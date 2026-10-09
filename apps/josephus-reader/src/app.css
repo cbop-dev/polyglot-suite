@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap');
+
+:root {
+  /* Font Families */
+  --font-greek: 'Gentium Book Plus', 'Cormorant Garamond', 'Times New Roman', serif;
+  --font-english: 'Literata', 'Georgia', serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Classic Sepia Theme (Default) */
+  --bg-primary: #FAF4E8;
+  --bg-secondary: #F3EBDD;
+  --bg-card: #FFFFFF;
+  --text-primary: #2B231D;
+  --text-secondary: #63574A;
+  --text-muted: #8C7B6B;
+  --border-color: #E2D7C5;
+  --accent-color: #8C3A2B;
+  --accent-hover: #A64736;
+  --accent-light: #F4E2DE;
+  --shadow-sm: 0 1px 3px rgba(43, 35, 29, 0.08);
+  --shadow-md: 0 4px 12px rgba(43, 35, 29, 0.12);
+  --shadow-lg: 0 8px 24px rgba(43, 35, 29, 0.16);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #12151E;
+  --bg-secondary: #1A1E2B;
+  --bg-card: #212636;
+  --text-primary: #E2E8F0;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border-color: #2D3548;
+  --accent-color: #60A5FA;
+  --accent-hover: #93C5FD;
+  --accent-light: #1E3A8A;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="light"] {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --border-color: #E2E8F0;
+  --accent-color: #2563EB;
+  --accent-hover: #1D4ED8;
+  --accent-light: #DBEAFE;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-english);
+  font-size: 1.125rem;
+  line-height: 1.7;
+  overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

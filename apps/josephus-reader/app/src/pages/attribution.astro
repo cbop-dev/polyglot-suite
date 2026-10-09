@@ -1,0 +1,131 @@
+---
+import ThemeInit from '../components/ThemeInit.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import '@shared/styles/global.css';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Attribution & License — Flavius Josephus Reader</title>
+    <ThemeInit />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="attr-body">
+    <div class="attr-container">
+      <header class="attr-header">
+        <div class="header-nav">
+          <a href={base || '/'} class="back-link">← Return to Josephus Reader</a>
+          <ThemeToggle />
+        </div>
+        <h1 class="attr-title">Source Data &amp; Attribution Info</h1>
+      </header>
+
+      <div class="attr-card">
+        <section class="info-section">
+          <h3>Perseus Digital Library</h3>
+          <p>The Greek text and English translation in this application are derived from XML datasets provided by the <a href="https://github.com/PerseusDL" target="_blank" rel="noopener noreferrer">Perseus Digital Library project</a>.</p>
+        </section>
+
+        <section class="info-section">
+          <h3>Editions &amp; Translations</h3>
+          <ul>
+            <li><strong>Greek Text:</strong> <em>Flavii Iosephi Opera</em>, Vol. 1–4. Edited by Benedikt Niese. Berlin: Weidmann, 1885–1890. (Public Domain / CC BY-SA 4.0 US)</li>
+            <li><strong>English Translation:</strong> <em>The Works of Flavius Josephus</em>. Translated by William Whiston. Auburn and Rochester, NY: Alden and Beardsley, 1856. (Public Domain / CC BY-SA 4.0 US)</li>
+          </ul>
+        </section>
+
+        <section class="info-section">
+          <h3>Lexicon &amp; Morphological Data</h3>
+          <p>Morphological lookup and dictionary definitions are derived from the <strong>Liddell-Scott-Jones (LSJ) Greek-English Lexicon</strong> via <a href="https://github.com/PerseusDL" target="_blank" rel="noopener noreferrer">Perseus</a> and the <a href="https://alpheios.net" target="_blank" rel="noopener noreferrer">Alpheios Project</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>.</p>
+        </section>
+
+        <section class="info-section">
+          <h3>License &amp; Open Access</h3>
+          <p>This site operates under a dual open-access license model:</p>
+          <ul>
+            <li><strong>Site Content &amp; Data:</strong> Distributed under the <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)</a>.</li>
+            <li><strong>Application Software:</strong> Open source codebase and Svelte/Astro web components are licensed under the <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT License</a>.</li>
+          </ul>
+        </section>
+
+        <section class="info-section">
+          <h3>Plato Reader Platform</h3>
+          <p>This web application is built using the open source platform architecture of John Boyer's <a href="https://github.com/johnhboyer-sys/plato-reader" target="_blank" rel="noopener noreferrer">Plato Reader / Josephus Project</a>.</p>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>
+
+<style>
+  .attr-body {
+    background-color: var(--page-bg, #eceee7);
+    color: var(--text, #171a1c);
+    font-family: var(--font-ui, system-ui, sans-serif);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+  .attr-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+  }
+  .header-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .back-link {
+    color: var(--accent, #1f6f7a);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .back-link:hover {
+    text-decoration: underline;
+  }
+  .attr-title {
+    font-family: var(--font-english, "EB Garamond", serif);
+    font-size: 2.25rem;
+    color: var(--accent, #1f6f7a);
+    margin: 0 0 1.5rem 0;
+  }
+  .attr-card {
+    background-color: var(--col-bg, #f5f6f2);
+    border: 1px solid var(--border, #d4d8d3);
+    border-radius: 8px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  h3 {
+    margin: 0 0 0.4rem 0;
+    font-size: 1.05rem;
+    color: var(--accent, #1f6f7a);
+  }
+  p, ul {
+    margin: 0;
+    line-height: 1.6;
+    font-size: 0.95rem;
+  }
+  ul {
+    padding-left: 1.25rem;
+  }
+  li {
+    margin-bottom: 0.35rem;
+  }
+  a {
+    color: var(--accent, #1f6f7a);
+    text-decoration: underline;
+  }
+</style>

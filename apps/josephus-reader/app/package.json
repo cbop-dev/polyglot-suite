@@ -1,0 +1,29 @@
+{
+  "name": "josephus-app",
+  "type": "module",
+  "version": "0.1.15",
+  "private": true,
+  "scripts": {
+    "clean": "rm -rf .astro node_modules/.vite ../build/local ../build/www",
+    "prebuild:local": "npm run clean",
+    "prebuild:www": "npm run clean",
+    "dev": "astro dev",
+    "build": "astro build",
+    "build:local": "OUT_DIR=../build/local BASE_PATH=/josephus-reader astro build",
+    "build:www": "OUT_DIR=../build/www BASE_PATH=\"\" astro build",
+    "build:vps": "npm run build:www",
+    "preview": "OUT_DIR=../build/local BASE_PATH=/josephus-reader astro preview",
+    "preview:www": "OUT_DIR=../build/www BASE_PATH=\"\" astro preview",
+    "preview:vps": "npm run preview:www",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
+    "astro": "^6.4.6"
+  },
+  "devDependencies": {
+    "@astrojs/svelte": "^8.1.2",
+    "svelte": "^5.56.3",
+    "typescript": "^5.7.0"
+  }
+}

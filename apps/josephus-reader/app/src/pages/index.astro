@@ -1,0 +1,218 @@
+---
+import { WORKS, SHELVES, workPath } from '@shared/lib/works';
+import ThemeInit from '../components/ThemeInit.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import '@shared/styles/global.css';
+import pkg from '../../../package.json';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const title = "FLAVIUS JOSEPHUS — Greek & English Reader";
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <ThemeInit />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="home-body">
+    <div class="landing-container">
+      <header class="home-header">
+        <div class="header-top">
+          <div class="brand-wrapper">
+            <span class="brand-title">JOSEPHUS READER</span>
+            <a
+              href={pkg.repository || "https://github.com/cbop-dev/josephus-reader"}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="version-badge"
+              title="View Josephus Reader on GitHub"
+            >
+              v{pkg.version}
+            </a>
+          </div>
+          <ThemeToggle />
+        </div>
+        <h1 class="hero-title">Flavius Josephus</h1>
+        <p class="hero-subtitle">Interactive Greek &amp; English Reader for the Complete Works (Niese Sectioning)</p>
+      </header>
+
+      <section class="shelves-section">
+        {SHELVES.map((shelf) => (
+          <div class="shelf">
+            <h2 class="shelf-title">{shelf.title}</h2>
+            <div class="works-grid">
+              {shelf.works.map((sw) => {
+                const work = WORKS.find(w => w.id === sw.id);
+                if (!work) return null;
+                return (
+                  <a href={`${base}${workPath(work.id, 1)}`} class="work-card">
+                    <div class="card-abbrev">{work.abbrev}</div>
+                    <div class="card-title">{work.englishTitle}</div>
+                    <div class="card-subtitle">{work.title}</div>
+                    <div class="card-meta">{work.booksCount} {work.booksCount === 1 ? 'Book' : 'Books'} • Niese Edition</div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <footer class="landing-footer">
+        <p>Greek text & Whiston English translation from Perseus Digital Library (CC BY-SA 4.0).</p>
+        <div class="footer-links">
+          <a href={`${base}/attribution/`} class="footer-link">Source Data &amp; Attribution</a>
+          <a href="https://github.com/cbop-dev/josephus-reader" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub Repository</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
+
+<style>
+  .home-body {
+    background-color: var(--page-bg, #eceee7);
+    color: var(--text, #171a1c);
+    font-family: var(--font-ui, system-ui, sans-serif);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+  .landing-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+  }
+  .home-header {
+    margin-bottom: 3.5rem;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .brand-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .brand-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--text-mid, #545b5c);
+  }
+  .version-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    background: var(--border, #d4d8d3);
+    color: var(--text-mid, #545b5c);
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .version-badge:hover {
+    background: var(--accent, #1f6f7a);
+    color: #fff;
+  }
+  .hero-title {
+    font-family: var(--font-english, "EB Garamond", serif);
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--accent, #1f6f7a);
+    margin: 0 0 0.5rem 0;
+  }
+  .hero-subtitle {
+    font-size: 1.15rem;
+    color: var(--text-mid, #545b5c);
+    margin: 0;
+  }
+  .shelves-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+  .shelf-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text, #171a1c);
+    border-bottom: 2px solid var(--border, #d4d8d3);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .works-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+  .work-card {
+    background-color: var(--col-bg, #f5f6f2);
+    border: 1px solid var(--border, #d4d8d3);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .work-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    border-color: var(--accent, #1f6f7a);
+  }
+  .card-abbrev {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--accent, #1f6f7a);
+    background-color: var(--page-bg, #eceee7);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+  }
+  .card-title {
+    font-family: var(--font-english, "EB Garamond", serif);
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+  }
+  .card-subtitle {
+    font-size: 0.95rem;
+    color: var(--text-mid, #545b5c);
+    font-style: italic;
+    margin-bottom: 0.75rem;
+  }
+  .card-meta {
+    font-size: 0.82rem;
+    color: var(--text-light, #616d6e);
+  }
+  .landing-footer {
+    margin-top: 4rem;
+    text-align: center;
+    border-top: 1px solid var(--border, #d4d8d3);
+    padding-top: 2rem;
+    font-size: 0.88rem;
+    color: var(--text-mid, #545b5c);
+  }
+  .footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+  }
+  .footer-link {
+    color: var(--accent, #1f6f7a);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .footer-link:hover {
+    text-decoration: underline;
+  }
+</style>

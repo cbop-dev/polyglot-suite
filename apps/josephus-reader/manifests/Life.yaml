@@ -1,0 +1,23 @@
+work:
+  id: Life
+  title: "Vita"
+  abbrev: "Vita"
+  english_title: "The Life of Flavius Josephus"
+  author: "Flavius Josephus"
+  tlg_author: "0526"
+  tlg_work: "002"
+  greek_edition: "B. Niese, Flavii Iosephi Opera (Weidmann, 1890)"
+
+citation:
+  scheme: niese
+  hideLineNumbers: true
+
+english:
+  primary:
+    id: whiston
+    name: "William Whiston (1856)"
+    model: perseus_niese
+    file: "perseus-eng/tlg0526.tlg002.perseus-eng2.xml"
+
+books:
+  - { n: 1, title: "Book I" }

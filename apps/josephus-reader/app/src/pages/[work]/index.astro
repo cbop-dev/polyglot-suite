@@ -1,0 +1,15 @@
+---
+import { WORKS, getWork } from '@shared/lib/works';
+import ReaderShell from '../../components/ReaderShell.astro';
+import '@shared/styles/global.css';
+
+export function getStaticPaths() {
+  return WORKS.map((w) => ({
+    params: { work: w.id }
+  }));
+}
+
+const { work } = Astro.params;
+const workMeta = getWork(work) || WORKS[0];
+---
+<ReaderShell workId={workMeta.id} n={1} />

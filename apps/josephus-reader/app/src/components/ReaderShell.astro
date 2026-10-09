@@ -1,0 +1,1095 @@
+---
+import { readFileSync, existsSync } from 'node:fs';
+import path from 'node:path';
+import Reader from '@shared/components/Reader.svelte';
+import NieseJump from '@shared/components/NieseJump.svelte';
+import CommandPalette from '@shared/components/CommandPalette.svelte';
+import WorkSwitcher from './WorkSwitcher.svelte';
+import ThemeInit from './ThemeInit.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import { getWork, bookLabel, workPath, WORKS } from '@shared/lib/works';
+import pkg from '../../../package.json';
+
+interface Props { workId: string; n: number; }
+const { workId, n } = Astro.props as Props;
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const work = getWork(workId)!;
+const label = bookLabel(work, n);
+
+// Load book data from disk at build time (zero client fetch latency)
+let bookData = null;
+const jsonPath = path.resolve(process.cwd(), `public/data/${workId}/book-${n}.json`);
+if (existsSync(jsonPath)) {
+  bookData = JSON.parse(readFileSync(jsonPath, 'utf-8'));
+}
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{work.englishTitle} — {label} | Josephus Reader</title>
+  <script is:inline define:vars={{ base }}>
+    window.__BASE_PATH__ = base || '';
+  </script>
+  <ThemeInit />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet" />
+</head>
+<body class="reader-body">
+  <header class="page-header">
+    <div class="header-left">
+      <div class="brand-wrapper">
+        <a class="brand-link" href={base || '/'}>Josephus Reader</a>
+        <a
+          href={pkg.repository || "https://github.com/cbop-dev/josephus-reader"}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="version-badge"
+          title="View Josephus Reader on GitHub"
+        >
+          v{pkg.version}
+        </a>
+      </div>
+
+      <WorkSwitcher work={workId} client:load />
+
+      <button type="button" class="toc-toggle" aria-label="Select book" aria-expanded="false" title="Book Outline">
+        <span class="toc-label">Bk {n}</span>
+      </button>
+    </div>
+
+    <div class="header-right">
+      <div class="desktop-header-tools">
+        <NieseJump work={workId} client:load />
+        <button type="button" class="search-trigger search-trigger-btn" title="Search (⌘K)">
+          <span class="hs-icon">🔍</span>
+          <span class="hs-kbd">⌘K</span>
+        </button>
+        <ThemeToggle />
+        <button type="button" class="info-trigger info-trigger-btn" aria-label="Sources & License Info" title="Sources & License Info (ⓘ)">
+          ⓘ
+        </button>
+        <button type="button" class="help-trigger help-trigger-btn" aria-label="Keyboard Shortcuts" title="Keyboard Shortcuts (?)">
+          ?
+        </button>
+      </div>
+
+      <button type="button" class="mobile-menu-toggle" aria-label="Toggle mobile menu" aria-expanded="false">
+        <span class="hamburger-icon" aria-hidden="true">☰</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Outline Sidebar Drawer -->
+  <div class="toc-backdrop" id="toc-backdrop" hidden></div>
+  <aside class="toc-sidebar" id="toc-sidebar" aria-hidden="true" inert>
+    <div class="toc-header">
+      <h2>{work.englishTitle}</h2>
+      <button type="button" class="toc-close" aria-label="Close outline">✕</button>
+    </div>
+    <nav class="toc-nav">
+      <h3>Books</h3>
+      <ul class="toc-books-list">
+        {Array.from({ length: work.booksCount }, (_, i) => i + 1).map((b) => (
+          <li class={b === n ? 'active' : ''}>
+            <a href={`${base}${workPath(workId, b)}`}>
+              Book {b}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Mobile Slide-out Menu Drawer -->
+  <div class="mobile-menu-backdrop" id="mobile-menu-backdrop" hidden></div>
+  <aside class="mobile-menu-drawer" id="mobile-menu-drawer" aria-hidden="true" inert>
+    <div class="mobile-menu-header">
+      <h3>Menu & Controls</h3>
+      <button type="button" class="mobile-menu-close" aria-label="Close menu">✕</button>
+    </div>
+
+    <div class="mobile-menu-body">
+      <!-- Section 1: Quick Tools -->
+      <section class="mobile-menu-section">
+        <h4>Navigation & Tools</h4>
+        <div class="mobile-tools-grid">
+          <div class="mobile-niese-wrapper">
+            <NieseJump work={workId} client:load />
+          </div>
+          <button type="button" class="mobile-drawer-btn mobile-search-btn">
+            <span>🔍 Search</span>
+            <span class="hs-kbd">⌘K</span>
+          </button>
+          <div class="mobile-drawer-item mobile-theme-wrapper">
+            <span>Theme</span>
+            <ThemeToggle />
+          </div>
+          <button type="button" class="mobile-drawer-btn mobile-info-btn">
+            <span>ⓘ Sources & License</span>
+          </button>
+          <button type="button" class="mobile-drawer-btn mobile-help-btn">
+            <span>❓ Keyboard Shortcuts</span>
+            <span class="hs-kbd">?</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Section 2: View Modes -->
+      <section class="mobile-menu-section">
+        <h4>View Mode</h4>
+        <div class="mobile-view-modes">
+          <button type="button" class="mobile-mode-btn" data-viewmode="parallel" title="Side-by-side (Greek & English)">
+            ◧ Parallel
+          </button>
+          <button type="button" class="mobile-mode-btn" data-viewmode="stacked" title="Stacked section text">
+            ⬓ Stacked
+          </button>
+          <button type="button" class="mobile-mode-btn" data-viewmode="greek" title="Greek text only">
+            Ω Greek
+          </button>
+          <button type="button" class="mobile-mode-btn" data-viewmode="english" title="English text only">
+            A English
+          </button>
+        </div>
+      </section>
+
+      <!-- Section 3: Reader Display Controls -->
+      <section class="mobile-menu-section">
+        <h4>Text & Display</h4>
+        <div class="mobile-controls-row">
+          <div class="mobile-control-item">
+            <span class="control-label">Font Size</span>
+            <div class="mobile-font-btns">
+              <button type="button" class="mobile-font-btn" data-font-action="dec" title="Decrease text size">A<sup>-</sup></button>
+              <button type="button" class="mobile-font-btn" data-font-action="inc" title="Increase text size">A<sup>+</sup></button>
+            </div>
+          </div>
+
+          <div class="mobile-control-item">
+            <span class="control-label">Word Tools</span>
+            <div class="mobile-lookup-btns">
+              <button type="button" class="mobile-morph-toggle" id="mobile-morph-toggle" title="Word Info (W)">
+                W (Word Info)
+              </button>
+              <button type="button" class="mobile-search-btn" id="mobile-search-btn" title="Corpus Search (S)">
+                S (Search)
+              </button>
+              <button type="button" class="mobile-highlights-btn" id="mobile-highlights-btn" title="Highlights (H)">
+                H (Highlights)<span class="mobile-hl-badge" id="mobile-hl-badge" hidden>0</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+  <!-- Sources & License Modal -->
+  <div class="info-modal-backdrop" id="info-modal-backdrop" hidden></div>
+  <aside class="info-modal" id="info-modal" aria-hidden="true" inert hidden>
+    <div class="info-modal-header">
+      <h3>Sources &amp; Licensing Information</h3>
+      <button type="button" class="info-modal-close" id="info-modal-close" aria-label="Close modal">✕</button>
+    </div>
+    <div class="info-modal-body">
+      <section class="info-modal-section">
+        <h4>Site &amp; Content License</h4>
+        <p>
+          This project uses a dual open-access license model:
+        </p>
+        <ul>
+          <li>
+            <strong>Text Content &amp; Data:</strong> Distributed under the <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)</a>.
+          </li>
+          <li>
+            <strong>Application Software:</strong> Svelte/Astro components and python pipeline code are open source under the <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT License</a>.
+          </li>
+        </ul>
+      </section>
+
+      <section class="info-modal-section">
+        <h4>Text &amp; Edition Sources</h4>
+        <ul>
+          <li>
+            <strong>Greek Text:</strong> <em>Flavii Iosephi Opera</em>, Vol. 1–4. Edited by Benedikt Niese (Berlin: Weidmann, 1885–1890). Derived from XML datasets provided by the <a href="https://github.com/PerseusDL" target="_blank" rel="noopener noreferrer">Perseus Digital Library</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/us/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0 US</a> / Public Domain text).
+          </li>
+          <li>
+            <strong>English Translation:</strong> <em>The Works of Flavius Josephus</em>. Translated by William Whiston (Auburn and Rochester, NY: Alden and Beardsley, 1856). Derived from the <a href="https://github.com/PerseusDL" target="_blank" rel="noopener noreferrer">Perseus Digital Library</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/us/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0 US</a> / Public Domain text).
+          </li>
+        </ul>
+      </section>
+
+      <section class="info-modal-section">
+        <h4>Lexicon &amp; Morphology Data</h4>
+        <p>
+          Morphological parsing and dictionary lookup data are derived from the <strong>Liddell-Scott-Jones (LSJ) Greek-English Lexicon</strong> via <a href="https://github.com/PerseusDL" target="_blank" rel="noopener noreferrer">Perseus</a> and the <a href="https://alpheios.net" target="_blank" rel="noopener noreferrer">Alpheios Project</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>.
+        </p>
+      </section>
+
+      <section class="info-modal-section">
+        <h4>Platform Software Architecture</h4>
+        <p>
+          Built on the open-source platform architecture of John H. Boyer's <a href="https://github.com/johnhboyer-sys/plato-reader" target="_blank" rel="noopener noreferrer">Plato Reader</a> under the <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT License</a>.
+        </p>
+      </section>
+
+      <div class="info-modal-footer">
+        <a href={`${base}/attribution/`} class="full-attr-link">View Full Attribution Page →</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div class="help-modal-backdrop" id="help-modal-backdrop" hidden></div>
+  <aside class="help-modal" id="help-modal" aria-hidden="true" inert hidden>
+    <div class="help-modal-header">
+      <h3>Keyboard Shortcuts</h3>
+      <button type="button" class="help-modal-close" id="help-modal-close" aria-label="Close modal">✕</button>
+    </div>
+    <div class="help-modal-body">
+      <table class="shortcuts-table">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><kbd>J</kbd></td>
+            <td>Open and focus "Jump to §" input</td>
+          </tr>
+          <tr>
+            <td><kbd>→</kbd> / <kbd>N</kbd></td>
+            <td>Jump to next section</td>
+          </tr>
+          <tr>
+            <td><kbd>←</kbd> / <kbd>P</kbd></td>
+            <td>Jump to previous section</td>
+          </tr>
+          <tr>
+            <td><kbd>F</kbd></td>
+            <td>Jump to first section (§ 1)</td>
+          </tr>
+          <tr>
+            <td><kbd>L</kbd></td>
+            <td>Jump to last section</td>
+          </tr>
+          <tr>
+            <td><kbd>W</kbd></td>
+            <td>Toggle Word Info mode (interactive word popups)</td>
+          </tr>
+          <tr>
+            <td><kbd>S</kbd></td>
+            <td>Open Corpus Search</td>
+          </tr>
+          <tr>
+            <td><kbd>H</kbd></td>
+            <td>Open Active Highlights Tab</td>
+          </tr>
+          <tr>
+            <td><kbd>O</kbd></td>
+            <td>Switch/scroll between Greek & English in section</td>
+          </tr>
+          <tr>
+            <td><kbd>T</kbd></td>
+            <td>Cycle theme (Light ☀️ → Dark 🌙 → Sepia 📜)</td>
+          </tr>
+          <tr>
+            <td><kbd>G</kbd></td>
+            <td>Show Greek text only</td>
+          </tr>
+          <tr>
+            <td><kbd>E</kbd></td>
+            <td>Show English text only</td>
+          </tr>
+          <tr>
+            <td><kbd>D</kbd></td>
+            <td>Toggle Dual language modes (Parallel ◧ ↔ Stacked ⬓)</td>
+          </tr>
+          <tr>
+            <td><kbd>Z</kbd></td>
+            <td>Toggle Zen Mode (full-screen focus view)</td>
+          </tr>
+          <tr>
+            <td><kbd>+</kbd> / <kbd>=</kbd></td>
+            <td>Increase text size</td>
+          </tr>
+          <tr>
+            <td><kbd>-</kbd> / <kbd>_</kbd></td>
+            <td>Decrease text size</td>
+          </tr>
+          <tr>
+            <td><kbd>⌘K</kbd> / <kbd>Ctrl K</kbd></td>
+            <td>Open Search & Command Palette</td>
+          </tr>
+          <tr>
+            <td><kbd>?</kbd></td>
+            <td>Toggle this Keyboard Shortcuts modal</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </aside>
+
+  <script>
+    const header = document.querySelector('.page-header');
+    const tocToggle = header?.querySelector('.toc-toggle');
+    const sidebar = document.getElementById('toc-sidebar');
+    const backdrop = document.getElementById('toc-backdrop');
+
+    const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
+    if (!isMac) document.querySelectorAll('.hs-kbd').forEach(el => {
+      if (el.textContent?.includes('⌘K')) el.replaceChildren('Ctrl K');
+    });
+
+    // TOC Sidebar Logic
+    const setToc = (open: boolean) => {
+      document.body.classList.toggle('toc-open', open);
+      sidebar?.setAttribute('aria-hidden', String(!open));
+      tocToggle?.setAttribute('aria-expanded', String(open));
+      if (backdrop) backdrop.hidden = !open;
+      if (open) {
+        sidebar?.removeAttribute('inert');
+      } else {
+        sidebar?.setAttribute('inert', '');
+      }
+    };
+
+    tocToggle?.addEventListener('click', () => setToc(!document.body.classList.contains('toc-open')));
+    backdrop?.addEventListener('click', () => setToc(false));
+    sidebar?.querySelector('.toc-close')?.addEventListener('click', () => setToc(false));
+
+    // Search trigger
+    header?.querySelector('.search-trigger-btn')?.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('open-command-palette'));
+    });
+
+    // Help Modal Logic
+    const helpModal = document.getElementById('help-modal');
+    const helpBackdrop = document.getElementById('help-modal-backdrop');
+    const helpClose = document.getElementById('help-modal-close');
+
+    const setHelpModal = (open: boolean) => {
+      document.body.classList.toggle('help-modal-open', open);
+      if (helpBackdrop) helpBackdrop.hidden = !open;
+      if (helpModal) {
+        helpModal.hidden = !open;
+        helpModal.setAttribute('aria-hidden', String(!open));
+        if (open) {
+          helpModal.removeAttribute('inert');
+        } else {
+          helpModal.setAttribute('inert', '');
+        }
+      }
+    };
+
+    header?.querySelector('.help-trigger-btn')?.addEventListener('click', () => setHelpModal(true));
+    helpClose?.addEventListener('click', () => setHelpModal(false));
+    helpBackdrop?.addEventListener('click', () => setHelpModal(false));
+
+    // Info/Sources Modal Logic
+    const infoModal = document.getElementById('info-modal');
+    const infoBackdrop = document.getElementById('info-modal-backdrop');
+    const infoClose = document.getElementById('info-modal-close');
+
+    const setInfoModal = (open: boolean) => {
+      document.body.classList.toggle('info-modal-open', open);
+      if (infoBackdrop) infoBackdrop.hidden = !open;
+      if (infoModal) {
+        infoModal.hidden = !open;
+        infoModal.setAttribute('aria-hidden', String(!open));
+        if (open) {
+          infoModal.removeAttribute('inert');
+        } else {
+          infoModal.setAttribute('inert', '');
+        }
+      }
+    };
+
+    header?.querySelector('.info-trigger-btn')?.addEventListener('click', () => setInfoModal(true));
+    infoClose?.addEventListener('click', () => setInfoModal(false));
+    infoBackdrop?.addEventListener('click', () => setInfoModal(false));
+
+    // Mobile Menu Drawer Logic
+    const mobileToggle = header?.querySelector('.mobile-menu-toggle');
+    const mobileDrawer = document.getElementById('mobile-menu-drawer');
+    const mobileBackdrop = document.getElementById('mobile-menu-backdrop');
+    const mobileClose = mobileDrawer?.querySelector('.mobile-menu-close');
+
+    const setMobileMenu = (open: boolean) => {
+      document.body.classList.toggle('mobile-menu-open', open);
+      mobileDrawer?.setAttribute('aria-hidden', String(!open));
+      mobileToggle?.setAttribute('aria-expanded', String(open));
+      if (mobileBackdrop) mobileBackdrop.hidden = !open;
+      if (open) {
+        mobileDrawer?.removeAttribute('inert');
+      } else {
+        mobileDrawer?.setAttribute('inert', '');
+      }
+    };
+
+    mobileToggle?.addEventListener('click', () => setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
+    mobileBackdrop?.addEventListener('click', () => setMobileMenu(false));
+    mobileClose?.addEventListener('click', () => setMobileMenu(false));
+
+    // Drawer internal actions
+    mobileDrawer?.querySelector('.mobile-search-btn')?.addEventListener('click', () => {
+      setMobileMenu(false);
+      window.dispatchEvent(new CustomEvent('open-command-palette'));
+    });
+    mobileDrawer?.querySelector('.mobile-info-btn')?.addEventListener('click', () => {
+      setMobileMenu(false);
+      setInfoModal(true);
+    });
+    mobileDrawer?.querySelector('.mobile-help-btn')?.addEventListener('click', () => {
+      setMobileMenu(false);
+      setHelpModal(true);
+    });
+
+    mobileDrawer?.querySelectorAll('.mobile-mode-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const mode = (e.currentTarget as HTMLElement).getAttribute('data-viewmode');
+        if (mode) {
+          window.dispatchEvent(new CustomEvent('reader-set-viewmode', { detail: mode }));
+        }
+      });
+    });
+
+    mobileDrawer?.querySelectorAll('.mobile-font-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const action = (e.currentTarget as HTMLElement).getAttribute('data-font-action');
+        if (action) {
+          window.dispatchEvent(new CustomEvent('reader-set-fontsize', { detail: action }));
+        }
+      });
+    });
+
+    const mobileMorphBtn = mobileDrawer?.querySelector('#mobile-morph-toggle');
+    mobileMorphBtn?.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('reader-toggle-morph'));
+    });
+
+    const mobileHighlightsBtn = mobileDrawer?.querySelector('#mobile-highlights-btn');
+    mobileHighlightsBtn?.addEventListener('click', () => {
+      setMobileMenu(false);
+      window.dispatchEvent(new CustomEvent('reader-toggle-highlights'));
+    });
+
+    function updateMobileHighlightsBadge(store: any) {
+      if (!store) return;
+      const count = (store.lemmas?.length || 0) + (store.forms?.length || 0);
+      const badge = mobileDrawer?.querySelector('#mobile-hl-badge');
+      if (badge) {
+        if (count > 0) {
+          badge.textContent = String(count);
+          badge.removeAttribute('hidden');
+          mobileHighlightsBtn?.classList.add('has-highlights');
+        } else {
+          badge.setAttribute('hidden', '');
+          mobileHighlightsBtn?.classList.remove('has-highlights');
+        }
+      }
+    }
+
+    window.addEventListener('reader-highlights-changed', (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      updateMobileHighlightsBadge(detail);
+    });
+
+    // Hydrate initial highlights state from localStorage if present
+    try {
+      const raw = localStorage.getItem('josephus_reader_highlights');
+      if (raw) updateMobileHighlightsBadge(JSON.parse(raw));
+    } catch {}
+
+    // Listen to Reader state changes to update drawer active buttons
+    window.addEventListener('reader-state-changed', (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail) return;
+
+      mobileDrawer?.querySelectorAll('.mobile-mode-btn').forEach((btn) => {
+        const mode = btn.getAttribute('data-viewmode');
+        btn.classList.toggle('active', mode === detail.viewMode);
+      });
+
+      if (mobileMorphBtn) {
+        mobileMorphBtn.classList.toggle('active', !!detail.morphEnabled);
+      }
+    });
+
+    // Global User Hotkeys Listener
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
+      // Input Guard: Suppress hotkeys when user is typing in inputs/textareas
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName.toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable) {
+          return;
+        }
+      }
+
+      if (e.key === 'Escape') {
+        if (helpModal && !helpModal.hidden) {
+          e.preventDefault();
+          setHelpModal(false);
+          return;
+        }
+        if (infoModal && !infoModal.hidden) {
+          e.preventDefault();
+          setInfoModal(false);
+          return;
+        }
+      }
+
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        const isOpen = helpModal && !helpModal.hidden;
+        setHelpModal(!isOpen);
+        return;
+      }
+
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const key = e.key.toLowerCase();
+
+      switch (key) {
+        case 'j':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('open-niese-jump'));
+          break;
+        case 'n':
+        case 'arrowright':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-nav-next'));
+          break;
+        case 'p':
+        case 'arrowleft':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-nav-prev'));
+          break;
+        case 'f':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-nav-first'));
+          break;
+        case 'l':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-nav-last'));
+          break;
+        case 'o':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-nav-lang-switch'));
+          break;
+        case 't':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('cycle-theme'));
+          break;
+        case 'g':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-set-viewmode', { detail: 'greek' }));
+          break;
+        case 'e':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-set-viewmode', { detail: 'english' }));
+          break;
+        case 'd':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-toggle-dualmode'));
+          break;
+        case 'b':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-toggle-bookmarks'));
+          break;
+        case 'w':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-toggle-morph'));
+          break;
+        case 's':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-toggle-search', { detail: { tab: 'lemma' } }));
+          break;
+        case 'h':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-toggle-search', { detail: { tab: 'highlights' } }));
+          break;
+        case 'z':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-toggle-zen'));
+          break;
+        case '+':
+        case '=':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-set-fontsize', { detail: 'inc' }));
+          break;
+        case '-':
+        case '_':
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('reader-set-fontsize', { detail: 'dec' }));
+          break;
+      }
+    });
+  </script>
+
+  <main class="reader-main">
+    {bookData ? (
+      <Reader work={workId} bookNum={n} bookData={bookData} client:load />
+    ) : (
+      <div class="error-box">Could not load text for {work.englishTitle} Book {n}.</div>
+    )}
+  </main>
+  <CommandPalette work={workId} client:load />
+</body>
+</html>
+
+<style>
+  :global(html) {
+    scroll-padding-top: 120px;
+    scroll-behavior: smooth;
+  }
+  @media (max-width: 768px) {
+    :global(html) {
+      scroll-padding-top: 70px;
+    }
+  }
+  .reader-body {
+    background-color: var(--page-bg, #eceee7);
+    color: var(--text, #171a1c);
+    margin: 0;
+    font-family: var(--font-ui, system-ui, sans-serif);
+    min-height: 100vh;
+  }
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: var(--col-bg, #f5f6f2);
+    border-bottom: 1px solid var(--border, #d4d8d3);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .brand-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .brand-link {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text, #171a1c);
+    text-decoration: none;
+  }
+  .version-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    background: var(--border, #d4d8d3);
+    color: var(--text-mid, #545b5c);
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .version-badge:hover {
+    background: var(--accent, #1f6f7a);
+    color: #fff;
+  }
+  .desktop-header-tools {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .toc-toggle, .search-trigger, .info-trigger, .help-trigger, .mobile-menu-toggle {
+    background: none;
+    border: 1px solid var(--border, #d4d8d3);
+    border-radius: 4px;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--text-mid, #545b5c);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .info-trigger, .help-trigger {
+    font-weight: 700;
+    padding: 0.35rem 0.55rem;
+  }
+  .mobile-menu-toggle {
+    display: none;
+    font-size: 1.1rem;
+    padding: 0.3rem 0.6rem;
+  }
+  .toc-toggle:hover, .search-trigger:hover, .info-trigger:hover, .help-trigger:hover, .mobile-menu-toggle:hover {
+    color: var(--accent, #1f6f7a);
+    border-color: var(--accent, #1f6f7a);
+  }
+  .hs-kbd {
+    background: var(--border, #d4d8d3);
+    font-size: 0.72rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+  }
+  .toc-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    background: var(--col-bg, #f5f6f2);
+    border-right: 1px solid var(--border, #d4d8d3);
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    padding: 1rem;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+  }
+  :global(body.toc-open) .toc-sidebar {
+    transform: translateX(0);
+  }
+  .toc-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+  }
+  .toc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border, #d4d8d3);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .toc-header h2 {
+    font-size: 1.1rem;
+    margin: 0;
+  }
+  .toc-close {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+  .toc-books-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .toc-books-list li {
+    margin-bottom: 0.4rem;
+  }
+  .toc-books-list a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    color: var(--text, #171a1c);
+    text-decoration: none;
+  }
+  .toc-books-list li.active a, .toc-books-list a:hover {
+    background: var(--accent, #1f6f7a);
+    color: #fff;
+  }
+
+  /* Mobile Drawer Styles */
+  .mobile-menu-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 300px;
+    max-width: 85vw;
+    background: var(--col-bg, #f5f6f2);
+    border-left: 1px solid var(--border, #d4d8d3);
+    z-index: 1000;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    padding: 1.25rem 1rem;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+    overflow-y: auto;
+  }
+  :global(body.mobile-menu-open) .mobile-menu-drawer {
+    transform: translateX(0);
+  }
+  .mobile-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+  }
+  .mobile-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border, #d4d8d3);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .mobile-menu-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+  .mobile-menu-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--text-mid, #545b5c);
+  }
+  .mobile-menu-section {
+    margin-bottom: 1.5rem;
+  }
+  .mobile-menu-section h4 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-mid, #545b5c);
+    margin: 0 0 0.6rem 0;
+  }
+  .mobile-tools-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .mobile-drawer-btn, .mobile-drawer-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    background: var(--page-bg, #eceee7);
+    border: 1px solid var(--border, #d4d8d3);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: var(--text, #171a1c);
+    cursor: pointer;
+  }
+  .mobile-view-modes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .mobile-mode-btn {
+    padding: 0.5rem;
+    background: var(--page-bg, #eceee7);
+    border: 1px solid var(--border, #d4d8d3);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-mid, #545b5c);
+    cursor: pointer;
+    text-align: center;
+  }
+  .mobile-mode-btn.active, .mobile-morph-toggle.active {
+    background: var(--accent, #1f6f7a);
+    color: #ffffff;
+    border-color: var(--accent, #1f6f7a);
+  }
+  .mobile-controls-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .mobile-control-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--page-bg, #eceee7);
+    padding: 0.4rem 0.65rem;
+    border-radius: 6px;
+    border: 1px solid var(--border, #d4d8d3);
+    font-size: 0.85rem;
+  }
+  .mobile-font-btns {
+    display: flex;
+    gap: 0.3rem;
+  }
+  .mobile-font-btn {
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border, #d4d8d3);
+    border-radius: 4px;
+    background: var(--col-bg, #f5f6f2);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .mobile-lookup-btns {
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+  }
+  .mobile-morph-toggle, .mobile-highlights-btn {
+    padding: 0.3rem 0.65rem;
+    border-radius: 4px;
+    border: 1px solid var(--border, #d4d8d3);
+    background: var(--col-bg, #f5f6f2);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-mid, #545b5c);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .mobile-highlights-btn.has-highlights {
+    border-color: var(--accent, #1f6f7a);
+    color: var(--accent, #1f6f7a);
+    font-weight: 700;
+  }
+  .mobile-hl-badge {
+    background-color: var(--accent, #1f6f7a);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.1rem 0.4rem;
+    border-radius: 10px;
+  }
+
+  /* Help & Info Modal Styles */
+  .help-modal-backdrop, .info-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1250;
+    backdrop-filter: blur(2px);
+  }
+  .help-modal, .info-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 480px;
+    max-width: 90vw;
+    max-height: 85vh;
+    background: var(--col-bg, #f5f6f2);
+    border: 1px solid var(--border, #d4d8d3);
+    border-radius: 12px;
+    z-index: 1300;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    overflow-y: auto;
+  }
+  .help-modal-header, .info-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border, #d4d8d3);
+  }
+  .help-modal-header h3, .info-modal-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--text, #171a1c);
+  }
+  .help-modal-close, .info-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--text-mid, #545b5c);
+  }
+  .info-modal-section {
+    margin-bottom: 1.2rem;
+  }
+  .info-modal-section h4 {
+    margin: 0 0 0.4rem 0;
+    font-size: 0.9rem;
+    color: var(--accent, #1f6f7a);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .info-modal-section p, .info-modal-section ul {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--text, #171a1c);
+  }
+  .info-modal-section ul {
+    padding-left: 1.2rem;
+  }
+  .info-modal-section li {
+    margin-bottom: 0.3rem;
+  }
+  .info-modal-section a {
+    color: var(--accent, #1f6f7a);
+    text-decoration: underline;
+  }
+  .info-modal-footer {
+    margin-top: 1.25rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border, #d4d8d3);
+    text-align: right;
+  }
+  .full-attr-link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent, #1f6f7a);
+    text-decoration: none;
+  }
+  .full-attr-link:hover {
+    text-decoration: underline;
+  }
+  .shortcuts-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  .shortcuts-table th {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-mid, #545b5c);
+    border-bottom: 1px solid var(--border, #d4d8d3);
+  }
+  .shortcuts-table td {
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--border, #d4d8d3);
+    vertical-align: middle;
+    color: var(--text, #171a1c);
+  }
+  .shortcuts-table kbd {
+    background: var(--page-bg, #eceee7);
+    border: 1px solid var(--border, #d4d8d3);
+    border-radius: 4px;
+    padding: 0.15rem 0.45rem;
+    font-family: var(--font-ui, system-ui, sans-serif);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text, #171a1c);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+
+  @media (max-width: 768px) {
+    .desktop-header-tools {
+      display: none;
+    }
+    .mobile-menu-toggle {
+      display: flex;
+    }
+    .page-header {
+      padding: 0.4rem 0.75rem;
+    }
+    .header-left {
+      gap: 0.4rem;
+    }
+    .brand-link {
+      font-size: 0.95rem;
+    }
+  }
+
+  .error-box {
+    padding: 3rem;
+    text-align: center;
+    color: var(--error, #b22323);
+  }
+</style>

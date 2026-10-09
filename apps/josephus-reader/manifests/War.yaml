@@ -1,0 +1,29 @@
+work:
+  id: War
+  title: "Bellum Judaicum"
+  abbrev: "Bel. Iud."
+  english_title: "The Jewish War"
+  author: "Flavius Josephus"
+  tlg_author: "0526"
+  tlg_work: "004"
+  greek_edition: "B. Niese, Flavii Iosephi Opera (Weidmann, 1895)"
+
+citation:
+  scheme: niese
+  hideLineNumbers: true
+
+english:
+  primary:
+    id: whiston
+    name: "William Whiston (1856)"
+    model: perseus_niese
+    file: "perseus-eng/tlg0526.tlg004.perseus-eng2.xml"
+
+books:
+  - { n: 1, title: "Book I" }
+  - { n: 2, title: "Book II" }
+  - { n: 3, title: "Book III" }
+  - { n: 4, title: "Book IV" }
+  - { n: 5, title: "Book V" }
+  - { n: 6, title: "Book VI" }
+  - { n: 7, title: "Book VII" }

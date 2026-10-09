@@ -1,0 +1,39 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+/static/data
+/sources
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# data
+/raw_xml
+/node_modules
+
+#misc
+/venv
+/.venv
+/scratch
+__pycache__/
+*.pyc
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+pipeline/josephus_pipeline/__pycache__/
+
