@@ -1,0 +1,446 @@
+---
+import ThemeInit from '../../components/ThemeInit.astro';
+import ThemeToggle from '../../components/ThemeToggle.astro';
+import '@shared/styles/global.css';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lemma Concordance — Josephus Reader</title>
+    <ThemeInit />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="lemma-body">
+    <div class="lemma-container">
+      <header class="lemma-header">
+        <div class="header-nav">
+          <a href={base || '/'} class="back-link">← Return to Josephus Reader Library</a>
+          <ThemeToggle />
+        </div>
+        <h1 id="lemma-head" class="lemma-title">Concordance</h1>
+        <p id="lemma-sub" class="lemma-sub">Occurrence summary across Flavius Josephus</p>
+      </header>
+
+      <main class="lemma-content">
+        <div id="loading-state" class="status-card">Loading concordance occurrences...</div>
+        <div id="results-card" class="lemma-card" style="display: none;">
+          <div class="summary-box">
+            <span class="count-badge" id="count-badge">0 occurrences</span>
+            <span class="norm-label" id="norm-label"></span>
+          </div>
+
+          <div class="occurrences-section">
+            <div class="occurrences-header">
+              <h3>Occurrences in Corpus</h3>
+              <button id="toggle-all-btn" class="toggle-all-btn" style="display: none;">Collapse All</button>
+            </div>
+            <div id="occurrences-container" class="occurrences-container"></div>
+          </div>
+        </div>
+        <div id="error-state" class="status-card error-card" style="display: none;">Lemma not found in corpus.</div>
+      </main>
+    </div>
+
+    <script is:inline define:vars={{ base }}>
+      const WORK_META = {
+        'Antiquities': { title: 'Antiquities of the Jews', abbrev: 'Ant.' },
+        'War': { title: 'The Jewish War', abbrev: 'War' },
+        'Life': { title: 'The Life of Josephus', abbrev: 'Life' },
+        'Apion': { title: 'Against Apion', abbrev: 'C. Ap.' }
+      };
+
+      function getGreekBucket(text) {
+        if (!text) return 'other';
+        const norm = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        if (!norm) return 'other';
+        const ch = norm[0].toLowerCase();
+        const map = {
+          'α': 'alpha', 'β': 'beta', 'γ': 'gamma', 'δ': 'delta',
+          'ε': 'epsilon', 'ζ': 'zeta', 'η': 'eta', 'θ': 'theta',
+          'ι': 'iota', 'κ': 'kappa', 'λ': 'lambda', 'μ': 'mu',
+          'ν': 'nu', 'ξ': 'xi', 'ο': 'omicron', 'π': 'pi',
+          'ρ': 'rho', 'σ': 'sigma', 'ς': 'sigma', 'τ': 'tau',
+          'υ': 'upsilon', 'φ': 'phi', 'χ': 'chi', 'ψ': 'psi',
+          'ω': 'omega'
+        };
+        return map[ch] || 'other';
+      }
+
+      async function loadLemma() {
+        const params = new URLSearchParams(window.location.search);
+        let wordKey = params.get('w') || params.get('slug') || '';
+        
+        // Fallback: extract from URL path if present
+        if (!wordKey) {
+          const parts = window.location.pathname.split('/').filter(Boolean);
+          const last = parts[parts.length - 1];
+          if (last && last !== 'lemma') {
+            wordKey = decodeURIComponent(last);
+          }
+        }
+
+        if (!wordKey) {
+          document.getElementById('loading-state').style.display = 'none';
+          document.getElementById('error-state').textContent = 'No lemma specified.';
+          document.getElementById('error-state').style.display = 'block';
+          return;
+        }
+
+        const bucket = getGreekBucket(wordKey);
+        const url = `${base}/data/lemmata/${bucket}.json`;
+
+        try {
+          const resp = await fetch(url);
+          if (!resp.ok) throw new Error('Data fetch failed');
+          const data = await resp.json();
+
+          // Find key matching wordKey (exact or stripped)
+          const normKey = wordKey.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/ς/g, 'σ');
+          const entry = data[wordKey] || data[normKey] || Object.values(data).find(e => e.lemma === wordKey || (e.lemma && e.lemma.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/ς/g, 'σ') === normKey));
+
+
+          document.getElementById('loading-state').style.display = 'none';
+
+          if (!entry) {
+            document.getElementById('lemma-head').textContent = wordKey;
+            document.getElementById('error-state').style.display = 'block';
+            return;
+          }
+
+          document.getElementById('lemma-head').textContent = entry.lemma || wordKey;
+          document.title = `Lemma: ${entry.lemma || wordKey} — Josephus Concordance`;
+
+          document.getElementById('count-badge').textContent = `${entry.count || (entry.occurrences ? entry.occurrences.length : 0)} occurrence(s)`;
+          document.getElementById('norm-label').textContent = `Normalized: ${normKey}`;
+
+          const container = document.getElementById('occurrences-container');
+          container.innerHTML = '';
+
+          const occurrences = entry.occurrences || [];
+          if (occurrences.length === 0) {
+            container.innerHTML = '<div class="status-card">No occurrences recorded.</div>';
+          } else {
+            // Group occurrences by Work -> Book
+            const grouped = {};
+            occurrences.forEach(occ => {
+              const w = occ.work || 'Other';
+              const b = occ.book || 1;
+              if (!grouped[w]) grouped[w] = {};
+              if (!grouped[w][b]) grouped[w][b] = [];
+              grouped[w][b].push(occ);
+            });
+
+            Object.keys(grouped).forEach(workKey => {
+              const booksMap = grouped[workKey];
+              const meta = WORK_META[workKey] || { title: workKey, abbrev: workKey };
+              
+              let workCount = 0;
+              Object.values(booksMap).forEach(arr => workCount += arr.length);
+
+              const workDetails = document.createElement('details');
+              workDetails.className = 'work-group';
+              workDetails.open = true;
+
+              workDetails.innerHTML = `
+                <summary class="work-summary">
+                  <span class="work-title">${meta.title} <span class="work-abbrev">(${meta.abbrev})</span></span>
+                  <span class="work-count-tag">${workCount} occurrence${workCount > 1 ? 's' : ''}</span>
+                </summary>
+                <div class="work-content"></div>
+              `;
+
+              const workContent = workDetails.querySelector('.work-content');
+
+              Object.keys(booksMap).sort((a,b) => Number(a) - Number(b)).forEach(bookNum => {
+                const bookOccs = booksMap[bookNum];
+
+                const bookDetails = document.createElement('details');
+                bookDetails.className = 'book-group';
+                bookDetails.open = true;
+
+                const pillsHtml = bookOccs.map(occ => {
+                  const secRef = occ.sec ? `§ ${occ.sec}` : `Bk ${occ.book}`;
+                  const anchor = occ.sec ? `#niese-${occ.sec}` : '';
+                  const targetUrl = `${base}/${occ.work}/book/${occ.book}/?hl=${encodeURIComponent(occ.word)}&lemma=${encodeURIComponent(normKey)}${anchor}`;
+
+                  return `
+                    <a class="occ-link" href="${targetUrl}">
+                      <span class="occ-ref">${secRef}</span>
+                      <span class="occ-form">${occ.word}</span>
+                    </a>
+                  `;
+                }).join('');
+
+                bookDetails.innerHTML = `
+                  <summary class="book-summary">
+                    <span class="book-title">Book ${bookNum}</span>
+                    <span class="book-count-tag">(${bookOccs.length})</span>
+                  </summary>
+                  <div class="pills-grid">${pillsHtml}</div>
+                `;
+
+                workContent.appendChild(bookDetails);
+              });
+
+              container.appendChild(workDetails);
+            });
+
+            // Enable Toggle All Button
+            const toggleBtn = document.getElementById('toggle-all-btn');
+            toggleBtn.style.display = 'inline-block';
+            let allOpen = true;
+            toggleBtn.onclick = () => {
+              allOpen = !allOpen;
+              document.querySelectorAll('.work-group, .book-group').forEach(el => {
+                el.open = allOpen;
+              });
+              toggleBtn.textContent = allOpen ? 'Collapse All' : 'Expand All';
+            };
+          }
+
+          document.getElementById('results-card').style.display = 'block';
+        } catch (err) {
+          console.error(err);
+          document.getElementById('loading-state').style.display = 'none';
+          document.getElementById('error-state').style.display = 'block';
+        }
+      }
+
+      window.addEventListener('DOMContentLoaded', loadLemma);
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  .lemma-body {
+    background-color: var(--page-bg, #eceee7);
+    color: var(--text, #171a1c);
+    font-family: var(--font-ui, system-ui, sans-serif);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+  .lemma-container {
+    max-width: 840px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+  }
+  .header-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .back-link {
+    color: var(--accent, #1f6f7a);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .back-link:hover {
+    text-decoration: underline;
+  }
+  .lemma-title {
+    font-family: var(--font-greek, "Cardo", serif);
+    font-size: 3rem;
+    color: var(--accent, #1f6f7a);
+    margin: 0 0 0.4rem 0;
+  }
+  .lemma-sub {
+    color: var(--text-mid, #545b5c);
+    font-size: 1.05rem;
+    margin-bottom: 2rem;
+  }
+  .status-card {
+    background-color: var(--col-bg, #ffffff);
+    border: 1px solid var(--border, #d4d8d3);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-mid, #545b5c);
+  }
+  .error-card {
+    color: #c53030;
+    border-color: #feb2b2;
+    background-color: #fff5f5;
+  }
+  .lemma-card {
+    background-color: var(--col-bg, #ffffff);
+    border: 1px solid var(--border, #d4d8d3);
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+  .summary-box {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border, #d4d8d3);
+  }
+  .count-badge {
+    background-color: var(--accent, #1f6f7a);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+  }
+  .norm-label {
+    font-size: 0.85rem;
+    color: var(--text-mid, #545b5c);
+    font-style: italic;
+  }
+  .occurrences-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+  .occurrences-header h3 {
+    font-size: 1.1rem;
+    color: var(--text-mid, #545b5c);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .toggle-all-btn {
+    background: transparent;
+    border: 1px solid var(--border, #d4d8d3);
+    border-radius: 6px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent, #1f6f7a);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .toggle-all-btn:hover {
+    background-color: var(--page-bg, #eceee7);
+  }
+  .work-group {
+    background: var(--col-bg, #ffffff);
+    border: 1px solid var(--border, #d4d8d3);
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  }
+  .work-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem 1.25rem;
+    background-color: var(--page-bg, #eceee7);
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease;
+  }
+  .work-summary:hover {
+    background-color: var(--border, #d4d8d3);
+  }
+  .work-title {
+    font-size: 1.05rem;
+    color: var(--accent, #1f6f7a);
+  }
+  .work-abbrev {
+    font-weight: 400;
+    color: var(--text-mid, #545b5c);
+    font-size: 0.92rem;
+  }
+  .work-count-tag {
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: var(--accent, #1f6f7a);
+    color: #ffffff;
+    padding: 0.2rem 0.55rem;
+    border-radius: 12px;
+  }
+  .work-content {
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .book-group {
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    padding: 0.5rem 0.85rem;
+    background-color: var(--col-bg, #ffffff);
+  }
+  .book-summary {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-mid, #545b5c);
+    cursor: pointer;
+    user-select: none;
+    padding: 0.3rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .book-summary:hover {
+    color: var(--accent, #1f6f7a);
+  }
+  .book-count-tag {
+    font-size: 0.75rem;
+    color: var(--text-mid, #545b5c);
+    font-weight: 500;
+  }
+  .pills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.6rem;
+    padding-top: 0.6rem;
+    padding-bottom: 0.25rem;
+  }
+  .occ-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    background-color: var(--page-bg, #eceee7);
+    border: 1px solid var(--border, #d4d8d3);
+    text-decoration: none;
+    color: var(--text, #171a1c);
+    font-size: 0.85rem;
+    line-height: 1.2;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.18s ease-in-out;
+  }
+  .occ-link:hover {
+    background-color: var(--accent, #1f6f7a) !important;
+    border-color: var(--accent, #1f6f7a) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(31, 111, 122, 0.3);
+  }
+  .occ-ref {
+    font-weight: 700;
+    color: var(--accent, #1f6f7a);
+    font-size: 0.82rem;
+    transition: color 0.18s ease-in-out;
+  }
+  .occ-link:hover .occ-ref {
+    color: rgba(255, 255, 255, 0.92) !important;
+  }
+  .occ-form {
+    font-family: var(--font-greek, "Cardo", "Gentium Plus", "Noto Serif", Georgia, serif);
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--text, #171a1c);
+    transition: color 0.18s ease-in-out;
+  }
+  .occ-link:hover .occ-form {
+    color: #ffffff !important;
+  }
+</style>

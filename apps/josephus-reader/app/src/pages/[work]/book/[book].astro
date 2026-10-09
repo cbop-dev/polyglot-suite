@@ -1,0 +1,22 @@
+---
+import { WORKS, getWork } from '@shared/lib/works';
+import ReaderShell from '../../../components/ReaderShell.astro';
+import '@shared/styles/global.css';
+
+export function getStaticPaths() {
+  const paths = [];
+  for (const w of WORKS) {
+    for (let b = 1; b <= w.booksCount; b++) {
+      paths.push({
+        params: { work: w.id, book: String(b) }
+      });
+    }
+  }
+  return paths;
+}
+
+const { work, book } = Astro.params;
+const workMeta = getWork(work) || WORKS[0];
+const bookNum = Number(book) || 1;
+---
+<ReaderShell workId={workMeta.id} n={bookNum} />

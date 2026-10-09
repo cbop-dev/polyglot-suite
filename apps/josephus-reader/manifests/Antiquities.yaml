@@ -1,0 +1,42 @@
+work:
+  id: Antiquities
+  title: "Antiquitates Judaicae"
+  abbrev: "Ant. Iud."
+  english_title: "Antiquities of the Jews"
+  author: "Flavius Josephus"
+  tlg_author: "0526"
+  tlg_work: "001"
+  greek_edition: "B. Niese, Flavii Iosephi Opera (Weidmann, 1887)"
+
+citation:
+  scheme: niese
+  hideLineNumbers: true
+
+english:
+  primary:
+    id: whiston
+    name: "William Whiston (1856)"
+    model: perseus_niese
+    file: "perseus-eng/tlg0526.tlg001.perseus-eng2.xml"
+
+books:
+  - { n: 1, title: "Book I" }
+  - { n: 2, title: "Book II" }
+  - { n: 3, title: "Book III" }
+  - { n: 4, title: "Book IV" }
+  - { n: 5, title: "Book V" }
+  - { n: 6, title: "Book VI" }
+  - { n: 7, title: "Book VII" }
+  - { n: 8, title: "Book VIII" }
+  - { n: 9, title: "Book IX" }
+  - { n: 10, title: "Book X" }
+  - { n: 11, title: "Book XI" }
+  - { n: 12, title: "Book XII" }
+  - { n: 13, title: "Book XIII" }
+  - { n: 14, title: "Book XIV" }
+  - { n: 15, title: "Book XV" }
+  - { n: 16, title: "Book XVI" }
+  - { n: 17, title: "Book XVII" }
+  - { n: 18, title: "Book XVIII" }
+  - { n: 19, title: "Book XIX" }
+  - { n: 20, title: "Book XX" }
