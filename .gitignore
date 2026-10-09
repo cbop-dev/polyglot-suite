@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.output/
+.svelte-kit/
+.astro/
+test-results/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.deploy.example
+
+# Python & Virtual Environments
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local databases & artifacts
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+.scratch/
+scratch/
+
+# Operating System
+.DS_Store
+Thumbs.db
