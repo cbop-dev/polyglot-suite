@@ -1,0 +1,180 @@
+import { getDbWorker } from './dbWorker';
+
+export interface Token {
+	w: string;
+	l: string;
+	m: string;
+	p: string;
+	lang: string;
+}
+
+export interface TextUnit {
+	id: number;
+	corpus_id: string;
+	work_code: string;
+	chapter: number;
+	section: number;
+	display_citation: string;
+	text_content: string;
+	tokens?: Token[];
+}
+
+export interface LexiconEntry {
+	dictionary: string;
+	strongs_id?: string;
+	lemma: string;
+	normalized_lemma: string;
+	transliteration?: string;
+	gloss: string;
+	definition: string;
+}
+
+export interface LemmaStat {
+	corpus_id: string;
+	lemma: string;
+	normalized_lemma: string;
+	total_count: number;
+	work_counts: Record<string, number>;
+}
+
+export interface ConcordanceRef {
+	display_citation: string;
+	work_unit_id: number;
+	work_code: string;
+	chapter: number;
+	section: number;
+	text_content: string;
+}
+
+export interface LemmaSearchResult {
+	lemma: string;
+	normalized_lemma: string;
+	total_count: number;
+	work_counts: Record<string, number>;
+}
+
+export async function fetchChapterSections(
+	workCode: string,
+	chapter: number
+): Promise<{ greek: TextUnit[]; english: TextUnit[]; latin: TextUnit[] }> {
+	const worker = await getDbWorker();
+	const sql = `
+		SELECT id, corpus_id, work_code, chapter, section, display_citation, text_content, tokens_json
+		FROM text_units
+		WHERE work_code = ? AND chapter = ?
+		ORDER BY section ASC, corpus_id ASC
+	`;
+	const rows = await worker.db.query(sql, [workCode, chapter]);
+
+	const greek: TextUnit[] = [];
+	const english: TextUnit[] = [];
+	const latin: TextUnit[] = [];
+
+	for (const row of rows) {
+		const unit: TextUnit = {
+			id: row[0] as number,
+			corpus_id: row[1] as string,
+			work_code: row[2] as string,
+			chapter: row[3] as number,
+			section: row[4] as number,
+			display_citation: row[5] as string,
+			text_content: row[6] as string,
+			tokens: row[7] ? JSON.parse(row[7] as string) : undefined
+		};
+
+		if (unit.corpus_id === 'lake_grc') {
+			greek.push(unit);
+		} else if (unit.corpus_id === 'lake_eng') {
+			english.push(unit);
+		} else if (unit.corpus_id === 'lake_lat') {
+			latin.push(unit);
+		}
+	}
+
+	return { greek, english, latin };
+}
+
+export async function fetchLexiconEntry(lemma: string): Promise<LexiconEntry | null> {
+	const worker = await getDbWorker();
+	const sql = `
+		SELECT dictionary, strongs_id, lemma, normalized_lemma, transliteration, gloss, definition
+		FROM lexicon_entries
+		WHERE lemma = ? OR normalized_lemma = ?
+		LIMIT 1
+	`;
+	const rows = await worker.db.query(sql, [lemma, lemma]);
+	if (!rows || rows.length === 0) return null;
+
+	const r = rows[0];
+	return {
+		dictionary: r[0] as string,
+		strongs_id: r[1] as string | undefined,
+		lemma: r[2] as string,
+		normalized_lemma: r[3] as string,
+		transliteration: r[4] as string | undefined,
+		gloss: r[5] as string,
+		definition: r[6] as string
+	};
+}
+
+export async function fetchLemmaStats(lemma: string): Promise<LemmaStat | null> {
+	const worker = await getDbWorker();
+	const sql = `
+		SELECT corpus_id, lemma, normalized_lemma, total_count, work_counts_json
+		FROM lemma_stats
+		WHERE lemma = ?
+		LIMIT 1
+	`;
+	const rows = await worker.db.query(sql, [lemma]);
+	if (!rows || rows.length === 0) return null;
+
+	const r = rows[0];
+	return {
+		corpus_id: r[0] as string,
+		lemma: r[1] as string,
+		normalized_lemma: r[2] as string,
+		total_count: r[3] as number,
+		work_counts: JSON.parse((r[4] as string) || '{}')
+	};
+}
+
+export async function fetchConcordance(lemma: string): Promise<ConcordanceRef[]> {
+	const worker = await getDbWorker();
+	const sql = `
+		SELECT c.display_citation, c.work_unit_id, t.work_code, t.chapter, t.section, t.text_content
+		FROM concordance_refs c
+		JOIN text_units t ON t.id = c.work_unit_id
+		WHERE c.lemma = ?
+		ORDER BY t.work_code, t.chapter, t.section
+		LIMIT 200
+	`;
+	const rows = await worker.db.query(sql, [lemma]);
+	return rows.map((r) => ({
+		display_citation: r[0] as string,
+		work_unit_id: r[1] as number,
+		work_code: r[2] as string,
+		chapter: r[3] as number,
+		section: r[4] as number,
+		text_content: r[5] as string
+	}));
+}
+
+export async function searchLemmas(query: string, limit: number = 30): Promise<LemmaSearchResult[]> {
+	if (!query.trim()) return [];
+	const worker = await getDbWorker();
+	const q = `%${query.trim()}%`;
+	const sql = `
+		SELECT lemma, normalized_lemma, total_count, work_counts_json
+		FROM lemma_stats
+		WHERE normalized_lemma LIKE ? OR lemma LIKE ?
+		ORDER BY total_count DESC
+		LIMIT ?
+	`;
+	const rows = await worker.db.query(sql, [q, q, limit]);
+	return rows.map((r) => ({
+		lemma: r[0] as string,
+		normalized_lemma: r[1] as string,
+		total_count: r[2] as number,
+		work_counts: JSON.parse((r[3] as string) || '{}')
+	}));
+}
