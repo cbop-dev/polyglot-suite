@@ -3,6 +3,8 @@ import svelte from '@astrojs/svelte';
 import sitemap from '@astrojs/sitemap';
 import path from 'path';
 
+import { searchForWorkspaceRoot } from 'vite';
+
 const outDir = process.env.OUT_DIR || '../build/local';
 
 export default defineConfig({
@@ -20,7 +22,10 @@ export default defineConfig({
     },
     server: {
       fs: {
-        allow: ['..']
+        allow: [
+          searchForWorkspaceRoot(process.cwd()),
+          '..'
+        ]
       }
     },
     resolve: {
