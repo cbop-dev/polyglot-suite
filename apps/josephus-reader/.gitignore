@@ -37,3 +37,6 @@ vite.config.ts.timestamp-*
 
 pipeline/josephus_pipeline/__pycache__/
 
+
+# Astro
+.astro/
