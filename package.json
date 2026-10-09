@@ -1,0 +1,25 @@
+{
+  "name": "polyglot-suite",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo workspace for ancient language readers and linguistic toolkits",
+  "workspaces": [
+    "apps/*",
+    "apps/josephus-reader/app",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:bible": "npm --workspace=polyglot-bible-reader run dev",
+    "dev:josephus": "npm --workspace=josephus-reader run dev",
+    "build:bible": "npm --workspace=polyglot-bible-reader run build",
+    "build:josephus": "npm --workspace=josephus-reader run build",
+    "check:bible": "npm --workspace=polyglot-bible-reader run check",
+    "check:josephus": "npm --workspace=josephus-reader run check",
+    "test:bible": "npm --workspace=polyglot-bible-reader run test",
+    "test:josephus": "npm --workspace=josephus-reader run test"
+  },
+  "allowScripts": {
+    "esbuild@0.27.7": true,
+    "sharp@0.34.5": true
+  }
+}

@@ -1,0 +1,6 @@
+# Shared packages directory for polyglot-suite
+# Intended packages:
+# - @polyglot/reader-core
+# - @polyglot/lemma-ui
+# - @polyglot/search-engine
+# - @polyglot/pipeline-toolkit
