@@ -235,10 +235,10 @@ const html = `<!doctype html>
       </div>
 
       <!-- Apostolic Fathers Reader -->
-      <div class="card disabled">
+      <div class="card">
         <div>
           <div class="card-header">
-            <span class="badge badge-dev">In Development</span>
+            <span class="badge badge-live">Available</span>
             <h2>Apostolic Fathers Reader</h2>
           </div>
           <p class="description">Tri-lingual parallel reader covering all 15 canonical works of the Apostolic Fathers with Kirsopp Lake Loeb Greek/English text, Latin fragments, unabridged LSJ definitions, and multi-color lemma highlighter.</p>
@@ -251,7 +251,7 @@ const html = `<!doctype html>
             <span class="tag">LSJ Lexicon</span>
           </div>
         </div>
-        <button class="btn btn-disabled" disabled>Coming Soon</button>
+        <a href="./fathers/" class="btn">Launch Fathers Reader &rarr;</a>
       </div>
     </div>
 
