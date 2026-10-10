@@ -1,9 +1,14 @@
 <script lang="ts">
 	import Header from '$lib/components/Header.svelte';
 	import ColumnView from '$lib/components/ColumnView.svelte';
-	import LemmaModal from '$lib/components/LemmaModal.svelte';
-	import LemmaSearchPanel from '$lib/components/LemmaSearchPanel.svelte';
+	import DockableSidePanel from '$lib/components/DockableSidePanel.svelte';
+	import BookModal from '$lib/components/BookModal.svelte';
+	import ChapterModal from '$lib/components/ChapterModal.svelte';
+	import HotkeyHelpModal from '$lib/components/HotkeyHelpModal.svelte';
+	import CommandPalette from '$lib/components/CommandPalette.svelte';
+	import CitationModal from '$lib/components/CitationModal.svelte';
 	import { readerState } from '$lib/stores/readerState.svelte';
+	import { hotkeyManager } from '$lib/services/hotkeyManager';
 	import { fetchChapterSections, type TextUnit } from '$lib/services/dbClient';
 
 	let greekSections = $state<TextUnit[]>([]);
@@ -35,32 +40,19 @@
 		}
 	}
 
-	function handleKeydown(e: KeyboardEvent) {
-		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-			return;
-		}
-		if (e.key === 'ArrowRight') {
-			readerState.nextChapter();
-		} else if (e.key === 'ArrowLeft') {
-			readerState.prevChapter();
-		} else if (e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
-			e.preventDefault();
-			readerState.toggleSearch();
-		}
-	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={(e) => hotkeyManager.handleKeyDown(e, readerState)} />
 
-<div class="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+<div class="min-h-screen flex flex-col bg-[var(--color-page)] text-[var(--color-ink)] transition-colors duration-150">
 	<Header />
 
-	<main class="flex-1">
+	<main class="flex-1 {readerState.isSidePanelOpen ? 'mr-0 lg:mr-[440px]' : ''} transition-all duration-200">
 		{#if loading}
-			<div class="flex items-center justify-center py-20 text-slate-400">
+			<div class="flex items-center justify-center py-20 text-[var(--color-ink-soft)]">
 				<div class="text-center">
 					<div class="text-base font-semibold">Loading chapter...</div>
-					<div class="text-xs text-slate-500 mt-1">Connecting to sql.js-httpvfs database</div>
+					<div class="text-xs text-[var(--color-ink-soft)] mt-1">Connecting to sql.js-httpvfs database</div>
 				</div>
 			</div>
 		{:else if error}
@@ -77,9 +69,37 @@
 		{/if}
 	</main>
 
-	<!-- Lemma inspection modal -->
-	<LemmaModal />
+	<!-- Unified Dockable Side Panel (Search, Lexeme with Attested Forms, Highlights) -->
+	<DockableSidePanel />
 
-	<!-- Fast Lemma search panel -->
-	<LemmaSearchPanel />
+	<!-- Work / Book Selection Modal (press 'b') -->
+	<BookModal
+		open={readerState.isBookModalOpen}
+		onClose={() => (readerState.isBookModalOpen = false)}
+	/>
+
+	<!-- Chapter Selection Modal (press 'c') -->
+	<ChapterModal
+		open={readerState.isChapterModalOpen}
+		onClose={() => (readerState.isChapterModalOpen = false)}
+	/>
+
+	<!-- Keyboard Shortcuts Help Modal (press '?') -->
+	<HotkeyHelpModal />
+
+	<!-- Fast Command Palette / Passage Jumper (Cmd+K) -->
+	<CommandPalette
+		open={readerState.isCommandPaletteOpen}
+		onClose={() => (readerState.isCommandPaletteOpen = false)}
+	/>
+
+	<!-- Academic Citation Generator Modal -->
+	{#if readerState.citationTarget}
+		<CitationModal
+			workCode={readerState.citationTarget.workCode}
+			chapter={readerState.citationTarget.chapter}
+			section={readerState.citationTarget.section}
+			onClose={() => readerState.closeCitation()}
+		/>
+	{/if}
 </div>

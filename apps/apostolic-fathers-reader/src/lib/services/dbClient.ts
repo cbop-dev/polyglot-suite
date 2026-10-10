@@ -208,3 +208,44 @@ export async function searchLemmas(query: string, limit: number = 30): Promise<L
 		};
 	});
 }
+
+export interface AttestedForm {
+	form: string;
+	count: number;
+}
+
+export async function fetchAttestedForms(lemma: string): Promise<AttestedForm[]> {
+	if (!lemma) return [];
+	const worker = await getDbWorker();
+	const clean = lemma.trim().replace(/[.,;:·]/g, '');
+
+	// Fetch all text units that contain occurrences of this lemma in their tokens
+	const sql = `
+		SELECT t.tokens_json
+		FROM concordance_refs c
+		JOIN text_units t ON t.id = c.work_unit_id
+		WHERE c.lemma = ?
+	`;
+	const rows = await worker.db.query(sql, [clean]);
+	const counts: Record<string, number> = {};
+
+	for (const row of rows as any[]) {
+		const raw = getRowVal<string | undefined>(row, 'tokens_json', 0);
+		const tokens = parseJsonField<Token[] | undefined>(raw);
+		if (!tokens) continue;
+
+		for (const tok of tokens) {
+			if (tok.l === clean || tok.l === lemma) {
+				// Strip surface punctuation from word for form counting
+				const surface = tok.w.replace(/[.,;:·’—\s]/g, '').trim();
+				if (surface) {
+					counts[surface] = (counts[surface] || 0) + 1;
+				}
+			}
+		}
+	}
+
+	return Object.entries(counts)
+		.map(([form, count]) => ({ form, count }))
+		.sort((a, b) => b.count - a.count || a.form.localeCompare(b.form));
+}
