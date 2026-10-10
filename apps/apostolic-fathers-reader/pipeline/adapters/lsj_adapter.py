@@ -1,7 +1,8 @@
 """Apostolic Fathers Pipeline - LSJ Lexicon Adapter.
 
 Loads STEPBible's TFLSJ full LSJ lexicon files and indexes entries
-by normalized Greek headwords and plain consonant keys for instant lookup.
+by normalized Greek headwords, plain consonant keys, and deponent/variant
+aliases for instant lookup.
 """
 
 from __future__ import annotations
@@ -23,6 +24,65 @@ def strip_greek_accents(s: str) -> str:
     return unicodedata.normalize("NFC", cleaned).lower().strip()
 
 
+# Supplementary Patristic / Hermas terms not in standard NT Strongs
+PATRISTIC_SUPPLEMENT: list[Dict[str, Any]] = [
+    {
+        "dictionary": "lsj",
+        "strongs_id": None,
+        "lemma": "διψυχία",
+        "normalized_lemma": strip_greek_accents("διψυχία"),
+        "transliteration": "dipsychia",
+        "gloss": "doubt, hesitation, double-mindedness",
+        "definition": "<b>διψυχία</b>, ἡ, <i>doubt, hesitation, double-mindedness</i>. Characteristic virtue-testing term in the Shepherd of Hermas and 1 Clement.",
+    },
+    {
+        "dictionary": "lsj",
+        "strongs_id": None,
+        "lemma": "ὀξυχολία",
+        "normalized_lemma": strip_greek_accents("ὀξυχολία"),
+        "transliteration": "oxucholia",
+        "gloss": "quick temper, sudden anger, irascibility",
+        "definition": "<b>ὀξυχολία</b>, ἡ, <i>sudden anger, quick temper, irascibility</i>. In Shepherd of Hermas (Mandate 5), the destructive spiritual adversary of patience.",
+    },
+    {
+        "dictionary": "lsj",
+        "strongs_id": "G1374",
+        "lemma": "διψυχέω",
+        "normalized_lemma": strip_greek_accents("διψυχέω"),
+        "transliteration": "dipsycheō",
+        "gloss": "to doubt, to hesitate, to be double-minded",
+        "definition": "<b>διψυχέω</b>, <i>to be in two minds, hesitate, doubt</i>. Frequently tested in Hermas and 1 Clement.",
+    },
+    {
+        "dictionary": "lsj",
+        "strongs_id": "G3475",
+        "lemma": "Μωϋσῆς",
+        "normalized_lemma": strip_greek_accents("Μωϋσῆς"),
+        "transliteration": "Mōysēs",
+        "gloss": "Moses",
+        "definition": "<b>Μωϋσῆς</b> (or Μωσῆς), ὁ, <i>Moses</i>, the Hebrew prophet, leader, and lawgiver.",
+    },
+    {
+        "dictionary": "lsj",
+        "strongs_id": None,
+        "lemma": "Πολύκαρπος",
+        "normalized_lemma": strip_greek_accents("Πολύκαρπος"),
+        "transliteration": "Polykarpos",
+        "gloss": "Polycarp",
+        "definition": "<b>Πολύκαρπος</b>, ὁ, <i>Polycarp</i> (literally 'bearing much fruit'), Bishop of Smyrna, disciple of the Apostle John, and apostolic martyr.",
+    },
+    {
+        "dictionary": "lsj",
+        "strongs_id": "G1138",
+        "lemma": "Δαυίδ",
+        "normalized_lemma": strip_greek_accents("Δαυίδ"),
+        "transliteration": "Dauid",
+        "gloss": "David",
+        "definition": "<b>Δαυίδ</b>, ὁ, indecl., <i>David</i>, King of Israel, shepherd, and psalmist.",
+    },
+]
+
+
 class LSJAdapter:
     def __init__(self, lexicon_dir: Optional[Path] = None):
         self.lexicon_dir = lexicon_dir or LEXICON_DIR
@@ -30,6 +90,8 @@ class LSJAdapter:
         self.extra_file = self.lexicon_dir / "TFLSJ_extra.txt"
 
     def iter_entries(self) -> Iterator[Dict[str, Any]]:
+        seen_keys = set()
+
         for filepath in [self.core_file, self.extra_file]:
             if not filepath.exists():
                 print(f"Warning: LSJ file missing: {filepath}")
@@ -47,10 +109,8 @@ class LSJAdapter:
 
                     raw_strongs = parts[0].strip()
                     m = re.match(r"^G(\d+)", raw_strongs)
-                    if not m:
-                        continue
+                    strongs_id = f"G{int(m.group(1))}" if m else None
 
-                    strongs_id = f"G{int(m.group(1))}"
                     headword = parts[3].strip() if len(parts) > 3 else ""
                     if not headword:
                         continue
@@ -60,7 +120,7 @@ class LSJAdapter:
                     defn = parts[7].strip() if len(parts) > 7 else ""
                     plain_key = strip_greek_accents(headword)
 
-                    yield {
+                    entry = {
                         "dictionary": "lsj",
                         "strongs_id": strongs_id,
                         "lemma": headword,
@@ -70,15 +130,53 @@ class LSJAdapter:
                         "definition": defn,
                     }
 
+                    if plain_key not in seen_keys:
+                        seen_keys.add(plain_key)
+                        yield entry
 
-if __name__ == "__main__":
-    adapter = LSJAdapter()
-    count = 0
-    sample = None
-    for entry in adapter.iter_entries():
-        count += 1
-        if entry["lemma"] == "ἀγάπη":
-            sample = entry
-    print(f"Total LSJ entries: {count:,}")
-    if sample:
-        print(f"Sample 'ἀγάπη': gloss='{sample['gloss']}', def={sample['definition'][:60]}...")
+                    # Generate Deponent / Middle and -μι / -υω aliases
+                    # 1. Active -ω <-> Middle -ομαι
+                    if plain_key.endswith("ω") and not plain_key.endswith("εω") and not plain_key.endswith("αω"):
+                        mid_key = plain_key[:-1] + "ομαι"
+                        if mid_key not in seen_keys:
+                            seen_keys.add(mid_key)
+                            yield {
+                                **entry,
+                                "lemma": headword[:-1] + "ομαι" if headword.endswith("ω") else headword,
+                                "normalized_lemma": mid_key,
+                            }
+                    elif plain_key.endswith("ομαι"):
+                        act_key = plain_key[:-4] + "ω"
+                        if act_key not in seen_keys:
+                            seen_keys.add(act_key)
+                            yield {
+                                **entry,
+                                "lemma": headword[:-4] + "ω" if headword.endswith("ομαι") else headword,
+                                "normalized_lemma": act_key,
+                            }
+
+                    # 2. -υμι <-> -υω
+                    if plain_key.endswith("υμι"):
+                        alt_key = plain_key[:-3] + "υω"
+                        if alt_key not in seen_keys:
+                            seen_keys.add(alt_key)
+                            yield {
+                                **entry,
+                                "lemma": headword[:-3] + "υω" if headword.endswith("υμι") else headword,
+                                "normalized_lemma": alt_key,
+                            }
+                    elif plain_key.endswith("υω"):
+                        alt_key = plain_key[:-2] + "υμι"
+                        if alt_key not in seen_keys:
+                            seen_keys.add(alt_key)
+                            yield {
+                                **entry,
+                                "lemma": headword[:-2] + "υμι" if headword.endswith("υω") else headword,
+                                "normalized_lemma": alt_key,
+                            }
+
+        # Yield supplementary Patristic vocabulary
+        for supp in PATRISTIC_SUPPLEMENT:
+            if supp["normalized_lemma"] not in seen_keys:
+                seen_keys.add(supp["normalized_lemma"])
+                yield supp

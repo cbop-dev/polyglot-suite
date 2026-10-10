@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 from typing import Dict, List, Tuple, Any, Optional
 from ..config import CANONICAL_WORKS, MORPH_DIR, AFWork
+from ..morph_resolver import MorphResolver
 
 
 class BrannanMorphParser:
@@ -51,13 +52,14 @@ class BrannanMorphParser:
                 if coord not in sections:
                     sections[coord] = []
 
-                sections[coord].append({
+                token_raw = {
                     "w": surface_with_punct,
                     "l": lemma,
                     "m": morph,
                     "p": pos,
                     "lang": lang
-                })
+                }
+                sections[coord].append(MorphResolver.resolve_token(token_raw))
 
         # Reconstruct plain text and finalize section
         result: Dict[Tuple[int, int], Dict[str, Any]] = {}
