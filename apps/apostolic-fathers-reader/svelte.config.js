@@ -2,11 +2,18 @@ import adapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 const adapterType = process.env.ADAPTER || process.env.BUILD_TARGET || '';
-const isStatic = adapterType === 'static' || adapterType === 'www' || adapterType === 'github';
+const isGitHub = adapterType === 'gh' || adapterType === 'github';
+const isStatic = isGitHub || adapterType === 'static' || adapterType === 'www';
 
-let defaultOutDir = isStatic ? 'build/www' : 'build/node';
+let defaultOutDir = 'build/node';
+if (isGitHub) {
+	defaultOutDir = 'build/github';
+} else if (isStatic) {
+	defaultOutDir = 'build/www';
+}
 const outDir = process.env.BUILD_DIR || defaultOutDir;
-const basePath = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : '';
+const defaultBase = isGitHub ? '/apostolic-fathers' : '';
+const basePath = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : defaultBase;
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
