@@ -1,4 +1,8 @@
 import { getDbWorker } from './dbWorker';
+import { stripGreekAccents } from '@polyglot/ancient-languages';
+import { getRowVal, parseJsonField } from '@polyglot/db-vfs';
+
+export { stripGreekAccents };
 
 export interface Token {
 	w: string;
@@ -71,24 +75,17 @@ export async function fetchChapterSections(
 	const latin: TextUnit[] = [];
 
 	for (const row of rows as any[]) {
-		const rawTokens = row.tokens_json ?? row[7];
-		let parsedTokens: Token[] | undefined = undefined;
-		if (rawTokens) {
-			try {
-				parsedTokens = typeof rawTokens === 'string' ? JSON.parse(rawTokens) : rawTokens;
-			} catch (e) {
-				console.warn('Failed to parse tokens JSON:', e);
-			}
-		}
+		const rawTokens = getRowVal(row, 'tokens_json', 7);
+		const parsedTokens = parseJsonField<Token[] | undefined>(rawTokens);
 
 		const unit: TextUnit = {
-			id: (row.id ?? row[0]) as number,
-			corpus_id: (row.corpus_id ?? row[1]) as string,
-			work_code: (row.work_code ?? row[2]) as string,
-			chapter: (row.chapter ?? row[3]) as number,
-			section: (row.section ?? row[4]) as number,
-			display_citation: (row.display_citation ?? row[5]) as string,
-			text_content: (row.text_content ?? row[6]) as string,
+			id: getRowVal<number>(row, 'id', 0),
+			corpus_id: getRowVal<string>(row, 'corpus_id', 1),
+			work_code: getRowVal<string>(row, 'work_code', 2),
+			chapter: getRowVal<number>(row, 'chapter', 3),
+			section: getRowVal<number>(row, 'section', 4),
+			display_citation: getRowVal<string>(row, 'display_citation', 5),
+			text_content: getRowVal<string>(row, 'text_content', 6),
 			tokens: parsedTokens
 		};
 
@@ -102,17 +99,6 @@ export async function fetchChapterSections(
 	}
 
 	return { greek, english, latin };
-}
-
-export function stripGreekAccents(s: string): string {
-	if (!s) return '';
-	return s
-		.normalize('NFD')
-		.replace(/[\u0300-\u036f\u1dc0-\u1dff\u1ab0-\u1aff\u1f00-\u1fff]/g, '')
-		.normalize('NFC')
-		.toLowerCase()
-		.replace(/[.,;:·]/g, '')
-		.trim();
 }
 
 export async function fetchLexiconEntry(lemma: string): Promise<LexiconEntry | null> {
@@ -132,13 +118,13 @@ export async function fetchLexiconEntry(lemma: string): Promise<LexiconEntry | n
 
 	const r = rows[0] as any;
 	return {
-		dictionary: (r.dictionary ?? r[0]) as string,
-		strongs_id: (r.strongs_id ?? r[1]) as string | undefined,
-		lemma: (r.lemma ?? r[2]) as string,
-		normalized_lemma: (r.normalized_lemma ?? r[3]) as string,
-		transliteration: (r.transliteration ?? r[4]) as string | undefined,
-		gloss: (r.gloss ?? r[5]) as string,
-		definition: (r.definition ?? r[6]) as string
+		dictionary: getRowVal<string>(r, 'dictionary', 0),
+		strongs_id: getRowVal<string | undefined>(r, 'strongs_id', 1),
+		lemma: getRowVal<string>(r, 'lemma', 2),
+		normalized_lemma: getRowVal<string>(r, 'normalized_lemma', 3),
+		transliteration: getRowVal<string | undefined>(r, 'transliteration', 4),
+		gloss: getRowVal<string>(r, 'gloss', 5),
+		definition: getRowVal<string>(r, 'definition', 6)
 	};
 }
 
@@ -158,21 +144,14 @@ export async function fetchLemmaStats(lemma: string): Promise<LemmaStat | null> 
 	if (!rows || rows.length === 0) return null;
 
 	const r = rows[0] as any;
-	const rawCounts = r.work_counts_json ?? r[4];
-	let workCounts: Record<string, number> = {};
-	if (rawCounts) {
-		try {
-			workCounts = typeof rawCounts === 'string' ? JSON.parse(rawCounts) : rawCounts;
-		} catch (e) {
-			console.warn('Failed to parse work_counts_json:', e);
-		}
-	}
+	const rawCounts = getRowVal(r, 'work_counts_json', 4);
+	const workCounts = parseJsonField<Record<string, number>>(rawCounts, {});
 
 	return {
-		corpus_id: (r.corpus_id ?? r[0]) as string,
-		lemma: (r.lemma ?? r[1]) as string,
-		normalized_lemma: (r.normalized_lemma ?? r[2]) as string,
-		total_count: (r.total_count ?? r[3]) as number,
+		corpus_id: getRowVal<string>(r, 'corpus_id', 0),
+		lemma: getRowVal<string>(r, 'lemma', 1),
+		normalized_lemma: getRowVal<string>(r, 'normalized_lemma', 2),
+		total_count: getRowVal<number>(r, 'total_count', 3),
 		work_counts: workCounts
 	};
 }
@@ -192,12 +171,12 @@ export async function fetchConcordance(lemma: string): Promise<ConcordanceRef[]>
 	`;
 	const rows = await worker.db.query(sql, [clean]);
 	return (rows as any[]).map((r) => ({
-		display_citation: (r.display_citation ?? r[0]) as string,
-		work_unit_id: (r.work_unit_id ?? r[1]) as number,
-		work_code: (r.work_code ?? r[2]) as string,
-		chapter: (r.chapter ?? r[3]) as number,
-		section: (r.section ?? r[4]) as number,
-		text_content: (r.text_content ?? r[5]) as string
+		display_citation: getRowVal<string>(r, 'display_citation', 0),
+		work_unit_id: getRowVal<number>(r, 'work_unit_id', 1),
+		work_code: getRowVal<string>(r, 'work_code', 2),
+		chapter: getRowVal<number>(r, 'chapter', 3),
+		section: getRowVal<number>(r, 'section', 4),
+		text_content: getRowVal<string>(r, 'text_content', 5)
 	}));
 }
 
@@ -218,17 +197,13 @@ export async function searchLemmas(query: string, limit: number = 30): Promise<L
 	`;
 	const rows = await worker.db.query(sql, [qNorm, qRaw, limit]);
 	return (rows as any[]).map((r) => {
-		const rawCounts = r.work_counts_json ?? r[3];
-		let workCounts: Record<string, number> = {};
-		if (rawCounts) {
-			try {
-				workCounts = typeof rawCounts === 'string' ? JSON.parse(rawCounts) : rawCounts;
-			} catch (e) {}
-		}
+		const rawCounts = getRowVal(r, 'work_counts_json', 3);
+		const workCounts = parseJsonField<Record<string, number>>(rawCounts, {});
+
 		return {
-			lemma: (r.lemma ?? r[0]) as string,
-			normalized_lemma: (r.normalized_lemma ?? r[1]) as string,
-			total_count: (r.total_count ?? r[2]) as number,
+			lemma: getRowVal<string>(r, 'lemma', 0),
+			normalized_lemma: getRowVal<string>(r, 'normalized_lemma', 1),
+			total_count: getRowVal<number>(r, 'total_count', 2),
 			work_counts: workCounts
 		};
 	});

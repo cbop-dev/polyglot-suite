@@ -53,6 +53,8 @@
 		"vitest": "^5.0.1"
 	},
 	"dependencies": {
+		"@polyglot/ancient-languages": "*",
+		"@polyglot/db-vfs": "*",
 		"chart.js": "^4.5.1",
 		"gridjs": "^6.2.0",
 		"gridjs-svelte": "^2.1.1",
