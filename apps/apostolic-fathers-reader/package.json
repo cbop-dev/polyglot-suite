@@ -8,6 +8,8 @@
     "build": "ADAPTER=node vite build",
     "build:www": "ADAPTER=static vite build",
     "build:static": "npm run build:www",
+    "build:gh": "ADAPTER=github vite build",
+    "build:github": "npm run build:gh",
     "preview": "vite preview",
     "preview:www": "ADAPTER=static vite preview",
     "pipeline:fetch": "python3 -m pipeline.fetcher",
