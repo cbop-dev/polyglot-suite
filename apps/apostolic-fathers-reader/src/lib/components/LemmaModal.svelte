@@ -2,7 +2,7 @@
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { highlightStore } from '$lib/stores/highlightStore.svelte';
 	import { WORKS_BY_CODE } from '$lib/config/canonicalWorks.generated';
-	import { decodeMorph } from '$lib/utils/morphUtils';
+	import { decodeMorph } from '@polyglot/ancient-languages';
 	import {
 		fetchLexiconEntry,
 		fetchLemmaStats,

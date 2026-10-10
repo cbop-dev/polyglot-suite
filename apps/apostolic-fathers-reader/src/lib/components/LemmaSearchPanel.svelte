@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { searchLemmas, type LemmaSearchResult } from '$lib/services/dbClient';
-	import { latinToGreek } from '$lib/utils/transliteration';
+	import { latinToGreek } from '@polyglot/ancient-languages';
 
 	let searchQuery = $state<string>('');
 	let results = $state<LemmaSearchResult[]>([]);
