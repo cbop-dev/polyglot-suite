@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { highlightStore } from '$lib/stores/highlightStore.svelte';
+	import { WORKS_BY_CODE } from '$lib/config/canonicalWorks.generated';
+	import { decodeMorph } from '$lib/utils/morphUtils';
 	import {
 		fetchLexiconEntry,
 		fetchLemmaStats,
@@ -18,6 +20,9 @@
 	let loading = $state<boolean>(false);
 
 	let currentLemma = $derived(readerState.selectedToken?.l || '');
+	let decoded = $derived(
+		decodeMorph(readerState.selectedToken?.p, readerState.selectedToken?.m)
+	);
 
 	$effect(() => {
 		if (currentLemma) {
@@ -79,12 +84,17 @@
 							</span>
 						{/if}
 					</div>
-					<div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
+					<div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
 						<span class="rounded bg-blue-100 px-2 py-0.5 font-bold text-blue-800 dark:bg-blue-900/60 dark:text-blue-200">
-							{readerState.selectedToken.p}
+							{decoded.pos}
 						</span>
-						<span class="rounded bg-slate-100 px-2 py-0.5 font-mono text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-							{readerState.selectedToken.m}
+						{#each decoded.details as detail}
+							<span class="rounded bg-slate-100 px-2 py-0.5 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+								{detail}
+							</span>
+						{/each}
+						<span class="text-[11px] text-slate-400 font-mono" title="Raw morphology tag">
+							({decoded.rawCode})
 						</span>
 						<span class="text-slate-400">&bull;</span>
 						<span class="text-slate-500 dark:text-slate-400">
@@ -168,8 +178,14 @@
 							{@html lexEntry.definition}
 						</div>
 					{:else}
-						<div class="py-8 text-center text-slate-400">
-							No unabridged LSJ definition mapped for this lemma.
+						<div class="py-8 text-center text-slate-400 space-y-2">
+							<div class="text-base font-semibold text-slate-500">No LSJ Entry Found</div>
+							<div class="text-xs max-w-sm mx-auto">
+								No direct LSJ lexicon article was matched for <em>{currentLemma}</em>.
+								{#if concordance.length > 0}
+									You can inspect occurrences in the <strong>Concordance</strong> tab ({concordance.length} occurrences).
+								{/if}
+							</div>
 						</div>
 					{/if}
 				{:else if activeTab === 'concordance'}
@@ -190,15 +206,33 @@
 						{/each}
 					</div>
 				{:else if activeTab === 'distribution'}
-					{#if stats}
-						<div class="space-y-2">
-							<h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Occurrences by Work</h3>
-							{#each Object.entries(stats.work_counts) as [workCode, count]}
-								<div class="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800">
-									<span class="font-medium">{workCode}</span>
-									<span class="font-bold text-slate-900 dark:text-slate-100">{count}</span>
+					{#if stats && Object.keys(stats.work_counts).length > 0}
+						<div class="space-y-3">
+							<div class="flex items-center justify-between text-xs text-slate-500 font-semibold uppercase tracking-wider pb-1 border-b border-slate-200 dark:border-slate-800">
+								<span>Work</span>
+								<span>Occurrences ({stats.total_count} total)</span>
+							</div>
+							{#each Object.entries(stats.work_counts).sort((a, b) => b[1] - a[1]) as [workCode, count]}
+								{@const work = WORKS_BY_CODE[workCode]}
+								{@const pct = Math.max(1, Math.round((count / stats.total_count) * 100))}
+								<div class="space-y-1">
+									<div class="flex items-center justify-between text-xs">
+										<span class="font-medium text-slate-800 dark:text-slate-200">
+											{work?.titleEnglish || workCode}
+										</span>
+										<span class="font-bold text-slate-900 dark:text-slate-100">
+											{count} <span class="text-slate-400 font-normal">({pct}%)</span>
+										</span>
+									</div>
+									<div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+										<div class="h-full bg-blue-500 rounded-full transition-all" style="width: {pct}%"></div>
+									</div>
 								</div>
 							{/each}
+						</div>
+					{:else}
+						<div class="py-8 text-center text-slate-400 text-xs">
+							No corpus distribution data found for this lemma.
 						</div>
 					{/if}
 				{/if}

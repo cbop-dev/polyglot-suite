@@ -104,15 +104,30 @@ export async function fetchChapterSections(
 	return { greek, english, latin };
 }
 
+export function stripGreekAccents(s: string): string {
+	if (!s) return '';
+	return s
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f\u1dc0-\u1dff\u1ab0-\u1aff\u1f00-\u1fff]/g, '')
+		.normalize('NFC')
+		.toLowerCase()
+		.replace(/[.,;:·]/g, '')
+		.trim();
+}
+
 export async function fetchLexiconEntry(lemma: string): Promise<LexiconEntry | null> {
+	if (!lemma) return null;
 	const worker = await getDbWorker();
+	const clean = lemma.trim().replace(/[.,;:·]/g, '');
+	const norm = stripGreekAccents(clean);
+
 	const sql = `
 		SELECT dictionary, strongs_id, lemma, normalized_lemma, transliteration, gloss, definition
 		FROM lexicon_entries
-		WHERE lemma = ? OR normalized_lemma = ?
+		WHERE normalized_lemma = ? OR lemma = ?
 		LIMIT 1
 	`;
-	const rows = await worker.db.query(sql, [lemma, lemma]);
+	const rows = await worker.db.query(sql, [norm, clean]);
 	if (!rows || rows.length === 0) return null;
 
 	const r = rows[0] as any;
@@ -128,14 +143,18 @@ export async function fetchLexiconEntry(lemma: string): Promise<LexiconEntry | n
 }
 
 export async function fetchLemmaStats(lemma: string): Promise<LemmaStat | null> {
+	if (!lemma) return null;
 	const worker = await getDbWorker();
+	const clean = lemma.trim().replace(/[.,;:·]/g, '');
+	const norm = stripGreekAccents(clean);
+
 	const sql = `
 		SELECT corpus_id, lemma, normalized_lemma, total_count, work_counts_json
 		FROM lemma_stats
-		WHERE lemma = ?
+		WHERE lemma = ? OR normalized_lemma = ?
 		LIMIT 1
 	`;
-	const rows = await worker.db.query(sql, [lemma]);
+	const rows = await worker.db.query(sql, [clean, norm]);
 	if (!rows || rows.length === 0) return null;
 
 	const r = rows[0] as any;
@@ -144,7 +163,9 @@ export async function fetchLemmaStats(lemma: string): Promise<LemmaStat | null> 
 	if (rawCounts) {
 		try {
 			workCounts = typeof rawCounts === 'string' ? JSON.parse(rawCounts) : rawCounts;
-		} catch (e) {}
+		} catch (e) {
+			console.warn('Failed to parse work_counts_json:', e);
+		}
 	}
 
 	return {
@@ -157,7 +178,10 @@ export async function fetchLemmaStats(lemma: string): Promise<LemmaStat | null> 
 }
 
 export async function fetchConcordance(lemma: string): Promise<ConcordanceRef[]> {
+	if (!lemma) return [];
 	const worker = await getDbWorker();
+	const clean = lemma.trim().replace(/[.,;:·]/g, '');
+
 	const sql = `
 		SELECT c.display_citation, c.work_unit_id, t.work_code, t.chapter, t.section, t.text_content
 		FROM concordance_refs c
@@ -166,7 +190,7 @@ export async function fetchConcordance(lemma: string): Promise<ConcordanceRef[]>
 		ORDER BY t.work_code, t.chapter, t.section
 		LIMIT 200
 	`;
-	const rows = await worker.db.query(sql, [lemma]);
+	const rows = await worker.db.query(sql, [clean]);
 	return (rows as any[]).map((r) => ({
 		display_citation: (r.display_citation ?? r[0]) as string,
 		work_unit_id: (r.work_unit_id ?? r[1]) as number,
@@ -180,7 +204,11 @@ export async function fetchConcordance(lemma: string): Promise<ConcordanceRef[]>
 export async function searchLemmas(query: string, limit: number = 30): Promise<LemmaSearchResult[]> {
 	if (!query.trim()) return [];
 	const worker = await getDbWorker();
-	const q = `%${query.trim()}%`;
+	const clean = query.trim();
+	const norm = stripGreekAccents(clean);
+	const qNorm = `%${norm}%`;
+	const qRaw = `%${clean}%`;
+
 	const sql = `
 		SELECT lemma, normalized_lemma, total_count, work_counts_json
 		FROM lemma_stats
@@ -188,7 +216,7 @@ export async function searchLemmas(query: string, limit: number = 30): Promise<L
 		ORDER BY total_count DESC
 		LIMIT ?
 	`;
-	const rows = await worker.db.query(sql, [q, q, limit]);
+	const rows = await worker.db.query(sql, [qNorm, qRaw, limit]);
 	return (rows as any[]).map((r) => {
 		const rawCounts = r.work_counts_json ?? r[3];
 		let workCounts: Record<string, number> = {};
