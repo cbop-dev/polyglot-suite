@@ -12,6 +12,16 @@
 		const target = e.target as HTMLSelectElement;
 		readerState.setChapter(parseInt(target.value, 10));
 	}
+
+	let chapterList = $derived.by(() => {
+		const min = readerState.currentWork.minChapter ?? 1;
+		const max = readerState.currentWork.totalChapters;
+		const list: number[] = [];
+		for (let i = min; i <= max; i++) {
+			list.push(i);
+		}
+		return list;
+	});
 </script>
 
 <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 shadow-sm">
@@ -52,8 +62,8 @@
 					onchange={handleChapterChange}
 					class="rounded border border-slate-300 bg-white px-2 py-1 text-sm font-semibold text-slate-800 shadow-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
 				>
-					{#each Array.from({ length: readerState.currentWork.totalChapters }, (_, i) => i + 1) as ch}
-						<option value={ch}>Ch. {ch}</option>
+					{#each chapterList as ch}
+						<option value={ch}>{ch === 0 ? 'Salutation' : `Ch. ${ch}`}</option>
 					{/each}
 				</select>
 				<button
