@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { highlightStore } from '$lib/stores/highlightStore.svelte';
+	import HighlightColorPicker from '$lib/components/HighlightColorPicker.svelte';
 	import { WORKS_BY_CODE } from '$lib/config/canonicalWorks.generated';
 	import { decodeMorph } from '@polyglot/ancient-languages';
 	import {
@@ -116,7 +117,7 @@
 					>
 						{#if highlightStore.isHighlighted(currentLemma)}
 							{@const hl = highlightStore.get(currentLemma)}
-							<span class="h-2.5 w-2.5 rounded-full" style="background-color: {hl?.bg}; border: 1px solid {hl?.text}"></span>
+							<span class="h-2.5 w-2.5 rounded-full" style="background-color: {hl?.hex}; border: 1px solid {hl?.borderLight}"></span>
 							Highlighted
 						{:else}
 							<span class="h-2.5 w-2.5 rounded-full border border-dashed border-slate-400"></span>
@@ -127,13 +128,28 @@
 					<button
 						type="button"
 						onclick={() => readerState.closeLemma()}
-						class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+						class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
 						aria-label="Close"
 					>
 						&times;
 					</button>
 				</div>
 			</div>
+
+			<!-- Color Swatches Row (when highlighted) -->
+			{#if highlightStore.isHighlighted(currentLemma)}
+				{@const currentIdx = highlightStore.getColorIndex(currentLemma) ?? 0}
+				{@const hl = highlightStore.get(currentLemma)}
+				<div class="px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 flex items-center justify-between gap-3 flex-wrap">
+					<div class="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+						Highlight Color: <span class="capitalize text-slate-900 dark:text-slate-100 font-bold">{hl?.name}</span>
+					</div>
+					<HighlightColorPicker
+						selectedColorIndex={currentIdx}
+						onselect={(idx) => highlightStore.setColor(currentLemma, idx)}
+					/>
+				</div>
+			{/if}
 
 			<!-- Navigation Tabs -->
 			<div class="flex border-b border-slate-200 bg-slate-50/50 px-4 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">

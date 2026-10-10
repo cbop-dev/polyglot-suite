@@ -16,7 +16,12 @@ import {
 	decodeGreekMorph,
 	decodeHebrewMorph,
 	formatMorphBadges,
-	parseHebrewMorphSegments
+	parseHebrewMorphSegments,
+	HIGHLIGHT_PALETTE,
+	getPaletteColor,
+	getNextPaletteColorIndex,
+	getHighlightInlineStyle,
+	normalizeStrongsId
 } from '../src/index.js';
 
 describe('@polyglot/ancient-languages', () => {
@@ -120,6 +125,58 @@ describe('@polyglot/ancient-languages', () => {
 				'Noun',
 				'Feminine Singular'
 			]);
+		});
+	});
+
+	describe('Highlights & Palettes', () => {
+		it('provides 16 distinct palette colors with light and dark themes', () => {
+			expect(HIGHLIGHT_PALETTE).toHaveLength(16);
+			for (const p of HIGHLIGHT_PALETTE) {
+				expect(p.hex).toMatch(/^#[0-9a-f]{6}$/i);
+				expect(p.bgLight).toContain('rgba');
+				expect(p.bgDark).toContain('rgba');
+				expect(p.textLight).toBeDefined();
+				expect(p.textDark).toBeDefined();
+				expect(p.borderLight).toBeDefined();
+				expect(p.borderDark).toBeDefined();
+			}
+		});
+
+		it('gets palette color safely with modular arithmetic fallback', () => {
+			expect(getPaletteColor(0).name).toBe('Amber');
+			expect(getPaletteColor(1).name).toBe('Sky Blue');
+			expect(getPaletteColor(16).name).toBe('Amber');
+			expect(getPaletteColor(-1).name).toBe('Sky Blue');
+			expect(getPaletteColor(NaN).name).toBe('Amber');
+		});
+
+		it('finds the next available palette color index', () => {
+			expect(getNextPaletteColorIndex([])).toBe(0);
+			expect(getNextPaletteColorIndex([0])).toBe(1);
+			expect(getNextPaletteColorIndex([0, 1, 2])).toBe(3);
+			expect(getNextPaletteColorIndex([0, 2])).toBe(1);
+
+			// When all 16 are filled, cycles based on length
+			const all = Array.from({ length: 16 }, (_, i) => i);
+			expect(getNextPaletteColorIndex(all)).toBe(0);
+			expect(getNextPaletteColorIndex([...all, 0])).toBe(1);
+		});
+
+		it('formats inline highlight CSS style for light and dark modes', () => {
+			const lightStyle = getHighlightInlineStyle(0, false);
+			expect(lightStyle).toContain(HIGHLIGHT_PALETTE[0].bgLight);
+			expect(lightStyle).toContain(HIGHLIGHT_PALETTE[0].textLight);
+
+			const darkStyle = getHighlightInlineStyle(0, true);
+			expect(darkStyle).toContain(HIGHLIGHT_PALETTE[0].bgDark);
+			expect(darkStyle).toContain(HIGHLIGHT_PALETTE[0].textDark);
+		});
+
+		it('normalizes Strongs identifiers', () => {
+			expect(normalizeStrongsId('G03056')).toBe('G3056');
+			expect(normalizeStrongsId('h00123')).toBe('H123');
+			expect(normalizeStrongsId('3056')).toBe('3056');
+			expect(normalizeStrongsId(undefined)).toBe('');
 		});
 	});
 });
