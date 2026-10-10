@@ -1,16 +1,19 @@
 <script lang="ts">
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { searchLemmas, type LemmaSearchResult } from '$lib/services/dbClient';
+	import { latinToGreek } from '$lib/utils/transliteration';
 
 	let searchQuery = $state<string>('');
 	let results = $state<LemmaSearchResult[]>([]);
 	let loading = $state<boolean>(false);
 
+	let convertedQuery = $derived(latinToGreek(searchQuery.trim()));
+
 	$effect(() => {
-		const q = searchQuery.trim();
-		if (q.length >= 2) {
+		const target = convertedQuery || searchQuery.trim();
+		if (target.length >= 2) {
 			const timer = setTimeout(() => {
-				runSearch(q);
+				runSearch(target);
 			}, 150);
 			return () => clearTimeout(timer);
 		} else {
@@ -64,9 +67,8 @@
 				<input
 					type="text"
 					bind:value={searchQuery}
-					placeholder="Search Greek lemma (e.g. ἀγάπη, logos, pistis)..."
+					placeholder="Search lemma in Greek or Latin (e.g. 'logos', 'qeos', 'pistis')..."
 					class="w-full bg-transparent text-base font-medium text-slate-900 placeholder-slate-400 focus:outline-hidden dark:text-slate-100"
-					autofocus
 				/>
 				<button
 					type="button"
@@ -76,6 +78,16 @@
 					ESC
 				</button>
 			</div>
+
+			<!-- Live Converted Script Preview -->
+			{#if convertedQuery && convertedQuery !== searchQuery.trim()}
+				<div class="flex items-center gap-2 px-3.5 py-1.5 bg-blue-50/70 dark:bg-blue-950/40 border-b border-blue-100 dark:border-blue-900 text-xs">
+					<span class="text-slate-500 dark:text-slate-400 font-mono text-[11px]">Greek:</span>
+					<span class="greek-font text-base font-bold text-blue-600 dark:text-blue-400">
+						{convertedQuery}
+					</span>
+				</div>
+			{/if}
 
 			<!-- Search Results List -->
 			<div class="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 p-2">
@@ -99,10 +111,12 @@
 							</span>
 						</button>
 					{/each}
-				{:else if searchQuery.trim().length >= 2}
+				{:else if (convertedQuery || searchQuery.trim()).length >= 2}
 					<div class="py-8 text-center text-xs text-slate-400">No matching lemmas found.</div>
 				{:else}
-					<div class="py-8 text-center text-xs text-slate-400">Type at least 2 characters to search.</div>
+					<div class="py-8 text-center text-xs text-slate-400 leading-relaxed">
+						Type Latin or Greek to search (e.g. <span class="font-mono">logos</span> &rarr; <span class="font-bold">λογος</span>, <span class="font-mono">qeos</span> &rarr; <span class="font-bold">θεος</span>, <span class="font-mono">pistis</span> &rarr; <span class="font-bold">πιστις</span>).
+					</div>
 				{/if}
 			</div>
 		</div>
