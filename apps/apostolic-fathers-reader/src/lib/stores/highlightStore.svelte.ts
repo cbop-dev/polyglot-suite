@@ -25,16 +25,15 @@ class HighlightStore {
 	toggle(lemma: string) {
 		if (!lemma) return;
 		if (lemma in this.highlights) {
-			const current = this.highlights[lemma];
-			if (current + 1 < PALETTE.length) {
-				this.highlights[lemma] = current + 1;
-			} else {
-				delete this.highlights[lemma];
-			}
+			delete this.highlights[lemma];
 		} else {
 			this.highlights[lemma] = 0;
 		}
 		this.save();
+	}
+
+	isHighlighted(lemma: string): boolean {
+		return Boolean(lemma && lemma in this.highlights);
 	}
 
 	remove(lemma: string) {

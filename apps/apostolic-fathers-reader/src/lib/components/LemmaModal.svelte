@@ -93,9 +93,6 @@
 								{detail}
 							</span>
 						{/each}
-						<span class="text-[11px] text-slate-400 font-mono" title="Raw morphology tag">
-							({decoded.rawCode})
-						</span>
 						<span class="text-slate-400">&bull;</span>
 						<span class="text-slate-500 dark:text-slate-400">
 							Surface: <strong class="text-slate-800 dark:text-slate-200">{readerState.selectedToken.w}</strong>
@@ -114,15 +111,15 @@
 					<button
 						type="button"
 						onclick={() => highlightStore.toggle(currentLemma)}
-						class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-						title="Cycle highlight color"
+						class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+						title={highlightStore.isHighlighted(currentLemma) ? "Remove highlight" : "Highlight lemma across text"}
 					>
-						{#if highlightStore.get(currentLemma)}
+						{#if highlightStore.isHighlighted(currentLemma)}
 							{@const hl = highlightStore.get(currentLemma)}
-							<span class="h-3 w-3 rounded-full" style="background-color: {hl?.bg}; border: 1px solid {hl?.text}"></span>
+							<span class="h-2.5 w-2.5 rounded-full" style="background-color: {hl?.bg}; border: 1px solid {hl?.text}"></span>
 							Highlighted
 						{:else}
-							<span class="h-3 w-3 rounded-full border border-dashed border-slate-400"></span>
+							<span class="h-2.5 w-2.5 rounded-full border border-dashed border-slate-400"></span>
 							Highlight
 						{/if}
 					</button>
@@ -171,12 +168,29 @@
 					</div>
 				{:else if activeTab === 'definition'}
 					{#if lexEntry}
-						<div class="mb-3 font-semibold text-slate-900 dark:text-slate-100">
-							Gloss: <span class="italic text-blue-600 dark:text-blue-400">{lexEntry.gloss}</span>
+						<div class="mb-4 p-3 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900/50">
+							<div class="text-[11px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Brief Gloss</div>
+							<div class="text-base font-semibold text-blue-700 dark:text-blue-300 italic">{lexEntry.gloss}</div>
 						</div>
-						<div class="prose dark:prose-invert max-w-none text-xs leading-normal">
-							{@html lexEntry.definition}
-						</div>
+
+						<details class="group rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-xs">
+							<summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none font-semibold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+								<div class="flex items-center gap-2">
+									<span class="rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 text-[10px] font-bold">
+										LSJ
+									</span>
+									<span>Full Lexicon Definition</span>
+								</div>
+								<span class="text-slate-400 group-open:rotate-180 transition-transform">
+									<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+									</svg>
+								</span>
+							</summary>
+							<div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30 prose dark:prose-invert max-w-none text-xs leading-normal max-h-96 overflow-y-auto">
+								{@html lexEntry.definition}
+							</div>
+						</details>
 					{:else}
 						<div class="py-8 text-center text-slate-400 space-y-2">
 							<div class="text-base font-semibold text-slate-500">No LSJ Entry Found</div>
