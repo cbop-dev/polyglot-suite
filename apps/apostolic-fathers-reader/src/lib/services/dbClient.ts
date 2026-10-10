@@ -70,16 +70,26 @@ export async function fetchChapterSections(
 	const english: TextUnit[] = [];
 	const latin: TextUnit[] = [];
 
-	for (const row of rows) {
+	for (const row of rows as any[]) {
+		const rawTokens = row.tokens_json ?? row[7];
+		let parsedTokens: Token[] | undefined = undefined;
+		if (rawTokens) {
+			try {
+				parsedTokens = typeof rawTokens === 'string' ? JSON.parse(rawTokens) : rawTokens;
+			} catch (e) {
+				console.warn('Failed to parse tokens JSON:', e);
+			}
+		}
+
 		const unit: TextUnit = {
-			id: row[0] as number,
-			corpus_id: row[1] as string,
-			work_code: row[2] as string,
-			chapter: row[3] as number,
-			section: row[4] as number,
-			display_citation: row[5] as string,
-			text_content: row[6] as string,
-			tokens: row[7] ? JSON.parse(row[7] as string) : undefined
+			id: (row.id ?? row[0]) as number,
+			corpus_id: (row.corpus_id ?? row[1]) as string,
+			work_code: (row.work_code ?? row[2]) as string,
+			chapter: (row.chapter ?? row[3]) as number,
+			section: (row.section ?? row[4]) as number,
+			display_citation: (row.display_citation ?? row[5]) as string,
+			text_content: (row.text_content ?? row[6]) as string,
+			tokens: parsedTokens
 		};
 
 		if (unit.corpus_id === 'lake_grc') {
@@ -105,15 +115,15 @@ export async function fetchLexiconEntry(lemma: string): Promise<LexiconEntry | n
 	const rows = await worker.db.query(sql, [lemma, lemma]);
 	if (!rows || rows.length === 0) return null;
 
-	const r = rows[0];
+	const r = rows[0] as any;
 	return {
-		dictionary: r[0] as string,
-		strongs_id: r[1] as string | undefined,
-		lemma: r[2] as string,
-		normalized_lemma: r[3] as string,
-		transliteration: r[4] as string | undefined,
-		gloss: r[5] as string,
-		definition: r[6] as string
+		dictionary: (r.dictionary ?? r[0]) as string,
+		strongs_id: (r.strongs_id ?? r[1]) as string | undefined,
+		lemma: (r.lemma ?? r[2]) as string,
+		normalized_lemma: (r.normalized_lemma ?? r[3]) as string,
+		transliteration: (r.transliteration ?? r[4]) as string | undefined,
+		gloss: (r.gloss ?? r[5]) as string,
+		definition: (r.definition ?? r[6]) as string
 	};
 }
 
@@ -128,13 +138,21 @@ export async function fetchLemmaStats(lemma: string): Promise<LemmaStat | null> 
 	const rows = await worker.db.query(sql, [lemma]);
 	if (!rows || rows.length === 0) return null;
 
-	const r = rows[0];
+	const r = rows[0] as any;
+	const rawCounts = r.work_counts_json ?? r[4];
+	let workCounts: Record<string, number> = {};
+	if (rawCounts) {
+		try {
+			workCounts = typeof rawCounts === 'string' ? JSON.parse(rawCounts) : rawCounts;
+		} catch (e) {}
+	}
+
 	return {
-		corpus_id: r[0] as string,
-		lemma: r[1] as string,
-		normalized_lemma: r[2] as string,
-		total_count: r[3] as number,
-		work_counts: JSON.parse((r[4] as string) || '{}')
+		corpus_id: (r.corpus_id ?? r[0]) as string,
+		lemma: (r.lemma ?? r[1]) as string,
+		normalized_lemma: (r.normalized_lemma ?? r[2]) as string,
+		total_count: (r.total_count ?? r[3]) as number,
+		work_counts: workCounts
 	};
 }
 
@@ -149,13 +167,13 @@ export async function fetchConcordance(lemma: string): Promise<ConcordanceRef[]>
 		LIMIT 200
 	`;
 	const rows = await worker.db.query(sql, [lemma]);
-	return rows.map((r) => ({
-		display_citation: r[0] as string,
-		work_unit_id: r[1] as number,
-		work_code: r[2] as string,
-		chapter: r[3] as number,
-		section: r[4] as number,
-		text_content: r[5] as string
+	return (rows as any[]).map((r) => ({
+		display_citation: (r.display_citation ?? r[0]) as string,
+		work_unit_id: (r.work_unit_id ?? r[1]) as number,
+		work_code: (r.work_code ?? r[2]) as string,
+		chapter: (r.chapter ?? r[3]) as number,
+		section: (r.section ?? r[4]) as number,
+		text_content: (r.text_content ?? r[5]) as string
 	}));
 }
 
@@ -171,10 +189,19 @@ export async function searchLemmas(query: string, limit: number = 30): Promise<L
 		LIMIT ?
 	`;
 	const rows = await worker.db.query(sql, [q, q, limit]);
-	return rows.map((r) => ({
-		lemma: r[0] as string,
-		normalized_lemma: r[1] as string,
-		total_count: r[2] as number,
-		work_counts: JSON.parse((r[3] as string) || '{}')
-	}));
+	return (rows as any[]).map((r) => {
+		const rawCounts = r.work_counts_json ?? r[3];
+		let workCounts: Record<string, number> = {};
+		if (rawCounts) {
+			try {
+				workCounts = typeof rawCounts === 'string' ? JSON.parse(rawCounts) : rawCounts;
+			} catch (e) {}
+		}
+		return {
+			lemma: (r.lemma ?? r[0]) as string,
+			normalized_lemma: (r.normalized_lemma ?? r[1]) as string,
+			total_count: (r.total_count ?? r[2]) as number,
+			work_counts: workCounts
+		};
+	});
 }

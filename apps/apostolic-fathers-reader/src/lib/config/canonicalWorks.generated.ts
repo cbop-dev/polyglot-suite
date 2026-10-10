@@ -7,6 +7,7 @@ export interface CanonicalWork {
   titleEnglish: string;
   titleGreek: string;
   titleLatin?: string;
+  minChapter: number;
   totalChapters: number;
 }
 
@@ -18,6 +19,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "1 Clement",
     titleGreek: "Κλήμεντος πρὸς Κορινθίους Α΄",
     titleLatin: "Clementis ad Corinthios I",
+    minChapter: 0,
     totalChapters: 65,
   },
   {
@@ -27,6 +29,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "2 Clement",
     titleGreek: "Κλήμεντος πρὸς Κορινθίους Β΄",
     titleLatin: "Clementis ad Corinthios II",
+    minChapter: 1,
     totalChapters: 20,
   },
   {
@@ -36,6 +39,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Ignatius to the Ephesians",
     titleGreek: "Ἰγνατίου πρὸς Ἐφεσίους",
     titleLatin: "Ignatii ad Ephesios",
+    minChapter: 0,
     totalChapters: 21,
   },
   {
@@ -45,6 +49,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Ignatius to the Magnesians",
     titleGreek: "Ἰγνατίου πρὸς Μαγνησιεῖς",
     titleLatin: "Ignatii ad Magnesios",
+    minChapter: 0,
     totalChapters: 15,
   },
   {
@@ -54,6 +59,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Ignatius to the Trallians",
     titleGreek: "Ἰγνατίου πρὸς Τραλλιανούς",
     titleLatin: "Ignatii ad Trallianos",
+    minChapter: 0,
     totalChapters: 13,
   },
   {
@@ -63,6 +69,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Ignatius to the Romans",
     titleGreek: "Ἰγνατίου πρὸς Ῥωμαίους",
     titleLatin: "Ignatii ad Romanos",
+    minChapter: 0,
     totalChapters: 10,
   },
   {
@@ -72,6 +79,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Ignatius to the Philadelphians",
     titleGreek: "Ἰγνατίου πρὸς Φιλαδελφεῖς",
     titleLatin: "Ignatii ad Philadelphenos",
+    minChapter: 0,
     totalChapters: 11,
   },
   {
@@ -81,6 +89,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Ignatius to the Smyrnaeans",
     titleGreek: "Ἰγνατίου πρὸς Σμυρναίους",
     titleLatin: "Ignatii ad Smyrnaeos",
+    minChapter: 0,
     totalChapters: 13,
   },
   {
@@ -90,6 +99,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Ignatius to Polycarp",
     titleGreek: "Ἰγνατίου πρὸς Πολύκαρπον",
     titleLatin: "Ignatii ad Polycarpum",
+    minChapter: 0,
     totalChapters: 8,
   },
   {
@@ -99,6 +109,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Polycarp to the Philippians",
     titleGreek: "Πολυκάρπου πρὸς Φιλιππησίους",
     titleLatin: "Polycarpi ad Philippenses",
+    minChapter: 0,
     totalChapters: 14,
   },
   {
@@ -108,6 +119,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Didache",
     titleGreek: "Διδαχὴ τῶν δώδεκα ἀποστόλων",
     titleLatin: "Doctrina duodecim apostolorum",
+    minChapter: 0,
     totalChapters: 16,
   },
   {
@@ -117,6 +129,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Epistle of Barnabas",
     titleGreek: "Βαρνάβα ἐπιστολή",
     titleLatin: "Barnabae epistula",
+    minChapter: 1,
     totalChapters: 21,
   },
   {
@@ -126,7 +139,8 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Shepherd of Hermas",
     titleGreek: "Ποιμὴν τοῦ Ἑρμᾶ",
     titleLatin: "Pastoris Hermae",
-    totalChapters: 114,
+    minChapter: 1,
+    totalChapters: 27,
   },
   {
     code: "MAR_POL",
@@ -135,6 +149,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Martyrdom of Polycarp",
     titleGreek: "Μαρτύριον τοῦ ἁγίου Πολυκάρπου",
     titleLatin: "Martyrium Polycarpi",
+    minChapter: 0,
     totalChapters: 22,
   },
   {
@@ -144,6 +159,7 @@ export const CANONICAL_WORKS: CanonicalWork[] = [
     titleEnglish: "Epistle to Diognetus",
     titleGreek: "Πρὸς Διόγνητον ἐπιστολή",
     titleLatin: "Epistula ad Diognetum",
+    minChapter: 1,
     totalChapters: 12,
   },
 ];

@@ -22,12 +22,14 @@ class ReaderState {
 	setWork(code: string, chapter: number = 1) {
 		if (WORKS_BY_CODE[code]) {
 			this.currentWorkCode = code;
-			this.currentChapter = Math.min(Math.max(1, chapter), this.currentWork.totalChapters);
+			const min = this.currentWork.minChapter ?? 1;
+			this.currentChapter = Math.min(Math.max(min, chapter), this.currentWork.totalChapters);
 		}
 	}
 
 	setChapter(ch: number) {
-		this.currentChapter = Math.min(Math.max(1, ch), this.currentWork.totalChapters);
+		const min = this.currentWork.minChapter ?? 1;
+		this.currentChapter = Math.min(Math.max(min, ch), this.currentWork.totalChapters);
 	}
 
 	nextChapter() {
@@ -38,13 +40,14 @@ class ReaderState {
 			if (currentIndex + 1 < CANONICAL_WORKS.length) {
 				const nextWork = CANONICAL_WORKS[currentIndex + 1];
 				this.currentWorkCode = nextWork.code;
-				this.currentChapter = 1;
+				this.currentChapter = nextWork.minChapter ?? 1;
 			}
 		}
 	}
 
 	prevChapter() {
-		if (this.currentChapter > 1) {
+		const min = this.currentWork.minChapter ?? 1;
+		if (this.currentChapter > min) {
 			this.currentChapter -= 1;
 		} else {
 			const currentIndex = CANONICAL_WORKS.findIndex((w) => w.code === this.currentWorkCode);

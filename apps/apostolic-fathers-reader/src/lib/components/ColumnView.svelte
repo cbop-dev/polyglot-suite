@@ -3,11 +3,13 @@
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { highlightStore } from '$lib/stores/highlightStore.svelte';
 
-	let { greek = [], english = [], latin = [] } = $props<{
-		greek: TextUnit[];
-		english: TextUnit[];
-		latin: TextUnit[];
-	}>();
+	interface Props {
+		greek?: TextUnit[];
+		english?: TextUnit[];
+		latin?: TextUnit[];
+	}
+
+	let { greek = [], english = [], latin = [] }: Props = $props();
 
 	// Group sections by section number
 	let sectionNumbers = $derived.by(() => {
