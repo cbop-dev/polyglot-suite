@@ -49,37 +49,173 @@
 		decodeMorph(readerState.selectedToken?.p, readerState.selectedToken?.m)
 	);
 
-	let lexEntry = $state<LexiconEntry | null>(null);
-	let stats = $state<LemmaStat | null>(null);
-	let concordance = $state<ConcordanceRef[]>([]);
+	// Section 1: Attested Forms (On-demand)
+	let isAttestedFormsOpen = $state<boolean>(false);
 	let attestedForms = $state<AttestedForm[]>([]);
-	let selectedFormFilter = $state<string | null>(null);
-	let isLexLoading = $state<boolean>(false);
+	let isAttestedFormsLoading = $state<boolean>(false);
+	let attestedFormsLoaded = $state<boolean>(false);
+	let attestedFormsError = $state<string | null>(null);
 
+	// Section 2: Full Lexicon Article (Auto-fetched in background, collapsed by default)
+	let isLexArticleOpen = $state<boolean>(false);
+	let lexEntry = $state<LexiconEntry | null>(null);
+	let isLexArticleLoading = $state<boolean>(false);
+	let lexArticleLoaded = $state<boolean>(false);
+	let lexArticleError = $state<string | null>(null);
+
+	// Section 3: Concordance (Stats auto-fetched in background; occurrences on-demand)
+	let isConcordanceOpen = $state<boolean>(false);
+	let concordance = $state<ConcordanceRef[]>([]);
+	let stats = $state<LemmaStat | null>(null);
+	let isConcordanceLoading = $state<boolean>(false);
+	let concordanceLoaded = $state<boolean>(false);
+	let concordanceError = $state<string | null>(null);
+
+	let selectedFormFilter = $state<string | null>(null);
+	let prevLemma = $state<string>('');
+
+	// When a new lexeme is selected/loaded, keep all sections collapsed by default,
+	// auto-fetch lightweight LSJ entry and stats in the background,
+	// and reset on-demand data for attested forms & concordance occurrences.
 	$effect(() => {
-		if (currentLemma) {
+		if (currentLemma !== prevLemma) {
+			prevLemma = currentLemma;
 			selectedFormFilter = null;
-			loadLexemeDetails(currentLemma);
+
+			// Keep all 3 sections collapsed by default
+			isAttestedFormsOpen = false;
+			isLexArticleOpen = false;
+			isConcordanceOpen = false;
+
+			// Reset Section 1: Attested Forms (on-demand)
+			attestedForms = [];
+			attestedFormsLoaded = false;
+			attestedFormsError = null;
+			isAttestedFormsLoading = false;
+
+			// Reset Section 2: Full Lexicon Article
+			lexEntry = null;
+			lexArticleLoaded = false;
+			lexArticleError = null;
+			isLexArticleLoading = false;
+
+			// Reset Section 3: Concordance
+			concordance = [];
+			stats = null;
+			concordanceLoaded = false;
+			concordanceError = null;
+			isConcordanceLoading = false;
+
+			// Auto-fetch lightweight LSJ entry and stats in the background
+			if (currentLemma) {
+				autoFetchLexAndStats(currentLemma);
+			}
 		}
 	});
 
-	async function loadLexemeDetails(lemma: string) {
-		isLexLoading = true;
+	// Asynchronously auto-fetch LSJ entry and corpus stats on worker thread
+	async function autoFetchLexAndStats(lemma: string) {
+		if (!lemma) return;
+		isLexArticleLoading = true;
+		lexArticleError = null;
 		try {
-			const [l, s, c, f] = await Promise.all([
+			const [entry, s] = await Promise.all([
 				fetchLexiconEntry(lemma),
-				fetchLemmaStats(lemma),
-				fetchConcordance(lemma),
-				fetchAttestedForms(lemma)
+				fetchLemmaStats(lemma)
 			]);
-			lexEntry = l;
+			// Sequence guard: prevent stale responses if user clicked another lemma
+			if (currentLemma !== lemma) return;
+			lexEntry = entry;
 			stats = s;
-			concordance = c;
-			attestedForms = f;
-		} catch (err) {
-			console.error('Error loading lexeme details:', err);
+			lexArticleLoaded = true;
+		} catch (err: any) {
+			if (currentLemma !== lemma) return;
+			console.error('Error auto-fetching lexicon entry and stats:', err);
+			lexArticleError = err?.message || 'Failed to load lexicon article';
 		} finally {
-			isLexLoading = false;
+			if (currentLemma === lemma) {
+				isLexArticleLoading = false;
+			}
+		}
+	}
+
+	// On-demand loader for Attested Forms (fetched only when clicked)
+	async function loadAttestedForms(lemma: string) {
+		if (!lemma) return;
+		isAttestedFormsLoading = true;
+		attestedFormsError = null;
+		try {
+			// Query executed asynchronously via database worker thread
+			const forms = await fetchAttestedForms(lemma);
+			if (currentLemma !== lemma) return;
+			attestedForms = forms;
+			attestedFormsLoaded = true;
+		} catch (err: any) {
+			if (currentLemma !== lemma) return;
+			console.error('Error loading attested forms:', err);
+			attestedFormsError = err?.message || 'Failed to load attested forms';
+		} finally {
+			if (currentLemma === lemma) {
+				isAttestedFormsLoading = false;
+			}
+		}
+	}
+
+	function toggleAttestedForms() {
+		isAttestedFormsOpen = !isAttestedFormsOpen;
+		if (isAttestedFormsOpen && !attestedFormsLoaded && !isAttestedFormsLoading && currentLemma) {
+			loadAttestedForms(currentLemma);
+		}
+	}
+
+	function toggleLexArticle() {
+		isLexArticleOpen = !isLexArticleOpen;
+		if (isLexArticleOpen && !lexArticleLoaded && !isLexArticleLoading && currentLemma) {
+			autoFetchLexAndStats(currentLemma);
+		}
+	}
+
+	// On-demand loader for Concordance occurrences (fetched only when clicked)
+	async function loadConcordance(lemma: string) {
+		if (!lemma) return;
+		isConcordanceLoading = true;
+		concordanceError = null;
+		try {
+			// Query executed asynchronously via database worker thread
+			const [c, s] = await Promise.all([
+				fetchConcordance(lemma),
+				stats ? Promise.resolve(stats) : fetchLemmaStats(lemma)
+			]);
+			if (currentLemma !== lemma) return;
+			concordance = c;
+			if (!stats) stats = s;
+			concordanceLoaded = true;
+		} catch (err: any) {
+			if (currentLemma !== lemma) return;
+			console.error('Error loading concordance:', err);
+			concordanceError = err?.message || 'Failed to load concordance';
+		} finally {
+			if (currentLemma === lemma) {
+				isConcordanceLoading = false;
+			}
+		}
+	}
+
+	function toggleConcordance() {
+		isConcordanceOpen = !isConcordanceOpen;
+		if (isConcordanceOpen && !concordanceLoaded && !isConcordanceLoading && currentLemma) {
+			loadConcordance(currentLemma);
+		}
+	}
+
+	function selectForm(form: string) {
+		const isSame = selectedFormFilter === form;
+		selectedFormFilter = isSame ? null : form;
+		if (!isSame) {
+			isConcordanceOpen = true;
+			if (!concordanceLoaded && !isConcordanceLoading && currentLemma) {
+				loadConcordance(currentLemma);
+			}
 		}
 	}
 
@@ -240,11 +376,6 @@
 						<p class="font-semibold text-sm">No word selected</p>
 						<p class="max-w-xs mx-auto">Click any Greek or Latin word in the text to inspect its morphology, definition, and attested forms.</p>
 					</div>
-				{:else if isLexLoading}
-					<div class="py-16 text-center text-xs text-[var(--color-ink-soft)] space-y-2">
-						<div class="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-						<p>Loading lexical and morphological data...</p>
-					</div>
 				{:else}
 					<!-- Word Header Card -->
 					<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] p-4 shadow-2xs">
@@ -327,88 +458,238 @@
 						{/if}
 					</div>
 
-					<!-- Attested Inflected Forms Grid -->
-					{#if attestedForms.length > 0}
-						<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] p-3">
-							<div class="flex items-center justify-between pb-2 mb-2 border-b border-[var(--color-rule)]">
-								<span class="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)]">
-									Attested Forms ({attestedForms.length})
-								</span>
-								{#if selectedFormFilter}
-									<button
-										type="button"
-										onclick={() => (selectedFormFilter = null)}
-										class="text-[11px] text-blue-600 dark:text-blue-400 font-semibold hover:underline cursor-pointer"
-									>
-										Reset filter
-									</button>
-								{/if}
-							</div>
-
-							<div class="flex flex-wrap gap-1.5">
-								{#each attestedForms as f}
-									{@const isActive = selectedFormFilter === f.form}
-									<button
-										type="button"
-										onclick={() => (selectedFormFilter = isActive ? null : f.form)}
-										class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors cursor-pointer {isActive ? 'bg-blue-600 text-white font-bold' : 'bg-[var(--color-page)] hover:bg-[var(--color-rule)] border border-[var(--color-rule)] text-[var(--color-ink)]'}"
-										title="Filter concordance by {f.form}"
-									>
-										<span class="greek-font font-medium">{f.form}</span>
-										<span class="text-[10px] font-mono opacity-70">({f.count})</span>
-									</button>
-								{/each}
-							</div>
-						</div>
-					{/if}
-
-					<!-- LSJ Lexicon Definition -->
-					{#if lexEntry}
-						<details open class="group rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] overflow-hidden">
-							<summary class="flex items-center justify-between px-4 py-2.5 cursor-pointer font-bold text-xs uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)] transition-colors select-none">
+					<!-- Section 1: Attested Forms (Collapsed by default, loads on click) -->
+					<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] overflow-hidden">
+						<div class="flex items-center justify-between hover:bg-[var(--color-rule)] transition-colors">
+							<button
+								type="button"
+								onclick={toggleAttestedForms}
+								class="flex-1 flex items-center justify-between px-4 py-3 cursor-pointer text-left select-none"
+								aria-expanded={isAttestedFormsOpen}
+							>
 								<div class="flex items-center gap-2">
-									<span class="rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 text-[10px] font-bold">LSJ</span>
-									<span>Full Lexicon Article</span>
+									<span class="text-xs font-bold uppercase tracking-wider text-[var(--color-ink)]">
+										Attested Forms
+									</span>
+									{#if isAttestedFormsLoading}
+										<span class="inline-block animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full" title="Loading..."></span>
+									{:else if attestedFormsLoaded}
+										<span class="rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-1.5 py-0.2 text-[10px] font-mono font-bold">
+											{attestedForms.length}
+										</span>
+									{/if}
 								</div>
-								<span class="text-slate-400 group-open:rotate-180 transition-transform">
-									&darr;
-								</span>
-							</summary>
-							<div class="p-4 border-t border-[var(--color-rule)] bg-[var(--color-page)]/50 prose dark:prose-invert max-w-none text-xs leading-normal max-h-60 overflow-y-auto">
-								{@html lexEntry.definition}
-							</div>
-						</details>
-					{/if}
-
-					<!-- Concordance List -->
-					<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] p-3">
-						<div class="flex items-center justify-between pb-2 mb-2 border-b border-[var(--color-rule)]">
-							<span class="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)]">
-								Concordance ({filteredConcordance.length}{selectedFormFilter ? ` for "${selectedFormFilter}"` : ''})
-							</span>
-							{#if stats}
-								<span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-									{stats.total_count} in AF corpus
-								</span>
+								<svg
+									class="h-4 w-4 text-[var(--color-ink-soft)] transition-transform duration-200 {isAttestedFormsOpen ? 'rotate-180' : ''}"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+								</svg>
+							</button>
+							{#if selectedFormFilter}
+								<button
+									type="button"
+									onclick={() => (selectedFormFilter = null)}
+									class="pr-4 text-[11px] text-blue-600 dark:text-blue-400 font-semibold hover:underline cursor-pointer"
+								>
+									Reset filter
+								</button>
 							{/if}
 						</div>
 
-						<div class="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-							{#each filteredConcordance as ref}
-								<button
-									type="button"
-									onclick={() => navigateToRef(ref)}
-									class="w-full text-left rounded-lg p-2 hover:bg-[var(--color-page)] border border-transparent hover:border-[var(--color-rule)] transition-colors cursor-pointer"
+						{#if isAttestedFormsOpen}
+							<div class="p-3 border-t border-[var(--color-rule)] bg-[var(--color-page)]/30">
+								{#if isAttestedFormsLoading}
+									<div class="py-4 text-center text-xs text-[var(--color-ink-soft)] space-y-1.5">
+										<div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+										<p>Loading attested forms from database worker...</p>
+									</div>
+								{:else if attestedFormsError}
+									<div class="p-3 text-center text-xs text-red-600 dark:text-red-400 space-y-1">
+										<p>{attestedFormsError}</p>
+										<button
+											type="button"
+											onclick={() => loadAttestedForms(currentLemma)}
+											class="text-blue-600 dark:text-blue-400 underline font-medium hover:opacity-80 cursor-pointer"
+										>
+											Retry
+										</button>
+									</div>
+								{:else if attestedForms.length === 0}
+									<div class="py-3 text-center text-xs text-[var(--color-ink-soft)]">
+										No attested forms recorded in the Apostolic Fathers corpus.
+									</div>
+								{:else}
+									<div class="flex flex-wrap gap-1.5">
+										{#each attestedForms as f}
+											{@const isActive = selectedFormFilter === f.form}
+											<button
+												type="button"
+												onclick={() => selectForm(f.form)}
+												class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors cursor-pointer {isActive ? 'bg-blue-600 text-white font-bold' : 'bg-[var(--color-page)] hover:bg-[var(--color-rule)] border border-[var(--color-rule)] text-[var(--color-ink)]'}"
+												title="Filter concordance by {f.form}"
+											>
+												<span class="greek-font font-medium">{f.form}</span>
+												<span class="text-[10px] font-mono opacity-70">({f.count})</span>
+											</button>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
+
+					<!-- Section 2: Full Lexicon Article (Collapsed by default, loads on click) -->
+					<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] overflow-hidden">
+						<button
+							type="button"
+							onclick={toggleLexArticle}
+							class="w-full flex items-center justify-between px-4 py-3 cursor-pointer text-left hover:bg-[var(--color-rule)] transition-colors select-none"
+							aria-expanded={isLexArticleOpen}
+						>
+							<div class="flex items-center gap-2">
+								<span class="rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 text-[10px] font-bold">LSJ</span>
+								<span class="text-xs font-bold uppercase tracking-wider text-[var(--color-ink)]">
+									Full Lexicon Article
+								</span>
+								{#if isLexArticleLoading}
+									<span class="inline-block animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full" title="Loading..."></span>
+								{/if}
+							</div>
+							<svg
+								class="h-4 w-4 text-[var(--color-ink-soft)] transition-transform duration-200 {isLexArticleOpen ? 'rotate-180' : ''}"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+							</svg>
+						</button>
+
+						{#if isLexArticleOpen}
+							<div class="border-t border-[var(--color-rule)] bg-[var(--color-page)]/50 p-4">
+								{#if isLexArticleLoading}
+									<div class="py-4 text-center text-xs text-[var(--color-ink-soft)] space-y-1.5">
+										<div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+										<p>Loading LSJ lexicon article from database worker...</p>
+									</div>
+								{:else if lexArticleError}
+									<div class="p-3 text-center text-xs text-red-600 dark:text-red-400 space-y-1">
+										<p>{lexArticleError}</p>
+										<button
+											type="button"
+											onclick={() => autoFetchLexAndStats(currentLemma)}
+											class="text-blue-600 dark:text-blue-400 underline font-medium hover:opacity-80 cursor-pointer"
+										>
+											Retry
+										</button>
+									</div>
+								{:else if !lexEntry || (!lexEntry.definition && !lexEntry.gloss)}
+									<div class="py-3 text-center text-xs text-[var(--color-ink-soft)]">
+										No direct LSJ lexicon article was matched for <em class="greek-font">{currentLemma}</em>.
+									</div>
+								{:else}
+									{#if lexEntry.gloss}
+										<div class="mb-3 p-2.5 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900/50">
+											<div class="text-[10px] uppercase font-bold text-[var(--color-ink-soft)] tracking-wider">Gloss</div>
+											<div class="text-sm font-semibold text-blue-700 dark:text-blue-300 italic">{lexEntry.gloss}</div>
+										</div>
+									{/if}
+									{#if lexEntry.definition}
+										<div class="prose dark:prose-invert max-w-none text-xs leading-normal max-h-60 overflow-y-auto">
+											{@html lexEntry.definition}
+										</div>
+									{/if}
+								{/if}
+							</div>
+						{/if}
+					</div>
+
+					<!-- Section 3: Concordance (Collapsed by default, loads on click) -->
+					<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] overflow-hidden">
+						<button
+							type="button"
+							onclick={toggleConcordance}
+							class="w-full flex items-center justify-between px-4 py-3 cursor-pointer text-left hover:bg-[var(--color-rule)] transition-colors select-none"
+							aria-expanded={isConcordanceOpen}
+						>
+							<div class="flex items-center gap-2">
+								<span class="text-xs font-bold uppercase tracking-wider text-[var(--color-ink)]">
+									Concordance
+								</span>
+								{#if isConcordanceLoading}
+									<span class="inline-block animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full" title="Loading..."></span>
+								{:else if concordanceLoaded}
+									<span class="rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-1.5 py-0.2 text-[10px] font-mono font-bold">
+										{filteredConcordance.length}{selectedFormFilter ? ` for "${selectedFormFilter}"` : ''}
+									</span>
+								{/if}
+							</div>
+							<div class="flex items-center gap-2">
+								{#if stats}
+									<span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+										{stats.total_count} in AF corpus
+									</span>
+								{/if}
+								<svg
+									class="h-4 w-4 text-[var(--color-ink-soft)] transition-transform duration-200 {isConcordanceOpen ? 'rotate-180' : ''}"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
 								>
-									<div class="font-bold text-blue-600 dark:text-blue-400 text-xs">
-										{ref.display_citation}
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+								</svg>
+							</div>
+						</button>
+
+						{#if isConcordanceOpen}
+							<div class="p-3 border-t border-[var(--color-rule)] bg-[var(--color-page)]/30">
+								{#if isConcordanceLoading}
+									<div class="py-4 text-center text-xs text-[var(--color-ink-soft)] space-y-1.5">
+										<div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+										<p>Querying concordance references from database worker...</p>
 									</div>
-									<div class="text-[11px] text-[var(--color-ink-soft)] line-clamp-2 mt-0.5 greek-font">
-										{ref.text_content}
+								{:else if concordanceError}
+									<div class="p-3 text-center text-xs text-red-600 dark:text-red-400 space-y-1">
+										<p>{concordanceError}</p>
+										<button
+											type="button"
+											onclick={() => loadConcordance(currentLemma)}
+											class="text-blue-600 dark:text-blue-400 underline font-medium hover:opacity-80 cursor-pointer"
+										>
+											Retry
+										</button>
 									</div>
-								</button>
-							{/each}
-						</div>
+								{:else if filteredConcordance.length === 0}
+									<div class="py-3 text-center text-xs text-[var(--color-ink-soft)]">
+										{#if selectedFormFilter}
+											No occurrences found for "{selectedFormFilter}".
+										{:else}
+											No concordance occurrences found in the corpus.
+										{/if}
+									</div>
+								{:else}
+									<div class="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+										{#each filteredConcordance as ref}
+											<button
+												type="button"
+												onclick={() => navigateToRef(ref)}
+												class="w-full text-left rounded-lg p-2 hover:bg-[var(--color-page)] border border-transparent hover:border-[var(--color-rule)] transition-colors cursor-pointer"
+											>
+												<div class="font-bold text-blue-600 dark:text-blue-400 text-xs">
+													{ref.display_citation}
+												</div>
+												<div class="text-[11px] text-[var(--color-ink-soft)] line-clamp-2 mt-0.5 greek-font">
+													{ref.text_content}
+												</div>
+											</button>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/if}
 					</div>
 				{/if}
 
