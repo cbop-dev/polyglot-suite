@@ -12,6 +12,7 @@ from typing import Iterator, Optional, Dict, Any, List
 from .base import BaseAdapter, VerseUnit, WordToken
 from ..config import CACHE_DIR, PIPELINE_DIR, REPO_ROOT, BOOK_ALIASES
 from ..tvtms import TVTMSResolver, load_tvtms
+from ..corrections import load_hebrew_errata, apply_lexeme_errata, apply_token_errata
 
 # BHS book abbreviation to standard USFM 3-letter codes
 BHS_BOOK_MAP = {
@@ -81,6 +82,7 @@ class WLCAdapter(BaseAdapter):
             bhs_data_dir = target_dir
         self.bhs_data_dir = bhs_data_dir
         self.tvtms = tvtms or load_tvtms()
+        self.errata = load_hebrew_errata()
         self.lexemes: Dict[str, Any] = {}
         self._load_lexemes()
 
@@ -89,6 +91,9 @@ class WLCAdapter(BaseAdapter):
         if lex_path.exists():
             with open(lex_path, "r", encoding="utf-8") as f:
                 self.lexemes = json.load(f)
+            patched = apply_lexeme_errata(self.lexemes, self.errata)
+            if patched:
+                print(f"WLCAdapter: Applied {patched} lexeme errata patches from registry.")
 
     def iter_verses(self) -> Iterator[VerseUnit]:
         books_dir = self.bhs_data_dir / "books"
@@ -140,6 +145,9 @@ class WLCAdapter(BaseAdapter):
                             gloss=lex_info.get("gloss"),
                             trailer=w.get("trailer")
                         ))
+
+                    # Apply contextual token errata (e.g. Isa 25:7 noun vs verb)
+                    apply_token_errata(std_ref.book, std_ref.chapter, std_ref.verse, tokens, self.errata)
 
                     yield VerseUnit(
                         corpus_id=self.corpus_id,

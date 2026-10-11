@@ -1171,31 +1171,17 @@ export async function getLexiconEntry(
 		const trimmedKey = key?.trim() || '';
 		const cleanKey = trimmedKey ? removeHebrewDiacritics(trimmedKey) : '';
 
-		// 1. Prioritize Strong's ID
-		if (sId) {
+		// 1. Prioritize matching BOTH strongs AND key/headword
+		if (sId && (trimmedKey || cleanKey)) {
 			const sCode = sId.toUpperCase().startsWith('H') ? sId.toUpperCase() : `H${sId}`;
-
-			// 1a. Prioritize matching BOTH strongs AND key/headword
-			if (trimmedKey || cleanKey) {
-				const exactBoth = await query<LexiconEntryRow>(
-					`SELECT id, dictionary, consonant_key AS key, lemma AS headword, strongs_id AS strongs, definition
-					 FROM lexicon_entries
-					 WHERE dictionary = 'bdb' AND strongs_id = ? AND (lemma = ? OR consonant_key = ? OR lemma = ? OR consonant_key = ?)
-					 LIMIT 1`,
-					[sCode, trimmedKey, trimmedKey, cleanKey, cleanKey]
-				);
-				if (exactBoth.length > 0) return exactBoth[0];
-			}
-
-			// 1b. If no exact both match, query by strongs alone
-			const rows = await query<LexiconEntryRow>(
+			const exactBoth = await query<LexiconEntryRow>(
 				`SELECT id, dictionary, consonant_key AS key, lemma AS headword, strongs_id AS strongs, definition
 				 FROM lexicon_entries
-				 WHERE dictionary = 'bdb' AND strongs_id = ?
+				 WHERE dictionary = 'bdb' AND strongs_id = ? AND (lemma = ? OR consonant_key = ? OR lemma = ? OR consonant_key = ?)
 				 LIMIT 1`,
-				[sCode]
+				[sCode, trimmedKey, trimmedKey, cleanKey, cleanKey]
 			);
-			if (rows.length > 0) return rows[0];
+			if (exactBoth.length > 0) return exactBoth[0];
 		}
 
 		// 2. Direct lookup of headword/lemma field
@@ -1208,19 +1194,33 @@ export async function getLexiconEntry(
 				[trimmedKey]
 			);
 			if (headwordRows.length > 0) return headwordRows[0];
-
-			// 3. Consonants key lookup
-			if (cleanKey) {
-				const keyRows = await query<LexiconEntryRow>(
-					`SELECT id, dictionary, consonant_key AS key, lemma AS headword, strongs_id AS strongs, definition
-					 FROM lexicon_entries
-					 WHERE dictionary = 'bdb' AND consonant_key = ?
-					 LIMIT 1`,
-					[cleanKey]
-				);
-				if (keyRows.length > 0) return keyRows[0];
-			}
 		}
+
+		// 3. Consonants key lookup
+		if (cleanKey) {
+			const keyRows = await query<LexiconEntryRow>(
+				`SELECT id, dictionary, consonant_key AS key, lemma AS headword, strongs_id AS strongs, definition
+				 FROM lexicon_entries
+				 WHERE dictionary = 'bdb' AND consonant_key = ?
+				 LIMIT 1`,
+				[cleanKey]
+			);
+			if (keyRows.length > 0) return keyRows[0];
+		}
+
+		// 4. Fallback: Query by strongs alone (e.g. Strong's search or when no consonant match exists)
+		if (sId) {
+			const sCode = sId.toUpperCase().startsWith('H') ? sId.toUpperCase() : `H${sId}`;
+			const rows = await query<LexiconEntryRow>(
+				`SELECT id, dictionary, consonant_key AS key, lemma AS headword, strongs_id AS strongs, definition
+				 FROM lexicon_entries
+				 WHERE dictionary = 'bdb' AND strongs_id = ?
+				 LIMIT 1`,
+				[sCode]
+			);
+			if (rows.length > 0) return rows[0];
+		}
+
 		return null;
 	}
 
