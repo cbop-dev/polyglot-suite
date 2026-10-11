@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Iterator, Optional, Dict, Any
 from .base import BaseAdapter
 from ..config import CACHE_DIR, PIPELINE_DIR
+from ..corrections import load_hebrew_errata, apply_lexeme_errata
 
 HEBREW_DIAC_REGEX = re.compile(r"[\u0591-\u05C7]")
 PUNCT_REGEX = re.compile(r"[\(\)\[\]⟦⟧⟨⟩\.,;׃׀־\s]+")
@@ -94,6 +95,10 @@ class BDBAdapter(BaseAdapter):
             try:
                 with open(self.lexemes_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
+                errata = load_hebrew_errata()
+                patched = apply_lexeme_errata(data, errata)
+                if patched:
+                    print(f"BDBAdapter: Applied {patched} lexeme errata patches to gloss source.")
                 for item in data.values():
                     s = item.get("strongs")
                     g = item.get("gloss")
