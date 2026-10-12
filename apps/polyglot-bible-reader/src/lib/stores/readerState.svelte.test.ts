@@ -121,6 +121,18 @@ describe('realign cell', ()=>{
         expect(rs.gridAlignments[0][0]).toEqual("left");
     });
 
+    it('aligns Peshitta right-to-left by default', async () => {
+        const rs = new ReaderState();
+        expect(rs.getDefaultAlign(0, 0, 'Peshitta')).toEqual('right');
+        expect(rs.getDefaultAlign(0, 0, 'BHS')).toEqual('right');
+        expect(rs.getDefaultAlign(0, 0, 'OpenGNT')).toEqual('left');
+        expect(rs.getDefaultAlign(0, 0, 'Vulgate')).toEqual('left');
+
+        rs.updateCell(0, 0, 'Peshitta', false, false);
+        rs.realignCell(0, 0);
+        expect(rs.getCellAlign(0, 0)).toEqual('right');
+    });
+
     it('immediately loads Matt 1 verses without omitted state when switching to OpenGNT from landing state', async () => {
         vi.spyOn(dbClient, 'getBookChapters').mockResolvedValue([1, 2, 3]);
         vi.spyOn(dbClient, 'getChapterVerses').mockImplementation(async (book, chapter, versions) => {
@@ -252,6 +264,30 @@ describe('realign cell', ()=>{
         expect(rs.showLemmaModal).toBe(true);
         expect(rs.activeWord).toBeDefined();
         expect(rs.activeWord?.gloss).toBe('human, mankind');
+    });
+
+    it('inspectWord resolves Syriac word with workId 8, cleaned lemma, and sedra dictionary', async () => {
+        const rs = new ReaderState();
+        const countSpy = vi.spyOn(dbClient, 'getLemmaTotalCount').mockResolvedValue(45);
+
+        await rs.inspectWord(
+            {
+                word: 'ܒܪܳܐ.',
+                normalized: 'ܒܪܳܐ',
+                lemma: 'ܒܪܳܐ',
+                morph: ''
+            },
+            'Peshitta'
+        );
+
+        expect(rs.showLemmaModal).toBe(true);
+        expect(rs.activeWord).toBeDefined();
+        expect(rs.activeWord?.work_id).toBe(8);
+        expect(rs.activeWord?.corpus).toBe('peshitta');
+        expect(rs.activeWord?.dictionary).toBe('sedra');
+        expect(rs.activeWord?.lemma).toBe('ܒܪܐ');
+        expect(countSpy).toHaveBeenCalledWith(8, 'ܒܪܐ', undefined);
+        expect(rs.activeWord?.total_count).toBe(45);
     });
 
     it('immediately activates selected version, closes dropdown, and sets loading state before async lookup resolves', async () => {

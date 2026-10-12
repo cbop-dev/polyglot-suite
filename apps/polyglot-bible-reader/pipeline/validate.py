@@ -39,6 +39,7 @@ class DatabaseValidator:
             success &= self.test_vulgate_psalm_118(conn)
             success &= self.test_psalm_50_51_alignment(conn)
             success &= self.test_webbe_and_brenton_integrity(conn)
+            success &= self.test_peshitta_integrity(conn)
             success &= self.test_lexicons(conn)
             success &= self.test_token_json_samples(conn)
             success &= self.test_lemma_stats_and_concordance(conn)
@@ -231,6 +232,46 @@ class DatabaseValidator:
         print("  WEBBE and Brenton verification: PASSED!")
         return True
 
+    def test_peshitta_integrity(self, conn: sqlite3.Connection) -> bool:
+        print("\n[Test 4c] Syriac Peshitta Versification & Content Verification...")
+        cur = conn.cursor()
+
+        # 1. Total verse count assertions
+        peshitta_count = cur.execute("SELECT COUNT(*) FROM text_units WHERE corpus_id = 'peshitta'").fetchone()[0]
+        print(f"  Peshitta verses: {peshitta_count:,} (Expected: >= 30,000)")
+        assert peshitta_count >= 30000, f"Expected >= 30,000 Peshitta verses, found {peshitta_count}"
+
+        # 2. Key passage content checks
+        peshitta_gen1 = cur.execute("""
+            SELECT text_content FROM text_units 
+            WHERE corpus_id = 'peshitta' AND std_book = 'GEN' AND std_chapter = 1 AND std_verse = 1
+        """).fetchone()
+        assert peshitta_gen1 and "ܒܪܫܝܬ" in peshitta_gen1["text_content"], "Peshitta Gen 1:1 text check failed"
+
+        peshitta_mat1 = cur.execute("""
+            SELECT text_content FROM text_units 
+            WHERE corpus_id = 'peshitta' AND std_book = 'MAT' AND std_chapter = 1 AND std_verse = 1
+        """).fetchone()
+        assert peshitta_mat1 and "ܟܬܒܐ" in peshitta_mat1["text_content"], "Peshitta Matt 1:1 text check failed"
+
+        # 3. Check that all 27 New Testament books in BFBS/SEDRA SyrNT are present
+        for nt_book in ["2PE", "2JN", "3JN", "JUD", "REV"]:
+            nt_count = cur.execute("""
+                SELECT COUNT(*) FROM text_units 
+                WHERE corpus_id = 'peshitta' AND std_book = ?
+            """, (nt_book,)).fetchone()[0]
+            assert nt_count > 0, f"Expected verses for {nt_book} in syrnt, got {nt_count}"
+
+        # 4. Token JSON verification (has tokens, lemma, and morph)
+        sample_token = cur.execute("""
+            SELECT tokens_json FROM text_units
+            WHERE corpus_id = 'peshitta' AND std_book = '2PE' AND std_chapter = 1 AND std_verse = 1
+        """).fetchone()
+        assert sample_token and sample_token["tokens_json"], "Missing tokens_json for Peshitta 2PE 1:1"
+
+        print("  Peshitta verification: PASSED!")
+        return True
+
     def test_lexicons(self, conn: sqlite3.Connection) -> bool:
         print("\n[Test 5] Lexicon Entry Verification...")
         cur = conn.cursor()
@@ -309,7 +350,7 @@ class DatabaseValidator:
         assert conc_count >= 1000000, f"Expected >= 1,000,000 concordance_refs rows, got {conc_count}"
 
         # 2. Spot check WLC H7225 (Reshith)
-        h7225 = cur.execute("SELECT * FROM lemma_stats WHERE corpus_id = 'wlc' AND strongs = 'H7225'").fetchone()
+        h7225 = cur.execute("SELECT * FROM lemma_stats WHERE corpus_id = 'wlc' AND lemma_key = 'H7225'").fetchone()
         assert h7225 is not None, "Missing H7225 in WLC lemma_stats"
         assert h7225["total_count"] >= 50, f"Expected H7225 total >= 50, got {h7225['total_count']}"
         b_list = json.loads(h7225["book_counts_json"])
@@ -318,29 +359,35 @@ class DatabaseValidator:
         print(f"  Spot-check H7225 (Reshith): total={h7225['total_count']}, top_book={top_book}")
 
         # 3. Spot check WLC H9003 (Preposition Beth בְּ)
-        h9003 = cur.execute("SELECT * FROM lemma_stats WHERE corpus_id = 'wlc' AND strongs = 'H9003'").fetchone()
+        h9003 = cur.execute("SELECT * FROM lemma_stats WHERE corpus_id = 'wlc' AND lemma_key = 'H9003'").fetchone()
         assert h9003 is not None, "Missing H9003 in WLC lemma_stats"
         assert h9003["total_count"] >= 15000, f"Expected H9003 total >= 15000, got {h9003['total_count']}"
         print(f"  Spot-check H9003 (Beth prefix): total={h9003['total_count']:,}")
 
         # 4. Spot check OGNT G2424 (Jesus)
-        g2424 = cur.execute("SELECT * FROM lemma_stats WHERE corpus_id = 'ognt' AND strongs = 'G2424'").fetchone()
+        g2424 = cur.execute("SELECT * FROM lemma_stats WHERE corpus_id = 'ognt' AND lemma_key = 'G2424'").fetchone()
         assert g2424 is not None, "Missing G2424 in OGNT lemma_stats"
         assert g2424["total_count"] >= 900, f"Expected G2424 total >= 900, got {g2424['total_count']}"
         print(f"  Spot-check G2424 (Jesus in NT): total={g2424['total_count']}")
 
-        # 5. Spot check non-strongs Greek word WORD:Χαμ
-        cham = cur.execute("SELECT * FROM lemma_stats WHERE corpus_id = 'swete_lxx' AND strongs = 'WORD:Χαμ'").fetchone()
-        assert cham is not None, "Missing WORD:Χαμ in LXX lemma_stats"
-        assert cham["total_count"] >= 15, f"Expected WORD:Χαμ total >= 15, got {cham['total_count']}"
-        print(f"  Spot-check non-Strongs WORD:Χαμ: total={cham['total_count']}")
+        # 5. Spot check non-strongs Greek word Χαμ in Swete LXX
+        cham = cur.execute("SELECT * FROM lemma_stats WHERE corpus_id = 'swete_lxx' AND lemma_key = 'Χαμ'").fetchone()
+        assert cham is not None, "Missing Χαμ in LXX lemma_stats"
+        assert cham["total_count"] >= 15, f"Expected Χαμ total >= 15, got {cham['total_count']}"
+        print(f"  Spot-check Greek Χαμ: total={cham['total_count']}")
 
-        # 6. Referential integrity: spot-check concordance_refs link to text_units.id
+        # 6. Spot check Peshitta Syriac lemma ܟܬܒܐ
+        ktba = cur.execute("SELECT * FROM lemma_stats WHERE corpus_id = 'peshitta' AND lemma_key = 'ܟܬܒܐ'").fetchone()
+        assert ktba is not None, "Missing ܟܬܒܐ in Peshitta lemma_stats"
+        assert ktba["total_count"] >= 30, f"Expected ܟܬܒܐ total >= 30, got {ktba['total_count']}"
+        print(f"  Spot-check Syriac ܟܬܒܐ: total={ktba['total_count']}")
+
+        # 7. Referential integrity: spot-check concordance_refs link to text_units.id
         conc_sample = cur.execute("""
             SELECT cr.ref_label, cr.work_unit_id, tu.text_content
             FROM concordance_refs cr
             JOIN text_units tu ON cr.work_unit_id = tu.id
-            WHERE cr.corpus_id = 'ognt' AND cr.strongs = 'G2424'
+            WHERE cr.corpus_id = 'ognt' AND cr.lemma_key = 'G2424'
             LIMIT 3
         """).fetchall()
         assert len(conc_sample) == 3, "Expected 3 joined concordance rows"

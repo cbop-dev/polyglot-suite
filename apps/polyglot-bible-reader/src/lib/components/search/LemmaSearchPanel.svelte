@@ -18,11 +18,12 @@
 		type HighlightedLemma
 	} from '$lib/stores/highlightStore.svelte';
 
-	// The three supported original language texts
-	const SEARCH_OPTIONS: { id: SupportedSearchCorpus; label: string; lang: 'hebrew' | 'greek'; defaultVersion: string }[] = [
+	// The four supported original language texts
+	const SEARCH_OPTIONS: { id: SupportedSearchCorpus; label: string; lang: 'hebrew' | 'greek' | 'syriac'; defaultVersion: string }[] = [
 		{ id: 'wlc', label: 'BHS (Hebrew)', lang: 'hebrew', defaultVersion: 'BHS' },
 		{ id: 'ognt', label: 'OpenGNT (Greek)', lang: 'greek', defaultVersion: 'OpenGNT' },
-		{ id: 'swete_lxx', label: 'LXX (Septuagint)', lang: 'greek', defaultVersion: 'LXX' }
+		{ id: 'swete_lxx', label: 'LXX (Septuagint)', lang: 'greek', defaultVersion: 'LXX' },
+		{ id: 'peshitta', label: 'Peshitta (Syriac)', lang: 'syriac', defaultVersion: 'Peshitta' }
 	];
 
 	// Active tab: 'search' | 'highlights'
@@ -98,7 +99,7 @@
 	}
 
 	function inspectHighlight(item: HighlightedLemma) {
-		const colVersion = item.lang === 'hebrew' ? 'BHS' : 'OpenGNT';
+		const colVersion = item.lang === 'syriac' ? 'Peshitta' : (item.lang === 'hebrew' ? 'BHS' : 'OpenGNT');
 		readerState.inspectWord(
 			{
 				lemma: item.lemma,
@@ -143,7 +144,7 @@
 			Lexemes & Highlighting
 		</h2>
 		<p class="text-xs text-ink-soft">
-			Search and highlight original Hebrew and Greek biblical lexemes with real-time transliteration.
+			Search and highlight original Hebrew, Greek, and Syriac biblical lexemes with real-time transliteration.
 		</p>
 	</div>
 
@@ -202,7 +203,7 @@
 				use:autofocus
 				type="text"
 				bind:value={rawInput}
-				placeholder={activeLang === 'hebrew' ? "Type in Latin (e.g. 'adm', 'br>jyt')..." : "Type in Latin (e.g. 'logos', 'qeos')..."}
+				placeholder={activeLang === 'syriac' ? "Type in Latin (e.g. 'malk', 'br>')..." : (activeLang === 'hebrew' ? "Type in Latin (e.g. 'adm', 'br>jyt')..." : "Type in Latin (e.g. 'logos', 'qeos')...")}
 				class="w-full pl-3 pr-8 py-2 text-sm bg-page border border-rule rounded-lg focus:outline-none focus:ring-2 focus:ring-link text-ink placeholder:text-ink-soft/60"
 				autocomplete="off"
 				autocorrect="off"
@@ -225,7 +226,7 @@
 		{#if convertedQuery}
 			<div class="flex items-center gap-2 mb-3 px-2 py-1.5 bg-rule/20 rounded-md text-xs border border-rule/50">
 				<span class="text-ink-soft font-mono">Script:</span>
-				<span class="{activeLang === 'hebrew' ? 'font-hebrew text-base' : 'font-greek text-base'} font-bold text-link" dir={activeLang === 'hebrew' ? 'rtl' : 'ltr'}>
+				<span class="{activeLang === 'syriac' ? 'font-syriac text-lg' : (activeLang === 'hebrew' ? 'font-hebrew text-base' : 'font-greek text-base')} font-bold text-link" dir={activeLang === 'syriac' || activeLang === 'hebrew' ? 'rtl' : 'ltr'}>
 					{convertedQuery}
 				</span>
 				<span class="ml-auto text-[11px] text-ink-soft">
@@ -235,8 +236,10 @@
 		{:else}
 			<!-- Transliteration Guide Badge -->
 			<div class="mb-3 text-[11px] text-ink-soft leading-relaxed px-1">
-				{#if activeLang === 'hebrew'}
-					Latin to Hebrew: <span class="font-mono font-medium">b</span>&rarr;ב, <span class="font-mono font-medium">j</span>&rarr;ש, <span class="font-mono font-medium">m</span>&rarr;מ/ם, <span class="font-mono font-medium">br>jyt</span>&rarr;בראשית
+				{#if activeLang === 'syriac'}
+					Latin to Syriac: <span class="font-mono font-medium">b</span>&rarr;ܒ, <span class="font-mono font-medium">d</span>&rarr;ܕ, <span class="font-mono font-medium">sh</span>&rarr;ܫ, <span class="font-mono font-medium">m</span>&rarr;ܡ, <span class="font-mono font-medium">br&gt;</span>&rarr;ܒܪܐ
+				{:else if activeLang === 'hebrew'}
+					Latin to Hebrew: <span class="font-mono font-medium">b</span>&rarr;ב, <span class="font-mono font-medium">j</span>&rarr;ש, <span class="font-mono font-medium">m</span>&rarr;מ/ם, <span class="font-mono font-medium">br&gt;jyt</span>&rarr;בראשית
 				{:else}
 					Latin to Greek: <span class="font-mono font-medium">logos</span>&rarr;λογος, <span class="font-mono font-medium">q</span>&rarr;θ, <span class="font-mono font-medium">x</span>&rarr;ξ, <span class="font-mono font-medium">c</span>&rarr;χ, <span class="font-mono font-medium">w</span>&rarr;ω
 				{/if}
@@ -262,12 +265,12 @@
 						<div class="text-[11px] font-bold text-ink-soft uppercase tracking-wider mb-2">
 							Best Matches ({filterResult.bestMatches.length})
 						</div>
-						<div class="flex flex-wrap gap-1.5" dir={activeLang === 'hebrew' ? 'rtl' : 'ltr'}>
+						<div class="flex flex-wrap gap-1.5" dir={activeLang === 'syriac' || activeLang === 'hebrew' ? 'rtl' : 'ltr'}>
 							{#each filterResult.bestMatches as item}
 								{@const hl = highlightStore.getHighlight(item.lemma, item.strongs, activeLang)}
 								<div
 									class="px-2 py-0.5 rounded-md text-sm transition-all border flex items-center gap-1.5 shadow-xs"
-									style={hl ? `background-color: ${hl.color}20; border-color: ${hl.color};` : 'background-color: var(--color-surface, #fff); border-color: var(--color-rule, #ccc);'}
+									style={hl ? `background-color: ${hl.color}20; border-color: ${hl.color};` : 'background-color: var(--bg-content, #fff); border-color: var(--color-rule, #ccc);'}
 								>
 									<button
 										type="button"
@@ -275,7 +278,7 @@
 										onclick={() => handleSelectLemma(item)}
 										title="Inspect {item.lemma}"
 									>
-										<span class="{activeLang === 'hebrew' ? 'font-hebrew text-base' : 'font-greek text-base'} font-bold">
+										<span class="{activeLang === 'syriac' ? 'font-syriac text-lg' : (activeLang === 'hebrew' ? 'font-hebrew text-base' : 'font-greek text-base')} font-bold">
 											{item.lemma}
 										</span>
 										<span class="text-[10px] px-1 py-0.2 rounded bg-rule/50 text-ink-soft font-sans font-medium">
@@ -309,12 +312,12 @@
 						<div class="text-[11px] font-bold text-ink-soft uppercase tracking-wider mb-2">
 							Other Matches ({filterResult.otherMatches.length})
 						</div>
-						<div class="flex flex-wrap gap-1.5" dir={activeLang === 'hebrew' ? 'rtl' : 'ltr'}>
+						<div class="flex flex-wrap gap-1.5" dir={activeLang === 'syriac' || activeLang === 'hebrew' ? 'rtl' : 'ltr'}>
 							{#each filterResult.otherMatches as item}
 								{@const hl = highlightStore.getHighlight(item.lemma, item.strongs, activeLang)}
 								<div
 									class="px-2 py-0.5 rounded-md text-xs transition-all border flex items-center gap-1 shadow-xs"
-									style={hl ? `background-color: ${hl.color}20; border-color: ${hl.color};` : 'background-color: var(--color-surface, #fff); border-color: var(--color-rule, #ccc);'}
+									style={hl ? `background-color: ${hl.color}20; border-color: ${hl.color};` : 'background-color: var(--bg-content, #fff); border-color: var(--color-rule, #ccc);'}
 								>
 									<button
 										type="button"
@@ -322,7 +325,7 @@
 										onclick={() => handleSelectLemma(item)}
 										title="Inspect {item.lemma}"
 									>
-										<span class="{activeLang === 'hebrew' ? 'font-hebrew text-sm' : 'font-greek text-sm'} font-semibold">
+										<span class="{activeLang === 'syriac' ? 'font-syriac text-base' : (activeLang === 'hebrew' ? 'font-hebrew text-sm' : 'font-greek text-sm')} font-semibold">
 											{item.lemma}
 										</span>
 										<span class="text-[10px] text-ink-soft font-sans">
@@ -355,7 +358,7 @@
 					<div class="text-[11px] font-bold text-ink-soft uppercase tracking-wider mb-2">
 						Frequent Lemmas in this Corpus
 					</div>
-					<div class="flex flex-wrap gap-1.5" dir={activeLang === 'hebrew' ? 'rtl' : 'ltr'}>
+					<div class="flex flex-wrap gap-1.5" dir={activeLang === 'syriac' || activeLang === 'hebrew' ? 'rtl' : 'ltr'}>
 						{#each topLemmas as item}
 							{@const hl = highlightStore.getHighlight(item.lemma, item.strongs, activeLang)}
 							<div
@@ -369,7 +372,7 @@
 									onclick={() => handleSelectLemma(item)}
 									title="Inspect {item.lemma}"
 								>
-									<span class="{activeLang === 'hebrew' ? 'font-hebrew text-sm' : 'font-greek text-sm'} font-bold">
+									<span class="{activeLang === 'syriac' ? 'font-syriac text-base' : (activeLang === 'hebrew' ? 'font-hebrew text-sm' : 'font-greek text-sm')} font-bold">
 										{item.lemma}
 									</span>
 									<span class="text-[10px] px-1 py-0.2 rounded bg-rule/50 text-ink-soft font-sans font-medium">
@@ -437,8 +440,8 @@
 									<span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background-color: {item.color};"></span>
 									<button
 										type="button"
-										class="cursor-pointer text-left hover:text-link truncate {item.lang === 'hebrew' ? 'font-hebrew text-lg' : 'font-greek text-lg'} font-bold"
-										dir={item.lang === 'hebrew' ? 'rtl' : 'ltr'}
+										class="cursor-pointer text-left hover:text-link truncate {item.lang === 'syriac' ? 'font-syriac text-xl' : (item.lang === 'hebrew' ? 'font-hebrew text-lg' : 'font-greek text-lg')} font-bold"
+										dir={item.lang === 'syriac' || item.lang === 'hebrew' ? 'rtl' : 'ltr'}
 										onclick={() => inspectHighlight(item)}
 										title="Inspect {item.lemma}"
 									>

@@ -25,6 +25,7 @@ from .adapters import (
     KJVAdapter,
     WEBBEAdapter,
     BrentonAdapter,
+    PeshittaAdapter,
     BDBAdapter,
     LSJAdapter,
 )
@@ -95,21 +96,21 @@ CREATE TABLE IF NOT EXISTS lexicon_entries (
 -- 5. Pre-computed Lemma Statistics (O(1) Book Frequency Distributions)
 CREATE TABLE IF NOT EXISTS lemma_stats (
     corpus_id TEXT NOT NULL,
-    strongs TEXT NOT NULL,
-    lemma TEXT NOT NULL,
+    lemma_key TEXT NOT NULL,
+    display_lemma TEXT NOT NULL,
     total_count INTEGER NOT NULL,
     book_counts_json TEXT NOT NULL,
-    PRIMARY KEY (corpus_id, strongs)
+    PRIMARY KEY (corpus_id, lemma_key)
 );
 
 -- 6. Pre-indexed Concordance References (O(1) Occurrence Range Scans)
 CREATE TABLE IF NOT EXISTS concordance_refs (
     corpus_id TEXT NOT NULL,
-    strongs TEXT NOT NULL,
-    lemma TEXT NOT NULL,
+    lemma_key TEXT NOT NULL,
+    display_lemma TEXT NOT NULL,
     ref_label TEXT NOT NULL,
     work_unit_id INTEGER NOT NULL,
-    PRIMARY KEY (corpus_id, strongs, work_unit_id)
+    PRIMARY KEY (corpus_id, lemma_key, work_unit_id)
 ) WITHOUT ROWID;
 
 -- 7. Pre-computed Corpus Book Statistics (Word & Verse totals per book)
@@ -138,11 +139,11 @@ ON lexicon_entries(dictionary, strongs_id);
 CREATE INDEX IF NOT EXISTS idx_lexicon_consonant 
 ON lexicon_entries(consonant_key);
 
-CREATE INDEX IF NOT EXISTS idx_lemma_stats_lemma 
-ON lemma_stats(corpus_id, lemma);
+CREATE INDEX IF NOT EXISTS idx_lemma_stats_lookup 
+ON lemma_stats(corpus_id, lemma_key);
 
-CREATE INDEX IF NOT EXISTS idx_concordance_refs_lemma 
-ON concordance_refs(corpus_id, lemma, work_unit_id);
+CREATE INDEX IF NOT EXISTS idx_concordance_refs_lookup 
+ON concordance_refs(corpus_id, lemma_key, work_unit_id);
 """
 
 
@@ -274,6 +275,18 @@ class DatabaseBuilder:
                 0,
                 "Public Domain",
                 "Samuel Bagster & Sons / eBible.org",
+            ),
+            (
+                "peshitta",
+                "The Syriac Peshitta (Leiden OT / SEDRA NT)",
+                "syc",
+                "rtl",
+                "bible",
+                "Peshitta",
+                1,
+                0,
+                "MIT / CC BY-NC 4.0",
+                "Peshitta Institute Leiden / George A. Kiraz (SEDRA) / ETCBC",
             ),
             (
                 "bdb",
@@ -454,6 +467,7 @@ class DatabaseBuilder:
                 KJVAdapter(tvtms=self.tvtms),
                 WEBBEAdapter(tvtms=self.tvtms),
                 BrentonAdapter(tvtms=self.tvtms),
+                PeshittaAdapter(tvtms=self.tvtms),
             ]
 
             for adapter in adapters:

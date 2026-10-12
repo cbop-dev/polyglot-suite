@@ -267,14 +267,119 @@ export function toPlainHebrew(hebrew: string): string {
 	return normalizedConsonants.replace(/[\s\u05BE]+/g, ' ').trim();
 }
 
+// Syriac single-character Latin mapping (SEDRA / CAL standard)
+export const LATIN_TO_SYRIAC_MAP: Record<string, string> = {
+	"'": '\u0710', '>': '\u0710', a: '\u0710', A: '\u0710', // Alaph
+	b: '\u0712', B: '\u0712', // Beth
+	g: '\u0713', G: '\u0713', // Gamal
+	d: '\u0715', D: '\u0715', // Dalath
+	h: '\u0717', H: '\u0717', // He
+	w: '\u0718', W: '\u0718', u: '\u0718', U: '\u0718', o: '\u0718', O: '\u0718', // Waw
+	z: '\u0719', Z: '\u0719', // Zayn
+	x: '\u071A', X: '\u071A', // Heth
+	T: '\u071B',              // Teth (capital T)
+	y: '\u071D', Y: '\u071D', i: '\u071D', I: '\u071D', e: '\u071D', E: '\u071D', // Yodh
+	k: '\u071F', K: '\u071F', // Kaph
+	l: '\u0720', L: '\u0720', // Lamadh
+	m: '\u0721', M: '\u0721', // Mim
+	n: '\u0722', N: '\u0722', // Nun
+	s: '\u0723',              // Semkath (lowercase s)
+	'(': '\u0725', '<': '\u0725', '`': '\u0725', // E ('Ayin)
+	p: '\u0726', P: '\u0726', f: '\u0726', F: '\u0726', // Pe
+	S: '\u0728', c: '\u0728', C: '\u0728', // Sadhe
+	q: '\u0729', Q: '\u0729', // Qaph
+	r: '\u072A', R: '\u072A', // Resh
+	$: '\u072B',              // Shin
+	t: '\u072C'               // Taw (lowercase t)
+};
+
+// Syriac multi-character digraphs
+export const SYRIAC_DIGRAPHS: Record<string, string> = {
+	sh: '\u072B', SH: '\u072B', Sh: '\u072B', // Shin
+	kh: '\u071A', KH: '\u071A', Kh: '\u071A', // Heth
+	'h.': '\u071A', 'H.': '\u071A',          // Heth
+	't.': '\u071B', 'T.': '\u071B',          // Teth
+	th: '\u072C', TH: '\u072C', Th: '\u072C', // Taw
+	's.': '\u0728', 'S.': '\u0728',          // Sadhe
+	ts: '\u0728', TS: '\u0728', Ts: '\u0728', // Sadhe
+	'e.': '\u0725', 'E.': '\u0725'           // E ('Ayin)
+};
+
 /**
- * Transliterates input based on language: 'greek' | 'hebrew'.
+ * Transliterates Latin input string to Syriac Unicode with 2-character digraph support.
+ * Preserves spaces, numbers, punctuation, and native Syriac characters already entered.
  */
-export function transliterate(input: string, lang: 'greek' | 'hebrew'): string {
+export function latinToSyriac(input: string): string {
+	if (!input) return '';
+
+	let res = '';
+	let i = 0;
+	const len = input.length;
+
+	while (i < len) {
+		const char = input[i];
+
+		// Pass through non-ASCII or existing Syriac characters
+		if (char.charCodeAt(0) > 127) {
+			res += char;
+			i++;
+			continue;
+		}
+
+		// Pass through spaces, numbers, and standard punctuation (except translit tokens ', `, <, >, (, $, +)
+		if (/[\s\d,;:!\?"\[\]]/.test(char)) {
+			res += char;
+			i++;
+			continue;
+		}
+
+		// Check 2-char digraphs (e.g. sh, kh, h., t., s., ts, th)
+		if (i + 1 < len) {
+			const pair = input.substring(i, i + 2);
+			if (SYRIAC_DIGRAPHS[pair]) {
+				res += SYRIAC_DIGRAPHS[pair];
+				i += 2;
+				continue;
+			}
+		}
+
+		// Check 1-char mapping
+		if (LATIN_TO_SYRIAC_MAP[char]) {
+			res += LATIN_TO_SYRIAC_MAP[char];
+		} else {
+			res += char;
+		}
+		i++;
+	}
+
+	return res;
+}
+
+const SYRIAC_PUNCT_DIACRITICS = /[\u0730-\u074F\u0300-\u036F\.\,\;\:\?\!\(\)\[\]]/g;
+
+/**
+ * Normalizes Syriac text for search/filtering by stripping vocalization points,
+ * reading dots, and punctuation.
+ */
+export function toPlainSyriac(syriac: string): string {
+	if (!syriac) return '';
+	return syriac
+		.normalize('NFD')
+		.replace(SYRIAC_PUNCT_DIACRITICS, '')
+		.normalize('NFC')
+		.trim();
+}
+
+/**
+ * Transliterates input based on language: 'greek' | 'hebrew' | 'syriac'.
+ */
+export function transliterate(input: string, lang: 'greek' | 'hebrew' | 'syriac'): string {
 	if (lang === 'greek') {
 		return latinToGreek(input);
 	} else if (lang === 'hebrew') {
 		return latinToHebrew(input);
+	} else if (lang === 'syriac') {
+		return latinToSyriac(input);
 	}
 	return input;
 }

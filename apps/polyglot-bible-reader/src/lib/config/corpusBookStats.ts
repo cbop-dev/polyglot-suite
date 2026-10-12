@@ -11,6 +11,7 @@ export interface BookWordStat {
 export const CORPUS_TOTAL_WORDS: Record<string, number> = {
   "kjv": 556037,
   "ognt": 138013,
+  "peshitta": 525248,
   "swete_lxx": 605183,
   "wlc": 420141
 };
@@ -446,6 +447,344 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
     "TIT": {
       "words": 659,
       "verses": 46
+    }
+  },
+  "peshitta": {
+    "1CH": {
+      "words": 11264,
+      "verses": 891
+    },
+    "1CO": {
+      "words": 5986,
+      "verses": 437
+    },
+    "1ES": {
+      "words": 6474,
+      "verses": 406
+    },
+    "1JN": {
+      "words": 1547,
+      "verses": 105
+    },
+    "1KI": {
+      "words": 12883,
+      "verses": 816
+    },
+    "1MA": {
+      "words": 23578,
+      "verses": 1768
+    },
+    "1PE": {
+      "words": 1535,
+      "verses": 105
+    },
+    "1SA": {
+      "words": 12937,
+      "verses": 809
+    },
+    "1TH": {
+      "words": 1117,
+      "verses": 89
+    },
+    "1TI": {
+      "words": 1507,
+      "verses": 113
+    },
+    "2CH": {
+      "words": 13568,
+      "verses": 768
+    },
+    "2CO": {
+      "words": 3737,
+      "verses": 257
+    },
+    "2ES": {
+      "words": 10627,
+      "verses": 714
+    },
+    "2JN": {
+      "words": 197,
+      "verses": 13
+    },
+    "2KI": {
+      "words": 12026,
+      "verses": 719
+    },
+    "2MA": {
+      "words": 11196,
+      "verses": 556
+    },
+    "2PE": {
+      "words": 1028,
+      "verses": 61
+    },
+    "2SA": {
+      "words": 11072,
+      "verses": 693
+    },
+    "2TH": {
+      "words": 609,
+      "verses": 47
+    },
+    "2TI": {
+      "words": 1040,
+      "verses": 83
+    },
+    "3JN": {
+      "words": 211,
+      "verses": 15
+    },
+    "3MA": {
+      "words": 4758,
+      "verses": 228
+    },
+    "4MA": {
+      "words": 7496,
+      "verses": 479
+    },
+    "ACT": {
+      "words": 15383,
+      "verses": 1007
+    },
+    "AMO": {
+      "words": 2112,
+      "verses": 146
+    },
+    "BAR": {
+      "words": 1940,
+      "verses": 142
+    },
+    "BEL": {
+      "words": 790,
+      "verses": 42
+    },
+    "COL": {
+      "words": 1133,
+      "verses": 95
+    },
+    "DAN": {
+      "words": 6472,
+      "verses": 412
+    },
+    "DEU": {
+      "words": 14136,
+      "verses": 959
+    },
+    "ECC": {
+      "words": 3020,
+      "verses": 222
+    },
+    "EPH": {
+      "words": 1774,
+      "verses": 155
+    },
+    "EST": {
+      "words": 2907,
+      "verses": 168
+    },
+    "EXO": {
+      "words": 16338,
+      "verses": 1213
+    },
+    "EZK": {
+      "words": 18329,
+      "verses": 1271
+    },
+    "EZR": {
+      "words": 3908,
+      "verses": 280
+    },
+    "GAL": {
+      "words": 1940,
+      "verses": 149
+    },
+    "GEN": {
+      "words": 20080,
+      "verses": 1533
+    },
+    "HAB": {
+      "words": 701,
+      "verses": 56
+    },
+    "HAG": {
+      "words": 609,
+      "verses": 38
+    },
+    "HEB": {
+      "words": 4288,
+      "verses": 303
+    },
+    "HOS": {
+      "words": 2580,
+      "verses": 197
+    },
+    "ISA": {
+      "words": 17562,
+      "verses": 1290
+    },
+    "JAS": {
+      "words": 1444,
+      "verses": 108
+    },
+    "JDG": {
+      "words": 9793,
+      "verses": 617
+    },
+    "JDT": {
+      "words": 5686,
+      "verses": 341
+    },
+    "JER": {
+      "words": 21782,
+      "verses": 1369
+    },
+    "JHN": {
+      "words": 12408,
+      "verses": 879
+    },
+    "JOB": {
+      "words": 9219,
+      "verses": 1065
+    },
+    "JOL": {
+      "words": 984,
+      "verses": 73
+    },
+    "JON": {
+      "words": 720,
+      "verses": 48
+    },
+    "JOS": {
+      "words": 10041,
+      "verses": 656
+    },
+    "JUD": {
+      "words": 415,
+      "verses": 25
+    },
+    "LAM": {
+      "words": 1762,
+      "verses": 159
+    },
+    "LEV": {
+      "words": 11834,
+      "verses": 859
+    },
+    "LJE": {
+      "words": 1088,
+      "verses": 73
+    },
+    "LUK": {
+      "words": 15234,
+      "verses": 1151
+    },
+    "MAL": {
+      "words": 933,
+      "verses": 55
+    },
+    "MAN": {
+      "words": 551,
+      "verses": 32
+    },
+    "MAT": {
+      "words": 13979,
+      "verses": 1071
+    },
+    "MIC": {
+      "words": 1498,
+      "verses": 105
+    },
+    "MRK": {
+      "words": 8793,
+      "verses": 678
+    },
+    "NAM": {
+      "words": 590,
+      "verses": 47
+    },
+    "NEH": {
+      "words": 5492,
+      "verses": 405
+    },
+    "NUM": {
+      "words": 16539,
+      "verses": 1289
+    },
+    "OBA": {
+      "words": 299,
+      "verses": 21
+    },
+    "ODA": {
+      "words": 2200,
+      "verses": 209
+    },
+    "PHM": {
+      "words": 277,
+      "verses": 25
+    },
+    "PHP": {
+      "words": 1326,
+      "verses": 104
+    },
+    "PRO": {
+      "words": 8052,
+      "verses": 914
+    },
+    "PS2": {
+      "words": 637,
+      "verses": 65
+    },
+    "PSA": {
+      "words": 20092,
+      "verses": 2454
+    },
+    "PSS": {
+      "words": 3362,
+      "verses": 343
+    },
+    "REV": {
+      "words": 6320,
+      "verses": 403
+    },
+    "ROM": {
+      "words": 5768,
+      "verses": 433
+    },
+    "RUT": {
+      "words": 1392,
+      "verses": 86
+    },
+    "SIR": {
+      "words": 13074,
+      "verses": 1261
+    },
+    "SNG": {
+      "words": 1312,
+      "verses": 117
+    },
+    "SUS": {
+      "words": 1215,
+      "verses": 65
+    },
+    "TIT": {
+      "words": 644,
+      "verses": 46
+    },
+    "TOB": {
+      "words": 6061,
+      "verses": 343
+    },
+    "WIS": {
+      "words": 6059,
+      "verses": 436
+    },
+    "ZEC": {
+      "words": 3168,
+      "verses": 211
+    },
+    "ZEP": {
+      "words": 810,
+      "verses": 53
     }
   },
   "swete_lxx": {

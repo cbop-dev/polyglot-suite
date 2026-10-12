@@ -41,6 +41,7 @@ export interface WordRow {
 	work_unit_id: number;
 	position: number;
 	surface: string;
+	word?: string;
 	normalized: string;
 	strongs_number: string;
 	morph_code: string;
@@ -68,6 +69,7 @@ function unpackToken(t: any, rowId: number, corpusId: string, idx: number): Word
 			work_unit_id: rowId,
 			position: idx,
 			surface: word,
+			word: word,
 			normalized: norm,
 			strongs_number: strongs,
 			morph_code: morph,
@@ -84,6 +86,7 @@ function unpackToken(t: any, rowId: number, corpusId: string, idx: number): Word
 		work_unit_id: rowId,
 		position: idx,
 		surface: t.word || '',
+		word: t.word || '',
 		normalized: t.normalized || t.word || '',
 		strongs_number: t.strongs || '',
 		morph_code: t.morph || '',
@@ -168,7 +171,9 @@ export const VERSION_MAP: Record<string, string> = {
 	webbe: 'webbe',
 	Brenton: 'brenton-lxx',
 	brenton: 'brenton-lxx',
-	'brenton-lxx': 'brenton-lxx'
+	'brenton-lxx': 'brenton-lxx',
+	Peshitta: 'peshitta',
+	peshitta: 'peshitta'
 };
 
 // Reverse mapping from corpus IDs to UI version acronyms
@@ -182,7 +187,8 @@ export const SLUG_TO_VERSION: Record<string, string> = {
 	'vulgate-clementine': 'Vulgate',
 	kjv: 'KJV',
 	webbe: 'WEB',
-	'brenton-lxx': 'Brenton'
+	'brenton-lxx': 'Brenton',
+	peshitta: 'Peshitta'
 };
 
 // Versions that have word-level tokens in tokens_json
@@ -191,7 +197,8 @@ export const VERSIONS_WITH_WORDS = new Set<string>([
 	'LXX', 'lxx', 'swete_lxx', 'swete-lxx',
 	'OpenGNT', 'opengnt', 'OGNT', 'ognt',
 	'SBLGNT', 'sblgnt',
-	'KJV', 'kjv'
+	'KJV', 'kjv',
+	'Peshitta', 'peshitta'
 ]);
 
 // USFM 3-letter codes by alias
@@ -325,7 +332,8 @@ const CORPUS_WORK_IDS: Record<string, number> = {
 	sblgnt: 40,
 	kjv: 5,
 	webbe: 6,
-	'brenton-lxx': 7
+	'brenton-lxx': 7,
+	peshitta: 8
 };
 
 export function getCorpusWorkId(corpusId: string): number {
@@ -342,6 +350,7 @@ export function workIdToCorpusId(workId: number): string {
 		case 5: return 'kjv';
 		case 6: return 'webbe';
 		case 7: return 'brenton-lxx';
+		case 8: return 'peshitta';
 		default: return 'wlc';
 	}
 }
@@ -835,6 +844,13 @@ export async function getLemma(
 	return rows.length > 0 ? rows[0] : null;
 }
 
+const SYRIAC_PUNCT_DIACRITICS = /[\u0730-\u074F\u0300-\u036F\.\,\;\:\?\!\(\)\[\]]/g;
+
+export function cleanSyriac(s: string): string {
+	if (!s) return '';
+	return s.replace(SYRIAC_PUNCT_DIACRITICS, '').trim();
+}
+
 /**
  * Retrieve total occurrence count of a lemma directly from lemma_stats.total_count.
  */
@@ -853,30 +869,35 @@ export async function getLemmaTotalCount(
 			const sCode = sNorm.startsWith('H') || sNorm.startsWith('G')
 				? sNorm
 				: (workId === 2 ? `H${sNorm}` : `G${sNorm}`);
+			const distinctKeys = sCode === sNorm ? [sCode] : [sCode, sNorm];
+			const keyClause = distinctKeys.length === 1 ? 'lemma_key = ?' : '(lemma_key = ? OR lemma_key = ?)';
 
 			const statRow = await queryOne<{ total_count: number }>(`
 				SELECT total_count
 				FROM lemma_stats
-				WHERE corpus_id = ? AND (strongs = ? OR strongs = ?)
+				WHERE corpus_id = ? AND ${keyClause}
 				LIMIT 1
-			`, [corpusId, sCode, sNorm]);
+			`, [corpusId, ...distinctKeys]);
 
 			if (statRow && typeof statRow.total_count === 'number') {
 				return statRow.total_count;
 			}
 		}
 
-		// 2. Check pre-computed lemma_stats by lemma (including pseudo-strongs WORD:<lemma>)
+		// 2. Check pre-computed lemma_stats by indexed lemma_key
 		if (lemma && lemma.trim()) {
 			const lTrim = lemma.trim();
-			const lNFC = lTrim.normalize('NFC');
-			const pseudoStrongs = `WORD:${lTrim}`;
+			const targetKey = corpusId === 'peshitta' ? cleanSyriac(lTrim) : lTrim;
+			const lNFC = targetKey.normalize('NFC');
+			const distinctKeys = targetKey === lNFC ? [targetKey] : [targetKey, lNFC];
+			const keyClause = distinctKeys.length === 1 ? 'lemma_key = ?' : '(lemma_key = ? OR lemma_key = ?)';
+
 			const statRow = await queryOne<{ total_count: number }>(`
 				SELECT total_count
 				FROM lemma_stats
-				WHERE corpus_id = ? AND (lemma = ? OR lemma = ? OR strongs = ?)
+				WHERE corpus_id = ? AND ${keyClause}
 				LIMIT 1
-			`, [corpusId, lTrim, lNFC, pseudoStrongs]);
+			`, [corpusId, ...distinctKeys]);
 
 			if (statRow && typeof statRow.total_count === 'number') {
 				return statRow.total_count;
@@ -939,13 +960,15 @@ export async function getWordFrequencyByBook(
 		const sCode = sNorm.startsWith('H') || sNorm.startsWith('G')
 			? sNorm
 			: (workId === 2 ? `H${sNorm}` : `G${sNorm}`);
+		const distinctKeys = sCode === sNorm ? [sCode] : [sCode, sNorm];
+		const keyClause = distinctKeys.length === 1 ? 'lemma_key = ?' : '(lemma_key = ? OR lemma_key = ?)';
 
 		const statRow = await queryOne<{ book_counts_json: string; total_count: number }>(`
 			SELECT book_counts_json, total_count
 			FROM lemma_stats
-			WHERE corpus_id = ? AND (strongs = ? OR strongs = ?)
+			WHERE corpus_id = ? AND ${keyClause}
 			LIMIT 1
-		`, [corpusId, sCode, sNorm]);
+		`, [corpusId, ...distinctKeys]);
 
 		if (statRow?.book_counts_json) {
 			try {
@@ -954,17 +977,20 @@ export async function getWordFrequencyByBook(
 		}
 	}
 
-	// 2. Check pre-computed lemma_stats by lemma (including pseudo-strongs WORD:<lemma>)
+	// 2. Check pre-computed lemma_stats by indexed lemma_key
 	if (lemma && lemma.trim()) {
 		const lTrim = lemma.trim();
-		const lNFC = lTrim.normalize('NFC');
-		const pseudoStrongs = `WORD:${lTrim}`;
+		const targetKey = corpusId === 'peshitta' ? cleanSyriac(lTrim) : lTrim;
+		const lNFC = targetKey.normalize('NFC');
+		const distinctKeys = targetKey === lNFC ? [targetKey] : [targetKey, lNFC];
+		const keyClause = distinctKeys.length === 1 ? 'lemma_key = ?' : '(lemma_key = ? OR lemma_key = ?)';
+
 		const statRow = await queryOne<{ book_counts_json: string; total_count: number }>(`
 			SELECT book_counts_json, total_count
 			FROM lemma_stats
-			WHERE corpus_id = ? AND (lemma = ? OR lemma = ? OR strongs = ?)
+			WHERE corpus_id = ? AND ${keyClause}
 			LIMIT 1
-		`, [corpusId, lTrim, lNFC, pseudoStrongs]);
+		`, [corpusId, ...distinctKeys]);
 
 		if (statRow?.book_counts_json) {
 			try {
@@ -1069,14 +1095,16 @@ export async function getConcordance(
 		const sCode = sNorm.startsWith('H') || sNorm.startsWith('G')
 			? sNorm
 			: (workId === 2 ? `H${sNorm}` : `G${sNorm}`);
+		const distinctKeys = sCode === sNorm ? [sCode] : [sCode, sNorm];
+		const keyClause = distinctKeys.length === 1 ? 'lemma_key = ?' : '(lemma_key = ? OR lemma_key = ?)';
 
 		const rows = await query<ConcordanceOccurrence>(`
 			SELECT ref_label, ref_label AS display_label, work_unit_id
 			FROM concordance_refs
-			WHERE corpus_id = ? AND (strongs = ? OR strongs = ?)
+			WHERE corpus_id = ? AND ${keyClause}
 			ORDER BY work_unit_id
 			${limitSql}
-		`, [corpusId, sCode, sNorm, ...limitParams]);
+		`, [corpusId, ...distinctKeys, ...limitParams]);
 
 		if (rows.length > 0) {
 			return rows.map((r) => ({
@@ -1086,19 +1114,21 @@ export async function getConcordance(
 		}
 	}
 
-	// 2. Try pre-indexed concordance_refs by lemma or pseudo-strongs
+	// 2. Try pre-indexed concordance_refs by indexed lemma_key
 	if (lemma && lemma.trim()) {
-		const cleanLemma = lemma.trim();
-		const cleanNFC = cleanLemma.normalize('NFC');
-		const pseudoStrongs = `WORD:${cleanLemma}`;
+		const lTrim = lemma.trim();
+		const targetKey = corpusId === 'peshitta' ? cleanSyriac(lTrim) : lTrim;
+		const lNFC = targetKey.normalize('NFC');
+		const distinctKeys = targetKey === lNFC ? [targetKey] : [targetKey, lNFC];
+		const keyClause = distinctKeys.length === 1 ? 'lemma_key = ?' : '(lemma_key = ? OR lemma_key = ?)';
 
 		const rows = await query<ConcordanceOccurrence>(`
 			SELECT ref_label, ref_label AS display_label, work_unit_id
 			FROM concordance_refs
-			WHERE corpus_id = ? AND (lemma = ? OR lemma = ? OR strongs = ?)
+			WHERE corpus_id = ? AND ${keyClause}
 			ORDER BY work_unit_id
 			${limitSql}
-		`, [corpusId, cleanLemma, cleanNFC, pseudoStrongs, ...limitParams]);
+		`, [corpusId, ...distinctKeys, ...limitParams]);
 
 		if (rows.length > 0) {
 			return rows.map((r) => ({

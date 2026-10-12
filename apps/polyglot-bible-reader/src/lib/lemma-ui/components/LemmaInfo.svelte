@@ -11,6 +11,7 @@
 	import PieChart from './ui/PieChart.svelte';
 	import LSJEntry from './LSJEntry.svelte';
 	import BDBEntry from './BDBEntry.svelte';
+	import SEDRAEntry from './SEDRAEntry.svelte';
 	import TextsDisplay from './TextsDisplay.svelte';
 	import CopyText from './ui/CopyText.svelte';
 	import { formatMorphBadges, parseHebrewMorphSegments } from '$lib/utils/morph-utils.js';
@@ -20,6 +21,7 @@
 		getLemmaTotalCount,
 		getCorpusTotalWords,
 		getCorpusBookWords,
+		cleanSyriac,
 		type BookFrequency,
 		type ConcordanceOccurrence
 	} from '$lib/services/dbClient';
@@ -82,9 +84,12 @@
 	const isHebrew = $derived(
 		lemma?.corpus === 'bhs' || lemma?.colVersion === 'BHS' || lemma?.dictionary === 'bdb'
 	);
-	const lang = $derived(isHebrew ? 'hebrew' : 'greek');
+	const isSyriac = $derived(
+		lemma?.corpus === 'peshitta' || lemma?.colVersion === 'Peshitta' || lemma?.language === 'syc' || lemma?.language === 'Syriac'
+	);
+	const lang = $derived(isSyriac ? 'syriac' : (isHebrew ? 'hebrew' : 'greek'));
 	const corpusLabel = $derived(
-		lemma?.colVersion || (isHebrew ? 'BHS' : (lemma?.corpus === 'ognt' || lemma?.corpus === 'sblgnt' || lemma?.corpus === 'opengnt') ? 'OpenGNT' : 'LXX')
+		lemma?.colVersion || (isSyriac ? 'Peshitta' : (isHebrew ? 'BHS' : (lemma?.corpus === 'ognt' || lemma?.corpus === 'sblgnt' || lemma?.corpus === 'opengnt') ? 'OpenGNT' : 'LXX'))
 	);
 
 	const targetLemma = $derived(
@@ -129,7 +134,11 @@
 		return parseHebrewMorphSegments(lemma.morph);
 	});
 
-	const lookupKey = $derived(currentLemmaData?.normalized || currentLemmaData?.plain || currentLemmaData?.lemma || currentLemmaData?.word || '');
+	const lookupKey = $derived(
+		isSyriac
+			? cleanSyriac(currentLemmaData?.lemma || currentLemmaData?.normalized || currentLemmaData?.plain || currentLemmaData?.word || '')
+			: (currentLemmaData?.normalized || currentLemmaData?.plain || currentLemmaData?.lemma || currentLemmaData?.word || '')
+	);
 
 	const totalOccurrences = $derived(
 		totalCount !== null && totalCount !== undefined
@@ -164,7 +173,7 @@
 		isFetchingStats = true;
 		try {
 			const workId = currentLemmaData?.work_id || lemma?.work_id;
-			const corpusId = lemma?.corpus || (isHebrew ? 'wlc' : (lemma?.colVersion === 'LXX' ? 'swete_lxx' : (lemma?.corpus === 'ognt' ? 'ognt' : 'swete_lxx')));
+			const corpusId = isSyriac ? 'peshitta' : (lemma?.corpus || (isHebrew ? 'wlc' : (lemma?.colVersion === 'LXX' ? 'swete_lxx' : (lemma?.corpus === 'ognt' ? 'ognt' : 'swete_lxx'))));
 			const [freqs, totalW] = await Promise.all([
 				getWordFrequencyByBook(workId, lookupKey, currentLemmaData?.strongs),
 				getCorpusTotalWords(corpusId)
@@ -206,7 +215,7 @@
 	$effect(() => {
 		const target = chosenBook;
 		if (!target) return;
-		const corpusId = lemma?.corpus || (isHebrew ? 'wlc' : (lemma?.colVersion === 'LXX' ? 'swete_lxx' : (lemma?.corpus === 'ognt' ? 'ognt' : 'swete_lxx')));
+		const corpusId = isSyriac ? 'peshitta' : (lemma?.corpus || (isHebrew ? 'wlc' : (lemma?.colVersion === 'LXX' ? 'swete_lxx' : (lemma?.corpus === 'ognt' ? 'ognt' : 'swete_lxx'))));
 		const match = bookFrequencies.find(
 			(b) => b.sbl_abbreviation === target || b.title === target
 		);
@@ -352,7 +361,7 @@
 <div class="items-center text-center">
 	<!-- 1. Header with Lemma, Copy button, Gloss, POS, Strong's -->
 	<div class="flex items-center justify-center gap-2 mb-2">
-		<h1 class="text-3xl {isHebrew ? 'hebrew font-hebrew text-4xl' : 'greek font-greek'} font-bold text-ink">
+		<h1 class="text-3xl {isSyriac ? 'syriac font-syriac text-4xl' : (isHebrew ? 'hebrew font-hebrew text-4xl' : 'greek font-greek')} font-bold text-ink">
 			{currentLemmaData?.headword || currentLemmaData?.lemma || currentLemmaData?.word || ''}
 		</h1>
 
@@ -425,7 +434,7 @@
 			{#if currentLemmaData?.word}
 				<div class="flex items-center gap-1.5">
 					<span class="text-xs uppercase tracking-wide text-ink-soft font-semibold">Inflected:</span>
-					<span class="{isHebrew ? 'hebrew font-hebrew text-2xl' : 'greek font-greek text-xl'} font-semibold text-ink">
+					<span class="{isSyriac ? 'syriac font-syriac text-2xl' : (isHebrew ? 'hebrew font-hebrew text-2xl' : 'greek font-greek text-xl')} font-semibold text-ink">
 						{currentLemmaData?.word}
 					</span>
 				</div>
@@ -447,9 +456,17 @@
 		</div>
 	{/if}
 
-	<!-- 3. Unabridged Dictionary Entry (BDB or LSJ) -->
+	<!-- 3. Unabridged Dictionary Entry (BDB, LSJ, or SEDRA/CAL) -->
 	<div class="max-w-xl mx-auto px-2">
-		{#if isHebrew}
+		{#if isSyriac}
+			<SEDRAEntry
+				sedraId={currentLemmaData?.sedra_id || currentLemmaData?.extra?.sedra_id || ''}
+				lemma={currentLemmaData?.lemma || ''}
+				word={currentLemmaData?.word || currentLemmaData?.surface || ''}
+				root={currentLemmaData?.root || ''}
+				calLemma={currentLemmaData?.cal_lex || ''}
+			/>
+		{:else if isHebrew}
 			<BDBEntry lemma={currentLemmaData} lang="hebrew" dbAbbrev="bhs" autoOpen={false} />
 		{:else}
 			<LSJEntry lemma={currentLemmaData} lang="greek" dbAbbrev={currentLemmaData?.corpus || 'lxx'} autoOpen={false} />
@@ -750,7 +767,7 @@
 				<TextsDisplay
 					occurrences={concordanceOccurrences}
 					lang={lang}
-					dbAbbrev={isHebrew ? 'bhs' : 'lxx'}
+					dbAbbrev={isSyriac ? 'peshitta' : (isHebrew ? 'bhs' : 'lxx')}
 				/>
 				{/key}
 			{/if}

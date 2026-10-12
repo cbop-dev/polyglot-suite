@@ -1,5 +1,5 @@
 import { query } from './dbClient';
-import { toPlainGreek, toPlainHebrew } from '$lib/utils/transliteration';
+import { toPlainGreek, toPlainHebrew, toPlainSyriac } from '$lib/utils/transliteration';
 import { getBaseurl } from '$lib/utils/ui-utils';
 
 export interface CorpusLemmaItem {
@@ -15,16 +15,17 @@ export interface LemmaFilterResult {
 	totalFound: number;
 }
 
-export type SupportedSearchCorpus = 'wlc' | 'ognt' | 'swete_lxx';
+export type SupportedSearchCorpus = 'wlc' | 'ognt' | 'swete_lxx' | 'peshitta';
 
-const SUPPORTED_CORPUS_LANG: Record<SupportedSearchCorpus, 'hebrew' | 'greek'> = {
+const SUPPORTED_CORPUS_LANG: Record<SupportedSearchCorpus, 'hebrew' | 'greek' | 'syriac'> = {
 	wlc: 'hebrew',
 	ognt: 'greek',
-	swete_lxx: 'greek'
+	swete_lxx: 'greek',
+	peshitta: 'syriac'
 };
 
 /**
- * Normalizes any version string/slug to one of the 3 supported search corpora.
+ * Normalizes any version string/slug to one of the 4 supported search corpora.
  */
 export function resolveSearchCorpus(versionOrCorpus: string): SupportedSearchCorpus | null {
 	if (!versionOrCorpus) return null;
@@ -32,10 +33,11 @@ export function resolveSearchCorpus(versionOrCorpus: string): SupportedSearchCor
 	if (v === 'bhs' || v === 'wlc' || v === 'hebrew') return 'wlc';
 	if (v === 'opengnt' || v === 'ognt' || v === 'sblgnt') return 'ognt';
 	if (v === 'lxx' || v === 'swetelxx' || v === 'septuagint') return 'swete_lxx';
+	if (v === 'peshitta' || v === 'syc' || v === 'syriac') return 'peshitta';
 	return null;
 }
 
-export function getCorpusLanguage(corpusId: SupportedSearchCorpus): 'hebrew' | 'greek' {
+export function getCorpusLanguage(corpusId: SupportedSearchCorpus): 'hebrew' | 'greek' | 'syriac' {
 	return SUPPORTED_CORPUS_LANG[corpusId] || 'greek';
 }
 
@@ -56,6 +58,8 @@ export async function getCorpusLemmas(corpusId: SupportedSearchCorpus): Promise<
 
 	const promise = (async () => {
 		const isHebrew = corpusId === 'wlc';
+		const isSyriac = corpusId === 'peshitta';
+		const toPlain = isSyriac ? toPlainSyriac : (isHebrew ? toPlainHebrew : toPlainGreek);
 
 		// 1. Attempt a single static fetch of pre-exported compact JSON
 		if (typeof window !== 'undefined' || typeof fetch !== 'undefined') {
@@ -68,7 +72,7 @@ export async function getCorpusLemmas(corpusId: SupportedSearchCorpus): Promise<
 					const items: CorpusLemmaItem[] = data.map(([strongs, lemma, total_count]) => ({
 						strongs,
 						lemma,
-						plain: isHebrew ? toPlainHebrew(lemma) : toPlainGreek(lemma),
+						plain: toPlain(lemma),
 						total_count
 					}));
 					lemmaCache.set(corpusId, items);
@@ -81,8 +85,8 @@ export async function getCorpusLemmas(corpusId: SupportedSearchCorpus): Promise<
 
 		// 2. Fallback: Query SQLite database table
 		try {
-			const rows = await query<{ strongs: string; lemma: string; total_count: number }>(
-				`SELECT strongs, lemma, total_count 
+			const rows = await query<{ lemma_key: string; display_lemma: string; total_count: number }>(
+				`SELECT lemma_key, display_lemma, total_count 
 				 FROM lemma_stats 
 				 WHERE corpus_id = ? 
 				 ORDER BY total_count DESC`,
@@ -90,11 +94,11 @@ export async function getCorpusLemmas(corpusId: SupportedSearchCorpus): Promise<
 			);
 
 			const items: CorpusLemmaItem[] = rows.map((r) => {
-				const plain = isHebrew ? toPlainHebrew(r.lemma) : toPlainGreek(r.lemma);
+				const lemma = r.display_lemma || r.lemma_key;
 				return {
-					strongs: r.strongs,
-					lemma: r.lemma,
-					plain,
+					strongs: r.lemma_key,
+					lemma,
+					plain: toPlain(lemma),
 					total_count: r.total_count
 				};
 			});
@@ -119,14 +123,14 @@ export async function getCorpusLemmas(corpusId: SupportedSearchCorpus): Promise<
 export function filterLemmas(
 	lemmas: CorpusLemmaItem[],
 	query: string,
-	lang: 'hebrew' | 'greek',
+	lang: 'hebrew' | 'greek' | 'syriac',
 	maxTotal: number = 60
 ): LemmaFilterResult {
 	if (!lemmas || lemmas.length === 0) {
 		return { bestMatches: [], otherMatches: [], totalFound: 0 };
 	}
 
-	const normQuery = lang === 'hebrew' ? toPlainHebrew(query) : toPlainGreek(query);
+	const normQuery = lang === 'syriac' ? toPlainSyriac(query) : (lang === 'hebrew' ? toPlainHebrew(query) : toPlainGreek(query));
 	if (!normQuery) {
 		return { bestMatches: [], otherMatches: [], totalFound: 0 };
 	}

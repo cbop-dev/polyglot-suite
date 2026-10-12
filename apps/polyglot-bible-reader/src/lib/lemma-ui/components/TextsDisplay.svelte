@@ -7,6 +7,7 @@
     import { getVerseText } from "$lib/services/dbClient";
     import { readerState } from "$lib/stores/readerState.svelte";
     import { formatDisplayReference, formatBookAbbreviation } from "$lib/config/bookMapping.js";
+    import { myDataSets } from "$lib/config/versions";
 
     let {
         title = '',
@@ -191,9 +192,10 @@
                 <p class="text-sm font-semibold text-ink">Loading verse text...</p>
             </div>
         {:else}
+            {@const isRtl = lang === 'syriac' || lang === 'hebrew' || myDataSets.isRtl(dbAbbrev)}
             <div class="block text-center py-2">
                 <h2 class="text-xl font-bold text-ink mb-2">{theRef}</h2>
-                <p class="{lang === 'hebrew' || dbAbbrev === 'bhs' ? 'hebrew font-hebrew text-3xl' : 'greek font-greek text-2xl'} py-4 text-ink leading-relaxed max-w-2xl mx-auto" dir={lang === 'hebrew' || dbAbbrev === 'bhs' ? 'rtl' : 'ltr'}>{theText}</p>
+                <p class="{lang === 'syriac' || dbAbbrev === 'peshitta' ? 'syriac font-syriac text-3xl' : (lang === 'hebrew' || dbAbbrev === 'bhs' ? 'hebrew font-hebrew text-3xl' : 'greek font-greek text-2xl')} py-4 text-ink leading-relaxed max-w-2xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>{theText}</p>
                 <div class="mt-4 flex items-center justify-center gap-3">
                     <CopyText copyText={theRef + ": " + theText} tooltip="Copy verse reference and text" linkText="Copy Verse" />
                     <button

@@ -93,6 +93,17 @@ UPSTREAM_SOURCES = {
         "filename": "eng-Brenton_usfm.zip",
         "description": "The Septuagint Version of the OT, with an English Translation (Brenton 1851, USFM)",
     },
+    # 10. Syriac Peshitta Texts
+    "peshitta_ot": {
+        "url": "https://github.com/ETCBC/peshitta/archive/refs/heads/master.zip",
+        "filename": "peshitta_ot_raw.jsonl",
+        "description": "ETCBC Leiden Peshitta Old Testament (Text-Fabric exported JSONL)",
+    },
+    "peshitta_nt": {
+        "url": "https://github.com/ETCBC/syrnt/archive/refs/heads/master.zip",
+        "filename": "peshitta_nt_raw.jsonl",
+        "description": "ETCBC SEDRA 3 Syriac New Testament (Text-Fabric exported JSONL)",
+    },
 }
 
 # Exhaustive Canonical Books Specification (USFM 3-letter codes)

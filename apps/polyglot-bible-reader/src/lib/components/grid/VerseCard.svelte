@@ -29,6 +29,8 @@
       const theDefault = 'font-latin';
       if (lang === 'Hebrew')
          return 'font-hebrew';
+      else if (lang === 'Syriac')
+         return 'font-syriac';
       else if (lang === 'Latin')
          return 'font-latin';
       else if (lang=== 'Greek')
@@ -54,7 +56,7 @@
       {#each row as colVersion, cIdx}
         {@const theVersion=myDataSets.lookup(getCorrectVersionName(colVersion) ?? '')}
         {@const lang=theVersion?.language}
-        {@const targetLang = (colVersion === 'BHS' || lang === 'Hebrew') ? 'hebrew' : (colVersion === 'OpenGNT' || colVersion === 'LXX' || lang === 'Greek') ? 'greek' : null}
+        {@const targetLang = (colVersion === 'Peshitta' || lang === 'Syriac') ? 'syriac' : (colVersion === 'BHS' || lang === 'Hebrew') ? 'hebrew' : (colVersion === 'OpenGNT' || colVersion === 'LXX' || lang === 'Greek') ? 'greek' : null}
         {@const langClass=getLangFontClass(lang)}
         {@const align = readerState.getCellAlign(rIdx, cIdx)}
         {@const vData = readerState.getVerseData(verseKey, colVersion)}
@@ -69,6 +71,7 @@
           readerState.hebrewMode,
           readerState.greekDiacritics
         )}
+        {@const isRtl = theVersion?.direction === 'rtl'}
         {#if true || !readerState.meditationMode}
         <div class="flex flex-col px-1.5 pt-1  {align === 'right' ? 'items-end text-right' : 'items-start text-left'} 
         {row.length > 1 && size.current !='base' ? (align=='right' && cIdx==0)  ?'pr-0': cIdx==row.length-1 ? 'pl-0': '': ''} ">
@@ -85,7 +88,7 @@
   <LinkIcon --strokecolor={theme.value=='dark'?'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'} height={8} width={10} /></CopyText>
           </div>
           {/if}
-          <div class="{colVersion === 'BHS' ? 'text-2xl' : 'text-xl'} {align === 'right' ? 'text-right' : 'text-left'} leading-snug w-full" dir={colVersion === 'BHS' ? 'rtl' : 'ltr'}>
+          <div class="{isRtl ? 'text-2xl' : 'text-xl'} {align === 'right' ? 'text-right' : 'text-left'} leading-snug w-full" dir={isRtl ? 'rtl' : 'ltr'}>
             {#if vData?.omitted}
               <span class="text-sm italic text-ink-soft font-sans" dir="ltr">[Not found in this version.]</span>
             {:else if vData?.verseData?.words || vData?.verseData?.text}
