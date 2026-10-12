@@ -2,6 +2,9 @@
 	"name": "polyglot-bible-reader",
 	"private": true,
 	"version": "0.2.26",
+	"repository":{
+		"url":"https://github.com/cbop-dev/polyglot-suite/tree/main/apps/polyglot-bible-reader"
+	},
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
