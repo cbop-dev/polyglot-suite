@@ -18,7 +18,7 @@ from typing import Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUT_DIR = ROOT / "static" / "data" / "lemmas"
-CORPORA = ["wlc", "ognt", "swete_lxx"]
+CORPORA = ["wlc", "ognt", "swete_lxx", "peshitta"]
 
 
 def export_lemma_indexes(conn: sqlite3.Connection, output_dir: Optional[Path] = None) -> None:
@@ -30,7 +30,7 @@ def export_lemma_indexes(conn: sqlite3.Connection, output_dir: Optional[Path] = 
     for corpus_id in CORPORA:
         cur.execute(
             """
-            SELECT strongs, lemma, total_count
+            SELECT lemma_key, display_lemma, total_count
             FROM lemma_stats
             WHERE corpus_id = ?
             ORDER BY total_count DESC

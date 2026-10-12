@@ -13,6 +13,7 @@ import {
 	getWorks,
 	translateReference,
 	getLexiconEntry,
+	cleanSyriac,
 	type WorkRow,
 	type LexiconEntryRow
 } from '$lib/services/dbClient';
@@ -325,13 +326,7 @@ export class ReaderState {
 	}
 
 	getDefaultAlign(rIdx: number, cIdx: number, version: string): 'left' | 'right' {
-		const totalCols = this.versionGrid[0]?.length || 2;
-		/*if (totalCols === 2) {
-			return cIdx === 0 ? 'right' : 'left';
-		}*/
-		const align =  version === 'BHS' ? 'right' : 'left';
-
-		return align
+		return myDataSets.isRtl(version) ? 'right' : 'left';
 	}
 
 	getCellAlign(rIdx: number, cIdx: number): 'left' | 'right' {
@@ -428,7 +423,7 @@ export class ReaderState {
 		if (this.gridAlignments[rIdx] && this.gridAlignments[rIdx].length){
 			if (this.versionGrid[rIdx].length > cIdx ){
 			this.gridAlignments[rIdx][cIdx] = 
-				(myDataSets.lookup(this.versionGrid[rIdx][cIdx])?.language.toLocaleLowerCase() == "hebrew") ?
+				myDataSets.isRtl(this.versionGrid[rIdx][cIdx]) ?
 				"right" : "left";
 			this.gridAlignments=this.gridAlignments;//for reactivity!)
 				
@@ -779,15 +774,16 @@ export class ReaderState {
 		if (!wordObj) return;
 		const corpus = colVersion.toLowerCase();
 		const isGreekNT = colVersion === 'OpenGNT' || colVersion === 'OGNT' || colVersion === 'SBLGNT' || corpus === 'ognt' || corpus === 'sblgnt';
+		const isSyriac = colVersion === 'Peshitta' || corpus === 'peshitta' || wordObj.corpus === 'peshitta';
 		const workId =
 			wordObj.work_id ||
-			(colVersion === 'BHS' || corpus === 'wlc' || corpus === 'bhs' ? 2 : colVersion === 'LXX' || corpus === 'swete_lxx' ? 24 : isGreekNT ? 40 : 0);
-		const dictionary = (colVersion === 'BHS' || corpus === 'wlc' || corpus === 'bhs') ? 'bdb' : 'lsj';
+			(isSyriac ? 8 : (colVersion === 'BHS' || corpus === 'wlc' || corpus === 'bhs' ? 2 : colVersion === 'LXX' || corpus === 'swete_lxx' ? 24 : isGreekNT ? 40 : 0));
+		const dictionary = isSyriac ? 'sedra' : ((colVersion === 'BHS' || corpus === 'wlc' || corpus === 'bhs') ? 'bdb' : 'lsj');
 
 		this.activeWord = {
 			...wordObj,
 			isLoading: true,
-			corpus,
+			corpus: isSyriac ? 'peshitta' : corpus,
 			colVersion,
 			work_id: workId,
 			dictionary
@@ -796,18 +792,23 @@ export class ReaderState {
 
 		try {
 			// Query lexemes table directly, prioritizing strongs when available
-			const lookupKey = wordObj.normalized || wordObj.word || wordObj.id;
-			const lexData = await getLemma(corpus, lookupKey, wordObj.strongs);
+			const rawKey = wordObj.lemma || wordObj.normalized || wordObj.word || wordObj.surface || wordObj.id;
+			const lookupKey = isSyriac ? cleanSyriac(rawKey) : (wordObj.normalized || wordObj.word || wordObj.id);
+			const lexData = isSyriac ? null : await getLemma(corpus, lookupKey, wordObj.strongs);
 
 			// Query lexicon entry (BDB or LSJ) to get the true dictionary headword
 			let lexiconRow: LexiconEntryRow | null = null;
-			try {
-				lexiconRow = await getLexiconEntry(dictionary, lookupKey, wordObj.strongs);
-			} catch (e) {
-				console.warn('[ReaderState] Error fetching lexicon entry in inspectWord:', e);
+			if (!isSyriac) {
+				try {
+					lexiconRow = await getLexiconEntry(dictionary, lookupKey, wordObj.strongs);
+				} catch (e) {
+					console.warn('[ReaderState] Error fetching lexicon entry in inspectWord:', e);
+				}
 			}
 
-			const primaryHeadword = lexiconRow?.headword || lexData?.lemma || wordObj.lemma || wordObj.normalized || wordObj.word;
+			const primaryHeadword = isSyriac
+				? (wordObj.lemma ? cleanSyriac(wordObj.lemma) : cleanSyriac(rawKey))
+				: (lexiconRow?.headword || lexData?.lemma || wordObj.lemma || wordObj.normalized || wordObj.word);
 			const primaryStrongs = lexiconRow?.strongs || lexData?.strongs || wordObj.strongs;
 
 			let totalCount = 0;
@@ -820,7 +821,7 @@ export class ReaderState {
 			this.activeWord = {
 				...wordObj,
 				...(lexData || {}),
-				corpus,
+				corpus: isSyriac ? 'peshitta' : corpus,
 				colVersion,
 				work_id: workId,
 				dictionary,
@@ -829,7 +830,7 @@ export class ReaderState {
 				gloss: lexData?.gloss || wordObj.gloss || '',
 				strongs: primaryStrongs,
 				morph: wordObj.morph,
-				word: wordObj.word,
+				word: wordObj.word || wordObj.surface,
 				total_count: totalCount,
 				total: totalCount,
 				isLoading: false
@@ -838,12 +839,12 @@ export class ReaderState {
 			console.warn('[ReaderState] Error inspecting word:', err);
 			this.activeWord = {
 				...wordObj,
-				corpus,
+				corpus: isSyriac ? 'peshitta' : corpus,
 				colVersion,
 				work_id: workId,
 				dictionary,
-				lemma: wordObj.lemma || wordObj.normalized || wordObj.word,
-				headword: wordObj.lemma || wordObj.normalized || wordObj.word,
+				lemma: wordObj.lemma || wordObj.normalized || wordObj.word || wordObj.surface,
+				headword: wordObj.lemma || wordObj.normalized || wordObj.word || wordObj.surface,
 				gloss: wordObj.gloss || '',
 				isLoading: false
 			};

@@ -7,6 +7,7 @@ from .ognt import OGNTAdapter
 from .kjv import KJVAdapter
 from .webbe import WEBBEAdapter
 from .brenton import BrentonAdapter
+from .peshitta import PeshittaAdapter
 from .bdb import BDBAdapter
 from .lsj import LSJAdapter
 
@@ -21,6 +22,7 @@ __all__ = [
     "KJVAdapter",
     "WEBBEAdapter",
     "BrentonAdapter",
+    "PeshittaAdapter",
     "BDBAdapter",
     "LSJAdapter",
 ]

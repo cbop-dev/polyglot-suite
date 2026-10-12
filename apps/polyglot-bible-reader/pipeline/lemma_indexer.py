@@ -1,16 +1,16 @@
-"""Polyglot Bible Reader - Lemma Statistics and Concordance Indexer.
+"""Polyglot Bible Reader - High-Performance Lemma & Concordance Indexer.
 
-Pre-computes:
+Precomputes two high-cardinality analytical tables:
   1. lemma_stats:
-     - Aggregated book frequency distributions per lemma / Strong's number
-     - Format: [{"title": "Genesis", "sbl_abbreviation": "GEN", "count": 165}, ...]
-     - Allows instant O(1) single-row lookup for distribution charts in LemmaInfo
+     (corpus_id, lemma_key, display_lemma, total_count, book_counts_json)
+     Stores overall lemma count and compact JSON book distributions:
+     [["MAT", 15], ["MRK", 8], ...] for O(1) frequency charts.
   2. concordance_refs:
-     - Distinct verse occurrences per lemma / Strong's number
-     - Stores (corpus_id, work_id, strongs, lemma, ref_label, work_unit_id)
-     - Allows instant O(1) range scan of occurrence badges without reading verse bodies
-
-Self-contained: derives 100% of data from text_units and canonical_books in SQLite.
+     (corpus_id, lemma_key, display_lemma, ref_label, work_unit_id)
+     Maps every lemma occurrence to its verse reference and text_unit ID.
+  3. corpus_book_stats:
+     (corpus_id, book_code, total_words, total_verses)
+     Stores total word counts and verse counts per book per corpus for relative frequencies.
 """
 
 from __future__ import annotations
@@ -33,7 +33,17 @@ CORPUS_WORK_IDS = {
     "kjv": 5,
     "webbe": 6,
     "brenton-lxx": 7,
+    "peshitta": 8,
 }
+
+SYRIAC_PUNCT_DIACRITICS = re.compile(r'[\u0730-\u074F\u0300-\u036F\.\,\;\:\?\!\(\)\[\]]')
+
+
+def clean_syriac(s: str) -> str:
+    """Removes vocalization points, reading dots, and punctuation from Syriac text."""
+    if not s:
+        return ""
+    return SYRIAC_PUNCT_DIACRITICS.sub("", s).strip()
 
 
 def normalize_strongs(s: str) -> str:
@@ -46,6 +56,50 @@ def normalize_strongs(s: str) -> str:
     if s.isdigit():
         return f"H{s}"
     return s.upper()
+
+
+def resolve_token_keys(corpus_id: str, tok: Any) -> Tuple[List[str], str]:
+    """Resolves a token into one or more canonical lookup keys and a display lemma."""
+    if isinstance(tok, list):
+        # Tuple format: [word, norm, strongs, morph, lemma, gloss, trailer, flags]
+        word = tok[0] if len(tok) > 0 else ""
+        norm = tok[1] if len(tok) > 1 else ""
+        raw_strongs = tok[2] if len(tok) > 2 else ""
+        morph = tok[3] if len(tok) > 3 else ""
+        lemma = tok[4] if len(tok) > 4 and tok[4] else (norm or word)
+        gloss = tok[5] if len(tok) > 5 else ""
+    else:
+        word = tok.get("word") or ""
+        norm = tok.get("normalized") or ""
+        raw_strongs = tok.get("strongs") or ""
+        lemma = tok.get("lemma") or norm or word or ""
+
+    keys: List[str] = []
+    display_lemma = lemma or norm or word
+
+    # 1. Syriac Peshitta
+    if corpus_id == "peshitta":
+        cleaned_lemma = clean_syriac(lemma or norm or word)
+        if cleaned_lemma:
+            keys.append(cleaned_lemma)
+            display_lemma = cleaned_lemma
+        return keys, display_lemma
+
+    # 2. Strong's based corpora (WLC Hebrew, OGNT Greek, KJV)
+    if raw_strongs:
+        for s in str(raw_strongs).split(","):
+            ns = normalize_strongs(s)
+            if ns:
+                keys.append(ns)
+
+    # 3. Fallback to normalized lemma / word
+    if not keys:
+        target = norm or lemma or word
+        if target:
+            keys.append(target.strip())
+            display_lemma = target.strip()
+
+    return keys, display_lemma
 
 
 def index_lemmas_and_concordance(conn: sqlite3.Connection):
@@ -77,12 +131,11 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
     book_verse_counts: Dict[Tuple[str, str], int] = defaultdict(int)
 
     # In-memory aggregations:
-    # key: (corpus_id, strongs_key)
-    # val: dict of book_code -> count
+    # key: (corpus_id, lemma_key) -> dict of book_code -> count
     lemma_book_counts: Dict[Tuple[str, str], Dict[str, int]] = defaultdict(lambda: defaultdict(int))
-    # best lemma string for this key
+    # best display lemma for this key: (corpus_id, lemma_key) -> display_lemma
     lemma_labels: Dict[Tuple[str, str], str] = {}
-    # concordance set: (corpus_id, strongs_key, lemma, native_citation, text_unit_id)
+    # concordance set: (corpus_id, lemma_key, display_lemma, native_citation, text_unit_id)
     concordance_set: Set[Tuple[str, str, str, str, int]] = set()
 
     verse_count = 0
@@ -107,40 +160,17 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
         verse_keys_seen: Set[str] = set()
 
         for tok in tokens:
-            if isinstance(tok, list):
-                # Tuple format: [word, norm, strongs, morph, lemma, gloss, trailer, flags]
-                word = tok[0] if len(tok) > 0 else ""
-                norm = tok[1] if len(tok) > 1 else ""
-                raw_strongs = tok[2] if len(tok) > 2 else ""
-                morph = tok[3] if len(tok) > 3 else ""
-                lemma = tok[4] if len(tok) > 4 and tok[4] else (norm or word)
-                gloss = tok[5] if len(tok) > 5 else ""
-            else:
-                raw_strongs = tok.get("strongs")
-                lemma = tok.get("lemma") or tok.get("normalized") or tok.get("word") or ""
-                norm = tok.get("normalized") or ""
+            keys, display_lemma = resolve_token_keys(corpus_id, tok)
 
-            # Extract distinct Strong's / key representations
-            strongs_keys: List[str] = []
-            if raw_strongs:
-                for s in str(raw_strongs).split(","):
-                    ns = normalize_strongs(s)
-                    if ns:
-                        strongs_keys.append(ns)
-
-            # If no Strong's number, index by normalized word
-            if not strongs_keys and norm:
-                strongs_keys.append(f"WORD:{norm}")
-
-            for sk in strongs_keys:
-                stat_key = (corpus_id, sk)
+            for lk in keys:
+                stat_key = (corpus_id, lk)
                 lemma_book_counts[stat_key][std_book] += 1
                 if stat_key not in lemma_labels or not lemma_labels[stat_key]:
-                    lemma_labels[stat_key] = lemma
+                    lemma_labels[stat_key] = display_lemma
 
-                if sk not in verse_keys_seen:
-                    verse_keys_seen.add(sk)
-                    concordance_set.add((corpus_id, sk, lemma, citation, tu_id))
+                if lk not in verse_keys_seen:
+                    verse_keys_seen.add(lk)
+                    concordance_set.add((corpus_id, lk, display_lemma, citation, tu_id))
 
     print(
         f"Processed {verse_count:,} verses ({token_count:,} tokens) in {time.time() - start_time:.2f}s."
@@ -179,8 +209,8 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
     cur.execute("DELETE FROM lemma_stats")
 
     lemma_rows = []
-    for (corpus_id, sk), book_counts in lemma_book_counts.items():
-        best_lemma = lemma_labels.get((corpus_id, sk), sk)
+    for (corpus_id, lk), book_counts in lemma_book_counts.items():
+        best_lemma = lemma_labels.get((corpus_id, lk), lk)
 
         # Build compact list of [book_code, count] sorted by count descending, then canonical order
         sorted_books = sorted(
@@ -192,7 +222,7 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
 
         lemma_rows.append((
             corpus_id,
-            sk,
+            lk,
             best_lemma,
             total_count,
             json.dumps(book_list, separators=(",", ":")),
@@ -201,7 +231,7 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
     cur.executemany(
         """
         INSERT INTO lemma_stats
-        (corpus_id, strongs, lemma, total_count, book_counts_json)
+        (corpus_id, lemma_key, display_lemma, total_count, book_counts_json)
         VALUES (?, ?, ?, ?, ?)
         """,
         lemma_rows,
@@ -224,7 +254,7 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
             cur.executemany(
                 """
                 INSERT OR IGNORE INTO concordance_refs
-                (corpus_id, strongs, lemma, ref_label, work_unit_id)
+                (corpus_id, lemma_key, display_lemma, ref_label, work_unit_id)
                 VALUES (?, ?, ?, ?, ?)
                 """,
                 batch,
@@ -237,7 +267,7 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
         cur.executemany(
             """
             INSERT OR IGNORE INTO concordance_refs
-            (corpus_id, strongs, lemma, ref_label, work_unit_id)
+            (corpus_id, lemma_key, display_lemma, ref_label, work_unit_id)
             VALUES (?, ?, ?, ?, ?)
             """,
             batch,
@@ -245,25 +275,5 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
         inserted_conc += len(batch)
         conn.commit()
 
-    print(
-        f"Inserted {inserted_conc:,} rows into concordance_refs in {time.time() - t_conc:.2f}s."
-    )
-    total_elapsed = time.time() - start_time
-    print(f"=== Lemma Indexing Complete in {total_elapsed:.2f}s ===\n")
-
-
-if __name__ == "__main__":
-    import sys
-    from pathlib import Path
-
-    db_path = Path("pipeline/build/polyglot-working.sqlite3")
-    if not db_path.exists():
-        db_path = Path("build/polyglot-working.sqlite3")
-    if not db_path.exists():
-        print(f"Database not found at {db_path}")
-        sys.exit(1)
-
-    print(f"Connecting to {db_path}...")
-    conn = sqlite3.connect(db_path)
-    index_lemmas_and_concordance(conn)
-    conn.close()
+    print(f"Inserted {inserted_conc:,} rows into concordance_refs in {time.time() - t_conc:.2f}s.")
+    print(f"Lemma indexing finished in {time.time() - start_time:.2f}s.")

@@ -1,4 +1,4 @@
-import { toPlainGreek, toPlainHebrew } from '$lib/utils/transliteration';
+import { toPlainGreek, toPlainHebrew, toPlainSyriac } from '$lib/utils/transliteration';
 import {
 	type PaletteColor,
 	HIGHLIGHT_PALETTE,
@@ -11,11 +11,11 @@ export type { PaletteColor };
 export { HIGHLIGHT_PALETTE };
 
 export interface HighlightedLemma {
-	id: string; // e.g. 'greek:λογος' or 'hebrew:ברα'
-	lemma: string; // Display lemma (e.g. 'λόγος', 'בָּרָא')
-	plain: string; // Normalized plain form (e.g. 'λογοσ', 'ברא')
-	strongs?: string; // Normalized Strong's ID (e.g. 'G3056', 'H1254')
-	lang: 'greek' | 'hebrew';
+	id: string; // e.g. 'greek:λογος', 'hebrew:ברא', or 'syriac:ܒܪܐ'
+	lemma: string; // Display lemma (e.g. 'λόγος', 'בָּרָא', 'ܒܪܐ')
+	plain: string; // Normalized plain form (e.g. 'λογοσ', 'ברא', 'ܒܪܐ')
+	strongs?: string; // Normalized Strong's ID / lemma_key
+	lang: 'greek' | 'hebrew' | 'syriac';
 	colorIndex: number;
 	color: string; // Hex color
 	createdAt: number;
@@ -39,12 +39,16 @@ export class HighlightStore {
 		const m = new Map<string, HighlightedLemma>();
 		for (const item of this.items) {
 			if (item.strongs) {
-				const sCode = normalizeStrongsId(item.strongs);
-				if (sCode) {
-					m.set(`${item.lang}:${sCode}`, item);
-					// Also store raw digits if prefixed with G/H
-					const numOnly = sCode.replace(/^[GH]/, '');
-					if (numOnly) m.set(`${item.lang}:${numOnly}`, item);
+				if (item.lang === 'syriac') {
+					m.set(`${item.lang}:${item.strongs}`, item);
+				} else {
+					const sCode = normalizeStrongsId(item.strongs);
+					if (sCode) {
+						m.set(`${item.lang}:${sCode}`, item);
+						// Also store raw digits if prefixed with G/H
+						const numOnly = sCode.replace(/^[GH]/, '');
+						if (numOnly) m.set(`${item.lang}:${numOnly}`, item);
+					}
 				}
 			}
 		}
@@ -83,25 +87,34 @@ export class HighlightStore {
 		return getNextPaletteColorIndex(this.items.map((i) => i.colorIndex));
 	}
 
-	makeId(plain: string, lang: 'greek' | 'hebrew'): string {
+	makeId(plain: string, lang: 'greek' | 'hebrew' | 'syriac'): string {
 		return `${lang}:${plain}`;
 	}
 
 	/**
 	 * Detects language from lemma string or corpus code.
 	 */
-	detectLanguage(lemma: string, langHint?: string): 'greek' | 'hebrew' {
+	detectLanguage(lemma: string, langHint?: string): 'greek' | 'hebrew' | 'syriac' {
+		if (langHint === 'syriac' || langHint === 'peshitta' || langHint === 'syc') return 'syriac';
 		if (langHint === 'hebrew' || langHint === 'bhs' || langHint === 'wlc') return 'hebrew';
 		if (langHint === 'greek' || langHint === 'ognt' || langHint === 'swete_lxx' || langHint === 'lxx') return 'greek';
+		// Check for Syriac Unicode block (\u0700 - \u074F)
+		if (/[\u0700-\u074F]/.test(lemma)) return 'syriac';
 		// Check for Hebrew Unicode block (\u0590 - \u05FF)
 		if (/[\u0590-\u05FF]/.test(lemma)) return 'hebrew';
 		return 'greek';
 	}
 
+	normalizePlain(lemma: string, lang: 'greek' | 'hebrew' | 'syriac'): string {
+		if (lang === 'syriac') return toPlainSyriac(lemma);
+		if (lang === 'hebrew') return toPlainHebrew(lemma);
+		return toPlainGreek(lemma);
+	}
+
 	addLemma(lemma: string, strongs?: string, langHint?: string, colorIndex?: number): HighlightedLemma {
 		if (!lemma && !strongs) throw new Error('Lemma or Strongs is required');
 		const lang = this.detectLanguage(lemma || '', langHint);
-		const plain = lang === 'hebrew' ? toPlainHebrew(lemma) : toPlainGreek(lemma);
+		const plain = this.normalizePlain(lemma, lang);
 		const id = this.makeId(plain || strongs || '', lang);
 
 		// Check if already present
@@ -119,7 +132,7 @@ export class HighlightStore {
 			id,
 			lemma: lemma || strongs || '',
 			plain,
-			strongs: strongs ? normalizeStrongsId(strongs) : undefined,
+			strongs: strongs ? (lang === 'syriac' ? strongs.trim() : normalizeStrongsId(strongs)) : undefined,
 			lang,
 			colorIndex: cIdx,
 			color: paletteColor.hex,
@@ -138,7 +151,7 @@ export class HighlightStore {
 
 	toggleLemma(lemma: string, strongs?: string, langHint?: string): boolean {
 		const lang = this.detectLanguage(lemma || '', langHint);
-		const plain = lang === 'hebrew' ? toPlainHebrew(lemma) : toPlainGreek(lemma);
+		const plain = this.normalizePlain(lemma, lang);
 		const id = this.makeId(plain || strongs || '', lang);
 
 		const exists = this.items.some((i) => i.id === id);
@@ -153,14 +166,14 @@ export class HighlightStore {
 
 	isHighlighted(lemma: string, strongs?: string, langHint?: string): boolean {
 		const lang = this.detectLanguage(lemma || '', langHint);
-		const plain = lang === 'hebrew' ? toPlainHebrew(lemma) : toPlainGreek(lemma);
+		const plain = this.normalizePlain(lemma, lang);
 		const id = this.makeId(plain || strongs || '', lang);
 		return this.items.some((i) => i.id === id);
 	}
 
 	getHighlight(lemma: string, strongs?: string, langHint?: string): HighlightedLemma | null {
 		const lang = this.detectLanguage(lemma || '', langHint);
-		const plain = lang === 'hebrew' ? toPlainHebrew(lemma) : toPlainGreek(lemma);
+		const plain = this.normalizePlain(lemma, lang);
 		const id = this.makeId(plain || strongs || '', lang);
 		return this.items.find((i) => i.id === id) || null;
 	}
@@ -189,34 +202,37 @@ export class HighlightStore {
 	/**
 	 * Fast O(1) matching for a word token in VerseCard.
 	 */
-	getHighlightForToken(token: any, lang: 'greek' | 'hebrew'): HighlightedLemma | null {
+	getHighlightForToken(token: any, lang: 'greek' | 'hebrew' | 'syriac'): HighlightedLemma | null {
 		if (!token || this.items.length === 0) return null;
 
-		// 1. Check by Strong's number
-		const sRaw = token.strongs || token.strongs_number;
+		// 1. Check by Strong's number / lemma_key
+		const sRaw = token.strongs || token.strongs_number || token.lemma_key;
 		if (sRaw) {
 			const sCode = normalizeStrongsId(String(sRaw));
 			const match = this.strongsMap.get(`${lang}:${sCode}`);
 			if (match) return match;
+			// Also direct key match
+			const directKeyMatch = this.strongsMap.get(`${lang}:${sRaw}`);
+			if (directKeyMatch) return directKeyMatch;
 		}
 
 		// 2. Check by token lemma
 		if (token.lemma) {
-			const p = lang === 'hebrew' ? toPlainHebrew(token.lemma) : toPlainGreek(token.lemma);
+			const p = this.normalizePlain(token.lemma, lang);
 			const match = this.plainMap.get(`${lang}:${p}`);
 			if (match) return match;
 		}
 
 		// 3. Check by normalized surface word
 		if (token.normalized) {
-			const p = lang === 'hebrew' ? toPlainHebrew(token.normalized) : toPlainGreek(token.normalized);
+			const p = this.normalizePlain(token.normalized, lang);
 			const match = this.plainMap.get(`${lang}:${p}`);
 			if (match) return match;
 		}
 
 		// 4. Check by surface word
 		if (token.word) {
-			const p = lang === 'hebrew' ? toPlainHebrew(token.word) : toPlainGreek(token.word);
+			const p = this.normalizePlain(token.word, lang);
 			const match = this.plainMap.get(`${lang}:${p}`);
 			if (match) return match;
 		}

@@ -5,34 +5,36 @@ export const biblesByLanguage={
   greek:['LXX']
 }
 
+export type TextDirection = 'ltr' | 'rtl';
+
 export class Dataset{
   abbrev= '';
   language='';
   description='';
   lemmaInfoEnabled=false;
   testament=''; //ot, nt, or both
+  direction: TextDirection = 'ltr';
 
-  constructor(abbrev: string, language: string,testament: string,description='', lemmaInfoEnabled=false){
+  constructor(abbrev: string, language: string, testament: string, description='', lemmaInfoEnabled=false, direction: TextDirection = 'ltr'){
     this.abbrev=abbrev;
     this.language=language;
     this.testament=testament;
     this.description=description;
     this.lemmaInfoEnabled=lemmaInfoEnabled;
+    this.direction=direction;
   }
 }
 
-
-
-
-export const datasetsDict=
+export const datasetsDict: Record<string, { language: string; testament: string; lemmas: boolean; direction: TextDirection }> =
 {
-  'KJV': {language:'English',testament: 'both', lemmas:false},
-  'Vulgate':{language:'Latin', testament: 'both', lemmas:false},
-  'WEB':{language:'English',testament: 'both', lemmas:false},
-   'Brenton':{language: 'English', testament: 'ot', lemmas:false},
-   'BHS':{language:'Hebrew', testament: 'ot', lemmas:true},
-   'LXX':{language:'Greek', testament: 'ot', lemmas:true},
-   'OpenGNT':{language:'Greek', testament: 'nt', lemmas:true}
+  'KJV': {language:'English',testament: 'both', lemmas:false, direction: 'ltr'},
+  'Vulgate':{language:'Latin', testament: 'both', lemmas:false, direction: 'ltr'},
+  'WEB':{language:'English',testament: 'both', lemmas:false, direction: 'ltr'},
+   'Brenton':{language: 'English', testament: 'ot', lemmas:false, direction: 'ltr'},
+   'BHS':{language:'Hebrew', testament: 'ot', lemmas:true, direction: 'rtl'},
+   'LXX':{language:'Greek', testament: 'ot', lemmas:true, direction: 'ltr'},
+   'OpenGNT':{language:'Greek', testament: 'nt', lemmas:true, direction: 'ltr'},
+   'Peshitta':{language:'Syriac', testament: 'both', lemmas:true, direction: 'rtl'}
 };
 
 /**
@@ -42,10 +44,12 @@ export const VERSION_ALIASES: Record<string, string> = {
   sblgnt: 'OpenGNT',
   sbl: 'OpenGNT',
   ognt: 'OpenGNT',
-  opengnt: 'OpenGNT'
+  opengnt: 'OpenGNT',
+  peshitta: 'Peshitta',
+  syc: 'Peshitta'
 };
 
-export const dataSets = Object.entries(datasetsDict).map(([k,v])=>new Dataset(k, v.language,v.testament,'', v.lemmas));
+export const dataSets = Object.entries(datasetsDict).map(([k,v])=>new Dataset(k, v.language, v.testament, '', v.lemmas, v.direction));
 //mylog(`datasets abbrevs: [${dataSets.map((ds)=>ds.abbrev).join(',')}]`, true);
 
 
@@ -65,6 +69,14 @@ export const myDataSets={
    */
   getByLang(language: string): Dataset[]{
     return dataSets.filter((ds)=>ds.language.toLocaleLowerCase()==language.toLocaleLowerCase());
+  },
+
+  getDirection(version: string): TextDirection {
+    return this.lookup(version)?.direction ?? 'ltr';
+  },
+
+  isRtl(version: string): boolean {
+    return this.getDirection(version) === 'rtl';
   }
 
 }
@@ -110,6 +122,10 @@ export const versionGroups: VersionGroup[] = [
   {
     language: 'Latin',
     versions: ['Vulgate']
+  },
+  {
+    language: 'Syriac',
+    versions: ['Peshitta']
   },
   {
     language: 'English',

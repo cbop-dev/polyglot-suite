@@ -228,6 +228,7 @@ def generate_typescript():
         "vulgate": "Vulgate",
         "webbe": "WEB",
         "brenton-lxx": "Brenton",
+        "peshitta": "Peshitta",
     }
 
     version_available_books = {}

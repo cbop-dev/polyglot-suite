@@ -16,6 +16,7 @@ import {
 	getVerseText,
 	getLexiconEntry,
 	translateReference,
+	cleanSyriac,
 	_clearDbClientCache
 } from './dbClient';
 import * as dbWorker from './dbWorker';
@@ -389,7 +390,7 @@ describe('dbClient service', () => {
 			expect(freqs[1].count).toBe(40);
 			expect(mockQuery).toHaveBeenCalledWith(
 				expect.stringContaining('FROM lemma_stats'),
-				['ognt', 'G3056', 'G3056']
+				['ognt', 'G3056']
 			);
 		});
 
@@ -404,7 +405,7 @@ describe('dbClient service', () => {
 			expect(total).toBe(917);
 			expect(mockQuery).toHaveBeenCalledWith(
 				expect.stringContaining('SELECT total_count'),
-				['ognt', 'G2424', 'G2424']
+				['ognt', 'G2424']
 			);
 		});
 
@@ -422,7 +423,45 @@ describe('dbClient service', () => {
 			expect(conc[0].display_label).toBe('John 1:1');
 			expect(mockQuery).toHaveBeenCalledWith(
 				expect.stringContaining('FROM concordance_refs'),
-				['ognt', 'G3056', 'G3056', 10]
+				['ognt', 'G3056', 10]
+			);
+		});
+
+		it('strips Syriac reading dots, vowels, and punctuation via cleanSyriac', () => {
+			expect(cleanSyriac('ܒܪܳܐ.')).toBe('ܒܪܐ');
+			expect(cleanSyriac('ܟ݁ܬ݂ܳܒ݂ܳܐ')).toBe('ܟܬܒܐ');
+			expect(cleanSyriac('ܡܰܠܟ݁ܳܐ: ')).toBe('ܡܠܟܐ');
+		});
+
+		it('queries Peshitta lemma_stats with cleanSyriac via getLemmaTotalCount', async () => {
+			mockQuery.mockResolvedValueOnce([
+				{
+					total_count: 53
+				}
+			]);
+
+			const total = await getLemmaTotalCount(8, 'ܒܪܳܐ.');
+			expect(total).toBe(53);
+			expect(mockQuery).toHaveBeenCalledWith(
+				expect.stringContaining('FROM lemma_stats'),
+				['peshitta', 'ܒܪܐ']
+			);
+		});
+
+		it('queries Peshitta concordance_refs with cleanSyriac via getConcordance', async () => {
+			mockQuery.mockResolvedValueOnce([
+				{
+					work_unit_id: 1001,
+					display_label: 'Gen 1:1',
+					ref_label: 'Gen 1:1'
+				}
+			]);
+
+			const conc = await getConcordance(8, 'ܒܪܳܐ.', 5);
+			expect(conc).toHaveLength(1);
+			expect(mockQuery).toHaveBeenCalledWith(
+				expect.stringContaining('FROM concordance_refs'),
+				['peshitta', 'ܒܪܐ', 5]
 			);
 		});
 

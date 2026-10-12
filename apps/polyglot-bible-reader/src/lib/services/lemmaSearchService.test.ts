@@ -26,6 +26,13 @@ describe('lemmaSearchService', () => {
 			expect(resolveSearchCorpus('swete_lxx')).toBe('swete_lxx');
 		});
 
+		it('resolves Peshitta variants to peshitta', () => {
+			expect(resolveSearchCorpus('Peshitta')).toBe('peshitta');
+			expect(resolveSearchCorpus('peshitta')).toBe('peshitta');
+			expect(resolveSearchCorpus('syc')).toBe('peshitta');
+			expect(resolveSearchCorpus('syriac')).toBe('peshitta');
+		});
+
 		it('returns null for unsupported English/Latin versions', () => {
 			expect(resolveSearchCorpus('KJV')).toBeNull();
 			expect(resolveSearchCorpus('Vulgate')).toBeNull();
@@ -34,10 +41,11 @@ describe('lemmaSearchService', () => {
 	});
 
 	describe('getCorpusLanguage', () => {
-		it('returns hebrew for wlc and greek for ognt and swete_lxx', () => {
+		it('returns hebrew for wlc, greek for ognt/swete_lxx, and syriac for peshitta', () => {
 			expect(getCorpusLanguage('wlc')).toBe('hebrew');
 			expect(getCorpusLanguage('ognt')).toBe('greek');
 			expect(getCorpusLanguage('swete_lxx')).toBe('greek');
+			expect(getCorpusLanguage('peshitta')).toBe('syriac');
 		});
 	});
 
@@ -83,6 +91,27 @@ describe('lemmaSearchService', () => {
 			const res = filterLemmas(mockHebrewLemmas, 'אד', 'hebrew');
 			expect(res.bestMatches.length).toBe(1);
 			expect(res.bestMatches[0].lemma).toBe('אָדָם');
+		});
+
+		const mockSyriacLemmas: CorpusLemmaItem[] = [
+			{ strongs: 'br>', lemma: 'ܒܪܐ', plain: 'ܒܪܐ', total_count: 500 },
+			{ strongs: 'malk', lemma: 'ܡܠܟ', plain: 'ܡܠܟ', total_count: 350 },
+			{ strongs: 'malka', lemma: 'ܡܠܟܐ', plain: 'ܡܠܟܐ', total_count: 1200 },
+			{ strongs: 'byt', lemma: 'ܒܝܬ', plain: 'ܒܝܬ', total_count: 850 }
+		];
+
+		it('filters Syriac lemmas with prefix matching into bestMatches', () => {
+			const res = filterLemmas(mockSyriacLemmas, 'ܡܠ', 'syriac');
+			expect(res.bestMatches.length).toBe(2);
+			expect(res.bestMatches[0].lemma).toBe('ܡܠܟ');
+			expect(res.bestMatches[1].lemma).toBe('ܡܠܟܐ');
+		});
+
+		it('filters Syriac lemmas with diacritic stripping and normalization', () => {
+			// Even if diacritics / vocalization dots are present in search query
+			const res = filterLemmas(mockSyriacLemmas, 'ܒܰܪ', 'syriac');
+			expect(res.bestMatches.length).toBe(1);
+			expect(res.bestMatches[0].lemma).toBe('ܒܪܐ');
 		});
 	});
 });

@@ -47,12 +47,24 @@ describe('HighlightStore', () => {
 		expect(store.items.length).toBe(1);
 	});
 
-	it('auto-detects Hebrew vs Greek by Unicode characters', () => {
+	it('adds Syriac lemma and normalizes plain text', () => {
+		const item = store.addLemma('ܒܪܐ', 'br>', 'syriac');
+		expect(item).toBeDefined();
+		expect(item.lang).toBe('syriac');
+		expect(item.plain).toBe('ܒܪܐ');
+		expect(item.strongs).toBe('br>');
+		expect(store.items.length).toBe(1);
+	});
+
+	it('auto-detects Hebrew vs Greek vs Syriac by Unicode characters', () => {
 		const hebrewItem = store.addLemma('שָׁלוֹם');
 		expect(hebrewItem.lang).toBe('hebrew');
 
 		const greekItem = store.addLemma('ἀγάπη');
 		expect(greekItem.lang).toBe('greek');
+
+		const syriacItem = store.addLemma('ܡܠܟܐ');
+		expect(syriacItem.lang).toBe('syriac');
 	});
 
 	it('cycles palette colors when adding multiple items', () => {
@@ -155,6 +167,16 @@ describe('HighlightStore', () => {
 
 			const m3 = store.getHighlightForToken({ strongs: 'H1254' }, 'hebrew');
 			expect(m3).toBeDefined();
+		});
+
+		it('matches Syriac token by lemma_key and lemma', () => {
+			store.addLemma('ܒܪܐ', 'br>', 'syriac');
+
+			const m1 = store.getHighlightForToken({ lemma: 'ܒܪܐ' }, 'syriac');
+			expect(m1).toBeDefined();
+
+			const m2 = store.getHighlightForToken({ lemma_key: 'br>' }, 'syriac');
+			expect(m2).toBeDefined();
 		});
 
 		it('returns null if token does not match', () => {
