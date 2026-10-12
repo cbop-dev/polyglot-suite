@@ -93,6 +93,14 @@ body {
 }
 
 @font-face {
+  font-family: 'Estrangelo Marcus';
+  src: url('/fonts/ESTRM-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'Noto Sans Syriac';
   src: url('/fonts/NotoSansSyriac-Regular.ttf') format('truetype');
   font-weight: normal;
@@ -102,7 +110,7 @@ body {
 
 .font-syriac,
 .syriac {
-  font-family: 'Noto Sans Syriac', serif;
+  font-family: var(--font-syriac-current, 'Estrangelo Edessa', 'Estrangelo Antioch', 'Estrangelo Marcus', 'Noto Sans Syriac', serif);
   direction: rtl;
   text-align: right;
   line-height: 1.8;

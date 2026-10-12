@@ -366,7 +366,25 @@ gap-2 sm:gap-4 -mx-3 px-1 sm:-mx-4 sm:px-4 md:-mx-8 md:px-3">
         </button>
       </div>
       {/if}
-      {#if displayedLanguages.includes("Hebrew") ||displayedLanguages.includes("Greek") }
+
+      {#if displayedLanguages.includes("Syriac")}
+      <div class="relative ml-1">
+        <label class="hidden lg:block text-xs font-bold mb-1 text-center text-ink-soft" for="syriac-font-cycle">Syr</label>
+        <button
+          id="syriac-font-cycle"
+          type="button"
+          class="font-syriac h-[26px] min-w-[28px] sm:h-[38px] sm:min-w-[38px] px-1 sm:px-2 rounded border text-sm sm:text-xl flex items-center justify-center cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-page text-ink-soft border-rule hover:bg-rule hover:text-ink font-normal shadow-xs"
+          style="font-family: '{readerState.selectedSyriacFont}', serif;"
+          onclick={() => readerState.cycleSyriacFont()}
+          title="Cycle through Syriac fonts (Current: {readerState.selectedSyriacFont})"
+          aria-label="Cycle through Syriac fonts"
+        >
+          <span style="font-family: '{readerState.selectedSyriacFont}', serif;">ܐ</span>
+        </button>
+      </div>
+      {/if}
+
+      {#if displayedLanguages.includes("Hebrew") || displayedLanguages.includes("Greek") || displayedLanguages.includes("Syriac")}
         <div class="relativeh-6 sm:h-8 w-px bg-rule mx-0.5 sm:mx-1 self-end mb-1 hidden sm:inline"></div>
       {/if}
       </div>
