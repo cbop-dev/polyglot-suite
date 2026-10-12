@@ -9,7 +9,7 @@
 
 	onMount(()=>{
 		readerState.initStaticData();
-
+		readerState.initSyriacFonts();
 	});
 	
 </script>

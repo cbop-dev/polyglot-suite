@@ -17,6 +17,13 @@ import {
 	type WorkRow,
 	type LexiconEntryRow
 } from '$lib/services/dbClient';
+import {
+	detectAvailableSyriacFonts,
+	getSavedSyriacFont,
+	saveSyriacFont,
+	applySyriacFontCss,
+	type SyriacFontOption
+} from '$lib/services/syriacFontService';
 
 
 
@@ -54,6 +61,8 @@ export class ReaderState {
 
 	hebrewMode = $state<HebrewDiacriticMode>('all');
 	greekDiacritics = $state<boolean>(true);
+	selectedSyriacFont = $state<string>('Estrangelo Marcus');
+	availableSyriacFonts = $state<SyriacFontOption[]>([]);
 	gridHeaderExpanded = $state<boolean>(false);
 	
 	loadedBooks = $state<Record<string, any>>({});
@@ -467,6 +476,30 @@ export class ReaderState {
 
 	toggleGreekDiacritics() {
 		this.greekDiacritics = !this.greekDiacritics;
+	}
+
+	initSyriacFonts() {
+		this.availableSyriacFonts = detectAvailableSyriacFonts();
+		const saved = getSavedSyriacFont();
+		if (saved && this.availableSyriacFonts.some((f) => f.family === saved)) {
+			this.selectedSyriacFont = saved;
+		} else if (this.availableSyriacFonts.length > 0) {
+			this.selectedSyriacFont = this.availableSyriacFonts[0].family;
+		}
+		applySyriacFontCss(this.selectedSyriacFont);
+	}
+
+	cycleSyriacFont() {
+		if (this.availableSyriacFonts.length === 0) {
+			this.initSyriacFonts();
+		}
+		if (this.availableSyriacFonts.length <= 1) return;
+
+		const currIdx = this.availableSyriacFonts.findIndex((f) => f.family === this.selectedSyriacFont);
+		const nextIdx = (currIdx + 1) % this.availableSyriacFonts.length;
+		this.selectedSyriacFont = this.availableSyriacFonts[nextIdx].family;
+		saveSyriacFont(this.selectedSyriacFont);
+		applySyriacFontCss(this.selectedSyriacFont);
 	}
 
 	
