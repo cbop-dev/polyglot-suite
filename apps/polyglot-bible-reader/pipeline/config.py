@@ -325,3 +325,104 @@ def resolve_canonical_book(name: str) -> Optional[str]:
         return up
     return None
 
+
+# Authentic version-specific canonical book sequences verified directly from upstream sources
+VERSION_CANONICAL_ORDERS = {
+    # 1. BHS: Masoretic Hebrew Tanakh order (from MAPM.xml)
+    # Torah -> Nevi'im (Former & Latter) -> Ketuvim (ending with 1-2 Chronicles)
+    "BHS": [
+        "GEN", "EXO", "LEV", "NUM", "DEU",
+        "JOS", "JDG", "1SA", "2SA", "1KI", "2KI",
+        "ISA", "JER", "EZK",
+        "HOS", "JOL", "AMO", "OBA", "JON", "MIC", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL",
+        "PSA", "PRO", "JOB",
+        "SNG", "RUT", "LAM", "ECC", "EST",
+        "DAN", "EZR", "NEH", "1CH", "2CH"
+    ],
+
+    # 2. LXX: Septuagint order (from Swete 1930 edition)
+    # Note: Includes separate dual recensions for Daniel/Theodotion, Susanna, Bel, Tobit
+    "LXX": [
+        "GEN", "EXO", "LEV", "NUM", "DEU",
+        "JOS", "JDG", "RUT",
+        "1SA", "2SA", "1KI", "2KI", "1CH", "2CH",
+        "1ES", "EZR", "NEH",
+        "PSA", "PRO", "ECC", "SNG", "JOB",
+        "WIS", "SIR", "EST", "JDT", "TOB",
+        "HOS", "AMO", "MIC", "JOL", "OBA", "JON", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL",
+        "ISA", "JER", "BAR", "LAM", "LJE", "EZK",
+        "DAG", "DAN", "SUG", "SUS", "BLG", "BEL",
+        "1MA", "2MA", "3MA", "4MA",
+        "PSS", "ODA"
+    ],
+
+    # 3. Peshitta: Traditional Syriac Leiden OT + SEDRA NT order (from ETCBC Peshitta)
+    "Peshitta": [
+        "GEN", "EXO", "LEV", "NUM", "DEU", "JOB", "JOS", "JDG", "1SA", "2SA",
+        "PSA", "1KI", "2KI", "PRO", "WIS", "ECC", "SNG", "ISA", "JER", "LAM",
+        "LJE", "BAR", "EZK", "HOS", "JOL", "AMO", "OBA", "JON", "MIC", "NAM",
+        "HAB", "ZEP", "HAG", "ZEC", "MAL", "DAN", "BEL", "RUT", "SUS", "EST",
+        "JDT", "SIR", "1CH", "2CH", "2ES", "EZR", "NEH", "1MA", "2MA", "3MA",
+        "4MA", "ODA", "MAN", "PS2", "PSS", "TOB", "1ES",
+        "MAT", "MRK", "LUK", "JHN", "ACT", "ROM", "1CO", "2CO", "GAL", "EPH",
+        "PHP", "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAS",
+        "1PE", "2PE", "1JN", "2JN", "3JN", "JUD", "REV"
+    ],
+
+    # 4. Vulgate: Clementine Latin Vulgate order (from VulgClementine.json)
+    "Vulgate": [
+        "GEN", "EXO", "LEV", "NUM", "DEU", "JOS", "JDG", "RUT", "1SA", "2SA",
+        "1KI", "2KI", "1CH", "2CH", "EZR", "NEH", "TOB", "JDT", "EST", "JOB",
+        "PSA", "PRO", "ECC", "SNG", "WIS", "SIR", "ISA", "JER", "LAM", "BAR",
+        "EZK", "DAN", "SUS", "BEL", "HOS", "JOL", "AMO", "OBA", "JON", "MIC",
+        "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL", "1MA", "2MA",
+        "MAT", "MRK", "LUK", "JHN", "ACT", "ROM", "1CO", "2CO", "GAL", "EPH",
+        "PHP", "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAS",
+        "1PE", "2PE", "1JN", "2JN", "3JN", "JUD", "REV",
+        "MAN", "1ES", "2ES", "PS2", "LAO"
+    ],
+
+    # 5. OpenGNT: Greek New Testament (from OpenGNT_version3_3.csv)
+    "OpenGNT": [
+        "MAT", "MRK", "LUK", "JHN", "ACT", "ROM", "1CO", "2CO", "GAL", "EPH",
+        "PHP", "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAS",
+        "1PE", "2PE", "1JN", "2JN", "3JN", "JUD", "REV"
+    ],
+
+    # 6. KJV: King James Version with Apocrypha (from KJV.json)
+    "KJV": [
+        "GEN", "EXO", "LEV", "NUM", "DEU", "JOS", "JDG", "RUT", "1SA", "2SA",
+        "1KI", "2KI", "1CH", "2CH", "EZR", "NEH", "EST", "JOB", "PSA", "PRO",
+        "ECC", "SNG", "ISA", "JER", "LAM", "EZK", "DAN", "HOS", "JOL", "AMO",
+        "OBA", "JON", "MIC", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL",
+        "1ES", "2ES", "TOB", "JDT", "ESG", "WIS", "SIR", "BAR", "LJE", "S3Y",
+        "SUS", "BEL", "MAN", "1MA", "2MA",
+        "MAT", "MRK", "LUK", "JHN", "ACT", "ROM", "1CO", "2CO", "GAL", "EPH",
+        "PHP", "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAS",
+        "1PE", "2PE", "1JN", "2JN", "3JN", "JUD", "REV"
+    ],
+
+    # 7. WEB: World English Bible (from ebible USFM)
+    "WEB": [
+        "GEN", "EXO", "LEV", "NUM", "DEU", "JOS", "JDG", "RUT", "1SA", "2SA",
+        "1KI", "2KI", "1CH", "2CH", "EZR", "NEH", "EST", "JOB", "PSA", "PRO",
+        "ECC", "SNG", "ISA", "JER", "LAM", "EZK", "DAN", "HOS", "JOL", "AMO",
+        "OBA", "JON", "MIC", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL",
+        "TOB", "JDT", "ESG", "WIS", "SIR", "BAR", "1MA", "2MA", "1ES", "MAN",
+        "PS2", "3MA", "2ES", "4MA", "DAG",
+        "MAT", "MRK", "LUK", "JHN", "ACT", "ROM", "1CO", "2CO", "GAL", "EPH",
+        "PHP", "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAS",
+        "1PE", "2PE", "1JN", "2JN", "3JN", "JUD", "REV"
+    ],
+
+    # 8. Brenton: Septuagint English Translation (from ebible USFM)
+    "Brenton": [
+        "GEN", "EXO", "LEV", "NUM", "DEU", "JOS", "JDG", "RUT", "1SA", "2SA",
+        "1KI", "2KI", "1CH", "2CH", "EZR", "NEH", "JOB", "PSA", "PRO", "ECC",
+        "SNG", "ISA", "JER", "LAM", "EZK", "HOS", "JOL", "AMO", "OBA", "JON",
+        "MIC", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL",
+        "TOB", "JDT", "ESG", "WIS", "SIR", "BAR", "LJE", "SUS", "BEL",
+        "1MA", "2MA", "1ES", "MAN", "3MA", "4MA", "DAG"
+    ]
+}
+

@@ -35,6 +35,7 @@
 	} from '$lib/utils/lex-stats';
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { highlightStore } from '$lib/stores/highlightStore.svelte';
+	import { getBookCanonicalIndex } from '$lib/config/bookMapping.js';
     import { mylog } from '../env/env';
 
 	let { lemma }: { lemma: any } = $props();
@@ -255,11 +256,11 @@
 
 	// Large Charts & Tables derived data
 	const sortedFrequenciesForCount = $derived.by(() => {
-		return sortBookFrequencies(bookFrequencies, chartSortOption, 'count');
+		return sortBookFrequencies(bookFrequencies, chartSortOption, 'count', corpusLabel);
 	});
 
 	const sortedFrequenciesForFreq = $derived.by(() => {
-		return sortBookFrequencies(bookFrequencies, chartSortOption, 'freq');
+		return sortBookFrequencies(bookFrequencies, chartSortOption, 'freq', corpusLabel);
 	});
 
 	const countChartData = $derived.by(() => {
@@ -301,6 +302,7 @@
 			const ratio = avgFreq > 0 ? floatRound(freq / avgFreq, 2) : 0;
 			return {
 				title: f.title,
+				sbl_abbreviation: f.sbl_abbreviation,
 				count: f.count,
 				freq,
 				ratio
@@ -308,7 +310,18 @@
 		});
 
 		return rows.sort((a, b) => {
-			const cmp = sortKey === 'title' ? a.title.localeCompare(b.title) : a[sortKey] - b[sortKey];
+			let cmp = 0;
+			if (sortKey === 'title') {
+				const ordA = getBookCanonicalIndex(a.sbl_abbreviation || a.title, corpusLabel);
+				const ordB = getBookCanonicalIndex(b.sbl_abbreviation || b.title, corpusLabel);
+				if (ordA !== ordB) {
+					cmp = ordA - ordB;
+				} else {
+					cmp = a.title.localeCompare(b.title);
+				}
+			} else {
+				cmp = a[sortKey] - b[sortKey];
+			}
 			return sortAsc ? cmp : -cmp;
 		});
 	});

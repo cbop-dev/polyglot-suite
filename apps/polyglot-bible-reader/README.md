@@ -2,7 +2,9 @@
 
 An interactive, high-performance web application--deployable as a static HTML/Javascript site--for side-by-side reading, comparative analysis, and morphological study across various publicly available ancient and modern versions of the Bible, including **Hebrew Bible (BHS/WLC)**, **Septuagint (Swete's LXX)**, and **Greek New Testament (OpenGNT)**, the **Vulgate** and a few English translations, complete with versification mapping, instant lexical and morphological lookups, and customizable reading themes.
 
-*This is still a work in progress. Some of the following features, especially the lemma and morphology information, may be inaccurate.* **Always check with a reliable scholarly source when doing academic/scholarly work!**
+
+> [!IMPORTANT]
+> *This is still a work in progress. Some of the following features, especially the lemma and morphology information, may be inaccurate.* **Always check with a reliable scholarly source when doing academic/scholarly work!**
 
 ---
 
