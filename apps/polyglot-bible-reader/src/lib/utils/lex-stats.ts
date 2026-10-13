@@ -3,7 +3,7 @@
  * Ported and enhanced from biblical-lexeme-explorer.
  */
 
-import { normalizeBookName } from '$lib/config/bookMapping.js';
+import { normalizeBookName, getBookCanonicalIndex } from '$lib/config/bookMapping.js';
 
 export function floatRound(val: number, decimals = 3): number {
 	if (!val || isNaN(val)) return 0;
@@ -107,14 +107,14 @@ export interface SortableBookItem {
 export function sortBookFrequencies<T extends SortableBookItem>(
 	items: T[],
 	sortOption: ChartSortOption = 'canonical',
-	metric: 'count' | 'freq' = 'count'
+	metric: 'count' | 'freq' = 'count',
+	version?: string
 ): T[] {
 	if (!items || items.length === 0) return [];
 	const list = [...items];
 
 	const getOrder = (item: T): number => {
-		const book = normalizeBookName(item.sbl_abbreviation) || normalizeBookName(item.title);
-		return book?.order ?? 999;
+		return getBookCanonicalIndex(item.sbl_abbreviation || item.title, version);
 	};
 
 	const getVal = (item: T): number => {

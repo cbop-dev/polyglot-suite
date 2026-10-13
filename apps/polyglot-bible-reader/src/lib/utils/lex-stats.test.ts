@@ -95,9 +95,16 @@ describe('LexStats utilities', () => {
 			expect(sorted.map((b) => b.sbl_abbreviation)).toEqual(['Exod', 'Gen', 'Matt']);
 		});
 
-		it('sorts by data value (frequency) ascending', () => {
-			const sorted = sortBookFrequencies(sampleData, 'value-asc', 'freq');
-			expect(sorted.map((b) => b.sbl_abbreviation)).toEqual(['Matt', 'Gen', 'Exod']);
+		it('sorts by version-specific canonical order when version is supplied', () => {
+			// In standard master order: 1Chr is 13, Job is 18.
+			// In BHS (Tanakh): Job is in Sifrei Emet (before Chronicles), 1Chr is near the very end (after Job).
+			const hebrewBooks = [
+				{ title: '1 Chronicles', sbl_abbreviation: '1Chr', count: 10, book_words: 10000 },
+				{ title: 'Job', sbl_abbreviation: 'Job', count: 10, book_words: 10000 },
+				{ title: 'Genesis', sbl_abbreviation: 'Gen', count: 10, book_words: 10000 }
+			];
+			const sortedBHS = sortBookFrequencies(hebrewBooks, 'canonical', 'count', 'BHS');
+			expect(sortedBHS.map((b) => b.sbl_abbreviation)).toEqual(['Gen', 'Job', '1Chr']);
 		});
 	});
 });

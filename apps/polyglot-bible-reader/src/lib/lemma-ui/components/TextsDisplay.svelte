@@ -6,7 +6,7 @@
     import { jumpToDiv } from "$lib/utils/ui-utils";
     import { getVerseText } from "$lib/services/dbClient";
     import { readerState } from "$lib/stores/readerState.svelte";
-    import { formatDisplayReference, formatBookAbbreviation } from "$lib/config/bookMapping.js";
+    import { formatDisplayReference, formatBookAbbreviation, getBookCanonicalIndex } from "$lib/config/bookMapping.js";
     import { myDataSets } from "$lib/config/versions";
 
     let {
@@ -21,12 +21,22 @@
 
     let showText = $state(false);
     let chosenRefIdx = $state(-1);
-    /** @type {Record<number, string>} */
-    let textsFetched = $state({});
+    let textsFetched = $state<Record<number, string>>({});
+
+    // Target version for canonical sequence sorting (e.g. BHS, LXX, Peshitta, KJV)
+    const activeVersionName = $derived.by(() => {
+        const selected = readerState.selectedVersion;
+        if (selected) return selected;
+        const low = (dbAbbrev || '').toLowerCase();
+        if (low === 'bhs' || low === 'wlc') return 'BHS';
+        if (low === 'peshitta') return 'Peshitta';
+        if (low === 'opengnt' || low === 'ognt') return 'OpenGNT';
+        return 'LXX';
+    });
 
     // Normalize input into unified list of { ref: string, workUnitId: number }
     let normalizedOccurrences = $derived.by(() => {
-        const activeVer = readerState.selectedVersion;
+        const activeVer = activeVersionName;
         if (occurrences && occurrences.length > 0) {
             return occurrences.map((occ, idx) => {
                 const rawRef = occ.display_label || occ.ref_label || (refs && refs[idx]) || '';
@@ -46,7 +56,7 @@
     });
 
     /**
-     * Precompute grouped books, index offsets, and combined range strings in a fast single pass
+     * Precompute grouped books, index offsets, and combined range strings in authentic canonical order
      */
     let groupedBookEntries = $derived.by(() => {
         let currentBook = '';
@@ -69,12 +79,31 @@
             list.push({ bCv, origIndex: i, item });
         }
 
+        // Sort books by authentic version canonical index
+        const sortedBookKeys = Array.from(bookMap.keys()).sort((a, b) => {
+            const ordA = getBookCanonicalIndex(a, activeVersionName);
+            const ordB = getBookCanonicalIndex(b, activeVersionName);
+            if (ordA !== ordB) return ordA - ordB;
+            return a.localeCompare(b);
+        });
+
         let offset = 0;
         const result = [];
-        for (const [book, bookRefs] of bookMap.entries()) {
+        for (const book of sortedBookKeys) {
+            const bookRefs = bookMap.get(book)!;
+            // Ensure refs within each book are ordered by chapter then verse
+            bookRefs.sort((a: any, b: any) => {
+                const chA = parseInt(a.bCv?.chap, 10) || 0;
+                const chB = parseInt(b.bCv?.chap, 10) || 0;
+                if (chA !== chB) return chA - chB;
+                const vA = parseInt(a.bCv?.v, 10) || 0;
+                const vB = parseInt(b.bCv?.v, 10) || 0;
+                return vA - vB;
+            });
+
             const currentOffset = offset;
             offset += bookRefs.length;
-            const refStrings = bookRefs.map((r) => bCvToString(r.bCv));
+            const refStrings = bookRefs.map((r: any) => bCvToString(r.bCv));
             result.push({
                 book,
                 bookRefs,
@@ -87,7 +116,7 @@
 
     let books = $derived(groupedBookEntries.map((e) => e.book));
 
-    function bCvToString(bcv, omitBook = false) {
+    function bCvToString(bcv: any, omitBook = false) {
         if (!bcv) return '';
         let ret = (bcv.chap || '1') + ":" + (bcv.v || '1');
         if (!omitBook) {

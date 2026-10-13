@@ -170,7 +170,18 @@ export const READER_HOTKEYS: HotkeyAction[] = [
 		action: (state) => {
 			state.toggleSearchPanel();
 		}
-	}
+	},	
+	{
+		id: 'cycle-syriac-fonts',
+		name: 'Change Syriac Font',
+		description: 'Cycle through Syriac Fonts',
+		category: 'View',
+		keys: ['s'],
+		preventDefault: true,
+		action: (state) => {
+			state.cycleSyriacFont();
+		}
+	},
 	/*,
 	{
 		id: 'close-search-panel',

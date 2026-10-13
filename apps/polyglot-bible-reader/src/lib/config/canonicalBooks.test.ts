@@ -144,5 +144,46 @@ describe('canonicalBooks Parity with SQLite Database', () => {
 		expect(genChapters[0]).toBe(1);
 		expect(genChapters).toHaveLength(50);
 	});
+
+	it('should follow authentic version canonical sequence in VERSION_AVAILABLE_BOOKS and getBookCanonicalIndex', async () => {
+		const { VERSION_AVAILABLE_BOOKS, getBookCanonicalIndex } = await import('./canonicalBooks.generated.js');
+
+		// 1. BHS follows Hebrew Tanakh order: ends with Daniel, Ezra, Neh, 1Chr, 2Chr
+		const bhs = VERSION_AVAILABLE_BOOKS['BHS'];
+		expect(bhs[0]).toBe('Gen');
+		expect(bhs[bhs.length - 1]).toBe('2Chr');
+		expect(bhs[bhs.length - 2]).toBe('1Chr');
+		expect(bhs[bhs.length - 3]).toBe('Neh');
+		expect(bhs[bhs.length - 4]).toBe('Ezra');
+		expect(bhs[bhs.length - 5]).toBe('Dan');
+
+		expect(getBookCanonicalIndex('Gen', 'BHS')).toBeLessThan(getBookCanonicalIndex('Isa', 'BHS'));
+		expect(getBookCanonicalIndex('Isa', 'BHS')).toBeLessThan(getBookCanonicalIndex('Ps', 'BHS'));
+		expect(getBookCanonicalIndex('Ps', 'BHS')).toBeLessThan(getBookCanonicalIndex('2Chr', 'BHS'));
+
+		// 2. Peshitta follows Leiden Peshitta order: Job placed right after Deuteronomy!
+		const peshitta = VERSION_AVAILABLE_BOOKS['Peshitta'];
+		expect(peshitta[0]).toBe('Gen');
+		expect(peshitta[4]).toBe('Deut');
+		expect(peshitta[5]).toBe('Job');
+		expect(peshitta[6]).toBe('Josh');
+
+		expect(getBookCanonicalIndex('Job', 'Peshitta')).toBe(6);
+		expect(getBookCanonicalIndex('Josh', 'Peshitta')).toBe(7);
+
+		// 3. LXX follows Swete 1930 order
+		const lxx = VERSION_AVAILABLE_BOOKS['LXX'];
+		expect(lxx[0]).toBe('Gen');
+		expect(lxx).toContain('TobBA');
+		expect(lxx).toContain('TobS');
+		expect(lxx).toContain('2Esdr');
+		expect(lxx[lxx.length - 1]).toBe('Od');
+
+		// 4. Vulgate follows Clementine Vulgate order
+		const vulgate = VERSION_AVAILABLE_BOOKS['Vulgate'];
+		expect(vulgate[0]).toBe('Gen');
+		expect(vulgate).toContain('Lao');
+		expect(vulgate[vulgate.length - 1]).toBe('Lao');
+	});
 });
 

@@ -16,6 +16,7 @@ import {
 	cleanKey,
 	normalizeBookName,
 	resolveBookCode,
+	getBookCanonicalIndex,
 	getCanonicalSlug,
 	getCanonicalBook
 } from './canonicalBooks.generated.js';
@@ -26,6 +27,7 @@ export {
 	cleanKey,
 	normalizeBookName,
 	resolveBookCode,
+	getBookCanonicalIndex,
 	getCanonicalSlug,
 	getCanonicalBook
 };

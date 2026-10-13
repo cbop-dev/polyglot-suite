@@ -231,7 +231,13 @@ def generate_typescript():
         "peshitta": "Peshitta",
     }
 
+    try:
+        from pipeline.config import VERSION_CANONICAL_ORDERS
+    except Exception:
+        VERSION_CANONICAL_ORDERS = {}
+
     version_available_books = {}
+    version_canonical_codes = {}
     for cid, ver in corpus_to_version.items():
         cur.execute("""
             SELECT tu.std_book, cb.order_index
@@ -242,9 +248,24 @@ def generate_typescript():
             ORDER BY cb.order_index
         """, (cid,))
         rows_ver = cur.fetchall()
+        db_book_codes = set(r[0] for r in rows_ver)
 
+        # 1. Determine canonical sequence of USFM codes for this version
+        custom_seq = VERSION_CANONICAL_ORDERS.get(ver, [])
+        if custom_seq:
+            ordered_codes = [c for c in custom_seq if c in db_book_codes]
+            # Append any books in db not explicitly in custom_seq
+            for std_code, _ in rows_ver:
+                if std_code not in ordered_codes:
+                    ordered_codes.append(std_code)
+        else:
+            ordered_codes = [std_code for std_code, _ in rows_ver]
+
+        version_canonical_codes[ver] = ordered_codes
+
+        # 2. Build UI abbreviation list matching this authentic sequence
         books_for_ver = []
-        for std_code, order_idx in rows_ver:
+        for std_code in ordered_codes:
             if ver == "LXX" and std_code == "TOB":
                 if "TobBA" not in books_for_ver:
                     books_for_ver.append("TobBA")
@@ -292,8 +313,6 @@ def generate_typescript():
                 if ver not in version_chapter_overrides:
                     version_chapter_overrides[ver] = {}
                 version_chapter_overrides[ver][std_code] = ch_list
-
-    conn.close()
 
     if len(rows) == 0:
         print("Error: No books found in canonical_books table!")
@@ -365,6 +384,8 @@ def generate_typescript():
         "",
         "export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = " + json.dumps(version_available_books, indent=2) + ";",
         "",
+        "export const VERSION_CANONICAL_CODES: Record<string, string[]> = " + json.dumps(version_canonical_codes, indent=2) + ";",
+        "",
         "export const VERSION_CHAPTER_OVERRIDES: Record<string, Partial<Record<string, number[]>>> = " + json.dumps(version_chapter_overrides, indent=2) + ";",
         "",
         "/**",
@@ -377,6 +398,8 @@ def generate_typescript():
         "",
         "const CODE_TO_CANONICAL = new Map<string, CanonicalBook>();",
         "const NORM_TO_CANONICAL = new Map<string, CanonicalBook>();",
+        "const VERSION_CODE_INDEX = new Map<string, Map<string, number>>();",
+        "const VERSION_ABBREV_INDEX = new Map<string, Map<string, number>>();",
         "",
         "function initIndices() {",
         "	for (const book of CANONICAL_BOOK_DEFINITIONS) {",
@@ -405,6 +428,20 @@ def generate_typescript():
         "				}",
         "			}",
         "		}",
+        "	}",
+        "",
+        "	for (const [ver, codes] of Object.entries(VERSION_CANONICAL_CODES)) {",
+        "		const cMap = new Map<string, number>();",
+        "		codes.forEach((code, idx) => cMap.set(code, idx + 1));",
+        "		VERSION_CODE_INDEX.set(ver.toLowerCase(), cMap);",
+        "	}",
+        "",
+        "	for (const [ver, abbrevs] of Object.entries(VERSION_AVAILABLE_BOOKS)) {",
+        "		const aMap = new Map<string, number>();",
+        "		abbrevs.forEach((abbrev, idx) => {",
+        "			aMap.set(cleanKey(abbrev), idx + 1);",
+        "		});",
+        "		VERSION_ABBREV_INDEX.set(ver.toLowerCase(), aMap);",
         "	}",
         "}",
         "",
@@ -441,6 +478,28 @@ def generate_typescript():
         "	const upper = input.trim().toUpperCase();",
         "	if (upper.length === 3) return upper;",
         "	return '';",
+        "}",
+        "",
+        "/**",
+        " * Returns the canonical sort index (1-based) for a book, honoring version-specific canonical sequence.",
+        " * Falls back to the master Protestant/Catholic/Orthodox canonical order if no version is provided.",
+        " */",
+        "export function getBookCanonicalIndex(bookIdentifier?: string | null, version?: string | null): number {",
+        "	if (!bookIdentifier) return 999;",
+        "	const clean = cleanKey(bookIdentifier);",
+        "	const canon = NORM_TO_CANONICAL.get(clean);",
+        "	const code = canon?.code || resolveBookCode(bookIdentifier, version || undefined) || clean.toUpperCase();",
+        "",
+        "	if (version) {",
+        "		const vKey = version.trim().toLowerCase();",
+        "		const aMap = VERSION_ABBREV_INDEX.get(vKey);",
+        "		if (aMap && aMap.has(clean)) return aMap.get(clean)!;",
+        "		const cMap = VERSION_CODE_INDEX.get(vKey);",
+        "		if (cMap && cMap.has(code)) return cMap.get(code)!;",
+        "	}",
+        "",
+        "	if (canon) return canon.order;",
+        "	return 999;",
         "}",
         "",
         "/**",
@@ -484,6 +543,79 @@ def generate_typescript():
     TARGET_TS.parent.mkdir(parents=True, exist_ok=True)
     TARGET_TS.write_text("\n".join(ts_lines), encoding="utf-8")
     print(f"Successfully generated: {TARGET_TS}")
+
+    # Generate corpusBookStats.ts sorted in canonical order
+    generate_corpus_book_stats(conn, version_canonical_codes, corpus_to_version)
+    conn.close()
+
+
+def generate_corpus_book_stats(conn: sqlite3.Connection, version_canonical_codes: dict, corpus_to_version: dict):
+    cur = conn.cursor()
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='corpus_book_stats'")
+    if not cur.fetchone():
+        print("Notice: corpus_book_stats table not found, skipping corpusBookStats.ts generation.")
+        return
+
+    cur.execute("SELECT corpus_id, book_code, total_words, total_verses FROM corpus_book_stats")
+    rows = cur.fetchall()
+    if not rows:
+        return
+
+    cur.execute("SELECT corpus_id, SUM(total_words) FROM corpus_book_stats GROUP BY corpus_id")
+    corpus_totals = dict(cur.fetchall())
+
+    # Map raw rows: corpus_id -> book_code -> {words, verses}
+    raw_stats = {}
+    for cid, b_code, w, v in rows:
+        if cid not in raw_stats:
+            raw_stats[cid] = {}
+        raw_stats[cid][b_code] = {"words": w, "verses": v}
+
+    # Sort books for each corpus according to authentic canonical order
+    sorted_corpus_stats = {}
+    for cid in sorted(raw_stats.keys()):
+        ver = corpus_to_version.get(cid, cid.upper())
+        canonical_codes = version_canonical_codes.get(ver, [])
+        code_order = {c: i for i, c in enumerate(canonical_codes)}
+
+        books_dict = raw_stats[cid]
+        sorted_books = sorted(
+            books_dict.items(),
+            key=lambda x: (code_order.get(x[0], 999), x[0])
+        )
+        sorted_corpus_stats[cid] = {b: stats for b, stats in sorted_books}
+
+    target_stats_ts = REPO_ROOT / "src" / "lib" / "config" / "corpusBookStats.ts"
+    stats_lines = [
+        "/**",
+        " * Pre-computed word and verse totals by biblical book and corpus.",
+        " * Serves as an instant in-memory lookup and static/offline fallback.",
+        " * AUTO-GENERATED - books are ordered in authentic canonical sequence.",
+        " */",
+        "",
+        "export interface BookWordStat {",
+        "	words: number;",
+        "	verses: number;",
+        "}",
+        "",
+        "export const CORPUS_TOTAL_WORDS: Record<string, number> = " + json.dumps(corpus_totals, indent=2) + ";",
+        "",
+        "export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = " + json.dumps(sorted_corpus_stats, indent=2) + ";",
+        "",
+        "export function getStaticCorpusTotalWords(corpusId: string): number {",
+        "	const c = corpusId.toLowerCase();",
+        "	return CORPUS_TOTAL_WORDS[c] || 0;",
+        "}",
+        "",
+        "export function getStaticBookWordStats(corpusId: string, bookCode: string): BookWordStat | null {",
+        "	const c = corpusId.toLowerCase();",
+        "	const b = (bookCode || '').toUpperCase();",
+        "	return CORPUS_BOOK_STATS[c]?.[b] || null;",
+        "}",
+        ""
+    ]
+    target_stats_ts.write_text("\n".join(stats_lines), encoding="utf-8")
+    print(f"Successfully generated canonically ordered: {target_stats_ts}")
 
 
 if __name__ == "__main__":
