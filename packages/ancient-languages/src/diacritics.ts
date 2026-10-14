@@ -1,5 +1,5 @@
 export type HebrewDiacriticMode = 'all' | 'vowels' | 'none';
-
+import {HebrewUtils} from './hebrew-utils.js';
 /**
  * Transforms Hebrew text according to the selected diacritic mode:
  * - 'all': full vowels + cantillation / accents
@@ -11,7 +11,8 @@ export function formatHebrew(text: string, mode: HebrewDiacriticMode): string {
 
 	if (mode === 'vowels') {
 		// Strip cantillation (U+0591–U+05AF) and Meteg (U+05BD)
-		return text.replace(/[\u0591-\u05AF\u05BD]/g, '');
+		//return text.replace(/[\u0591-\u05AF\u05BD]/g, '');
+		return HebrewUtils.vowelsOnly(text);
 	}
 
 	// mode === 'none' (consonants only)

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import type { Section } from '../lib/data';
+  import type { Section } from '../lib/data.ts';
 
   let {
     sections = [],
