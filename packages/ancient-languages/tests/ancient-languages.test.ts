@@ -21,10 +21,24 @@ import {
 	getPaletteColor,
 	getNextPaletteColorIndex,
 	getHighlightInlineStyle,
-	normalizeStrongsId
+	normalizeStrongsId,
+	HebrewUtils
 } from '../src/index.js';
 
 describe('@polyglot/ancient-languages', () => {
+
+	describe('restrict to Hebrew vowels', () => {
+		it('removes all Hebrew markings', () => {
+			const tests = [{input:"אֲשֵׁמִ֣ים׀",output:"אֲשֵׁמִים"}];
+			tests.forEach((t)=>{
+				expect(HebrewUtils.vowelsOnly(t.input)).toEqual(t.output);
+			})
+			//expect(latinToHebrew('b')).toBe('ב');
+			
+		});
+
+		
+	});
 	describe('Greek transliteration & normalization', () => {
 		it('transliterates basic Latin Beta Code to Greek', () => {
 			expect(latinToGreek('logos')).toBe('λογος');
