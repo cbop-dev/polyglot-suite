@@ -283,6 +283,13 @@
       showLemmaWindow = true;
     };
 
+    const handleCloseAll = () => {
+      if (isZenMode) isZenMode = false;
+      if (showLemmaWindow) showLemmaWindow = false;
+      if (showBookmarksModal) showBookmarksModal = false;
+      if (citationSecNum !== null) citationSecNum = null;
+    };
+
     window.addEventListener("reader-set-viewmode", handleSetViewMode);
     window.addEventListener("reader-set-fontsize", handleSetFontSize);
     window.addEventListener("reader-toggle-morph", handleToggleMorph);
@@ -299,6 +306,7 @@
       handleToggleHighlightsModal,
     );
     window.addEventListener("reader-toggle-search", handleToggleSearchModal);
+    window.addEventListener("close-all-modals", handleCloseAll);
     window.addEventListener("keydown", handleKeydown);
     window.addEventListener("hashchange", scrollToHash);
 
@@ -328,6 +336,7 @@
         "reader-toggle-search",
         handleToggleSearchModal,
       );
+      window.removeEventListener("close-all-modals", handleCloseAll);
       window.removeEventListener("keydown", handleKeydown);
       window.removeEventListener("hashchange", scrollToHash);
     };

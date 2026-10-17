@@ -1,90 +1,27 @@
 ---
-// 3-way Theme Selector (Light ☀️, Dark 🌙, Sepia 📜)
+// Reading Theme & Warmth Control (Light vs. Dark & Cool vs. Warm)
+import ThemeSlider from '@polyglot/theme/ThemeSlider.svelte';
+
+interface Props {
+  align?: 'left' | 'right';
+}
+
+const { align = 'right' } = Astro.props as Props;
 ---
-<div class="theme-dropdown-wrapper">
-  <select class="theme-select" aria-label="Select theme" title="Change theme">
-    <option value="light" title="Light theme">☀️</option>
-    <option value="dark" title="Dark theme">🌙</option>
-    <option value="sepia" title="Sepia theme">📜</option>
-  </select>
+<div class="theme-toggle-wrapper">
+  <ThemeSlider
+    client:load
+    align={align}
+    profile="josephus"
+    storageKey="ne-reading-theme"
+    warmthStorageKey="ne-reading-warmth"
+    legacyKey="ne-theme"
+  />
 </div>
 
-<script is:inline>
-  (function () {
-    function initThemes() {
-      var selects = document.querySelectorAll('.theme-select');
-      if (!selects.length) return;
-
-      function render() {
-        var current = document.documentElement.dataset.theme || 'light';
-        selects.forEach(function (s) {
-          s.value = current;
-        });
-      }
-
-      function applyTheme(targetTheme) {
-        function apply() {
-          document.documentElement.dataset.theme = targetTheme;
-          try {
-            localStorage.setItem('ne-theme', targetTheme);
-          } catch (err) {}
-          render();
-        }
-        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (document.startViewTransition && !reduce) {
-          document.startViewTransition(apply);
-        } else {
-          apply();
-        }
-      }
-
-      render();
-
-      selects.forEach(function (select) {
-        select.addEventListener('change', function (e) {
-          applyTheme(e.target.value);
-        });
-      });
-
-      function cycleTheme() {
-        var order = ['light', 'dark', 'sepia'];
-        var current = document.documentElement.dataset.theme || 'light';
-        var idx = order.indexOf(current);
-        var nextTheme = order[(idx + 1) % order.length];
-        applyTheme(nextTheme);
-      }
-
-      window.removeEventListener('cycle-theme', cycleTheme);
-      window.addEventListener('cycle-theme', cycleTheme);
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initThemes);
-    } else {
-      initThemes();
-    }
-  })();
-</script>
-
 <style>
-  .theme-dropdown-wrapper {
+  .theme-toggle-wrapper {
     display: inline-flex;
     align-items: center;
-  }
-  .theme-select {
-    background: var(--page-bg, #eceee7);
-    color: var(--text, #171a1c);
-    border: 1px solid var(--border, #d4d8d3);
-    border-radius: 4px;
-    padding: 0.35rem 0.45rem;
-    font-family: var(--font-ui, system-ui, sans-serif);
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    text-align: center;
-  }
-  .theme-select:focus {
-    outline: 2px solid var(--accent, #1f6f7a);
-    border-color: transparent;
   }
 </style>

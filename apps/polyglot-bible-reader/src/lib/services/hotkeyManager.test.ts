@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HotkeyManager } from './hotkeyManager';
-import type { HotkeyAction } from '$lib/config/hotkeys';
-import type { ReaderState } from '$lib/stores/readerState.svelte';
+import type { HotkeyAction } from '../config/hotkeys.js';
+import type { ReaderState } from '../stores/readerState.svelte.js';
 
 describe('HotkeyManager', () => {
 	let manager: HotkeyManager;

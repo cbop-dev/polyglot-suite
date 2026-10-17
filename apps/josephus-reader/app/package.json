@@ -20,6 +20,7 @@
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
     "@polyglot/ancient-languages": "*",
+    "@polyglot/theme": "*",
     "astro": "^6.4.6"
   },
   "devDependencies": {

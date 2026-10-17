@@ -1,19 +1,10 @@
 import type { ReaderState } from '$lib/stores/readerState.svelte';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
+import type { HotkeyCategory, HotkeyAction as GenericHotkeyAction } from '@polyglot/ancient-languages/hotkeys';
 
-export type HotkeyCategory = 'Navigation' | 'View' | 'General';
-
-export interface HotkeyAction {
-	id: string;
-	name: string;
-	description: string;
-	category: HotkeyCategory;
-	keys: string[];
-	action: (state: ReaderState, event: KeyboardEvent) => void | Promise<void>;
-	enabled?: (state: ReaderState) => boolean;
-	preventDefault?: boolean;
-}
+export type { HotkeyCategory };
+export type HotkeyAction = GenericHotkeyAction<ReaderState>;
 
 export const READER_HOTKEYS: HotkeyAction[] = [
 	{

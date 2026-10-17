@@ -8,6 +8,7 @@ import WorkSwitcher from './WorkSwitcher.svelte';
 import ThemeInit from './ThemeInit.astro';
 import ThemeToggle from './ThemeToggle.astro';
 import { getWork, bookLabel, workPath, WORKS } from '@shared/lib/works';
+import { JOSEPHUS_HOTKEYS, formatKey } from '@shared/lib/hotkeys';
 import pkg from '../../../package.json';
 
 interface Props { workId: string; n: number; }
@@ -259,84 +260,29 @@ if (existsSync(jsonPath)) {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td><kbd>J</kbd></td>
-            <td>Open and focus "Jump to §" input</td>
-          </tr>
-          <tr>
-            <td><kbd>→</kbd> / <kbd>N</kbd></td>
-            <td>Jump to next section</td>
-          </tr>
-          <tr>
-            <td><kbd>←</kbd> / <kbd>P</kbd></td>
-            <td>Jump to previous section</td>
-          </tr>
-          <tr>
-            <td><kbd>F</kbd></td>
-            <td>Jump to first section (§ 1)</td>
-          </tr>
-          <tr>
-            <td><kbd>L</kbd></td>
-            <td>Jump to last section</td>
-          </tr>
-          <tr>
-            <td><kbd>W</kbd></td>
-            <td>Toggle Word Info mode (interactive word popups)</td>
-          </tr>
-          <tr>
-            <td><kbd>S</kbd></td>
-            <td>Open Corpus Search</td>
-          </tr>
-          <tr>
-            <td><kbd>H</kbd></td>
-            <td>Open Active Highlights Tab</td>
-          </tr>
-          <tr>
-            <td><kbd>O</kbd></td>
-            <td>Switch/scroll between Greek & English in section</td>
-          </tr>
-          <tr>
-            <td><kbd>T</kbd></td>
-            <td>Cycle theme (Light ☀️ → Dark 🌙 → Sepia 📜)</td>
-          </tr>
-          <tr>
-            <td><kbd>G</kbd></td>
-            <td>Show Greek text only</td>
-          </tr>
-          <tr>
-            <td><kbd>E</kbd></td>
-            <td>Show English text only</td>
-          </tr>
-          <tr>
-            <td><kbd>D</kbd></td>
-            <td>Toggle Dual language modes (Parallel ◧ ↔ Stacked ⬓)</td>
-          </tr>
-          <tr>
-            <td><kbd>Z</kbd></td>
-            <td>Toggle Zen Mode (full-screen focus view)</td>
-          </tr>
-          <tr>
-            <td><kbd>+</kbd> / <kbd>=</kbd></td>
-            <td>Increase text size</td>
-          </tr>
-          <tr>
-            <td><kbd>-</kbd> / <kbd>_</kbd></td>
-            <td>Decrease text size</td>
-          </tr>
-          <tr>
-            <td><kbd>⌘K</kbd> / <kbd>Ctrl K</kbd></td>
-            <td>Open Search & Command Palette</td>
-          </tr>
-          <tr>
-            <td><kbd>?</kbd></td>
-            <td>Toggle this Keyboard Shortcuts modal</td>
-          </tr>
+          {JOSEPHUS_HOTKEYS.filter((a) => a.id !== 'close-modals').map((action) => (
+            <tr>
+              <td>
+                {action.keys.map((k, idx) => (
+                  <span>
+                    {idx > 0 ? ' / ' : ''}
+                    <kbd class={k.includes('mod+') ? 'hs-kbd' : ''}>
+                      {k.includes('mod+') ? '⌘K' : (k.length === 1 ? k.toUpperCase() : formatKey(k))}
+                    </kbd>
+                  </span>
+                ))}
+              </td>
+              <td>{action.description}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
   </aside>
 
   <script>
+    import { hotkeyManager } from '@shared/lib/hotkeys';
+
     const header = document.querySelector('.page-header');
     const tocToggle = header?.querySelector('.toc-toggle');
     const sidebar = document.getElementById('toc-sidebar');
@@ -437,6 +383,17 @@ if (existsSync(jsonPath)) {
     mobileBackdrop?.addEventListener('click', () => setMobileMenu(false));
     mobileClose?.addEventListener('click', () => setMobileMenu(false));
 
+    window.addEventListener('toggle-help-modal', () => {
+      const isOpen = helpModal && !helpModal.hidden;
+      setHelpModal(!isOpen);
+    });
+
+    window.addEventListener('close-all-modals', () => {
+      if (helpModal && !helpModal.hidden) setHelpModal(false);
+      if (infoModal && !infoModal.hidden) setInfoModal(false);
+      if (mobileDrawer && !mobileDrawer.hasAttribute('inert')) setMobileMenu(false);
+    });
+
     // Drawer internal actions
     mobileDrawer?.querySelector('.mobile-search-btn')?.addEventListener('click', () => {
       setMobileMenu(false);
@@ -524,113 +481,7 @@ if (existsSync(jsonPath)) {
 
     // Global User Hotkeys Listener
     window.addEventListener('keydown', (e: KeyboardEvent) => {
-      // Input Guard: Suppress hotkeys when user is typing in inputs/textareas
-      const target = e.target as HTMLElement | null;
-      if (target) {
-        const tag = target.tagName.toLowerCase();
-        if (tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable) {
-          return;
-        }
-      }
-
-      if (e.key === 'Escape') {
-        if (helpModal && !helpModal.hidden) {
-          e.preventDefault();
-          setHelpModal(false);
-          return;
-        }
-        if (infoModal && !infoModal.hidden) {
-          e.preventDefault();
-          setInfoModal(false);
-          return;
-        }
-      }
-
-      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
-        e.preventDefault();
-        const isOpen = helpModal && !helpModal.hidden;
-        setHelpModal(!isOpen);
-        return;
-      }
-
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-
-      const key = e.key.toLowerCase();
-
-      switch (key) {
-        case 'j':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('open-niese-jump'));
-          break;
-        case 'n':
-        case 'arrowright':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-nav-next'));
-          break;
-        case 'p':
-        case 'arrowleft':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-nav-prev'));
-          break;
-        case 'f':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-nav-first'));
-          break;
-        case 'l':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-nav-last'));
-          break;
-        case 'o':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-nav-lang-switch'));
-          break;
-        case 't':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('cycle-theme'));
-          break;
-        case 'g':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-set-viewmode', { detail: 'greek' }));
-          break;
-        case 'e':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-set-viewmode', { detail: 'english' }));
-          break;
-        case 'd':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-toggle-dualmode'));
-          break;
-        case 'b':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-toggle-bookmarks'));
-          break;
-        case 'w':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-toggle-morph'));
-          break;
-        case 's':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-toggle-search', { detail: { tab: 'lemma' } }));
-          break;
-        case 'h':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-toggle-search', { detail: { tab: 'highlights' } }));
-          break;
-        case 'z':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-toggle-zen'));
-          break;
-        case '+':
-        case '=':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-set-fontsize', { detail: 'inc' }));
-          break;
-        case '-':
-        case '_':
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('reader-set-fontsize', { detail: 'dec' }));
-          break;
-      }
+      hotkeyManager.handleKeyDown(e);
     });
   </script>
 

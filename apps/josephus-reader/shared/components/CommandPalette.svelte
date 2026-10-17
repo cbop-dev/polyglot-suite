@@ -22,10 +22,7 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-      e.preventDefault();
-      open = !open;
-    } else if (e.key === 'Escape' && open) {
+    if (e.key === 'Escape' && open) {
       close();
     }
   }
@@ -34,15 +31,23 @@
     open = true;
   }
 
+  function handleToggleEvent() {
+    open = !open;
+  }
+
   onMount(() => {
     if (typeof window !== 'undefined') {
       window.addEventListener('open-command-palette', handleOpenEvent);
+      window.addEventListener('toggle-command-palette', handleToggleEvent);
+      window.addEventListener('close-all-modals', close);
     }
   });
 
   onDestroy(() => {
     if (typeof window !== 'undefined') {
       window.removeEventListener('open-command-palette', handleOpenEvent);
+      window.removeEventListener('toggle-command-palette', handleToggleEvent);
+      window.removeEventListener('close-all-modals', close);
     }
   });
 </script>
