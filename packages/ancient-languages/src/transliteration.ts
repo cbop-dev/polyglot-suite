@@ -384,40 +384,83 @@ export function transliterate(input: string, lang: 'greek' | 'hebrew' | 'syriac'
 	return input;
 }
 
+export interface KwicOptions {
+	normQ?: string;
+	radius?: number;
+	lang?: string;
+}
+
+export interface KwicSnippet {
+	before: string;
+	match: string;
+	after: string;
+	start: number;
+	end: number;
+}
+
 /**
- * Finds the character range { start, end } of a query in text with 100% accurate mapping
- * back to original text character positions, ignoring Greek diacritics and accents.
+ * Finds all character ranges { start, end } of a query in text with 100% accurate mapping
+ * back to original text character positions, ignoring Greek diacritics/accents,
+ * Hebrew vowels/accents, and Syriac vocalization marks.
  */
-export function findMatchInText(
+export function findAllMatchesInText(
 	text: string,
 	query: string,
-	normQ?: string
-): { start: number; end: number } | null {
-	if (!text || !query) return null;
+	normQ?: string,
+	lang?: string
+): Array<{ start: number; end: number }> {
+	if (!text || !query) return [];
+
 	let q = query;
-	if (!normQ && /[a-zA-Z]/.test(query) && /[\u0370-\u03ff\u1f00-\u1fff]/.test(text)) {
-		q = transliterateLatinToGreek(query);
-	}
-	const targetNormQ = normQ || normalizeGreekSearch(q);
-	if (!targetNormQ) return null;
+	const isGreek = lang === 'greek' || (!lang && /[\u0370-\u03ff\u1f00-\u1fff]/.test(text));
+	const isHebrew = lang === 'hebrew' || (!lang && /[\u0590-\u05ff]/.test(text));
+	const isSyriac = lang === 'syriac' || (!lang && /[\u0700-\u074f]/.test(text));
 
-	// 1. Try direct exact/case-insensitive substring search first
-	const directIdx = text.toLowerCase().indexOf(query.toLowerCase());
-	if (directIdx !== -1) {
-		return { start: directIdx, end: directIdx + query.length };
+	if (!normQ && /[a-zA-Z]/.test(query)) {
+		if (isGreek) {
+			q = transliterateLatinToGreek(query);
+		} else if (isHebrew) {
+			q = latinToHebrew(query);
+		} else if (isSyriac) {
+			q = latinToSyriac(query);
+		}
 	}
 
-	// 2. Build index map for diacritics-insensitive match
+	let targetNormQ = normQ;
+	if (!targetNormQ) {
+		if (isGreek) {
+			targetNormQ = normalizeGreekSearch(q);
+		} else if (isHebrew) {
+			targetNormQ = q.replace(/[\u0591-\u05bd\u05bf-\u05c7]/g, '');
+		} else if (isSyriac) {
+			targetNormQ = q.replace(/[\u0730-\u074a]/g, '');
+		} else {
+			targetNormQ = q.toLowerCase();
+		}
+	}
+	if (!targetNormQ) return [];
+
+	// Build index map for diacritics/accents-insensitive match
 	let normText = '';
 	const indexMap: number[] = [];
 
 	for (let i = 0; i < text.length; i++) {
 		const char = text[i];
-		const normChar = char
-			.normalize('NFD')
-			.replace(/[\u0300-\u036f]/g, '')
-			.toLowerCase()
-			.replace(/ς/g, 'σ');
+		let normChar = char;
+
+		if (isGreek) {
+			normChar = char
+				.normalize('NFD')
+				.replace(/[\u0300-\u036f]/g, '')
+				.toLowerCase()
+				.replace(/ς/g, 'σ');
+		} else if (isHebrew) {
+			normChar = char.replace(/[\u0591-\u05bd\u05bf-\u05c7]/g, '');
+		} else if (isSyriac) {
+			normChar = char.replace(/[\u0730-\u074a]/g, '');
+		} else {
+			normChar = char.toLowerCase();
+		}
 
 		for (let j = 0; j < normChar.length; j++) {
 			normText += normChar[j];
@@ -425,38 +468,130 @@ export function findMatchInText(
 		}
 	}
 
-	const normIdx = normText.indexOf(targetNormQ);
-	if (normIdx === -1) return null;
+	const matches: Array<{ start: number; end: number }> = [];
+	let normIdx = normText.indexOf(targetNormQ);
 
-	const start = indexMap[normIdx];
-	const lastNormIdx = normIdx + targetNormQ.length - 1;
-	const end = indexMap[lastNormIdx] + 1;
+	while (normIdx !== -1) {
+		const start = indexMap[normIdx];
+		const lastNormIdx = normIdx + targetNormQ.length - 1;
+		let end = indexMap[lastNormIdx] + 1;
 
-	return { start, end };
+		// Include any trailing combining marks on the final character
+		while (
+			end < text.length &&
+			/[\u0300-\u036f\u0591-\u05bd\u05bf-\u05c7\u0730-\u074a]/.test(text[end])
+		) {
+			end++;
+		}
+
+		matches.push({ start, end });
+		normIdx = normText.indexOf(targetNormQ, normIdx + targetNormQ.length);
+	}
+
+	return matches;
+}
+
+/**
+ * Finds the first character range { start, end } of a query in text with 100% accurate mapping
+ * back to original text character positions, ignoring Greek diacritics and accents.
+ */
+export function findMatchInText(
+	text: string,
+	query: string,
+	normQ?: string,
+	lang?: string
+): { start: number; end: number } | null {
+	if (!text || !query) return null;
+	const all = findAllMatchesInText(text, query, normQ, lang);
+	return all.length > 0 ? all[0] : null;
 }
 
 /**
  * Generates KWIC (Key Word In Context) snippet with accurate match boundaries.
+ * Backwards compatible with (text, query, normQ) or (text, query, options).
  */
 export function getKwicSnippet(
 	text: string,
 	query: string,
-	normQ?: string
-): { before: string; match: string; after: string } {
-	if (!text) return { before: '', match: '', after: '' };
+	optionsOrNormQ?: string | KwicOptions
+): KwicSnippet {
+	const defaultRadius = 45;
+	let normQ: string | undefined;
+	let radius = defaultRadius;
+	let lang: string | undefined;
 
-	const matchRange = findMatchInText(text, query, normQ);
+	if (typeof optionsOrNormQ === 'string') {
+		normQ = optionsOrNormQ;
+	} else if (optionsOrNormQ && typeof optionsOrNormQ === 'object') {
+		normQ = optionsOrNormQ.normQ;
+		radius = optionsOrNormQ.radius ?? defaultRadius;
+		lang = optionsOrNormQ.lang;
+	}
+
+	if (!text) {
+		return { before: '', match: '', after: '', start: -1, end: -1 };
+	}
+
+	const matchRange = findMatchInText(text, query, normQ, lang);
 	if (!matchRange) {
-		return { before: text.slice(0, 60), match: '', after: text.slice(60, 120) };
+		return {
+			before: text.slice(0, radius),
+			match: '',
+			after: text.slice(radius, radius * 2),
+			start: -1,
+			end: -1
+		};
 	}
 
 	const { start, end } = matchRange;
-	const kwicStart = Math.max(0, start - 45);
-	const kwicEnd = Math.min(text.length, end + 45);
+	const kwicStart = Math.max(0, start - radius);
+	const kwicEnd = Math.min(text.length, end + radius);
 
 	return {
 		before: (kwicStart > 0 ? '...' : '') + text.slice(kwicStart, start),
 		match: text.slice(start, end),
-		after: text.slice(end, kwicEnd) + (kwicEnd < text.length ? '...' : '')
+		after: text.slice(end, kwicEnd) + (kwicEnd < text.length ? '...' : ''),
+		start,
+		end
 	};
+}
+
+/**
+ * Generates all KWIC snippets for every occurrence of query found in text.
+ */
+export function getAllKwicSnippets(
+	text: string,
+	query: string,
+	optionsOrNormQ?: string | KwicOptions
+): KwicSnippet[] {
+	const defaultRadius = 45;
+	let normQ: string | undefined;
+	let radius = defaultRadius;
+	let lang: string | undefined;
+
+	if (typeof optionsOrNormQ === 'string') {
+		normQ = optionsOrNormQ;
+	} else if (optionsOrNormQ && typeof optionsOrNormQ === 'object') {
+		normQ = optionsOrNormQ.normQ;
+		radius = optionsOrNormQ.radius ?? defaultRadius;
+		lang = optionsOrNormQ.lang;
+	}
+
+	if (!text || !query) return [];
+
+	const matches = findAllMatchesInText(text, query, normQ, lang);
+	if (matches.length === 0) return [];
+
+	return matches.map(({ start, end }) => {
+		const kwicStart = Math.max(0, start - radius);
+		const kwicEnd = Math.min(text.length, end + radius);
+
+		return {
+			before: (kwicStart > 0 ? '...' : '') + text.slice(kwicStart, start),
+			match: text.slice(start, end),
+			after: text.slice(end, kwicEnd) + (kwicEnd < text.length ? '...' : ''),
+			start,
+			end
+		};
+	});
 }
