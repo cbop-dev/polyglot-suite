@@ -3,6 +3,7 @@ import { mylog } from '$lib/lemma-ui/env/env';
 import { normalizeBookName, getBookForVersion, formatDisplayReference, formatBookAbbreviation } from '$lib/config/bookMapping.js';
 import { getStaticCorpusTotalWords, getStaticBookWordStats } from '$lib/config/corpusBookStats';
 import { myDataSets } from '$lib/config/versions';
+import { stripGreekAccents, toPlainHebrew, normalizeStrongsId } from '@polyglot/ancient-languages';
 export interface WorkRow {
 	id: number;
 	slug: string;
@@ -1159,6 +1160,215 @@ export async function getVerseText(workUnitId: number): Promise<string | null> {
 		[workUnitId]
 	);
 	return row ? row.body : null;
+}
+
+export interface BatchVerseItem {
+	text: string;
+	matchedWords: string[];
+}
+
+export interface VerseSearchTarget {
+	lemma?: string;
+	strongs?: string;
+	lookupKey?: string;
+	lang?: string;
+	clickedWord?: string;
+}
+
+/**
+ * Extracts exact surface words from tokens_json matching a given lexeme/Strongs search target.
+ */
+export function extractMatchedWordsFromTokens(
+	tokensJson: string | null | undefined,
+	target?: VerseSearchTarget
+): string[] {
+	if (!tokensJson || !target) return [];
+	let tokens: any[];
+	try {
+		tokens = JSON.parse(tokensJson);
+	} catch {
+		return [];
+	}
+	if (!Array.isArray(tokens)) return [];
+
+	const rawLemma = (target.lemma || '').trim();
+	const rawLookup = (target.lookupKey || '').trim();
+	const rawClicked = (target.clickedWord || '').trim();
+
+	// Clean candidate search strings: remove lexicographical annotations like ", ὁ", "[H...]", numbers, etc.
+	const cleanSearchLemma = rawLemma.replace(/[,;·].*$/g, '').replace(/\[.*\]/g, '').replace(/\s+\d+$/g, '').trim();
+	const cleanSearchLookup = rawLookup.replace(/[,;·].*$/g, '').replace(/\[.*\]/g, '').replace(/\s+\d+$/g, '').trim();
+	const cleanClicked = rawClicked.replace(/[.,;:·’—\s׃־׀]/g, '').trim();
+
+	const targetStrongs = target.strongs ? normalizeStrongsId(target.strongs) : '';
+	const normStrongsNum = targetStrongs ? targetStrongs.replace(/^[HG]/i, '') : '';
+	const greekNormLemma = stripGreekAccents(cleanSearchLemma);
+	const greekNormLookup = stripGreekAccents(cleanSearchLookup);
+	const hebrewPlainLemma = toPlainHebrew(cleanSearchLemma);
+	const hebrewPlainLookup = toPlainHebrew(cleanSearchLookup);
+	const syriacCleanLemma = cleanSyriac(cleanSearchLemma);
+	const syriacCleanLookup = cleanSyriac(cleanSearchLookup);
+
+	const matched: string[] = [];
+
+	for (const t of tokens) {
+		let tokWord = '';
+		let tokNorm = '';
+		let tokStrongs = '';
+		let tokLemma = '';
+
+		if (Array.isArray(t)) {
+			// Array format: [word, norm, strongs, morph, lemma, gloss, trailer, flags]
+			tokWord = t[0] || '';
+			tokNorm = t[1] || '';
+			tokStrongs = t[2] || '';
+			tokLemma = t[4] || '';
+		} else if (t) {
+			tokWord = t.word || t.surface || '';
+			tokNorm = t.normalized || '';
+			tokStrongs = t.strongs || '';
+			tokLemma = t.lemma || '';
+		}
+
+		if (!tokWord) continue;
+
+		let isMatch = false;
+
+		// 1. Match by Strong's number
+		if (targetStrongs && tokStrongs) {
+			const tokStrongsNorm = normalizeStrongsId(String(tokStrongs));
+			const tokStrongsNum = tokStrongsNorm.replace(/^[HG]/i, '');
+			if (tokStrongsNorm === targetStrongs || tokStrongsNum === normStrongsNum) {
+				isMatch = true;
+			}
+		}
+
+		// 2. Match by Lemma / LookupKey
+		if (!isMatch) {
+			if (target.lang === 'greek' || (!target.lang && /[\u0370-\u03ff\u1f00-\u1fff]/.test(tokWord))) {
+				const tokNormLemma = stripGreekAccents(tokLemma);
+				const tokNormWord = stripGreekAccents(tokWord);
+				const tokNormField = stripGreekAccents(tokNorm);
+				if (
+					(greekNormLemma && (tokNormLemma === greekNormLemma || tokNormWord === greekNormLemma || tokNormField === greekNormLemma)) ||
+					(greekNormLookup && (tokNormLemma === greekNormLookup || tokNormWord === greekNormLookup || tokNormField === greekNormLookup))
+				) {
+					isMatch = true;
+				}
+			} else if (target.lang === 'hebrew' || (!target.lang && /[\u0590-\u05ff]/.test(tokWord))) {
+				const tokPlainLemma = toPlainHebrew(tokLemma);
+				const tokPlainWord = toPlainHebrew(tokWord);
+				const tokPlainNorm = toPlainHebrew(tokNorm);
+				if (
+					(hebrewPlainLemma && (tokPlainLemma === hebrewPlainLemma || tokPlainWord === hebrewPlainLemma || tokPlainNorm === hebrewPlainLemma)) ||
+					(hebrewPlainLookup && (tokPlainLemma === hebrewPlainLookup || tokPlainWord === hebrewPlainLookup || tokPlainNorm === hebrewPlainLookup))
+				) {
+					isMatch = true;
+				}
+			} else if (target.lang === 'syriac' || (!target.lang && /[\u0700-\u074f]/.test(tokWord))) {
+				const tokCleanLemma = cleanSyriac(tokLemma);
+				const tokCleanWord = cleanSyriac(tokWord);
+				if (
+					(syriacCleanLemma && (tokCleanLemma === syriacCleanLemma || tokCleanWord === syriacCleanLemma)) ||
+					(syriacCleanLookup && (tokCleanLemma === syriacCleanLookup || tokCleanWord === syriacCleanLookup))
+				) {
+					isMatch = true;
+				}
+			} else {
+				const cleanW = tokWord.toLowerCase();
+				const cleanL = tokLemma.toLowerCase();
+				if (
+					cleanW === cleanSearchLemma.toLowerCase() ||
+					cleanL === cleanSearchLemma.toLowerCase() ||
+					cleanW === cleanSearchLookup.toLowerCase()
+				) {
+					isMatch = true;
+				}
+			}
+		}
+
+		if (isMatch) {
+			const surface = tokWord.replace(/[.,;:·’—\s׃־׀]/g, '').trim();
+			if (surface && !matched.includes(surface)) {
+				matched.push(surface);
+			}
+		}
+	}
+
+	if (matched.length === 0 && cleanClicked) {
+		matched.push(cleanClicked);
+	}
+
+	return matched;
+}
+
+/**
+ * Fetch the verse body texts for an array of work unit IDs in a single batch query,
+ * extracting matched inflected surface words for accurate KWIC and verse highlighting.
+ */
+export async function getBatchVerseTexts(
+	workUnitIds: number[],
+	target?: VerseSearchTarget
+): Promise<Record<number, BatchVerseItem>> {
+	if (!workUnitIds || workUnitIds.length === 0) return {};
+	const uniqueIds = Array.from(new Set(workUnitIds.filter(Boolean)));
+	if (uniqueIds.length === 0) return {};
+
+	const placeholders = uniqueIds.map(() => '?').join(',');
+	const result: Record<number, BatchVerseItem> = {};
+
+	const fallbackWord = (target?.lemma || target?.lookupKey || target?.clickedWord || '').replace(/[,;·].*$/g, '').trim();
+
+	try {
+		const rows = await query<{ id: number; text_content: string; tokens_json?: string }>(
+			`SELECT id, text_content, tokens_json FROM text_units WHERE id IN (${placeholders})`,
+			uniqueIds
+		);
+		for (const r of rows) {
+			if (r.id != null && r.text_content != null) {
+				const matchedWords = extractMatchedWordsFromTokens(r.tokens_json, target);
+				result[r.id] = {
+					text: r.text_content,
+					matchedWords: matchedWords.length > 0 ? matchedWords : (fallbackWord ? [fallbackWord] : [])
+				};
+			}
+		}
+	} catch (e) {
+		console.error('[dbClient] Error batch fetching verse texts:', e);
+	}
+
+	const missingIds = uniqueIds.filter((id) => result[id] == null);
+	if (missingIds.length > 0) {
+		const missingPlaceholders = missingIds.map(() => '?').join(',');
+		try {
+			const rows = await query<{ id: number; body: string }>(
+				`SELECT id, body FROM work_units WHERE id IN (${missingPlaceholders})`,
+				missingIds
+			);
+			for (const r of rows) {
+				if (r.id != null && r.body != null) {
+					result[r.id] = {
+						text: r.body,
+						matchedWords: fallbackWord ? [fallbackWord] : []
+					};
+				}
+			}
+		} catch (e) {}
+	}
+
+	return result;
+}
+
+/**
+ * Fetch a single verse's body text and matched words for on-demand inspection modals.
+ */
+export async function getVerseDetail(
+	workUnitId: number,
+	target?: VerseSearchTarget
+): Promise<BatchVerseItem | null> {
+	if (!workUnitId) return null;
+	const batch = await getBatchVerseTexts([workUnitId], target);
+	return batch[workUnitId] || null;
 }
 
 /**

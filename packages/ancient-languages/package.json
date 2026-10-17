@@ -6,8 +6,18 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./hebrew-utils":"./src/hebrew-utils.js",
-    "./greek-utils":"./src/greek-utils.js"
+    "./hebrew-utils": "./src/hebrew-utils.js",
+    "./greek-utils": "./src/greek-utils.js",
+    "./KwicSnippet.svelte": "./src/components/KwicSnippet.svelte",
+    "./components/*": "./src/components/*"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "svelte": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "typescript": "^5.7.0"

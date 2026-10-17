@@ -781,6 +781,10 @@
 					occurrences={concordanceOccurrences}
 					lang={lang}
 					dbAbbrev={isSyriac ? 'peshitta' : (isHebrew ? 'bhs' : 'lxx')}
+					lemma={targetLemma}
+					strongs={currentLemmaData?.strongs || lemma?.strongs}
+					lookupKey={lookupKey}
+					clickedWord={currentLemmaData?.word || lemma?.word || lemma?.surface || ''}
 				/>
 				{/key}
 			{/if}

@@ -4,6 +4,7 @@
 	import HighlightColorPicker from '$lib/components/HighlightColorPicker.svelte';
 	import { WORKS_BY_CODE } from '$lib/config/canonicalWorks.generated';
 	import { decodeMorph, latinToGreek } from '@polyglot/ancient-languages';
+	import KwicSnippet from '@polyglot/ancient-languages/KwicSnippet.svelte';
 	import {
 		fetchLexiconEntry,
 		fetchLemmaStats,
@@ -65,6 +66,7 @@
 
 	// Section 3: Concordance (Stats auto-fetched in background; occurrences on-demand)
 	let isConcordanceOpen = $state<boolean>(false);
+	let isKwic = $state<boolean>(true);
 	let concordance = $state<ConcordanceRef[]>([]);
 	let stats = $state<LemmaStat | null>(null);
 	let isConcordanceLoading = $state<boolean>(false);
@@ -671,19 +673,62 @@
 										{/if}
 									</div>
 								{:else}
+									<div class="flex items-center justify-between pb-2 mb-2 border-b border-[var(--color-rule)]">
+										<span class="text-[11px] text-[var(--color-ink-soft)] font-medium">
+											{filteredConcordance.length} {filteredConcordance.length === 1 ? 'occurrence' : 'occurrences'}
+										</span>
+										<div class="inline-flex rounded-lg bg-[var(--color-rule)] p-0.5 text-[11px] font-semibold">
+											<button
+												type="button"
+												onclick={() => (isKwic = true)}
+												class="px-2 py-0.5 rounded-md transition-colors cursor-pointer {isKwic
+													? 'bg-[var(--color-card-bg)] shadow-2xs text-blue-600 dark:text-blue-400 font-bold'
+													: 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'}"
+											>
+												KWIC
+											</button>
+											<button
+												type="button"
+												onclick={() => (isKwic = false)}
+												class="px-2 py-0.5 rounded-md transition-colors cursor-pointer {!isKwic
+													? 'bg-[var(--color-card-bg)] shadow-2xs text-blue-600 dark:text-blue-400 font-bold'
+													: 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'}"
+											>
+												Full Text
+											</button>
+										</div>
+									</div>
+
 									<div class="space-y-1.5 max-h-72 overflow-y-auto pr-1">
 										{#each filteredConcordance as ref}
 											<button
 												type="button"
 												onclick={() => navigateToRef(ref)}
-												class="w-full text-left rounded-lg p-2 hover:bg-[var(--color-page)] border border-transparent hover:border-[var(--color-rule)] transition-colors cursor-pointer"
+												class="w-full text-left rounded-lg p-2 hover:bg-[var(--color-page)] border border-transparent hover:border-[var(--color-rule)] transition-colors cursor-pointer group"
 											>
-												<div class="font-bold text-blue-600 dark:text-blue-400 text-xs">
-													{ref.display_citation}
+												<div class="flex items-center justify-between">
+													<span class="font-bold text-blue-600 dark:text-blue-400 text-xs">
+														{ref.display_citation}
+													</span>
+													<span class="text-[10px] text-[var(--color-ink-soft)] opacity-0 group-hover:opacity-100 transition-opacity">
+														Jump &rarr;
+													</span>
 												</div>
-												<div class="text-[11px] text-[var(--color-ink-soft)] line-clamp-2 mt-0.5 greek-font">
-													{ref.text_content}
-												</div>
+												{#if isKwic}
+													<div class="mt-1 text-xs text-[var(--color-ink)]">
+														<KwicSnippet
+															text={ref.text_content}
+															matchWord={selectedFormFilter || ref.matched_word || currentLemma}
+															lang="greek"
+															radius={48}
+															class="w-full"
+														/>
+													</div>
+												{:else}
+													<div class="text-[11px] text-[var(--color-ink-soft)] mt-1 leading-relaxed greek-font">
+														{ref.text_content}
+													</div>
+												{/if}
 											</button>
 										{/each}
 									</div>

@@ -9,7 +9,9 @@ import {
 	toPlainHebrew,
 	transliterate,
 	findMatchInText,
+	findAllMatchesInText,
 	getKwicSnippet,
+	getAllKwicSnippets,
 	formatHebrew,
 	formatGreek,
 	decodeMorph,
@@ -76,6 +78,33 @@ describe('@polyglot/ancient-languages', () => {
 
 			const snippet = getKwicSnippet(text, 'logos');
 			expect(snippet.match).toBe('λόγος');
+		});
+
+		it('finds all occurrences and extracts multiple KWIC snippets', () => {
+			const text = 'Ἐν ἀρχῇ ἦν ὁ λόγος καὶ ὁ λόγος ἦν πρὸς τὸν θεόν';
+			const matches = findAllMatchesInText(text, 'logos');
+			expect(matches.length).toBe(2);
+
+			const snippets = getAllKwicSnippets(text, 'logos', { radius: 15 });
+			expect(snippets.length).toBe(2);
+			expect(snippets[0].match).toBe('λόγος');
+			expect(snippets[1].match).toBe('λόγος');
+			expect(snippets[0].before).toContain('Ἐν ἀρχῇ');
+			expect(snippets[1].after).toContain('ἦν πρὸς τὸν');
+		});
+
+		it('finds Hebrew words in pointed text ignoring vowels and accents', () => {
+			const pointed = 'בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ׃';
+			const match = findMatchInText(pointed, 'אלהים');
+			expect(match).not.toBeNull();
+			const snippet = getKwicSnippet(pointed, 'אלהים', { radius: 20, lang: 'hebrew' });
+			expect(snippet.match).toBe('אֱלֹהִים');
+
+			// 'ברא' appears both as prefix of 'בְּרֵאשִׁית' and full word 'בָּרָא'
+			const allMatches = getAllKwicSnippets(pointed, 'ברא', { radius: 15, lang: 'hebrew' });
+			expect(allMatches.length).toBe(2);
+			expect(allMatches[0].match).toBe('בְּרֵא');
+			expect(allMatches[1].match).toBe('בָּרָא');
 		});
 	});
 

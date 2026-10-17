@@ -4,6 +4,7 @@
 	import HighlightColorPicker from '$lib/components/HighlightColorPicker.svelte';
 	import { WORKS_BY_CODE } from '$lib/config/canonicalWorks.generated';
 	import { decodeMorph } from '@polyglot/ancient-languages';
+	import KwicSnippet from '@polyglot/ancient-languages/KwicSnippet.svelte';
 	import {
 		fetchLexiconEntry,
 		fetchLemmaStats,
@@ -14,6 +15,7 @@
 	} from '$lib/services/dbClient';
 
 	let activeTab = $state<'definition' | 'concordance' | 'distribution'>('definition');
+	let isKwic = $state<boolean>(true);
 
 	let lexEntry = $state<LexiconEntry | null>(null);
 	let stats = $state<LemmaStat | null>(null);
@@ -219,21 +221,73 @@
 						</div>
 					{/if}
 				{:else if activeTab === 'concordance'}
-					<div class="space-y-2">
-						{#each concordance as ref}
-							<button
-								type="button"
-								onclick={() => navigateToRef(ref)}
-								class="block w-full text-left rounded-lg p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
-							>
-								<div class="font-semibold text-blue-600 dark:text-blue-400 text-xs">
-									{ref.display_citation}
-								</div>
-								<div class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mt-0.5">
-									{ref.text_content}
-								</div>
-							</button>
-						{/each}
+					<div class="space-y-3">
+						<div class="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800">
+							<span class="text-xs text-slate-500 font-medium">
+								{concordance.length} {concordance.length === 1 ? 'occurrence' : 'occurrences'} found
+							</span>
+							<div class="inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800 text-xs font-semibold">
+								<button
+									type="button"
+									onclick={() => (isKwic = true)}
+									class="px-2.5 py-1 rounded-md transition-colors cursor-pointer {isKwic
+										? 'bg-white shadow-2xs text-blue-600 dark:bg-slate-700 dark:text-blue-400 font-bold'
+										: 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'}"
+								>
+									KWIC
+								</button>
+								<button
+									type="button"
+									onclick={() => (isKwic = false)}
+									class="px-2.5 py-1 rounded-md transition-colors cursor-pointer {!isKwic
+										? 'bg-white shadow-2xs text-blue-600 dark:bg-slate-700 dark:text-blue-400 font-bold'
+										: 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'}"
+								>
+									Full Text
+								</button>
+							</div>
+						</div>
+
+						{#if concordance.length === 0}
+							<div class="py-8 text-center text-xs text-slate-400">
+								No concordance occurrences found for this lemma.
+							</div>
+						{:else}
+							<div class="space-y-2">
+								{#each concordance as ref}
+									<button
+										type="button"
+										onclick={() => navigateToRef(ref)}
+										class="block w-full text-left rounded-lg p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 group cursor-pointer"
+									>
+										<div class="flex items-center justify-between">
+											<span class="font-semibold text-blue-600 dark:text-blue-400 text-xs">
+												{ref.display_citation}
+											</span>
+											<span class="text-[11px] text-slate-400 group-hover:text-blue-500 transition-colors">
+												Jump &rarr;
+											</span>
+										</div>
+
+										{#if isKwic}
+											<div class="mt-1 text-xs text-slate-700 dark:text-slate-300">
+												<KwicSnippet
+													text={ref.text_content}
+													matchWord={ref.matched_word || currentLemma}
+													lang="greek"
+													radius={48}
+													class="w-full"
+												/>
+											</div>
+										{:else}
+											<div class="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+												{ref.text_content}
+											</div>
+										{/if}
+									</button>
+								{/each}
+							</div>
+						{/if}
 					</div>
 				{:else if activeTab === 'distribution'}
 					{#if stats && Object.keys(stats.work_counts).length > 0}

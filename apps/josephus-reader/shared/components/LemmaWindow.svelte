@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { transliterateLatinToGreek, normalizeGreekSearch, getKwicSnippet } from '../lib/transliterate';
+  import KwicSnippet from '@polyglot/ancient-languages/KwicSnippet.svelte';
   import { getWork } from '../lib/works';
   import {
     getBase,
@@ -687,9 +688,7 @@
                             title={`Jump to ${workMeta?.abbrev || sec.w} ${sec.b}.${sec.s}`}
                           >
                             <span class="sec-badge">{workMeta?.abbrev || sec.w} {sec.b}.{sec.s}</span>
-                            <span class="sec-kwic-snippet">
-                              {kwic.before}<mark class="kwic-mark">{kwic.match}</mark>{kwic.after}
-                            </span>
+                            <KwicSnippet snippet={kwic} lang="greek" class="sec-kwic-snippet" />
                             <span class="sec-jump-hint">Jump →</span>
                           </div>
                         {/each}
