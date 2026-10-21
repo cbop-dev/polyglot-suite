@@ -100,9 +100,9 @@
                   {#if w.indent}<br />
                     <span class="inline-block pl-5" aria-hidden="true"></span>{/if}{#if !myDataSets.lookup(colVersion)?.lemmaInfoEnabled}{@const text = w.word}<span class="bible-font inline" style={hlStyle}>{text}{w.trailer ?? ''}</span>{:else}{@const text = formatVerseText(w.word, colVersion, readerState.hebrewMode, readerState.greekDiacritics)}<span aria-label="Lexeme info" 
                       class="{langClass} 
-                      {readerState.meditationMode? '': 'cursor-pointer hover:bg-rule'} rounded focus:outline-none inline"
+                      {readerState.enableLemmaClick? 'cursor-pointer hover:bg-rule':''} rounded focus:outline-none inline"
                       style={hlStyle}
-                      onclick={(e) => { if (!readerState.meditationMode) {e.stopPropagation(); readerState.inspectWord(w, colVersion);} }}
+                      onclick={(e) => { if (readerState.enableLemmaClick) {e.stopPropagation(); readerState.inspectWord(w, colVersion);} }}
                     >{text}</span>{#if (w.trailer ?? ' ')}{w.trailer ?? ' '}{/if}{/if}{#if w.para_break}<span class="block mt-2"></span>{/if}{/each}{:else if vData?.verseData?.text}
                 {@const text = formatVerseText(vData.verseData.text, colVersion, readerState.hebrewMode, readerState.greekDiacritics)}
                 <span class="{langClass} whitespace-pre-line">

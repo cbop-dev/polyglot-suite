@@ -173,6 +173,17 @@ export const READER_HOTKEYS: HotkeyAction[] = [
 			state.cycleSyriacFont();
 		}
 	},
+	{
+		id: 'toggle-lemma-click-enable',
+		name: 'Toggle Lemma Click-for-Info',
+		description: 'Enable/Disable click-to-view Lemma Info',
+		category: 'General',
+		keys: ['l'],
+		preventDefault: true,
+		action: (state) => {
+			state.enableLemmaClick =!state.enableLemmaClick;
+		}
+	},
 	/*,
 	{
 		id: 'close-search-panel',

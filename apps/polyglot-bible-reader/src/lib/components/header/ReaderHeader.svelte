@@ -321,6 +321,25 @@ gap-2 sm:gap-4 -mx-3 px-1 sm:-mx-4 sm:px-4 md:-mx-8 md:px-3">
     <!-- Diacritic Controls -->
      <div class="sm:flex flex-row flex-nowrap sm:relative {readerState.showGridHeader ? 'flex' : 'hidden'} ">
      
+      
+      <div class="relative mr-1">
+        <label class="hidden lg:block text-xs font-bold mb-1 text-center text-ink-soft" for="greek-diacritics">Lem</label>
+        <button
+          id="lemma-click-enable-button"
+          type="button"
+          class=" font-greek h-[26px] min-w-[28px] sm:h-[38px] sm:min-w-[38px] px-1 sm:px-2 rounded border text-sm sm:text-lg flex items-center justify-center cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-blue-500 {readerState.enableLemmaClick
+            ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 shadow-xs font-bold'
+            : 'bg-page text-ink-soft border-rule hover:bg-rule hover:text-ink font-normal'}"
+          onclick={() => {readerState.enableLemmaClick =!readerState.enableLemmaClick}}
+          title={readerState.enableLemmaClick
+            ? 'Click to Show Lemma Info: On (click to disable)'
+            : 'Click to Show Lemma Info: Off (click to enable)'}
+          aria-label="Toggle Click-to-Show Lemma Info"
+        >
+          <span>L</span>
+        </button>
+      </div>
+     
     
       {#if displayedLanguages.includes("Hebrew")}
       <div class="{readerState.visibleVersions.includes("BHS") ? 'relative' : 'hidden'}">

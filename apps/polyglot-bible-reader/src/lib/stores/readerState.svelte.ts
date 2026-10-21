@@ -55,7 +55,7 @@ export class ReaderState {
 	selectedVersion = $state<string>('BHS');
 	selectedBook = $state<string>('Gen');
 	selectedChapter = $state<string>('1');
-
+	enableLemmaClick=$state(true);
 	versionGrid = $state<string[][]>([['BHS', 'LXX']]);
 	gridAlignments = $state<(( 'left' | 'right' ) | null)[][]>([['right', 'left']]);
 
@@ -116,6 +116,23 @@ export class ReaderState {
 		}
 	}
 
+	/**
+	 * @description sets meditation mode, and also sets the enableLemmaClick to the opposite value!
+	 * @param value Value to assign to Mediation mode
+	 */
+	setMeditationMode(value=true){
+		this.enableLemmaClick = !(this.meditationMode = value);
+	}
+
+	disableMeditationMode(){
+		this.setMeditationMode(false);
+	}
+	enableMeditationMode(){
+		this.setMeditationMode(true);
+	}
+	toggleMeditationMode(){
+		this.setMeditationMode(!this.meditationMode);
+	}
 	//what does this do?
 	/**
 	 * @description ensures that at least one grid version is the selectedVersion!
