@@ -20,9 +20,18 @@ export class ReaderState {
 	selectedToken = $state<Token | null>(null);
 	selectedCitation = $state<string | null>(null);
 
-	// Unified Side Panel & Tabs ('lexeme' | 'search' | 'highlights')
+	// Unified Side Panel & Tabs ('lexeme' | 'search' | 'highlights' | 'citations')
 	isSidePanelOpen = $state<boolean>(false);
-	activeSidePanelTab = $state<'lexeme' | 'search' | 'highlights'>('search');
+	activeSidePanelTab = $state<'lexeme' | 'search' | 'highlights' | 'citations'>('search');
+
+	// Biblical Citation Explorer State
+	selectedBiblicalCitation = $state<{
+		bookCode?: string;
+		chapter?: number;
+		verse?: number;
+		display?: string;
+		bookName?: string;
+	} | null>(null);
 
 	get isSearchOpen(): boolean {
 		return this.isSidePanelOpen && this.activeSidePanelTab === 'search';
@@ -114,6 +123,23 @@ export class ReaderState {
 
 	openHighlightsTab() {
 		this.activeSidePanelTab = 'highlights';
+		this.isSidePanelOpen = true;
+	}
+
+	openBiblicalCitation(
+		bookCode?: string,
+		chapter?: number,
+		verse?: number,
+		display?: string,
+		bookName?: string
+	) {
+		this.selectedBiblicalCitation = { bookCode, chapter, verse, display, bookName };
+		this.activeSidePanelTab = 'citations';
+		this.isSidePanelOpen = true;
+	}
+
+	openCitationsTab() {
+		this.activeSidePanelTab = 'citations';
 		this.isSidePanelOpen = true;
 	}
 

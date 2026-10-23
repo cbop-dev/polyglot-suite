@@ -91,12 +91,17 @@
 								{@const isPunct = [',', '.', '·', ';', ':', ')', ']', '—'].includes(tok.w)}
 								{@const nextIsPunct = nextTok && [',', '.', '·', ';', ':', ')', ']'].includes(nextTok.w)}
 								{#if tok.type === 'citation'}
-									<span
-										class="inline-flex items-center text-xs font-sans font-medium rounded-md px-1.5 py-0.5 mx-1 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 select-none align-middle"
-										title="Septuagint Citation: {tok.book_name} {tok.bible_chapter ? `${tok.bible_chapter}${tok.bible_verse ? `:${tok.bible_verse}` : ''}` : ''}"
+									<button
+										type="button"
+										onclick={() => readerState.openBiblicalCitation(tok.book_code, tok.bible_chapter, tok.bible_verse, tok.display, tok.book_name)}
+										class="inline-flex items-center gap-1 text-xs font-sans font-semibold rounded-md px-1.5 py-0.5 mx-1 bg-amber-100/80 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 cursor-pointer select-none align-middle transition-colors shadow-xs"
+										title="Click to explore Philo's citations of {tok.book_name || tok.display}"
 									>
-										{tok.display}
-									</span>{#if !nextIsPunct}{' '}{/if}
+										<svg xmlns="http://www.w3.org/2000/svg" class="size-3 text-amber-700 dark:text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+											<path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+										</svg>
+										<span>{tok.display}</span>
+									</button>{#if !nextIsPunct}{' '}{/if}
 								{:else if tok.type === 'apparatus'}
 									<span
 										class="text-xs text-slate-400 dark:text-slate-500 italic font-sans select-none"

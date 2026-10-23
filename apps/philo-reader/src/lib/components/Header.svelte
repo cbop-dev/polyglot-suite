@@ -132,6 +132,26 @@
 				<span class="font-mono text-xs font-bold leading-none">?</span>
 			</button>
 
+			<!-- Scripture Index / Biblical Citation Explorer Toggle -->
+			<button
+				type="button"
+				onclick={() => {
+					if (readerState.isSidePanelOpen && readerState.activeSidePanelTab === 'citations') {
+						readerState.isSidePanelOpen = false;
+					} else {
+						readerState.openCitationsTab();
+					}
+				}}
+				class="hidden md:inline-flex items-center gap-1 rounded-lg border border-[var(--color-rule)] bg-[var(--color-card-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--color-ink)] shadow-2xs hover:bg-[var(--color-rule)] cursor-pointer"
+				title="Biblical Citation Explorer"
+				aria-label="Biblical Citation Explorer"
+			>
+				<svg class="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+					<path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+				</svg>
+				<span>Scripture</span>
+			</button>
+
 			<!-- Search & Reference Panel Toggle -->
 			<button
 				type="button"
@@ -177,6 +197,16 @@
 				</div>
 			</div>
 			<div class="flex items-center justify-between pt-2 border-t border-[var(--color-rule)] text-xs">
+				<button
+					type="button"
+					onclick={() => { isMobileMenuOpen = false; readerState.openCitationsTab(); }}
+					class="font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer flex items-center gap-1"
+				>
+					<svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+						<path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+					</svg>
+					<span>Scripture Index</span>
+				</button>
 				<button
 					type="button"
 					onclick={() => { isMobileMenuOpen = false; readerState.openCitation(readerState.currentWorkCode, readerState.currentChapter); }}

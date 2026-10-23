@@ -22,6 +22,8 @@ export interface Token {
 export interface BiblicalCitation {
 	id: number;
 	work_code: string;
+	work_abbrev?: string;
+	work_title?: string;
 	chapter: number;
 	section: number;
 	work_unit_id: number;
@@ -31,6 +33,13 @@ export interface BiblicalCitation {
 	bible_verse?: number;
 	display_citation: string;
 	raw_citation: string;
+	text_snippet?: string;
+}
+
+export interface BiblicalBookSummary {
+	book_code: string;
+	book_name: string;
+	total_count: number;
 }
 
 export interface TextUnit {
@@ -326,45 +335,73 @@ export async function fetchAttestedForms(lemma: string): Promise<AttestedForm[]>
 	return buildAttestedForms(rawItems, { canonicalize: true, lang: 'greek' });
 }
 
+export async function fetchBiblicalBookSummaries(): Promise<BiblicalBookSummary[]> {
+	const worker = await getDbWorker();
+	const sql = `
+		SELECT book_code, book_name, COUNT(*) as cnt
+		FROM biblical_citations
+		GROUP BY book_code, book_name
+		ORDER BY cnt DESC
+	`;
+	const rows = await worker.db.query(sql);
+	return (rows as any[]).map((r) => ({
+		book_code: getRowVal<string>(r, 'book_code', 0),
+		book_name: getRowVal<string>(r, 'book_name', 1),
+		total_count: getRowVal<number>(r, 'cnt', 2)
+	}));
+}
+
 export async function searchBiblicalCitations(
 	bookCode?: string,
 	chapter?: number,
-	verse?: number
+	verse?: number,
+	limit: number = 100
 ): Promise<BiblicalCitation[]> {
 	const worker = await getDbWorker();
 	let sql = `
-		SELECT id, work_code, chapter, section, work_unit_id, book_code, book_name, bible_chapter, bible_verse, display_citation, raw_citation
-		FROM biblical_citations
+		SELECT c.id, c.work_code, c.chapter, c.section, c.work_unit_id, c.book_code, c.book_name, 
+		       c.bible_chapter, c.bible_verse, c.display_citation, c.raw_citation,
+		       w.abbrev as work_abbrev, w.title_english as work_title, t.text_content as text_snippet
+		FROM biblical_citations c
+		JOIN canonical_works w ON w.code = c.work_code
+		JOIN text_units t ON t.id = c.work_unit_id
 		WHERE 1=1
 	`;
 	const params: any[] = [];
 	if (bookCode) {
-		sql += ` AND book_code = ?`;
+		sql += ` AND c.book_code = ?`;
 		params.push(bookCode);
 	}
-	if (chapter !== undefined) {
-		sql += ` AND bible_chapter = ?`;
+	if (chapter !== undefined && chapter !== null) {
+		sql += ` AND c.bible_chapter = ?`;
 		params.push(chapter);
 	}
-	if (verse !== undefined) {
-		sql += ` AND bible_verse = ?`;
+	if (verse !== undefined && verse !== null) {
+		sql += ` AND c.bible_verse = ?`;
 		params.push(verse);
 	}
-	sql += ` ORDER BY work_code, chapter, section LIMIT 100`;
+	sql += ` ORDER BY c.bible_chapter IS NULL, c.bible_chapter, c.bible_verse IS NULL, c.bible_verse, w.order_index, c.chapter, c.section LIMIT ?`;
+	params.push(limit);
 
 	const rows = await worker.db.query(sql, params);
-	return (rows as any[]).map((r) => ({
-		id: getRowVal<number>(r, 'id', 0),
-		work_code: getRowVal<string>(r, 'work_code', 1),
-		chapter: getRowVal<number>(r, 'chapter', 2),
-		section: getRowVal<number>(r, 'section', 3),
-		work_unit_id: getRowVal<number>(r, 'work_unit_id', 4),
-		book_code: getRowVal<string>(r, 'book_code', 5),
-		book_name: getRowVal<string>(r, 'book_name', 6),
-		bible_chapter: getRowVal<number | undefined>(r, 'bible_chapter', 7),
-		bible_verse: getRowVal<number | undefined>(r, 'bible_verse', 8),
-		display_citation: getRowVal<string>(r, 'display_citation', 9),
-		raw_citation: getRowVal<string>(r, 'raw_citation', 10)
-	}));
+	return (rows as any[]).map((r) => {
+		const fullText = getRowVal<string>(r, 'text_snippet', 13) || '';
+		return {
+			id: getRowVal<number>(r, 'id', 0),
+			work_code: getRowVal<string>(r, 'work_code', 1),
+			chapter: getRowVal<number>(r, 'chapter', 2),
+			section: getRowVal<number>(r, 'section', 3),
+			work_unit_id: getRowVal<number>(r, 'work_unit_id', 4),
+			book_code: getRowVal<string>(r, 'book_code', 5),
+			book_name: getRowVal<string>(r, 'book_name', 6),
+			bible_chapter: getRowVal<number | undefined>(r, 'bible_chapter', 7),
+			bible_verse: getRowVal<number | undefined>(r, 'bible_verse', 8),
+			display_citation: getRowVal<string>(r, 'display_citation', 9),
+			raw_citation: getRowVal<string>(r, 'raw_citation', 10),
+			work_abbrev: getRowVal<string>(r, 'work_abbrev', 11),
+			work_title: getRowVal<string>(r, 'work_title', 12),
+			text_snippet: fullText.length > 180 ? `${fullText.slice(0, 180)}…` : fullText
+		};
+	});
 }
 
