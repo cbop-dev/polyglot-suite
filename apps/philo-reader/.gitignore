@@ -1,0 +1,17 @@
+node_modules
+.output
+.vercel
+.netlify
+/.svelte-kit
+/build
+.bak
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+!.env.deploy.example
+pipeline/__pycache__/
+pipeline/cache/
+pipeline/build/
+*.sqlite3

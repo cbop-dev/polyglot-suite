@@ -253,6 +253,26 @@ const html = `<!doctype html>
         </div>
         <a href="./fathers/" class="btn">Launch Fathers Reader &rarr;</a>
       </div>
+
+      <!-- Philo Reader -->
+      <div class="card">
+        <div>
+          <div class="card-header">
+            <span class="badge badge-live">Available</span>
+            <h2>Philo Reader</h2>
+          </div>
+          <p class="description">Synchronized parallel Greek and English reader covering all 31 surviving treatises of Philo of Alexandria (Cohn-Wendland Greek &amp; C.D. Yonge English) with unabridged LSJ lexicon, lemma statistics, and dual Cohn-Wendland / Mangey citation support.</p>
+          <div class="tags">
+            <span class="tag">Ancient Greek</span>
+            <span class="tag">C.D. Yonge English</span>
+            <span class="tag">31 Treatises</span>
+            <span class="tag">LSJ Lexicon</span>
+            <span class="tag">Mangey Milestones</span>
+            <span class="tag">sql.js-httpvfs</span>
+          </div>
+        </div>
+        <a href="./philo/" class="btn">Launch Philo Reader &rarr;</a>
+      </div>
     </div>
 
     <footer>

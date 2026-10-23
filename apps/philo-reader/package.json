@@ -1,0 +1,51 @@
+{
+  "name": "philo-reader",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "ADAPTER=node vite build",
+    "build:www": "ADAPTER=static vite build",
+    "build:static": "npm run build:www",
+    "build:gh": "ADAPTER=github vite build",
+    "build:github": "npm run build:gh",
+    "preview": "vite preview",
+    "preview:www": "ADAPTER=static vite preview",
+    "pipeline:fetch": "python3 -m pipeline.fetcher",
+    "pipeline:build": "python3 -m pipeline.build --build-db --chunk --export-ts",
+    "pipeline:all": "python3 -m pipeline.build --all",
+    "deploy": "npm run deploy:www",
+    "deploy:www": "./scripts/deploy_www.sh",
+    "deploy:www:promote": "./scripts/deploy_www.sh --promote",
+    "dwp": "npm run deploy:www:promote",
+    "deploy:promote": "npm run deploy:www:promote",
+    "deploy:www:history": "./scripts/deploy_www.sh --history",
+    "deploy:www:clean": "./scripts/deploy_www.sh --clean",
+    "rollback:www": "./scripts/deploy_www.sh --rollback",
+    "rollback": "npm run rollback:www",
+    "prepare": "svelte-kit sync || echo ''",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/kit": "^2.63.0",
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "@tailwindcss/typography": "^0.5.20",
+    "@tailwindcss/vite": "^4.3.0",
+    "showdown": "^2.1.0",
+    "svelte": "^5.56.1",
+    "svelte-check": "^4.6.0",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^5.7.0",
+    "vite": "^8.0.16"
+  },
+  "dependencies": {
+    "@polyglot/ancient-languages": "*",
+    "@polyglot/db-vfs": "*",
+    "@polyglot/theme": "*",
+    "chart.js": "^4.5.1",
+    "sql.js-httpvfs": "^0.8.12",
+    "svelte-chartjs": "^4.0.1"
+  }
+}

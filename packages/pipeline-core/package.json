@@ -1,0 +1,7 @@
+{
+  "name": "@polyglot/pipeline-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared Python pipeline tooling for Polyglot Suite ancient text readers",
+  "type": "module"
+}
