@@ -3,7 +3,16 @@ import { mylog } from '$lib/lemma-ui/env/env';
 import { normalizeBookName, getBookForVersion, formatDisplayReference, formatBookAbbreviation } from '$lib/config/bookMapping.js';
 import { getStaticCorpusTotalWords, getStaticBookWordStats } from '$lib/config/corpusBookStats';
 import { myDataSets } from '$lib/config/versions';
-import { stripGreekAccents, toPlainHebrew, normalizeStrongsId } from '@polyglot/ancient-languages';
+import {
+	stripGreekAccents,
+	toPlainHebrew,
+	normalizeStrongsId,
+	buildAttestedForms,
+	parseGreekMorph,
+	parseHebrewMorph,
+	type AttestedForm
+} from '@polyglot/ancient-languages';
+export type { AttestedForm };
 export interface WorkRow {
 	id: number;
 	slug: string;
@@ -1140,6 +1149,153 @@ export async function getConcordance(
 	}
 
 	return [];
+}
+
+export interface AttestedFormsResult {
+	forms: AttestedForm[];
+	workUnitForms: Map<number, string[]>;
+}
+
+/**
+ * Asynchronously fetch all attested surface forms and grammatical analyses for a lemma or Strong's ID.
+ */
+export async function fetchAttestedForms(
+	workId: number,
+	lemma: string,
+	strongs?: string,
+	lang: string = 'greek'
+): Promise<AttestedFormsResult> {
+	const emptyResult: AttestedFormsResult = { forms: [], workUnitForms: new Map() };
+	if (!workId && !lemma && !strongs) return emptyResult;
+	const corpusId = workId ? workIdToCorpusId(workId) : (lang === 'hebrew' ? 'wlc' : 'ognt');
+
+	const distinctKeys: string[] = [];
+	let sCode = '';
+	let sNorm = '';
+	if (strongs && strongs.trim()) {
+		sNorm = strongs.trim().toUpperCase();
+		sCode = sNorm.startsWith('H') || sNorm.startsWith('G')
+			? sNorm
+			: (corpusId === 'wlc' ? `H${sNorm}` : `G${sNorm}`);
+		distinctKeys.push(sCode);
+		if (sNorm !== sCode) distinctKeys.push(sNorm);
+	}
+
+	let lTrim = '';
+	if (lemma && lemma.trim()) {
+		lTrim = lemma.trim();
+		const targetKey = corpusId === 'peshitta' ? cleanSyriac(lTrim) : lTrim;
+		distinctKeys.push(targetKey);
+		const lNFC = targetKey.normalize('NFC');
+		if (lNFC !== targetKey) distinctKeys.push(lNFC);
+	}
+
+	const uniqueKeys = Array.from(new Set(distinctKeys));
+	if (uniqueKeys.length === 0) return emptyResult;
+
+	const placeholders = uniqueKeys.map(() => '?').join(',');
+	const rows = await query<{ work_unit_id: number; tokens_json: string }>(`
+		SELECT cr.work_unit_id, tu.tokens_json
+		FROM concordance_refs cr
+		JOIN text_units tu ON tu.id = cr.work_unit_id
+		WHERE cr.corpus_id = ? AND cr.lemma_key IN (${placeholders})
+		ORDER BY cr.work_unit_id
+	`, [corpusId, ...uniqueKeys]);
+
+	if (!rows || rows.length === 0) return emptyResult;
+
+	const rawTokens: { word: string; morphAnalysis?: any }[] = [];
+	const workUnitForms = new Map<number, string[]>();
+
+	const strongsSet = new Set(
+		uniqueKeys
+			.filter((k) => k.startsWith('H') || k.startsWith('G'))
+			.map((k) => k.toUpperCase())
+	);
+	const lemmaLowerSet = new Set(uniqueKeys.map((k) => k.toLowerCase()));
+
+	for (const row of rows) {
+		if (!row.tokens_json) continue;
+		try {
+			const tokens = typeof row.tokens_json === 'string' ? JSON.parse(row.tokens_json) : row.tokens_json;
+			if (!Array.isArray(tokens)) continue;
+
+			for (const t of tokens) {
+				let surface = '';
+				let norm = '';
+				let tokStrongs = '';
+				let morph = '';
+				let tokLemma = '';
+
+				if (Array.isArray(t)) {
+					surface = t[0] || '';
+					norm = t[1] || surface;
+					tokStrongs = t[2] || '';
+					morph = t[3] || '';
+					tokLemma = t[4] || '';
+				} else if (t && typeof t === 'object') {
+					surface = t.word || t.surface || '';
+					norm = t.normalized || surface;
+					tokStrongs = t.strongs || t.strongs_number || '';
+					morph = t.morph || t.morph_code || '';
+					tokLemma = t.lemma || '';
+				}
+
+				if (!surface) continue;
+
+				let isMatch = false;
+				if (tokStrongs && strongsSet.size > 0) {
+					const normSt = tokStrongs.trim().toUpperCase();
+					if (strongsSet.has(normSt) || (normSt.length > 1 && strongsSet.has(normSt.slice(1)))) {
+						isMatch = true;
+					}
+				}
+				if (!isMatch && tokLemma) {
+					const lemLow = tokLemma.trim().toLowerCase();
+					if (lemmaLowerSet.has(lemLow) || lemmaLowerSet.has(lemLow.normalize('NFC'))) {
+						isMatch = true;
+					}
+				}
+				if (!isMatch && norm) {
+					const normLow = norm.trim().toLowerCase();
+					if (lemmaLowerSet.has(normLow) || lemmaLowerSet.has(normLow.normalize('NFC'))) {
+						isMatch = true;
+					}
+				}
+
+				if (isMatch) {
+					const analysis = (lang === 'hebrew' || corpusId === 'wlc')
+						? parseHebrewMorph(morph)
+						: parseGreekMorph(morph);
+					rawTokens.push({
+						word: surface,
+						morphAnalysis: analysis
+					});
+
+					const cleanWord = surface.replace(/[.,;:·’—\s׃־׀]/g, '').trim().toLowerCase();
+					if (cleanWord) {
+						let wList = workUnitForms.get(row.work_unit_id);
+						if (!wList) {
+							wList = [];
+							workUnitForms.set(row.work_unit_id, wList);
+						}
+						if (!wList.includes(cleanWord)) {
+							wList.push(cleanWord);
+						}
+					}
+				}
+			}
+		} catch (e) {
+			// ignore malformed token rows
+		}
+	}
+
+	const forms = buildAttestedForms(rawTokens, {
+		canonicalize: true,
+		lang: lang === 'hebrew' ? 'hebrew' : 'greek'
+	});
+
+	return { forms, workUnitForms };
 }
 
 /**

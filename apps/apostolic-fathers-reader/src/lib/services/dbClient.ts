@@ -1,8 +1,8 @@
 import { getDbWorker } from './dbWorker';
-import { stripGreekAccents } from '@polyglot/ancient-languages';
+import { stripGreekAccents, buildAttestedForms, type AttestedForm } from '@polyglot/ancient-languages';
 import { getRowVal, parseJsonField } from '@polyglot/db-vfs';
 
-export { stripGreekAccents };
+export { stripGreekAccents, type AttestedForm };
 
 export interface Token {
 	w: string;
@@ -230,11 +230,6 @@ export async function searchLemmas(query: string, limit: number = 30): Promise<L
 	});
 }
 
-export interface AttestedForm {
-	form: string;
-	count: number;
-}
-
 export async function fetchAttestedForms(lemma: string): Promise<AttestedForm[]> {
 	if (!lemma) return [];
 	const worker = await getDbWorker();
@@ -248,7 +243,7 @@ export async function fetchAttestedForms(lemma: string): Promise<AttestedForm[]>
 		WHERE c.lemma = ?
 	`;
 	const rows = await worker.db.query(sql, [clean]);
-	const counts: Record<string, number> = {};
+	const rawItems: { word: string; pos?: string; morph?: string }[] = [];
 
 	for (const row of rows as any[]) {
 		const raw = getRowVal<string | undefined>(row, 'tokens_json', 0);
@@ -257,16 +252,14 @@ export async function fetchAttestedForms(lemma: string): Promise<AttestedForm[]>
 
 		for (const tok of tokens) {
 			if (tok.l === clean || tok.l === lemma) {
-				// Strip surface punctuation from word for form counting
-				const surface = tok.w.replace(/[.,;:·’—\s]/g, '').trim();
-				if (surface) {
-					counts[surface] = (counts[surface] || 0) + 1;
-				}
+				rawItems.push({
+					word: tok.w,
+					pos: tok.p,
+					morph: tok.m
+				});
 			}
 		}
 	}
 
-	return Object.entries(counts)
-		.map(([form, count]) => ({ form, count }))
-		.sort((a, b) => b.count - a.count || a.form.localeCompare(b.form));
+	return buildAttestedForms(rawItems, { canonicalize: true, lang: 'greek' });
 }

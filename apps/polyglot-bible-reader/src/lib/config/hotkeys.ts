@@ -15,7 +15,7 @@ export const READER_HOTKEYS: HotkeyAction[] = [
 		keys: ['m'],
 		preventDefault: true,
 		action: (state) => {
-			state.meditationMode = !state.meditationMode;
+			state.toggleMeditationMode();
 		}
 	},
 	{

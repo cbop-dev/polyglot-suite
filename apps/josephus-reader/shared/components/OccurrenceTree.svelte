@@ -15,6 +15,7 @@
     lemmaDisplay = '',
     lemmaData = null,
     selectedFormFilter = null,
+    matchingForms = null,
     onClearFormFilter = () => {},
     onNavigate = defaultNavigate,
     loading = false,
@@ -23,6 +24,7 @@
     lemmaDisplay?: string;
     lemmaData?: LemmaEntryData | null;
     selectedFormFilter?: string | null;
+    matchingForms?: string[] | null;
     onClearFormFilter?: () => void;
     onNavigate?: (work: string, book: number, sec: string) => void;
     loading?: boolean;
@@ -122,8 +124,18 @@
 
   let filteredOccurrences = $derived.by(() => {
     if (!lemmaData || !lemmaData.occurrences) return [];
-    if (!selectedFormFilter) return lemmaData.occurrences;
-    return lemmaData.occurrences.filter(occ => isFormFilterMatch(occ.word, selectedFormFilter!));
+    let list = lemmaData.occurrences;
+    if (matchingForms !== null && matchingForms !== undefined) {
+      const matchSet = new Set(matchingForms.map(f => f.toLowerCase()));
+      list = list.filter(occ => {
+        const clean = occ.word.replace(/[,\.·;:\?!()\[\]—]/g, '').trim().toLowerCase();
+        return matchSet.has(clean) || matchingForms.some(f => isFormFilterMatch(occ.word, f));
+      });
+    }
+    if (selectedFormFilter) {
+      list = list.filter(occ => isFormFilterMatch(occ.word, selectedFormFilter!));
+    }
+    return list;
   });
 
   let lemmaOccurrencesGrouped = $derived.by(() => {
@@ -184,7 +196,7 @@
         <span class="inline-spinner" title="Loading occurrences..."></span>
       {/if}
       <span class="section-count-badge" class:ready-glow={justLoaded}>
-        {selectedFormFilter ? `${filteredOccurrences.length} / ${lemmaData?.occurrences?.length || 0}` : (lemmaData?.occurrences?.length || 0)}
+        {selectedFormFilter || (matchingForms !== null && matchingForms !== undefined) ? `${filteredOccurrences.length} / ${lemmaData?.occurrences?.length || 0}` : (lemmaData?.occurrences?.length || 0)}
       </span>
     </div>
     {#if lemmaData?.occurrences?.length}
@@ -208,6 +220,12 @@
           Show All Forms ✕
         </button>
       </div>
+    {:else if matchingForms !== null && matchingForms !== undefined}
+      <div class="form-filter-active-bar">
+        <span class="filter-bar-text">
+          Filtering passages by inflection ({filteredOccurrences.length} occurrence{filteredOccurrences.length === 1 ? '' : 's'} across {matchingForms.length} matching form{matchingForms.length === 1 ? '' : 's'})
+        </span>
+      </div>
     {/if}
 
     {#if loading}
@@ -215,7 +233,7 @@
     {:else if !lemmaData || !lemmaData.occurrences || lemmaData.occurrences.length === 0}
       <div class="occ-empty">No textual occurrences recorded for "{lemmaDisplay}".</div>
     {:else if filteredOccurrences.length === 0}
-      <div class="occ-empty">No occurrences found for form "{selectedFormFilter}".</div>
+      <div class="occ-empty">No occurrences found matching active filter.</div>
     {:else}
       <div class="occurrences-tree">
         {#each Object.entries(lemmaOccurrencesGrouped) as [workId, bookGroup] (workId)}

@@ -3,8 +3,18 @@
 	import { highlightStore } from '$lib/stores/highlightStore.svelte';
 	import HighlightColorPicker from '$lib/components/HighlightColorPicker.svelte';
 	import { WORKS_BY_CODE } from '$lib/config/canonicalWorks.generated';
-	import { decodeMorph, latinToGreek } from '@polyglot/ancient-languages';
+	import {
+		decodeMorph,
+		latinToGreek,
+		isFormFilterMatch,
+		filterAttestedForms,
+		extractAvailableInflections,
+		isCriteriaActive,
+		type InflectionFilterCriteria
+	} from '@polyglot/ancient-languages';
 	import KwicSnippet from '@polyglot/ancient-languages/KwicSnippet.svelte';
+	import AttestedFormsSection from '@polyglot/ancient-languages/AttestedFormsSection.svelte';
+	import InflectionFilterBar from '@polyglot/ancient-languages/InflectionFilterBar.svelte';
 	import {
 		fetchLexiconEntry,
 		fetchLemmaStats,
@@ -74,7 +84,16 @@
 	let concordanceError = $state<string | null>(null);
 
 	let selectedFormFilter = $state<string | null>(null);
+	let inflectionCriteria = $state<InflectionFilterCriteria>({});
+	let isInflectionFilterOpen = $state<boolean>(false);
 	let prevLemma = $state<string>('');
+
+	let availableInflections = $derived(extractAvailableInflections(attestedForms));
+	let filteredAttestedForms = $derived(
+		isCriteriaActive(inflectionCriteria)
+			? filterAttestedForms(attestedForms, inflectionCriteria)
+			: attestedForms
+	);
 
 	// When a new lexeme is selected/loaded, keep all sections collapsed by default,
 	// auto-fetch lightweight LSJ entry and stats in the background,
@@ -83,8 +102,10 @@
 		if (currentLemma !== prevLemma) {
 			prevLemma = currentLemma;
 			selectedFormFilter = null;
+			inflectionCriteria = {};
+			isInflectionFilterOpen = false;
 
-			// Keep all 3 sections collapsed by default
+			// Keep all sections collapsed by default
 			isAttestedFormsOpen = false;
 			isLexArticleOpen = false;
 			isConcordanceOpen = false;
@@ -221,10 +242,40 @@
 		}
 	}
 
+	let activeInflectionMatchingForms = $derived.by(() => {
+		if (!isCriteriaActive(inflectionCriteria)) return null;
+		return new Set(filterAttestedForms(attestedForms, inflectionCriteria).map((f) => f.form.toLowerCase()));
+	});
+
 	let filteredConcordance = $derived.by(() => {
-		if (!selectedFormFilter) return concordance;
-		const target = selectedFormFilter.toLowerCase();
-		return concordance.filter((c) => c.text_content.toLowerCase().includes(target));
+		let list = concordance;
+
+		// 1. If inflection filter is active, only include occurrences matching one of the filtered forms
+		if (activeInflectionMatchingForms) {
+			list = list.filter((c) => {
+				if (c.matched_words && c.matched_words.length > 0) {
+					return c.matched_words.some((w) => {
+						const clean = w.replace(/[,\.·;:\?!()\[\]—]/g, '').trim().toLowerCase();
+						return activeInflectionMatchingForms.has(clean) || Array.from(activeInflectionMatchingForms).some((f) => isFormFilterMatch(w, f));
+					});
+				}
+				const clean = (c.matched_word || '').replace(/[,\.·;:\?!()\[\]—]/g, '').trim().toLowerCase();
+				return activeInflectionMatchingForms.has(clean) || Array.from(activeInflectionMatchingForms).some((f) => isFormFilterMatch(c.matched_word || '', f));
+			});
+		}
+
+		// 2. If a specific form chip is selected, filter by that exact form
+		if (selectedFormFilter) {
+			const filter = selectedFormFilter;
+			list = list.filter((c) => {
+				if (c.matched_words && c.matched_words.length > 0) {
+					return c.matched_words.some((w) => isFormFilterMatch(w, filter));
+				}
+				return isFormFilterMatch(c.matched_word || '', filter) || c.text_content.toLowerCase().includes(filter.toLowerCase());
+			});
+		}
+
+		return list;
 	});
 
 	// Tab 2: Search Data
@@ -460,88 +511,42 @@
 						{/if}
 					</div>
 
-					<!-- Section 1: Attested Forms (Collapsed by default, loads on click) -->
-					<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] overflow-hidden">
-						<div class="flex items-center justify-between hover:bg-[var(--color-rule)] transition-colors">
-							<button
-								type="button"
-								onclick={toggleAttestedForms}
-								class="flex-1 flex items-center justify-between px-4 py-3 cursor-pointer text-left select-none"
-								aria-expanded={isAttestedFormsOpen}
-							>
-								<div class="flex items-center gap-2">
-									<span class="text-xs font-bold uppercase tracking-wider text-[var(--color-ink)]">
-										Attested Forms
-									</span>
-									{#if isAttestedFormsLoading}
-										<span class="inline-block animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full" title="Loading..."></span>
-									{:else if attestedFormsLoaded}
-										<span class="rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-1.5 py-0.2 text-[10px] font-mono font-bold">
-											{attestedForms.length}
-										</span>
-									{/if}
-								</div>
-								<svg
-									class="h-4 w-4 text-[var(--color-ink-soft)] transition-transform duration-200 {isAttestedFormsOpen ? 'rotate-180' : ''}"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-								</svg>
-							</button>
-							{#if selectedFormFilter}
-								<button
-									type="button"
-									onclick={() => (selectedFormFilter = null)}
-									class="pr-4 text-[11px] text-blue-600 dark:text-blue-400 font-semibold hover:underline cursor-pointer"
-								>
-									Reset filter
-								</button>
-							{/if}
-						</div>
+					<!-- Sibling Section: Inflection Filter (Collapsed by default, loads on click) -->
+					<InflectionFilterBar
+						available={availableInflections}
+						bind:criteria={inflectionCriteria}
+						bind:isOpen={isInflectionFilterOpen}
+						totalFormsCount={attestedForms.length}
+						filteredFormsCount={filteredAttestedForms.length}
+						loading={isAttestedFormsLoading}
+						error={attestedFormsError}
+						onRetry={() => loadAttestedForms(currentLemma)}
+						onToggleOpen={(open) => {
+							if (open && !attestedFormsLoaded && !isAttestedFormsLoading && currentLemma) {
+								loadAttestedForms(currentLemma);
+							}
+						}}
+					/>
 
-						{#if isAttestedFormsOpen}
-							<div class="p-3 border-t border-[var(--color-rule)] bg-[var(--color-page)]/30">
-								{#if isAttestedFormsLoading}
-									<div class="py-4 text-center text-xs text-[var(--color-ink-soft)] space-y-1.5">
-										<div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-										<p>Loading attested forms from database worker...</p>
-									</div>
-								{:else if attestedFormsError}
-									<div class="p-3 text-center text-xs text-red-600 dark:text-red-400 space-y-1">
-										<p>{attestedFormsError}</p>
-										<button
-											type="button"
-											onclick={() => loadAttestedForms(currentLemma)}
-											class="text-blue-600 dark:text-blue-400 underline font-medium hover:opacity-80 cursor-pointer"
-										>
-											Retry
-										</button>
-									</div>
-								{:else if attestedForms.length === 0}
-									<div class="py-3 text-center text-xs text-[var(--color-ink-soft)]">
-										No attested forms recorded in the Apostolic Fathers corpus.
-									</div>
-								{:else}
-									<div class="flex flex-wrap gap-1.5">
-										{#each attestedForms as f}
-											{@const isActive = selectedFormFilter === f.form}
-											<button
-												type="button"
-												onclick={() => selectForm(f.form)}
-												class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors cursor-pointer {isActive ? 'bg-blue-600 text-white font-bold' : 'bg-[var(--color-page)] hover:bg-[var(--color-rule)] border border-[var(--color-rule)] text-[var(--color-ink)]'}"
-												title="Filter concordance by {f.form}"
-											>
-												<span class="greek-font font-medium">{f.form}</span>
-												<span class="text-[10px] font-mono opacity-70">({f.count})</span>
-											</button>
-										{/each}
-									</div>
-								{/if}
-							</div>
-						{/if}
-					</div>
+					<!-- Sibling Section: Attested Forms (Collapsed by default, loads on click) -->
+					<AttestedFormsSection
+						attestedForms={filteredAttestedForms}
+						totalCount={attestedForms.length}
+						selectedFormFilter={selectedFormFilter}
+						lemmaDisplay={currentLemma}
+						corpusTitle="Apostolic Fathers"
+						loading={isAttestedFormsLoading}
+						bind:isOpen={isAttestedFormsOpen}
+						error={attestedFormsError}
+						onRetry={() => loadAttestedForms(currentLemma)}
+						onToggleOpen={(open) => {
+							if (open && !attestedFormsLoaded && !isAttestedFormsLoading && currentLemma) {
+								loadAttestedForms(currentLemma);
+							}
+						}}
+						onToggleFilter={selectForm}
+						onResetFilter={() => (selectedFormFilter = null)}
+					/>
 
 					<!-- Section 2: Full Lexicon Article (Collapsed by default, loads on click) -->
 					<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] overflow-hidden">
@@ -625,7 +630,7 @@
 									<span class="inline-block animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full" title="Loading..."></span>
 								{:else if concordanceLoaded}
 									<span class="rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-1.5 py-0.2 text-[10px] font-mono font-bold">
-										{filteredConcordance.length}{selectedFormFilter ? ` for "${selectedFormFilter}"` : ''}
+										{filteredConcordance.length}{selectedFormFilter ? ` for "${selectedFormFilter}"` : (isCriteriaActive(inflectionCriteria) ? ' (filtered)' : '')}
 									</span>
 								{/if}
 							</div>

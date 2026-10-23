@@ -24,7 +24,19 @@ import {
 	getNextPaletteColorIndex,
 	getHighlightInlineStyle,
 	normalizeStrongsId,
-	HebrewUtils
+	HebrewUtils,
+	parseProielMorph,
+	parsePerseusMorph,
+	parseGreekMorph,
+	parseHebrewMorph,
+	getCanonicalForm,
+	getCanonicalAttestedForms,
+	isFormFilterMatch,
+	buildAttestedForms,
+	extractAvailableInflections,
+	filterAttestedForms,
+	isCriteriaActive,
+	countActiveFilters
 } from '../src/index.js';
 
 describe('@polyglot/ancient-languages', () => {
@@ -220,6 +232,216 @@ describe('@polyglot/ancient-languages', () => {
 			expect(normalizeStrongsId('h00123')).toBe('H123');
 			expect(normalizeStrongsId('3056')).toBe('3056');
 			expect(normalizeStrongsId(undefined)).toBe('');
+		});
+	});
+
+	describe('Unified Morphological Analysis & Attested Forms', () => {
+		it('parses PROIEL tags into structured MorphAnalysis', () => {
+			const finiteVerb = parseProielMorph('V-', '3AAI-S--');
+			expect(finiteVerb.pos).toBe('Verb');
+			expect(finiteVerb.tense).toBe('Aorist');
+			expect(finiteVerb.voice).toBe('Active');
+			expect(finiteVerb.mood).toBe('Indicative');
+			expect(finiteVerb.person).toBe('3rd');
+			expect(finiteVerb.number).toBe('Singular');
+
+			const participle = parseProielMorph('V-', '-AMPNSM-');
+			expect(participle.pos).toBe('Verb');
+			expect(participle.tense).toBe('Aorist');
+			expect(participle.voice).toBe('Middle');
+			expect(participle.mood).toBe('Participle');
+			expect(participle.case).toBe('Nominative');
+			expect(participle.number).toBe('Singular');
+			expect(participle.gender).toBe('Masculine');
+
+			const noun = parseProielMorph('N-', '----NSF-');
+			expect(noun.pos).toBe('Noun');
+			expect(noun.case).toBe('Nominative');
+			expect(noun.number).toBe('Singular');
+			expect(noun.gender).toBe('Feminine');
+		});
+
+		it('parses Perseus / Josephus parse strings into structured MorphAnalysis', () => {
+			const res1 = parsePerseusMorph('Perf Ind MidPass 3s', 'verb');
+			expect(res1.pos).toBe('Verb');
+			expect(res1.tense).toBe('Perfect');
+			expect(res1.mood).toBe('Indicative');
+			expect(res1.voice).toBe('Middle/Passive');
+			expect(res1.person).toBe('3rd');
+			expect(res1.number).toBe('Singular');
+
+			const res2 = parsePerseusMorph('Pres Part Act Acc Pl M', 'verb');
+			expect(res2.pos).toBe('Verb');
+			expect(res2.tense).toBe('Present');
+			expect(res2.mood).toBe('Participle');
+			expect(res2.voice).toBe('Active');
+			expect(res2.case).toBe('Accusative');
+			expect(res2.number).toBe('Plural');
+			expect(res2.gender).toBe('Masculine');
+
+			const res3 = parsePerseusMorph('Nom Sg M', 'noun');
+			expect(res3.pos).toBe('Noun');
+			expect(res3.case).toBe('Nominative');
+			expect(res3.number).toBe('Singular');
+			expect(res3.gender).toBe('Masculine');
+		});
+
+		it('parses MorphGNT & Swete LXX Greek codes into structured MorphAnalysis', () => {
+			const mgnt = parseGreekMorph('V- 3AAI-S--');
+			expect(mgnt.pos).toBe('Verb');
+			expect(mgnt.person).toBe('3rd');
+			expect(mgnt.tense).toBe('Aorist');
+			expect(mgnt.voice).toBe('Active');
+			expect(mgnt.mood).toBe('Indicative');
+			expect(mgnt.number).toBe('Singular');
+
+			const swete = parseGreekMorph('V-AAI-3S');
+			expect(swete.pos).toBe('Verb');
+			expect(swete.person).toBe('3rd');
+			expect(swete.tense).toBe('Aorist');
+			expect(swete.voice).toBe('Active');
+			expect(swete.mood).toBe('Indicative');
+			expect(swete.number).toBe('Singular');
+		});
+
+		it('canonicalizes Greek movable nu correctly', () => {
+			expect(getCanonicalForm('ἔμελλεν')).toBe('ἔμελλε(ν)');
+			expect(getCanonicalForm('ἔμελλε')).toBe('ἔμελλε(ν)');
+			expect(getCanonicalForm('Ἔμελλεν')).toBe('ἔμελλε(ν)');
+			expect(getCanonicalForm('ἀρχή')).toBe('ἀρχή');
+			expect(getCanonicalForm('παρὰ')).toBe('παρά');
+
+			const list = getCanonicalAttestedForms([
+				{ word: 'ἔμελλε' },
+				{ word: 'Ἔμελλε' },
+				{ word: 'ἔμελλεν' },
+				{ word: 'Ἔμελλεν' }
+			]);
+			expect(list).toEqual(['ἔμελλε(ν)']);
+
+			expect(isFormFilterMatch('ἔμελλεν', 'ἔμελλε(ν)')).toBe(true);
+			expect(isFormFilterMatch('ἔμελλε', 'ἔμελλε(ν)')).toBe(true);
+			expect(isFormFilterMatch('ἄλλο', 'ἔμελλε(ν)')).toBe(false);
+		});
+
+		it('builds unified AttestedForm objects with counts and analyses', () => {
+			const tokens = [
+				{ word: 'ἔμελλε', pos: 'V-', morph: '3IAI-S--' },
+				{ word: 'ἔμελλεν', pos: 'V-', morph: '3IAI-S--' },
+				{ word: 'μελλήσει', pos: 'V-', morph: '3FAI-S--' }
+			];
+
+			const forms = buildAttestedForms(tokens, { canonicalize: true });
+			expect(forms).toHaveLength(2);
+			expect(forms[0].form).toBe('ἔμελλε(ν)');
+			expect(forms[0].count).toBe(2);
+			expect(forms[0].rawForms).toContain('ἔμελλε');
+			expect(forms[0].rawForms).toContain('ἔμελλεν');
+			expect(forms[0].analyses).toHaveLength(1);
+			expect(forms[0].analyses[0].tense).toBe('Imperfect');
+
+			expect(forms[1].form).toBe('μελλήσει(ν)');
+			expect(forms[1].count).toBe(1);
+			expect(forms[1].analyses[0].tense).toBe('Future');
+		});
+
+		it('extracts available inflection options from forms', () => {
+			const tokens = [
+				{ word: 'ἔμελλε', pos: 'V-', morph: '3IAI-S--' }, // Impf Act Ind 3s
+				{ word: 'μέλλοντος', pos: 'V-', morph: '-PAPGSM-' }, // Pres Act Part Gen Sg Masc
+				{ word: 'μελλήσει', pos: 'V-', morph: '3FAI-S--' } // Fut Act Ind 3s
+			];
+			const forms = buildAttestedForms(tokens);
+			const available = extractAvailableInflections(forms);
+
+			expect(available.isVerb).toBe(true);
+			expect(available.hasParticiple).toBe(true);
+			expect(available.moods).toEqual(['Indicative', 'Participle']);
+			expect(available.tenses).toEqual(['Present', 'Imperfect', 'Future']);
+			expect(available.voices).toEqual(['Active']);
+			expect(available.persons).toEqual(['3rd']);
+			expect(available.numbers).toEqual(['Singular']);
+			expect(available.cases).toEqual(['Genitive']);
+			expect(available.genders).toEqual(['Masculine']);
+		});
+
+		it('filters forms with multi-select OR within dimension and AND across dimensions', () => {
+			const tokens = [
+				{ word: 'ἔμελλε', pos: 'V-', morph: '3IAI-S--' }, // Impf Ind
+				{ word: 'ἔμελλον', pos: 'V-', morph: '1IAI-S--' }, // Impf Ind
+				{ word: 'μελλήσει', pos: 'V-', morph: '3FAI-S--' }, // Fut Ind
+				{ word: 'μέλλοντος', pos: 'V-', morph: '-PAPGSM-' }, // Pres Part
+				{ word: 'μελλόντων', pos: 'V-', morph: '-PAPGPM-' } // Pres Part
+			];
+			const forms = buildAttestedForms(tokens);
+
+			// Multi-select OR within tense (Imperfect OR Future)
+			const resTense = filterAttestedForms(forms, { tense: ['Imperfect', 'Future'] });
+			const tenseForms = resTense.map((f) => f.form);
+			expect(tenseForms).toContain('ἔμελλε(ν)');
+			expect(tenseForms).toContain('ἔμελλον');
+			expect(tenseForms).toContain('μελλήσει(ν)');
+			expect(tenseForms).not.toContain('μέλλοντος');
+
+			// AND across dimensions: Tense = Present AND Mood = Participle
+			const resPart = filterAttestedForms(forms, { tense: ['Present'], mood: ['Participle'] });
+			const partForms = resPart.map((f) => f.form);
+			expect(partForms).toEqual(['μέλλοντος', 'μελλόντων']);
+
+			// Filter by Case when Participle (Genitive)
+			const resGen = filterAttestedForms(forms, { case: ['Genitive'] });
+			expect(resGen.map((f) => f.form)).toEqual(['μέλλοντος', 'μελλόντων']);
+
+			// Helper checks
+			expect(isCriteriaActive({ tense: ['Aorist'] })).toBe(true);
+			expect(isCriteriaActive({})).toBe(false);
+			expect(isCriteriaActive({ tense: [] })).toBe(false);
+			expect(countActiveFilters({ tense: ['Aorist', 'Future'], mood: ['Indicative'] })).toBe(3);
+		});
+
+		it('parses Robinson-style Greek morphology (OpenGNT / Swete)', () => {
+			const m = parseGreekMorph('V-PAP-DSF');
+			expect(m.pos).toBe('Verb');
+			expect(m.tense).toBe('Present');
+			expect(m.voice).toBe('Active');
+			expect(m.mood).toBe('Participle');
+			expect(m.case).toBe('Dative');
+			expect(m.number).toBe('Singular');
+			expect(m.gender).toBe('Feminine');
+
+			const n = parseGreekMorph('N-NSM-P');
+			expect(n.pos).toBe('Noun');
+			expect(n.case).toBe('Nominative');
+			expect(n.number).toBe('Singular');
+			expect(n.gender).toBe('Masculine');
+		});
+
+		it('parses Hebrew morphology (ETCBC / BHSA and Open Scriptures)', () => {
+			const etcbc = parseHebrewMorph('4c.verb.qal.perf.p3.m.sg');
+			expect(etcbc.pos).toBe('Verb');
+			expect(etcbc.tense).toBe('Perfect');
+			expect(etcbc.person).toBe('3rd');
+			expect(etcbc.gender).toBe('Masculine');
+			expect(etcbc.number).toBe('Singular');
+			expect(etcbc.voice).toBe('Active');
+
+			const noun = parseHebrewMorph('4c.nmpr.m.sg.a');
+			expect(noun.pos).toBe('Noun');
+			expect(noun.gender).toBe('Masculine');
+			expect(noun.number).toBe('Singular');
+
+			const part = parseHebrewMorph('4c.verb.qal.ptca.m.sg.a');
+			expect(part.pos).toBe('Verb');
+			expect(part.mood).toBe('Participle');
+			expect(part.gender).toBe('Masculine');
+			expect(part.number).toBe('Singular');
+
+			const openScr = parseHebrewMorph('Prep-b | V-qp3ms');
+			expect(openScr.pos).toBe('Verb');
+			expect(openScr.tense).toBe('Perfect');
+			expect(openScr.person).toBe('3rd');
+			expect(openScr.gender).toBe('Masculine');
+			expect(openScr.number).toBe('Singular');
 		});
 	});
 });

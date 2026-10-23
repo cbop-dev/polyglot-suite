@@ -10,7 +10,12 @@
     "./hebrew-utils": "./src/hebrew-utils.js",
     "./greek-utils": "./src/greek-utils.js",
     "./KwicSnippet.svelte": "./src/components/KwicSnippet.svelte",
+    "./AttestedFormsSection.svelte": "./src/components/AttestedFormsSection.svelte",
+    "./InflectionFilterBar.svelte": "./src/components/InflectionFilterBar.svelte",
     "./components/*": "./src/components/*"
+  },
+  "scripts": {
+    "test": "vitest run"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"

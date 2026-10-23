@@ -270,96 +270,12 @@ export interface WordHighlightResult {
   style?: string;
 }
 
-/**
- * Normalizes Greek lemma accents so no lemma ends with or contains grave accents (\u0300 -> \u0301).
- * e.g., παρὰ -> παρά, καὶ -> καί, διὰ -> διά
- */
-export function normalizeLemmaAccents(str: string): string {
-  if (!str) return '';
-  return str.normalize('NFD').replace(/\u0300/g, '\u0301').normalize('NFC');
-}
-
-/**
- * Canonicalizes a Greek word form for display and grouping in Attested Forms grids.
- * - Lowercases capital letters with accents/breathings (e.g., Ἔμελλε -> ἔμελλε)
- * - Normalizes grave accents to acute accents (\u0300 -> \u0301)
- * - Groups movable nu (ἐφελκυστικὸν ν) into a single canonical representation, e.g. ἔμελλε(ν)
- */
-export function getCanonicalForm(rawWord: string): string {
-  if (!rawWord) return '';
-
-  let w = rawWord.replace(/[.,·;:!?"'»«()\[\]]/g, '').trim();
-  if (!w) return '';
-
-  w = w.toLowerCase();
-  w = w.normalize('NFD').replace(/\u0300/g, '\u0301');
-
-  // Strip secondary enclitic accent on final syllable if an earlier accent exists
-  const accentMatches = w.match(/\u0301/g) || [];
-  if (accentMatches.length > 1) {
-    const lastIdx = w.lastIndexOf('\u0301');
-    if (lastIdx !== -1) {
-      w = w.slice(0, lastIdx) + w.slice(lastIdx + 1);
-    }
-  }
-
-  w = w.normalize('NFC');
-
-  if (w.endsWith('ν')) {
-    const stem = w.slice(0, -1);
-    const normStem = stem.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    if (/[ε|σι|τι|ει]$/.test(normStem)) {
-      return `${stem}(ν)`;
-    }
-  } else {
-    const normW = w.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    if (/[ε|σι|τι|ει]$/.test(normW)) {
-      return `${w}(ν)`;
-    }
-  }
-
-  return w;
-}
-
-/**
- * Given a list of occurrences, produces a deduplicated, sorted list of canonical attested form strings.
- * e.g., ["ἔμελλε", "Ἔμελλε", "ἔμελλεν", "Ἔμελλεν"] => ["ἔμελλε(ν)"]
- */
-export function getCanonicalAttestedForms(occurrences: Array<{ word?: string }>): string[] {
-  if (!occurrences || !Array.isArray(occurrences)) return [];
-
-  const canonicalMap = new Map<string, string>();
-
-  for (const o of occurrences) {
-    if (!o || !o.word) continue;
-    const raw = o.word.trim();
-    if (!raw) continue;
-    const canonical = getCanonicalForm(raw);
-    if (!canonicalMap.has(canonical)) {
-      canonicalMap.set(canonical, canonical);
-    }
-  }
-
-  return Array.from(canonicalMap.values()).sort((a, b) => a.localeCompare(b, 'el'));
-}
-
-/**
- * Checks whether an occurrence word form matches a selected form filter (canonicalized).
- */
-export function isFormFilterMatch(occWord: string, filterWord: string): boolean {
-  if (!filterWord || !occWord) return true;
-  if (occWord === filterWord) return true;
-
-  const canonicalOcc = getCanonicalForm(occWord);
-  const canonicalFilter = getCanonicalForm(filterWord);
-  if (canonicalOcc === canonicalFilter) return true;
-
-  const normOcc = normalizeKey(occWord);
-  const normFilter = normalizeKey(filterWord);
-  const stripNu = (s: string) => (s.endsWith('ν') ? s.slice(0, -1) : s);
-
-  return normOcc === normFilter || stripNu(normOcc) === stripNu(normFilter);
-}
+export {
+  normalizeLemmaAccents,
+  getCanonicalForm,
+  getCanonicalAttestedForms,
+  isFormFilterMatch
+} from '@polyglot/ancient-languages';
 
 export function matchSingleWord(normWord: string, normTarget: string): boolean {
   if (!normWord || !normTarget) return false;

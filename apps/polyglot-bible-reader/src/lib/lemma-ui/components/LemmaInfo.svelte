@@ -14,6 +14,15 @@
 	import SEDRAEntry from './SEDRAEntry.svelte';
 	import TextsDisplay from './TextsDisplay.svelte';
 	import CopyText from './ui/CopyText.svelte';
+	import AttestedFormsSection from '@polyglot/ancient-languages/AttestedFormsSection.svelte';
+	import InflectionFilterBar from '@polyglot/ancient-languages/InflectionFilterBar.svelte';
+	import {
+		filterAttestedForms,
+		isCriteriaActive,
+		isFormFilterMatch,
+		extractAvailableInflections,
+		type InflectionFilterCriteria
+	} from '@polyglot/ancient-languages';
 	import { formatMorphBadges, parseHebrewMorphSegments } from '$lib/utils/morph-utils.js';
 	import {
 		getWordFrequencyByBook,
@@ -22,8 +31,10 @@
 		getCorpusTotalWords,
 		getCorpusBookWords,
 		cleanSyriac,
+		fetchAttestedForms,
 		type BookFrequency,
-		type ConcordanceOccurrence
+		type ConcordanceOccurrence,
+		type AttestedForm
 	} from '$lib/services/dbClient';
 	import {
 		calcTotalFrequency,
@@ -59,7 +70,18 @@
 
 	let bookFrequencies = $state<BookFrequency[]>([]);
 	let concordanceOccurrences = $state<ConcordanceOccurrence[]>([]);
-		const currentLemmaData = $derived.by(() => {
+
+	let attestedForms = $state<AttestedForm[]>([]);
+	let workUnitFormMap = $state<Map<number, string[]>>(new Map());
+	let isAttestedFormsOpen = $state(false);
+	let isAttestedFormsLoading = $state(false);
+	let attestedFormsLoaded = $state(false);
+	let attestedFormsError = $state<string | null>(null);
+	let selectedFormFilter = $state<string | null>(null);
+	let inflectionCriteria = $state<InflectionFilterCriteria>({});
+	let isInflectionFilterOpen = $state(false);
+
+	const currentLemmaData = $derived.by(() => {
 		if (selectedSegment.startsWith('prefix-') && parsedHebrewMorph) {
 			const idx = parseInt(selectedSegment.replace('prefix-', ''), 10);
 			const p = parsedHebrewMorph.prefixes[idx];
@@ -111,6 +133,15 @@
 		selectedSegment = 'stem';
 		bookFrequencies = [];
 		concordanceOccurrences = [];
+		attestedForms = [];
+		workUnitFormMap = new Map();
+		isAttestedFormsOpen = false;
+		isInflectionFilterOpen = false;
+		isAttestedFormsLoading = false;
+		attestedFormsLoaded = false;
+		attestedFormsError = null;
+		selectedFormFilter = null;
+		inflectionCriteria = {};
 		totalCount = lemma?.total_count ?? lemma?.total ?? null;
 		chosenBook = readerState.selectedBook || '';
 		corpusWordsTotal = 0;
@@ -123,6 +154,15 @@
 		bookFrequencies = [];
 		showReferences = false;
 		concordanceOccurrences = [];
+		attestedForms = [];
+		workUnitFormMap = new Map();
+		isAttestedFormsOpen = false;
+		isInflectionFilterOpen = false;
+		isAttestedFormsLoading = false;
+		attestedFormsLoaded = false;
+		attestedFormsError = null;
+		selectedFormFilter = null;
+		inflectionCriteria = {};
 		showStats = false;
 		totalCount = null;
 		chosenBook = readerState.selectedBook || '';
@@ -211,6 +251,66 @@
 			isFetchingReferences = false;
 		}
 	}
+
+	async function loadAttestedForms() {
+		if (attestedFormsLoaded || isAttestedFormsLoading) return;
+		isAttestedFormsLoading = true;
+		attestedFormsError = null;
+		try {
+			const workId = currentLemmaData?.work_id || lemma?.work_id || 0;
+			const res = await fetchAttestedForms(workId, lookupKey, currentLemmaData?.strongs, lang);
+			attestedForms = res.forms;
+			workUnitFormMap = res.workUnitForms;
+			attestedFormsLoaded = true;
+		} catch (err: any) {
+			console.warn('[LemmaInfo] Error loading attested forms:', err);
+			attestedFormsError = err?.message || 'Failed to load attested forms';
+		} finally {
+			isAttestedFormsLoading = false;
+		}
+	}
+
+	function toggleFormFilter(form: string) {
+		const isSame = selectedFormFilter === form;
+		selectedFormFilter = isSame ? null : form;
+		if (!isSame) {
+			showReferences = true;
+			loadConcordance();
+		}
+	}
+
+	const availableInflections = $derived(extractAvailableInflections(attestedForms));
+
+	const filteredAttestedForms = $derived(
+		isCriteriaActive(inflectionCriteria)
+			? filterAttestedForms(attestedForms, inflectionCriteria)
+			: attestedForms
+	);
+
+	const activeInflectionMatchingForms = $derived.by(() => {
+		if (!isCriteriaActive(inflectionCriteria)) return null;
+		return new Set(filteredAttestedForms.map((f) => f.form.toLowerCase()));
+	});
+
+	const filteredConcordanceOccurrences = $derived.by(() => {
+		let list = concordanceOccurrences;
+		if (activeInflectionMatchingForms && workUnitFormMap.size > 0) {
+			list = list.filter((occ) => {
+				const forms = workUnitFormMap.get(occ.work_unit_id);
+				if (!forms || forms.length === 0) return true;
+				return forms.some((f) => activeInflectionMatchingForms.has(f) || Array.from(activeInflectionMatchingForms).some((m) => isFormFilterMatch(f, m)));
+			});
+		}
+		if (selectedFormFilter && workUnitFormMap.size > 0) {
+			const filter = selectedFormFilter;
+			list = list.filter((occ) => {
+				const forms = workUnitFormMap.get(occ.work_unit_id);
+				if (!forms || forms.length === 0) return true;
+				return forms.some((f) => isFormFilterMatch(f, filter));
+			});
+		}
+		return list;
+	});
 
 	// Update sectionBookWords whenever chosenBook changes
 	$effect(() => {
@@ -486,6 +586,46 @@
 		{/if}
 	</div>
 
+	<!-- 3.5 Sibling Panels: Inflection Filter & Attested Forms -->
+	<div class="my-3 max-w-xl mx-auto px-2 flex flex-col gap-3">
+		<InflectionFilterBar
+			available={availableInflections}
+			bind:criteria={inflectionCriteria}
+			bind:isOpen={isInflectionFilterOpen}
+			totalFormsCount={attestedForms.length}
+			filteredFormsCount={filteredAttestedForms.length}
+			loading={isAttestedFormsLoading}
+			error={attestedFormsError}
+			onRetry={loadAttestedForms}
+			onToggleOpen={(open) => {
+				if (open && !attestedFormsLoaded && !isAttestedFormsLoading) {
+					loadAttestedForms();
+				}
+			}}
+		/>
+
+		<AttestedFormsSection
+			attestedForms={filteredAttestedForms}
+			totalCount={attestedForms.length}
+			selectedFormFilter={selectedFormFilter}
+			lemmaDisplay={targetLemma}
+			corpusTitle={corpusLabel}
+			loading={isAttestedFormsLoading}
+			bind:isOpen={isAttestedFormsOpen}
+			error={attestedFormsError}
+			lang={lang}
+			fontClass={lang === 'greek' ? 'greek-font' : (lang === 'hebrew' ? 'hebrew-font' : 'syriac-font')}
+			onRetry={loadAttestedForms}
+			onToggleOpen={(open) => {
+				if (open && !attestedFormsLoaded && !isAttestedFormsLoading) {
+					loadAttestedForms();
+				}
+			}}
+			onToggleFilter={toggleFormFilter}
+			onResetFilter={() => (selectedFormFilter = null)}
+		/>
+	</div>
+
 	<!-- 4. Action Buttons (Stats & Concordance) -->
 	<div class="my-3 flex flex-wrap items-center justify-center gap-2">
 		<OptionButton
@@ -514,7 +654,7 @@
 			{:else}
 				<Icon svg={BookSvg} />
 			{/if}
-			See {totalOccurrences} Occurrences
+			See {#if selectedFormFilter || isCriteriaActive(inflectionCriteria)}{filteredConcordanceOccurrences.length} of {/if}{totalOccurrences} Occurrences
 		</OptionButton>
 	</div>
 
@@ -762,7 +902,11 @@
 			<div class="flex items-center justify-between mb-3">
 				<h2 class="text-xl font-bold text-ink">Concordance Instances</h2>
 				<span class="text-xs font-medium text-ink-soft">
-					{concordanceOccurrences.length} verse references loaded
+					{#if selectedFormFilter || isCriteriaActive(inflectionCriteria)}
+						{filteredConcordanceOccurrences.length} of {concordanceOccurrences.length} verse references (filtered)
+					{:else}
+						{concordanceOccurrences.length} verse references loaded
+					{/if}
 				</span>
 			</div>
 
@@ -775,10 +919,14 @@
 				<div class="py-6 text-center text-sm text-ink-soft">
 					No verse occurrences found for this lemma.
 				</div>
+			{:else if filteredConcordanceOccurrences.length === 0}
+				<div class="py-6 text-center text-sm text-ink-soft">
+					No verse occurrences match the active form / inflection filter.
+				</div>
 			{:else}
-				{#key concordanceOccurrences}
+				{#key filteredConcordanceOccurrences}
 				<TextsDisplay
-					occurrences={concordanceOccurrences}
+					occurrences={filteredConcordanceOccurrences}
 					lang={lang}
 					dbAbbrev={isSyriac ? 'peshitta' : (isHebrew ? 'bhs' : 'lxx')}
 					lemma={targetLemma}

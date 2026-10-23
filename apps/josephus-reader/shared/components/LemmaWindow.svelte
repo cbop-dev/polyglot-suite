@@ -5,6 +5,7 @@
   import { getWork } from '../lib/works';
   import {
     getBase,
+    getGreekBucket,
     fetchLemmaData,
     fetchMorphForWord,
     fetchDictionaryForWord,
@@ -30,8 +31,18 @@
     getCanonicalAttestedForms,
     type HighlightStore
   } from '../lib/highlights';
+  import {
+    buildAttestedForms,
+    parsePerseusMorph,
+    filterAttestedForms,
+    isCriteriaActive,
+    extractAvailableInflections,
+    type AttestedForm,
+    type InflectionFilterCriteria
+  } from '@polyglot/ancient-languages';
 
-  import AttestedFormsGrid from './AttestedFormsGrid.svelte';
+  import AttestedFormsSection from '@polyglot/ancient-languages/AttestedFormsSection.svelte';
+  import InflectionFilterBar from '@polyglot/ancient-languages/InflectionFilterBar.svelte';
   import OccurrenceTree from './OccurrenceTree.svelte';
 
   export interface SearchSectionItem {
@@ -86,6 +97,8 @@
   let lemmaData = $state<LemmaEntryData | null>(null);
   let loadingLemmaData = $state(false);
   let selectedFormFilter = $state<string | null>(null);
+  let inflectionCriteria = $state<InflectionFilterCriteria>({});
+  let isInflectionFilterOpen = $state(false);
 
   // Word Morph & Dict State
   let info = $state<MorphEntry | null>(null);
@@ -273,6 +286,28 @@
     return map[clean] || map[nfc] || map[lower] || map[stripped] || map[key] || null;
   }
 
+  let currentMorphMap = $state<Record<string, MorphEntry>>({});
+
+  async function loadMorphsForOccurrences(occurrences: LemmaOccurrence[]) {
+    try {
+      const buckets = new Set<string>();
+      for (const o of occurrences) {
+        if (o.word) {
+          const b = getGreekBucket(o.word);
+          if (b && b !== 'other') buckets.add(b);
+        }
+      }
+      const maps = await Promise.all(Array.from(buckets).map(b => fetchMorphForWord(b)));
+      const merged = { ...currentMorphMap };
+      for (const m of maps) {
+        Object.assign(merged, m);
+      }
+      currentMorphMap = merged;
+    } catch (e) {
+      // Non-fatal
+    }
+  }
+
   async function fetchWordInfo(w: string) {
     loadingWordInfo = true;
     info = null;
@@ -282,6 +317,9 @@
         fetchMorphForWord(w),
         fetchDictionaryForWord(w)
       ]);
+      if (morphMap) {
+        currentMorphMap = { ...currentMorphMap, ...morphMap };
+      }
       info = findMorph(morphMap, w);
       const lemmaKey = info?.lemma_norm || info?.lemma || w.toLowerCase();
       dictEntry = findDict(dictMap, lemmaKey);
@@ -303,6 +341,9 @@
         selectedLemma.l = normalizeLemmaAccents(data.lemma);
         if (data.count) selectedLemma.c = data.count;
       }
+      if (data && Array.isArray(data.occurrences)) {
+        loadMorphsForOccurrences(data.occurrences);
+      }
     } catch (err) {
       console.error('Failed to fetch lemma occurrence data:', err);
     } finally {
@@ -313,6 +354,7 @@
   async function inspectWord(w: string) {
     selectedWord = w;
     selectedFormFilter = null;
+    inflectionCriteria = {};
     mainTab = 'info';
     await fetchWordInfo(w);
   }
@@ -321,6 +363,7 @@
     selectedLemma = { ...item, l: normalizeLemmaAccents(item.l) };
     selectedWord = '';
     selectedFormFilter = null;
+    inflectionCriteria = {};
     info = null;
     dictEntry = null;
     lemmaData = null;
@@ -337,6 +380,9 @@
         fetchLemmaData(item.n)
       ]);
 
+      if (morphMap) {
+        currentMorphMap = { ...currentMorphMap, ...morphMap };
+      }
       info = findMorph(morphMap, searchKey) || findMorph(morphMap, item.n);
       const lemmaKey = info?.lemma_norm || info?.lemma || item.n;
       dictEntry = findDict(dictMap, lemmaKey) || findDict(dictMap, item.l) || findDict(dictMap, item.n);
@@ -353,6 +399,9 @@
           c: occurrenceData.count || selectedLemma.c
         };
       }
+      if (occurrenceData && Array.isArray(occurrenceData.occurrences)) {
+        loadMorphsForOccurrences(occurrenceData.occurrences);
+      }
     } catch (err) {
       console.error('Failed to select lemma:', err);
     } finally {
@@ -365,6 +414,8 @@
     selectedLemma = null;
     lemmaData = null;
     selectedFormFilter = null;
+    inflectionCriteria = {};
+    isInflectionFilterOpen = false;
     info = null;
     dictEntry = null;
     selectedWord = '';
@@ -401,9 +452,31 @@
     return groups;
   });
 
-  let selectedLemmaAttestedForms = $derived.by(() => {
+  let selectedLemmaAttestedForms = $derived.by((): AttestedForm[] => {
     if (!lemmaData || !Array.isArray(lemmaData.occurrences)) return [];
-    return getCanonicalAttestedForms(lemmaData.occurrences);
+    const rawTokens = lemmaData.occurrences.map((o) => {
+      const w = o.word;
+      const morphEntry = currentMorphMap[w] || findMorph(currentMorphMap, w);
+      const analysis = morphEntry ? parsePerseusMorph(morphEntry.parse, morphEntry.pos, morphEntry.desc) : undefined;
+      return {
+        word: w,
+        morphAnalysis: analysis
+      };
+    });
+    return buildAttestedForms(rawTokens, { canonicalize: true, lang: 'greek' });
+  });
+
+  let availableInflections = $derived(extractAvailableInflections(selectedLemmaAttestedForms));
+
+  let filteredAttestedForms = $derived(
+    isCriteriaActive(inflectionCriteria)
+      ? filterAttestedForms(selectedLemmaAttestedForms, inflectionCriteria)
+      : selectedLemmaAttestedForms
+  );
+
+  let matchingFormsFromInflection = $derived.by(() => {
+    if (!isCriteriaActive(inflectionCriteria)) return null;
+    return filteredAttestedForms.map((f) => f.form);
   });
 
   let sectionGrcMap = $derived.by(() => {
@@ -801,15 +874,33 @@
               </details>
             {/if}
 
-            <!-- Attested Word Forms Section -->
+            <!-- Sibling Section: Inflection Filter (Collapsed by default) -->
             {#if selectedLemmaAttestedForms.length > 0}
-              <AttestedFormsGrid
-                attestedForms={selectedLemmaAttestedForms}
-                selectedFormFilter={selectedFormFilter}
-                lemmaNorm={currentLemmaNorm}
-                lemmaDisplay={currentLemmaDisplay}
-                onToggleFilter={toggleFormFilter}
+              <InflectionFilterBar
+                available={availableInflections}
+                bind:criteria={inflectionCriteria}
+                bind:isOpen={isInflectionFilterOpen}
+                totalFormsCount={selectedLemmaAttestedForms.length}
+                filteredFormsCount={filteredAttestedForms.length}
                 loading={loadingLemmaData}
+              />
+
+              <!-- Attested Word Forms Section -->
+              <AttestedFormsSection
+                attestedForms={filteredAttestedForms}
+                totalCount={selectedLemmaAttestedForms.length}
+                selectedFormFilter={selectedFormFilter}
+                lemmaDisplay={currentLemmaDisplay}
+                corpusTitle="Josephus"
+                loading={loadingLemmaData}
+                showHighlightAction={true}
+                isFormHighlighted={(fWord) => highlightsStore.forms.some(f => f.word === normalizeKey(fWord))}
+                onToggleFormHighlight={(fWord) => {
+                  toggleFormHighlight(fWord, currentLemmaNorm);
+                  notifyHighlightsChanged();
+                }}
+                onToggleFilter={toggleFormFilter}
+                onResetFilter={() => (selectedFormFilter = null)}
               />
             {/if}
 
@@ -818,6 +909,7 @@
               lemmaDisplay={currentLemmaDisplay}
               lemmaData={lemmaData}
               selectedFormFilter={selectedFormFilter}
+              matchingForms={matchingFormsFromInflection}
               onClearFormFilter={() => (selectedFormFilter = null)}
               onNavigate={navigateToSection}
               loading={loadingLemmaData}
