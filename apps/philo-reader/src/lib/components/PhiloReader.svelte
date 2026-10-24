@@ -75,7 +75,7 @@
 				<div class="text-center space-y-2">
 					<div class="inline-block h-8 w-8 animate-spin rounded-full border-3 border-blue-600 border-t-transparent"></div>
 					<div class="text-base font-semibold">Loading Philo Treatise...</div>
-					<div class="text-xs text-[var(--color-ink-soft)]">Reading via sql.js-httpvfs range requests</div>
+					<div class="text-xs text-[var(--color-ink-soft)]">Querying the database...</div>
 				</div>
 			</div>
 		{:else if error}

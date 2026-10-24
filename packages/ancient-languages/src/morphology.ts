@@ -1121,12 +1121,12 @@ export function getCanonicalForm(rawWord: string): string {
 	if (w.endsWith('ν')) {
 		const stem = w.slice(0, -1);
 		const normStem = stem.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-		if (/[ε|σι|τι|ει]$/.test(normStem)) {
+		if (/(?:ε|σι|τι|ει)$/.test(normStem)) {
 			return `${stem}(ν)`;
 		}
 	} else {
 		const normW = w.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-		if (/[ε|σι|τι|ει]$/.test(normW)) {
+		if (/(?:ε|σι|τι|ει)$/.test(normW)) {
 			return `${w}(ν)`;
 		}
 	}

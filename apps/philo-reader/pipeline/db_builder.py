@@ -13,7 +13,9 @@ Compiles philo.sqlite3 containing:
 
 from __future__ import annotations
 import json
+import re
 import sqlite3
+import unicodedata
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Set, Any, Optional
@@ -26,6 +28,76 @@ from .config import (
     PhiloWork,
 )
 from .parser import PhiloParser, ParsedSection
+
+
+def clean_surface_word(raw_word: str) -> str:
+    if not raw_word:
+        return ""
+    return re.sub(r'[.,·;:!?"\'»«()\[\]⟦⟧⟨⟩—\s]', '', raw_word).strip()
+
+
+def get_canonical_greek_form(raw_word: str) -> str:
+    if not raw_word:
+        return ""
+    w = clean_surface_word(raw_word).lower()
+    if not w:
+        return ""
+    w = unicodedata.normalize('NFD', w).replace('\u0300', '\u0301')
+    accents = [i for i, c in enumerate(w) if c == '\u0301']
+    if len(accents) > 1:
+        last_idx = accents[-1]
+        w = w[:last_idx] + w[last_idx + 1:]
+    w = unicodedata.normalize('NFC', w)
+
+    if w.endswith('ν'):
+        stem = w[:-1]
+        norm_stem = re.sub(r'[\u0300-\u036f]', '', unicodedata.normalize('NFD', stem))
+        if re.search(r'(?:ε|σι|τι|ει)$', norm_stem):
+            return f'{stem}(ν)'
+    else:
+        norm_w = re.sub(r'[\u0300-\u036f]', '', unicodedata.normalize('NFD', w))
+        if re.search(r'(?:ε|σι|τι|ει)$', norm_w):
+            return f'{w}(ν)'
+    return w
+
+
+def format_morph_analysis(tok: Dict[str, Any]) -> Dict[str, Any]:
+    decoded = tok.get("decoded") or {}
+    morph_code = tok.get("m", "")
+    analysis: Dict[str, Any] = {"rawCode": morph_code}
+
+    if decoded.get("pos"):
+        analysis["pos"] = decoded["pos"].capitalize()
+    if decoded.get("person"):
+        analysis["person"] = decoded["person"]
+    if decoded.get("number"):
+        analysis["number"] = decoded["number"].capitalize()
+    if decoded.get("tense"):
+        analysis["tense"] = decoded["tense"].capitalize()
+    if decoded.get("mood"):
+        analysis["mood"] = decoded["mood"].capitalize()
+    if decoded.get("voice"):
+        v = decoded["voice"].lower()
+        analysis["voice"] = "Middle/Passive" if v in ("middle/passive", "e") else decoded["voice"].capitalize()
+    if decoded.get("gender"):
+        analysis["gender"] = decoded["gender"].capitalize()
+    if decoded.get("case"):
+        analysis["case"] = decoded["case"].capitalize()
+    if decoded.get("degree"):
+        analysis["degree"] = decoded["degree"].capitalize()
+
+    summary_parts = [
+        analysis.get("pos"),
+        analysis.get("tense"),
+        analysis.get("voice"),
+        analysis.get("mood"),
+        f"{analysis['person']} {analysis.get('number', '')}".strip() if "person" in analysis else analysis.get("number"),
+        analysis.get("case"),
+        analysis.get("gender"),
+        analysis.get("degree"),
+    ]
+    analysis["summary"] = " • ".join([p for p in summary_parts if p])
+    return analysis
 
 
 def build_database(output_path: Optional[Path] = None) -> Path:
@@ -130,6 +202,17 @@ def build_database(output_path: Optional[Path] = None) -> Path:
         PRIMARY KEY (corpus_id, lemma, work_unit_id)
     ) WITHOUT ROWID;
 
+    CREATE TABLE lemma_forms (
+        corpus_id TEXT NOT NULL,
+        lemma_key TEXT NOT NULL,
+        display_lemma TEXT NOT NULL,
+        total_occurrences INTEGER NOT NULL,
+        forms_json TEXT NOT NULL,
+        PRIMARY KEY (corpus_id, lemma_key)
+    );
+
+    CREATE INDEX idx_lemma_forms_lookup ON lemma_forms(corpus_id, lemma_key);
+
     CREATE VIRTUAL TABLE text_units_fts USING fts5(
         work_code UNINDEXED,
         chapter UNINDEXED,
@@ -192,6 +275,9 @@ def build_database(output_path: Optional[Path] = None) -> Path:
     parser = PhiloParser()
     corpus_lemmas: Set[str] = set()
     lemma_occurrences: Dict[str, Dict[str, List[tuple]]] = defaultdict(lambda: defaultdict(list))
+    lemma_forms_data: Dict[str, Dict[str, Any]] = defaultdict(
+        lambda: {"total": 0, "forms": defaultdict(lambda: {"count": 0, "raw": set(), "analyses": {}})}
+    )
     biblical_citations_rows: List[tuple] = []
 
     total_greek_units = 0
@@ -248,6 +334,18 @@ def build_database(output_path: Optional[Path] = None) -> Path:
                     if lemma:
                         corpus_lemmas.add(lemma)
                         lemma_occurrences["grc"][lemma].append((cit_label, grc_unit_id, work.code))
+
+                        raw_w = clean_surface_word(tok.get("clean") or tok.get("w") or "")
+                        if raw_w:
+                            canon_form = get_canonical_greek_form(raw_w)
+                            lf_entry = lemma_forms_data[lemma]
+                            lf_entry["total"] += 1
+                            form_entry = lf_entry["forms"][canon_form]
+                            form_entry["count"] += 1
+                            form_entry["raw"].add(raw_w)
+                            morph_analysis = format_morph_analysis(tok)
+                            m_key = morph_analysis.get("rawCode") or morph_analysis.get("summary") or json.dumps(morph_analysis)
+                            form_entry["analyses"][m_key] = morph_analysis
 
             # B. English Unit
             cur.execute(
@@ -314,6 +412,38 @@ def build_database(output_path: Optional[Path] = None) -> Path:
         concordance_data,
     )
     print(f"✓ Indexed {len(stats_data):,} lemma statistics and {len(concordance_data):,} concordance entries.")
+
+    # 5b. Insert Precomputed Lemma Forms
+    print(f"\nPopulating lemma_forms table for {len(lemma_forms_data):,} lemmas...")
+    lf_rows = []
+    alias_candidates = []
+    for lemma, lf_data in lemma_forms_data.items():
+        forms_list = []
+        for cf, f_info in sorted(lf_data["forms"].items(), key=lambda x: (-x[1]["count"], x[0])):
+            forms_list.append({
+                "form": cf,
+                "canonicalForm": cf,
+                "rawForms": sorted(list(f_info["raw"])),
+                "count": f_info["count"],
+                "analyses": list(f_info["analyses"].values()),
+            })
+        forms_json = json.dumps({"forms": forms_list}, separators=(",", ":"), ensure_ascii=False)
+        lf_rows.append(("grc", lemma, lemma, lf_data["total"], forms_json))
+        norm_l = strip_greek_accents(lemma)
+        if norm_l and norm_l != lemma:
+            alias_candidates.append(("grc", norm_l, lemma, lf_data["total"], forms_json))
+
+    cur.executemany(
+        """INSERT INTO lemma_forms (corpus_id, lemma_key, display_lemma, total_occurrences, forms_json)
+           VALUES (?, ?, ?, ?, ?)""",
+        lf_rows,
+    )
+    cur.executemany(
+        """INSERT OR IGNORE INTO lemma_forms (corpus_id, lemma_key, display_lemma, total_occurrences, forms_json)
+           VALUES (?, ?, ?, ?, ?)""",
+        alias_candidates,
+    )
+    print(f"✓ Inserted {len(lf_rows):,} primary rows and {len(alias_candidates):,} alias rows into lemma_forms.")
 
     # 6. Ingest Matched LSJ Lexicon Definitions
     print("\nIngesting matching LSJ Lexicon definitions...")

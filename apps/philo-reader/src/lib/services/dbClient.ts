@@ -306,33 +306,25 @@ export async function fetchAttestedForms(lemma: string): Promise<AttestedForm[]>
 	if (!lemma) return [];
 	const worker = await getDbWorker();
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
+	const normalized = stripGreekAccents(clean);
 
 	const sql = `
-		SELECT t.tokens_json
-		FROM concordance_refs c
-		JOIN text_units t ON t.id = c.work_unit_id
-		WHERE c.lemma = ?
+		SELECT forms_json
+		FROM lemma_forms
+		WHERE corpus_id = 'grc' AND (lemma_key = ? OR lemma_key = ?)
+		ORDER BY CASE WHEN lemma_key = ? THEN 0 ELSE 1 END, total_occurrences DESC
+		LIMIT 1
 	`;
-	const rows = await worker.db.query(sql, [clean]);
-	const rawItems: { word: string; pos?: string; morph?: string }[] = [];
-
-	for (const row of rows as any[]) {
-		const raw = getRowVal<string | undefined>(row, 'tokens_json', 0);
-		const tokens = parseJsonField<Token[] | undefined>(raw);
-		if (!tokens) continue;
-
-		for (const tok of tokens) {
-			if (tok.l === clean || tok.l === lemma) {
-				rawItems.push({
-					word: tok.w,
-					pos: tok.p,
-					morph: tok.m
-				});
-			}
-		}
+	const rows = await worker.db.query(sql, [clean, normalized, clean]);
+	if (!rows || (rows as any[]).length === 0) {
+		return [];
 	}
 
-	return buildAttestedForms(rawItems, { canonicalize: true, lang: 'greek' });
+	const rawJson = getRowVal<string | undefined>((rows as any[])[0], 'forms_json', 0);
+	if (!rawJson) return [];
+
+	const parsed = parseJsonField<{ forms?: AttestedForm[] }>(rawJson);
+	return parsed?.forms || [];
 }
 
 export async function fetchBiblicalBookSummaries(): Promise<BiblicalBookSummary[]> {

@@ -2,7 +2,9 @@
 	import { base } from '$app/paths';
 	import { CANONICAL_WORKS } from '$lib/config/canonicalWorks.generated';
 	import { readerState } from '$lib/stores/readerState.svelte';
+	import { APP_VERSION, APP_REPO } from '$lib/config/version';
 	import ThemeSlider from '@polyglot/theme/ThemeSlider.svelte';
+	import VersionPill from '@polyglot/theme/VersionPill.svelte';
 
 	let isMobileMenuOpen = $state<boolean>(false);
 
@@ -18,30 +20,43 @@
 </script>
 
 <header class="sticky top-0 z-30 border-b border-[var(--color-rule)] bg-[var(--color-page)]/95 backdrop-blur shadow-xs">
-	<div class="mx-auto flex max-w-7xl items-center justify-between px-2.5 py-1.5 sm:px-4 sm:py-2">
-		<!-- Left: Suite link, Treatise Selector, Book Navigator, Jump Button -->
-		<div class="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+	<div class="mx-auto flex max-w-7xl items-center justify-between px-2 py-1.5 sm:px-4 sm:py-2">
+		<!-- Left: Suite link, Title & Version, Treatise Selector, Book Navigator, Jump Button -->
+		<div class="flex items-center gap-1 sm:gap-2.5 min-w-0">
 			<!-- Suite link -->
 			<a
 				href="{base}/"
 				class="text-xs font-semibold text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] shrink-0"
 				title="Back to Polyglot Suite"
 			>
-				&larr; <span class="hidden sm:inline">Suite</span>
+				&larr;<span class="hidden sm:inline">&nbsp;Suite</span>
 			</a>
-			<span class="text-slate-300 dark:text-slate-700 hidden sm:inline">/</span>
-			<h1 class="text-sm font-bold tracking-tight text-[var(--color-ink)] hidden xl:inline truncate">
-				Philo Reader
-			</h1>
+			<span class="text-slate-300 dark:text-slate-700">/</span>
+
+			<!-- App Title & Version Pill -->
+			<div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+				<h1 class="text-xs sm:text-sm font-bold tracking-tight text-[var(--color-ink)]">
+					<span class="hidden sm:inline">Philo Reader</span>
+					<span class="sm:hidden">Philo</span>
+				</h1>
+				<div class="block md:block">
+				<VersionPill
+					version={APP_VERSION}
+					href={APP_REPO}
+					title="View Philo Reader on GitHub"
+				/>
+				</div>
+			</div>
 
 			<!-- Treatise Selector Button (press 'b') -->
 			<button
 				type="button"
 				onclick={() => readerState.openBookModal()}
-				class="max-w-[140px] sm:max-w-[210px] md:max-w-[260px] truncate rounded-lg border border-[var(--color-rule)] bg-[var(--color-card-bg)] px-2 py-1 text-xs sm:text-sm font-medium text-[var(--color-ink)] shadow-2xs hover:bg-[var(--color-rule)] cursor-pointer flex items-center gap-1 shrink min-w-0"
+				class="max-w-[85px] min-[400px]:max-w-[120px] sm:max-w-[210px] md:max-w-[260px] truncate rounded-lg border border-[var(--color-rule)] bg-[var(--color-card-bg)] px-1.5 py-1 sm:px-2 text-xs sm:text-sm font-medium text-[var(--color-ink)] shadow-2xs hover:bg-[var(--color-rule)] cursor-pointer flex items-center gap-1 shrink min-w-0"
 				title="Choose treatise (Hot key: 'b')"
 			>
-				<span class="truncate">{currentWork.titleEnglish}</span>
+				<span class="hidden lg:inline truncate">{currentWork.titleEnglish}</span>
+				<span class="lg:hidden truncate">{currentWork.abbrev}</span>
 				<span class="text-[10px] text-[var(--color-ink-soft)] shrink-0">▾</span>
 			</button>
 
@@ -86,7 +101,7 @@
 				<svg class="h-3.5 w-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
 				</svg>
-				<span>Jump</span>
+				<span class="hidden md:inline-block">Jump</span>
 				<kbd class="text-[10px] bg-slate-100 dark:bg-slate-800 px-1 rounded text-slate-500 font-mono">⌘K</kbd>
 			</button>
 		</div>
@@ -115,7 +130,7 @@
 				<svg class="h-3.5 w-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
 				</svg>
-				<span>Cite</span>
+				<span class="hidden lg:block">Cite</span>
 			</button>
 
 			<!-- Theme and Warmth Slider -->
@@ -138,6 +153,7 @@
 			</button>
 
 			<!-- Scripture Index / Biblical Citation Explorer Toggle -->
+			 <!-- let's remove this ...
 			<button
 				type="button"
 				onclick={() => {
@@ -156,7 +172,7 @@
 				</svg>
 				<span>Scripture</span>
 			</button>
-
+			-->
 			<!-- Search & Reference Panel Toggle -->
 			<button
 				type="button"
@@ -168,7 +184,7 @@
 				<svg class="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
 				</svg>
-				<span class="hidden sm:inline">Search</span>
+				<!--<span class="hidden sm:inline">Search</span>-->
 			</button>
 
 			<!-- Mobile menu toggle -->

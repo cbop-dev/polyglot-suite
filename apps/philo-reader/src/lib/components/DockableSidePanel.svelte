@@ -634,6 +634,23 @@
 						{/if}
 					</div>
 
+					<!-- Sibling Section: Inflection Filter (Collapsed by default, loads on click) -->
+					<InflectionFilterBar
+						available={availableInflections}
+						bind:criteria={inflectionCriteria}
+						bind:isOpen={isInflectionFilterOpen}
+						totalFormsCount={attestedForms.length}
+						filteredFormsCount={filteredAttestedForms.length}
+						loading={isAttestedFormsLoading}
+						error={attestedFormsError}
+						onRetry={() => loadAttestedForms(currentLemma)}
+						onToggleOpen={(open) => {
+							if (open && !attestedFormsLoaded && !isAttestedFormsLoading && currentLemma) {
+								loadAttestedForms(currentLemma);
+							}
+						}}
+					/>
+
 					<!-- Sibling Section: Attested Forms (Collapsed by default, loads on click) -->
 					<AttestedFormsSection
 						attestedForms={filteredAttestedForms}

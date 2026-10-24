@@ -1,6 +1,6 @@
 {
   "name": "@polyglot/theme",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Continuous piecewise contrast-invariant theme engine and UI components for the polyglot suite",
   "main": "./src/index.ts",
@@ -14,6 +14,7 @@
     "./core": "./src/core.ts",
     "./dom": "./src/dom.ts",
     "./ThemeSlider.svelte": "./src/components/ThemeSlider.svelte",
+    "./VersionPill.svelte": "./src/components/VersionPill.svelte",
     "./components/*": "./src/components/*"
   },
   "peerDependencies": {

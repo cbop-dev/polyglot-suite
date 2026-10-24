@@ -308,6 +308,9 @@ describe('@polyglot/ancient-languages', () => {
 			expect(getCanonicalForm('ἔμελλεν')).toBe('ἔμελλε(ν)');
 			expect(getCanonicalForm('ἔμελλε')).toBe('ἔμελλε(ν)');
 			expect(getCanonicalForm('Ἔμελλεν')).toBe('ἔμελλε(ν)');
+			expect(getCanonicalForm('πᾶσι')).toBe('πᾶσι(ν)');
+			expect(getCanonicalForm('πᾶσιν')).toBe('πᾶσι(ν)');
+			expect(getCanonicalForm('οἱ')).toBe('οἱ');
 			expect(getCanonicalForm('ἀρχή')).toBe('ἀρχή');
 			expect(getCanonicalForm('παρὰ')).toBe('παρά');
 

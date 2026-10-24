@@ -1,7 +1,7 @@
 {
   "name": "philo-reader",
   "private": true,
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
@@ -10,7 +10,7 @@
     "build:static": "npm run build:www",
     "build:gh": "ADAPTER=github vite build",
     "build:github": "npm run build:gh",
-    "preview": "vite preview",
+    "preview": "npm run preview:www",
     "preview:www": "ADAPTER=static vite preview",
     "pipeline:fetch": "python3 -m pipeline.fetcher",
     "pipeline:build": "python3 -m pipeline.build --build-db --chunk --export-ts",

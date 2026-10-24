@@ -31,6 +31,20 @@ export async function createHttpVfsWorker(options: HttpVfsWorkerConfig): Promise
 	};
 
 	const worker = await createDbWorker([config], workerUrl, wasmUrl);
-	console.info(`${logPrefix} Worker initialized successfully.`);
+
+	// Serialize all queries across callers to avoid overlapping Web Worker messages,
+	// read-head thrashing, and HTTP connection congestion.
+	let queryQueue: Promise<unknown> = Promise.resolve();
+	const originalQuery = worker.db.query.bind(worker.db);
+
+	worker.db.query = ((sql: string, ...params: any[]) => {
+		const execute = () => originalQuery(sql, ...params);
+		const result = queryQueue.then(execute, execute);
+		// Keep queue chain resilient against query failures
+		queryQueue = result.catch(() => {});
+		return result;
+	}) as any;
+
+	console.info(`${logPrefix} Worker initialized successfully with serialized query queue.`);
 	return worker;
 }
