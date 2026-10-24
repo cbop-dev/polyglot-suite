@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { CANONICAL_WORKS } from '$lib/config/canonicalWorks.generated';
 	import { readerState } from '$lib/stores/readerState.svelte';
-	import ThemeSlider from '$lib/components/ThemeSlider.svelte';
+	import ThemeSlider from '@polyglot/theme/ThemeSlider.svelte';
 
 	let isMobileMenuOpen = $state<boolean>(false);
 
@@ -119,7 +119,12 @@
 			</button>
 
 			<!-- Theme and Warmth Slider -->
-			<ThemeSlider />
+			<ThemeSlider
+				storageKey="philo_reading_theme"
+				warmthStorageKey="philo_reading_warmth"
+				profile="standard"
+				align="right"
+			/>
 
 			<!-- Keyboard shortcuts button -->
 			<button
