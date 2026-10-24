@@ -43,6 +43,7 @@ class DatabaseValidator:
             success &= self.test_lexicons(conn)
             success &= self.test_token_json_samples(conn)
             success &= self.test_lemma_stats_and_concordance(conn)
+            success &= self.test_lemma_forms(conn)
         finally:
             conn.close()
 
@@ -396,6 +397,37 @@ class DatabaseValidator:
         print("  Concordance-to-text_unit linkage: PASSED!")
 
         print("  Lemma stats and concordance verification: PASSED!")
+        return True
+
+    def test_lemma_forms(self, conn: sqlite3.Connection) -> bool:
+        print("\n[Test 9] Pre-computed Lemma Forms & Attested Forms verification...")
+        cur = conn.cursor()
+        import json
+
+        # 1. Total counts
+        forms_count = cur.execute("SELECT COUNT(*) FROM lemma_forms").fetchone()[0]
+        print(f"  lemma_forms total rows: {forms_count:,} (Expected >= 50,000)")
+        assert forms_count >= 50000, f"Expected >= 50,000 lemma_forms rows, got {forms_count}"
+
+        # 2. Spot check WLC H4554 (Mispo / Fodder)
+        h4554 = cur.execute("SELECT * FROM lemma_forms WHERE corpus_id = 'wlc' AND lemma_key = 'H4554'").fetchone()
+        assert h4554 is not None, "Missing H4554 in WLC lemma_forms"
+        assert h4554["total_occurrences"] == 5, f"Expected H4554 total == 5, got {h4554['total_occurrences']}"
+        data_h4554 = json.loads(h4554["forms_json"])
+        assert len(data_h4554["forms"]) >= 1, "Expected at least 1 attested form for H4554"
+        gen43_id = cur.execute("SELECT id FROM text_units WHERE corpus_id='wlc' AND std_book='GEN' AND std_chapter=43 AND std_verse=24").fetchone()[0]
+        assert str(gen43_id) in data_h4554["workUnitForms"], f"Expected Gen 43:24 ({gen43_id}) in H4554 workUnitForms"
+        print(f"  Spot-check H4554 (Mispo): total={h4554['total_occurrences']}, forms={[f['form'] for f in data_h4554['forms']]}")
+
+        # 3. Spot check OGNT G3195 (Mello)
+        g3195 = cur.execute("SELECT * FROM lemma_forms WHERE corpus_id = 'ognt' AND lemma_key = 'G3195'").fetchone()
+        assert g3195 is not None, "Missing G3195 in OGNT lemma_forms"
+        assert g3195["total_occurrences"] >= 100, f"Expected G3195 total >= 100, got {g3195['total_occurrences']}"
+        data_g3195 = json.loads(g3195["forms_json"])
+        assert any(a.get("pos") == "Verb" for f in data_g3195["forms"] for a in f.get("analyses", [])), "Expected Verb analyses in G3195"
+        print(f"  Spot-check G3195 (Mello): total={g3195['total_occurrences']}, distinct forms={len(data_g3195['forms'])}")
+
+        print("  Lemma forms verification: PASSED!")
         return True
 
 

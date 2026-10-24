@@ -18,7 +18,9 @@ import json
 import re
 import sqlite3
 import time
+import unicodedata
 from collections import defaultdict
+from pathlib import Path
 from typing import Dict, Any, List, Set, Tuple
 
 # Mapping of corpus_id to legacy work_id for backward compatibility
@@ -37,6 +39,220 @@ CORPUS_WORK_IDS = {
 }
 
 SYRIAC_PUNCT_DIACRITICS = re.compile(r'[\u0730-\u074F\u0300-\u036F\.\,\;\:\?\!\(\)\[\]]')
+
+# Greek Morphology Maps
+GREEK_POS = {
+    'V': 'Verb', 'N': 'Noun', 'A': 'Adjective', 'RA': 'Article',
+    'RD': 'Demonstrative Pronoun', 'RI': 'Interrogative/Indefinite Pronoun',
+    'RP': 'Personal Pronoun', 'RR': 'Relative Pronoun', 'C': 'Conjunction',
+    'P': 'Preposition', 'D': 'Adverb', 'X': 'Particle', 'I': 'Interjection',
+    'PREP': 'Preposition', 'CONJ': 'Conjunction', 'ADV': 'Adverb',
+    'PRON': 'Pronoun', 'NUM': 'Numeral', 'INTERJ': 'Interjection', 'PART': 'Particle'
+}
+GREEK_TENSE = {'P': 'Present', 'I': 'Imperfect', 'F': 'Future', 'A': 'Aorist', 'X': 'Perfect', 'Y': 'Pluperfect'}
+GREEK_VOICE = {'A': 'Active', 'M': 'Middle', 'P': 'Passive', 'E': 'Middle/Passive'}
+GREEK_MOOD = {'I': 'Indicative', 'S': 'Subjunctive', 'O': 'Optative', 'D': 'Imperative', 'N': 'Infinitive', 'P': 'Participle'}
+GREEK_CASE = {'N': 'Nominative', 'G': 'Genitive', 'D': 'Dative', 'A': 'Accusative', 'V': 'Vocative'}
+GREEK_NUMBER = {'S': 'Singular', 'P': 'Plural'}
+GREEK_GENDER = {'M': 'Masculine', 'F': 'Feminine', 'N': 'Neuter'}
+GREEK_PERSON = {'1': '1st', '2': '2nd', '3': '3rd'}
+
+# Load hebrew_morph_dict if available
+HEBREW_DICT: Dict[str, str] = {}
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+hebrew_dict_file = REPO_ROOT / "packages" / "ancient-languages" / "src" / "data" / "hebrew_morph_dict.json"
+if hebrew_dict_file.exists():
+    try:
+        with open(hebrew_dict_file, "r", encoding="utf-8") as f:
+            HEBREW_DICT = json.load(f)
+    except Exception:
+        pass
+
+
+def clean_surface_word(surface: str) -> str:
+    if not surface:
+        return ""
+    return re.sub(r'[.,·;:!?\"\'»«()\[\]⟦⟧⟨⟩⸂⸃⸆⸇⸀⸁⸄⸅†‡*\s׃־׀]', '', surface).strip()
+
+
+def get_canonical_greek_form(raw_word: str) -> str:
+    if not raw_word:
+        return ""
+    w = clean_surface_word(raw_word).lower()
+    if not w:
+        return ""
+    w = unicodedata.normalize('NFD', w).replace('\u0300', '\u0301')
+    accents = [i for i, c in enumerate(w) if c == '\u0301']
+    if len(accents) > 1:
+        last_idx = accents[-1]
+        w = w[:last_idx] + w[last_idx + 1:]
+    w = unicodedata.normalize('NFC', w)
+
+    if w.endswith('ν'):
+        stem = w[:-1]
+        norm_stem = re.sub(r'[\u0300-\u036f]', '', unicodedata.normalize('NFD', stem))
+        if re.search(r'[ε|σι|τι|ει]$', norm_stem):
+            return f'{stem}(ν)'
+    else:
+        norm_w = re.sub(r'[\u0300-\u036f]', '', unicodedata.normalize('NFD', w))
+        if re.search(r'[ε|σι|τι|ει]$', norm_w):
+            return f'{w}(ν)'
+    return w
+
+
+def get_canonical_hebrew_form(raw_word: str) -> str:
+    if not raw_word:
+        return ""
+    w = clean_surface_word(raw_word)
+    # Strip cantillation / ta'amim: \u0591 to \u05AF
+    return re.sub(r'[\u0591-\u05AF]', '', w)
+
+
+def parse_greek_morph(code: str) -> Dict[str, Any]:
+    trimmed = (code or '').strip()
+    analysis: Dict[str, Any] = {'rawCode': trimmed}
+    if not trimmed:
+        return analysis
+
+    if len(trimmed) == 11 and trimmed[2] == ' ':
+        pos_code = trimmed[:2].replace('-', '').strip()
+        analysis['pos'] = GREEK_POS.get(pos_code, 'Article' if pos_code == 'RA' else pos_code)
+        p, t, v, m, c, n, g = trimmed[3], trimmed[4], trimmed[5], trimmed[6], trimmed[7], trimmed[8], trimmed[9]
+        if p in GREEK_PERSON: analysis['person'] = GREEK_PERSON[p]
+        if t in GREEK_TENSE: analysis['tense'] = GREEK_TENSE[t]
+        if v in GREEK_VOICE: analysis['voice'] = GREEK_VOICE[v]
+        if m in GREEK_MOOD: analysis['mood'] = GREEK_MOOD[m]
+        if c in GREEK_CASE: analysis['case'] = GREEK_CASE[c]
+        if n in GREEK_NUMBER: analysis['number'] = GREEK_NUMBER[n]
+        if g in GREEK_GENDER: analysis['gender'] = GREEK_GENDER[g]
+    elif '-' in trimmed:
+        parts = trimmed.split('-')
+        pos_code = parts[0]
+        analysis['pos'] = 'Article' if pos_code == 'D' else GREEK_POS.get(pos_code, pos_code)
+        if pos_code == 'V':
+            tvm = parts[1] if len(parts) > 1 else ''
+            if len(tvm) > 0 and tvm[0] in GREEK_TENSE: analysis['tense'] = GREEK_TENSE[tvm[0]]
+            if len(tvm) > 1 and tvm[1] in GREEK_VOICE: analysis['voice'] = GREEK_VOICE[tvm[1]]
+            if len(tvm) > 2 and tvm[2] in GREEK_MOOD: analysis['mood'] = GREEK_MOOD[tvm[2]]
+            pn = parts[2] if len(parts) > 2 else ''
+            if len(pn) == 2 and pn[0] in GREEK_PERSON:
+                analysis['person'] = GREEK_PERSON[pn[0]]
+                if pn[1] in GREEK_NUMBER: analysis['number'] = GREEK_NUMBER[pn[1]]
+            elif len(pn) == 3 and pn[0] in GREEK_CASE:
+                analysis['case'] = GREEK_CASE[pn[0]]
+                if pn[1] in GREEK_NUMBER: analysis['number'] = GREEK_NUMBER[pn[1]]
+                if pn[2] in GREEK_GENDER: analysis['gender'] = GREEK_GENDER[pn[2]]
+        else:
+            cng = parts[1] if len(parts) > 1 else ''
+            if len(cng) == 3:
+                if cng[0] in GREEK_CASE: analysis['case'] = GREEK_CASE[cng[0]]
+                if cng[1] in GREEK_NUMBER: analysis['number'] = GREEK_NUMBER[cng[1]]
+                if cng[2] in GREEK_GENDER: analysis['gender'] = GREEK_GENDER[cng[2]]
+
+    summary_parts = [
+        analysis.get('pos'),
+        analysis.get('tense'),
+        analysis.get('voice'),
+        analysis.get('mood'),
+        f"{analysis['person']} {analysis.get('number', '')}".strip() if 'person' in analysis else analysis.get('number'),
+        analysis.get('case'),
+        analysis.get('gender')
+    ]
+    analysis['summary'] = ' • '.join([p for p in summary_parts if p])
+    return analysis
+
+
+def parse_hebrew_morph(code: str) -> Dict[str, Any]:
+    trimmed = (code or '').strip()
+    analysis: Dict[str, Any] = {'rawCode': trimmed}
+    if not trimmed:
+        return analysis
+
+    stem_code = trimmed
+    if '|' in trimmed:
+        parts = [p.strip() for p in trimmed.split('|')]
+        stem_code = parts[-1] or trimmed
+
+    if '.' in stem_code:
+        parts = stem_code.split('.')
+        for p in parts:
+            if p == 'verb': analysis['pos'] = 'Verb'
+            elif p in ('subs', 'nmpr'): analysis['pos'] = 'Noun'
+            elif p == 'adjv': analysis['pos'] = 'Adjective'
+            elif p == 'art': analysis['pos'] = 'Article'
+            elif p in ('prps', 'prde', 'prin'): analysis['pos'] = 'Pronoun'
+            elif p == 'prep': analysis['pos'] = 'Preposition'
+            elif p == 'conj': analysis['pos'] = 'Conjunction'
+            elif p == 'p1': analysis['person'] = '1st'
+            elif p == 'p2': analysis['person'] = '2nd'
+            elif p == 'p3': analysis['person'] = '3rd'
+            elif p == 'm': analysis['gender'] = 'Masculine'
+            elif p == 'f': analysis['gender'] = 'Feminine'
+            elif p == 'sg': analysis['number'] = 'Singular'
+            elif p == 'pl': analysis['number'] = 'Plural'
+            elif p == 'du': analysis['number'] = 'Dual'
+            elif p == 'perf': analysis['tense'] = 'Perfect'
+            elif p in ('impf', 'wayq'): analysis['tense'] = 'Imperfect'
+            elif p == 'ptca':
+                analysis['mood'] = 'Participle'
+                analysis['voice'] = 'Active'
+            elif p == 'ptcp':
+                analysis['mood'] = 'Participle'
+                analysis['voice'] = 'Passive'
+            elif p in ('infc', 'infa'): analysis['mood'] = 'Infinitive'
+            elif p == 'impv': analysis['mood'] = 'Imperative'
+            elif p in ('qal', 'piel', 'hif'): analysis['voice'] = 'Active'
+            elif p in ('nif', 'pual', 'hof'): analysis['voice'] = 'Passive'
+            elif p == 'hit': analysis['voice'] = 'Middle'
+
+        if trimmed in HEBREW_DICT:
+            badges = [b.strip().title() for b in HEBREW_DICT[trimmed].split(',')]
+            analysis['summary'] = ' • '.join(badges)
+        else:
+            summary_parts = [analysis.get('pos'), analysis.get('tense'), analysis.get('voice'), analysis.get('mood'), analysis.get('person'), analysis.get('gender'), analysis.get('number')]
+            analysis['summary'] = ' • '.join([p for p in summary_parts if p])
+        return analysis
+
+    if stem_code.startswith('V-'):
+        analysis['pos'] = 'Verb'
+        rest = stem_code[2:]
+        if len(rest) >= 2:
+            aspect = rest[1]
+            if aspect == 'p': analysis['tense'] = 'Perfect'
+            elif aspect in ('i', 'w'): analysis['tense'] = 'Imperfect'
+            elif aspect == 'v': analysis['mood'] = 'Imperative'
+            elif aspect in ('c', 'a'): analysis['mood'] = 'Infinitive'
+            elif aspect == 'r':
+                analysis['mood'] = 'Participle'
+                analysis['voice'] = 'Active'
+            elif aspect == 's':
+                analysis['mood'] = 'Participle'
+                analysis['voice'] = 'Passive'
+
+            if len(rest) > 2:
+                if rest[2] == '1': analysis['person'] = '1st'
+                elif rest[2] == '2': analysis['person'] = '2nd'
+                elif rest[2] == '3': analysis['person'] = '3rd'
+            if len(rest) > 3:
+                if rest[3] == 'm': analysis['gender'] = 'Masculine'
+                elif rest[3] == 'f': analysis['gender'] = 'Feminine'
+            if len(rest) > 4:
+                if rest[4] == 's': analysis['number'] = 'Singular'
+                elif rest[4] == 'p': analysis['number'] = 'Plural'
+                elif rest[4] == 'd': analysis['number'] = 'Dual'
+    elif stem_code.startswith('N-') or stem_code.startswith('A-'):
+        analysis['pos'] = 'Noun' if stem_code.startswith('N-') else 'Adjective'
+        rest = stem_code[2:]
+        for c in rest:
+            if c == 'm': analysis['gender'] = 'Masculine'
+            elif c == 'f': analysis['gender'] = 'Feminine'
+            elif c == 's': analysis['number'] = 'Singular'
+            elif c == 'p': analysis['number'] = 'Plural'
+            elif c == 'd': analysis['number'] = 'Dual'
+
+    summary_parts = [analysis.get('pos'), analysis.get('tense'), analysis.get('voice'), analysis.get('mood'), analysis.get('person'), analysis.get('gender'), analysis.get('number')]
+    analysis['summary'] = ' • '.join([p for p in summary_parts if p])
+    return analysis
 
 
 def clean_syriac(s: str) -> str:
@@ -103,10 +319,10 @@ def resolve_token_keys(corpus_id: str, tok: Any) -> Tuple[List[str], str]:
 
 
 def index_lemmas_and_concordance(conn: sqlite3.Connection):
-    """Generates lemma_stats and concordance_refs from populated text_units."""
+    """Generates lemma_stats, concordance_refs, and lemma_forms from populated text_units."""
     cur = conn.cursor()
     start_time = time.time()
-    print("\n=== Indexing Lemma Statistics & Concordance References ===")
+    print("\n=== Indexing Lemma Statistics, Concordance References & Attested Forms ===")
 
     # 1. Load canonical books for titles and abbreviations
     cur.execute("SELECT code, order_index, name_english FROM canonical_books")
@@ -138,6 +354,11 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
     # concordance set: (corpus_id, lemma_key, display_lemma, native_citation, text_unit_id)
     concordance_set: Set[Tuple[str, str, str, str, int]] = set()
 
+    # Lemma forms aggregation: (corpus_id, lemma_key) -> { total, forms, work_units }
+    lemma_forms_data: Dict[Tuple[str, str], Dict[str, Any]] = defaultdict(
+        lambda: {"total": 0, "forms": defaultdict(lambda: {"count": 0, "raw": set(), "analyses": {}}), "work_units": defaultdict(set)}
+    )
+
     verse_count = 0
     token_count = 0
 
@@ -162,6 +383,34 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
         for tok in tokens:
             keys, display_lemma = resolve_token_keys(corpus_id, tok)
 
+            # Extract token details
+            if isinstance(tok, list):
+                surface = tok[0] if len(tok) > 0 else ""
+                norm = tok[1] if len(tok) > 1 else ""
+                raw_strongs = tok[2] if len(tok) > 2 else ""
+                morph = tok[3] if len(tok) > 3 else ""
+            else:
+                surface = tok.get("word") or ""
+                norm = tok.get("normalized") or ""
+                raw_strongs = tok.get("strongs") or ""
+                morph = tok.get("morph") or ""
+
+            surface_clean = clean_surface_word(surface)
+
+            # Determine canonical form and parse morphology
+            is_greek = corpus_id in ("ognt", "sblgnt", "swete_lxx", "lxx") or (raw_strongs and str(raw_strongs).startswith("G"))
+            is_hebrew = corpus_id in ("wlc", "bhs") or (raw_strongs and str(raw_strongs).startswith("H"))
+
+            if is_greek:
+                canonical_form = get_canonical_greek_form(surface_clean)
+                morph_analysis = parse_greek_morph(morph) if morph else {}
+            elif is_hebrew:
+                canonical_form = get_canonical_hebrew_form(surface_clean)
+                morph_analysis = parse_hebrew_morph(morph) if morph else {}
+            else:
+                canonical_form = surface_clean
+                morph_analysis = {"rawCode": morph, "summary": morph} if morph else {}
+
             for lk in keys:
                 stat_key = (corpus_id, lk)
                 lemma_book_counts[stat_key][std_book] += 1
@@ -171,6 +420,24 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
                 if lk not in verse_keys_seen:
                     verse_keys_seen.add(lk)
                     concordance_set.add((corpus_id, lk, display_lemma, citation, tu_id))
+
+                if surface_clean:
+                    lf_entry = lemma_forms_data[stat_key]
+                    lf_entry["total"] += 1
+                    form_entry = lf_entry["forms"][canonical_form]
+                    form_entry["count"] += 1
+                    form_entry["raw"].add(surface_clean)
+                    if morph_analysis:
+                        m_key = morph_analysis.get("rawCode") or morph_analysis.get("summary") or json.dumps(morph_analysis)
+                        form_entry["analyses"][m_key] = morph_analysis
+
+                    wu_set = lf_entry["work_units"][tu_id]
+                    wu_set.add(surface_clean.lower())
+                    wu_set.add(canonical_form.lower())
+                    if is_hebrew:
+                        unpointed = re.sub(r'[\u0591-\u05C7]', '', canonical_form)
+                        if unpointed:
+                            wu_set.add(unpointed)
 
     print(
         f"Processed {verse_count:,} verses ({token_count:,} tokens) in {time.time() - start_time:.2f}s."
@@ -276,4 +543,92 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
         conn.commit()
 
     print(f"Inserted {inserted_conc:,} rows into concordance_refs in {time.time() - t_conc:.2f}s.")
+
+    # 6. Populate lemma_forms table
+    print("Populating lemma_forms table...")
+    t_forms = time.time()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS lemma_forms (
+            corpus_id TEXT NOT NULL,
+            lemma_key TEXT NOT NULL,
+            display_lemma TEXT NOT NULL,
+            total_occurrences INTEGER NOT NULL,
+            forms_json TEXT NOT NULL,
+            PRIMARY KEY (corpus_id, lemma_key)
+        )
+    """)
+    cur.execute("DELETE FROM lemma_forms")
+
+    lf_rows = []
+    alias_candidates: List[Tuple[str, str, str, int, str]] = []
+
+    for (corpus_id, lk), lf_data in lemma_forms_data.items():
+        best_lemma = lemma_labels.get((corpus_id, lk), lk)
+        total_occ = lf_data["total"]
+
+        forms_list = []
+        for cf, f_info in sorted(lf_data["forms"].items(), key=lambda x: (-x[1]["count"], x[0])):
+            forms_list.append({
+                "form": cf,
+                "canonicalForm": cf,
+                "rawForms": sorted(list(f_info["raw"])),
+                "count": f_info["count"],
+                "analyses": list(f_info["analyses"].values())
+            })
+
+        wuf_dict = {
+            str(tu_id): sorted(list(forms_set))
+            for tu_id, forms_set in lf_data["work_units"].items()
+        }
+
+        forms_json = json.dumps({
+            "forms": forms_list,
+            "workUnitForms": wuf_dict
+        }, separators=(",", ":"), ensure_ascii=False)
+
+        lf_rows.append((
+            corpus_id,
+            lk,
+            best_lemma,
+            total_occ,
+            forms_json
+        ))
+
+        # Aliases for direct lookup by display lemma or unpointed lemma
+        if best_lemma and best_lemma != lk:
+            alias_candidates.append((corpus_id, best_lemma, best_lemma, total_occ, forms_json))
+            unpointed_lem = re.sub(r'[\u0591-\u05C7]', '', best_lemma).strip()
+            if unpointed_lem and unpointed_lem != best_lemma and unpointed_lem != lk:
+                alias_candidates.append((corpus_id, unpointed_lem, best_lemma, total_occ, forms_json))
+
+    insert_batch_size = 5000
+    for i in range(0, len(lf_rows), insert_batch_size):
+        cur.executemany(
+            """
+            INSERT OR REPLACE INTO lemma_forms
+            (corpus_id, lemma_key, display_lemma, total_occurrences, forms_json)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            lf_rows[i:i + insert_batch_size]
+        )
+    conn.commit()
+
+    if alias_candidates:
+        for i in range(0, len(alias_candidates), insert_batch_size):
+            cur.executemany(
+                """
+                INSERT OR IGNORE INTO lemma_forms
+                (corpus_id, lemma_key, display_lemma, total_occurrences, forms_json)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                alias_candidates[i:i + insert_batch_size]
+            )
+        conn.commit()
+
+    # Ensure index exists
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_lemma_forms_lookup ON lemma_forms(corpus_id, lemma_key)")
+    conn.commit()
+
+    print(f"Inserted {len(lf_rows):,} primary rows and {len(alias_candidates):,} alias rows into lemma_forms in {time.time() - t_forms:.2f}s.")
     print(f"Lemma indexing finished in {time.time() - start_time:.2f}s.")
+

@@ -7,33 +7,38 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 DEFAULT_DB_PATH = os.path.join(REPO_ROOT, 'pipeline', 'build', 'polyglot-working.sqlite3')
 DB_PATH = os.environ.get('POLYGLOT_DB_PATH', DEFAULT_DB_PATH)
 OUTPUT_DIR = os.path.join(REPO_ROOT, 'static', 'db')
-CHUNK_SIZE = 5242880
+CHUNK_SIZE = 10485760
 
 def rechunk():
     total_bytes = os.path.getsize(DB_PATH)
     print(f'Database size: {total_bytes:,} bytes ({total_bytes / (1024*1024):.2f} MB)')
+
+    # Detect page size in read-only mode so SQLite does not touch file change counter
+    import sqlite3
+    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+    cur = conn.cursor()
+    cur.execute("PRAGMA page_size;")
+    page_size = cur.fetchone()[0]
+    conn.close()
+    print(f'Detected SQLite page_size: {page_size} bytes.')
 
     # Remove existing chunks
     for f in os.listdir(OUTPUT_DIR):
         if f.startswith('polyglot.db.'):
             os.remove(os.path.join(OUTPUT_DIR, f))
 
+    # Auto-calculate suffix length for split
+    chunk_count = (total_bytes + CHUNK_SIZE - 1) // CHUNK_SIZE
+    suffix_len = 3 if chunk_count >= 100 else 2
+
     # Split using split command
     prefix = os.path.join(OUTPUT_DIR, 'polyglot.db.')
-    cmd = ['split', '-b', str(CHUNK_SIZE), '-d', '-a', '2', DB_PATH, prefix]
+    cmd = ['split', '-b', str(CHUNK_SIZE), '-d', '-a', str(suffix_len), DB_PATH, prefix]
     print(f'Running: {" ".join(cmd)}')
     subprocess.check_call(cmd)
 
     chunks = sorted([f for f in os.listdir(OUTPUT_DIR) if f.startswith('polyglot.db.')])
     print(f'Created {len(chunks)} chunks ({chunks[0]} .. {chunks[-1]}).')
-
-    import sqlite3
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute("PRAGMA page_size;")
-    page_size = cur.fetchone()[0]
-    conn.close()
-    print(f'Detected SQLite page_size: {page_size} bytes.')
 
     # Update config.json
     import time
@@ -43,13 +48,13 @@ def rechunk():
         "urlPrefix": "polyglot.db.",
         "serverChunkSize": CHUNK_SIZE,
         "databaseLengthBytes": total_bytes,
-        "suffixLength": 2,
+        "suffixLength": suffix_len,
         "cacheBust": f"v{int(time.time())}"
     }
     config_path = os.path.join(OUTPUT_DIR, 'config.json')
     with open(config_path, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2)
-    print(f'Updated config.json (requestChunkSize: {page_size}) with length {total_bytes:,} bytes.')
+    print(f'Updated config.json (requestChunkSize: {page_size}) with length {total_bytes:,} bytes (suffixLength: {suffix_len}).')
 
     # Verify sha256 checksum of reassembled chunks
     orig_hasher = hashlib.sha256()

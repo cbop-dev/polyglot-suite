@@ -858,7 +858,7 @@ export class ReaderState {
 
 			const primaryHeadword = isSyriac
 				? (wordObj.lemma ? cleanSyriac(wordObj.lemma) : cleanSyriac(rawKey))
-				: (lexiconRow?.headword || lexData?.lemma || wordObj.lemma || wordObj.normalized || wordObj.word);
+				: (wordObj.lemma || lexiconRow?.headword || lexData?.lemma || wordObj.normalized || wordObj.word);
 			const primaryStrongs = lexiconRow?.strongs || lexData?.strongs || wordObj.strongs;
 
 			let totalCount = 0;

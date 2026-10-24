@@ -121,6 +121,16 @@ CREATE TABLE IF NOT EXISTS corpus_book_stats (
     total_verses INTEGER NOT NULL,
     PRIMARY KEY (corpus_id, book_code)
 );
+
+-- 8. Pre-computed Lemma Attested Forms (O(1) Inflections & Grammatical Analyses)
+CREATE TABLE IF NOT EXISTS lemma_forms (
+    corpus_id TEXT NOT NULL,
+    lemma_key TEXT NOT NULL,
+    display_lemma TEXT NOT NULL,
+    total_occurrences INTEGER NOT NULL,
+    forms_json TEXT NOT NULL,
+    PRIMARY KEY (corpus_id, lemma_key)
+);
 """
 
 INDEX_SQL = """
@@ -144,6 +154,9 @@ ON lemma_stats(corpus_id, lemma_key);
 
 CREATE INDEX IF NOT EXISTS idx_concordance_refs_lookup 
 ON concordance_refs(corpus_id, lemma_key, work_unit_id);
+
+CREATE INDEX IF NOT EXISTS idx_lemma_forms_lookup 
+ON lemma_forms(corpus_id, lemma_key);
 """
 
 

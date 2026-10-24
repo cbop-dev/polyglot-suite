@@ -1198,163 +1198,36 @@ export async function fetchAttestedForms(
 	if (uniqueKeys.length === 0) return emptyResult;
 
 	const placeholders = uniqueKeys.map(() => '?').join(',');
-	const rows = await query<{ work_unit_id: number; tokens_json: string }>(`
-		SELECT cr.work_unit_id, tu.tokens_json
-		FROM concordance_refs cr
-		JOIN text_units tu ON tu.id = cr.work_unit_id
-		WHERE cr.corpus_id = ? AND cr.lemma_key IN (${placeholders})
-		ORDER BY cr.work_unit_id
-	`, [corpusId, ...uniqueKeys]);
+	const orderClause = sCode ? 'CASE WHEN lemma_key = ? THEN 0 ELSE 1 END, ' : '';
+	const orderParams = sCode ? [sCode] : [];
 
-	if (!rows || rows.length === 0) return emptyResult;
+	try {
+		const row = await queryOne<{ forms_json: string }>(`
+			SELECT forms_json
+			FROM lemma_forms
+			WHERE corpus_id = ? AND lemma_key IN (${placeholders})
+			ORDER BY ${orderClause}total_occurrences DESC
+			LIMIT 1
+		`, [corpusId, ...uniqueKeys, ...orderParams]);
 
-	const rawTokens: { word: string; morphAnalysis?: any }[] = [];
-	const workUnitForms = new Map<number, string[]>();
-
-	const strongsSet = new Set(
-		uniqueKeys
-			.filter((k) => k.startsWith('H') || k.startsWith('G'))
-			.map((k) => k.toUpperCase())
-	);
-	const lemmaLowerSet = new Set(
-		uniqueKeys
-			.filter((k) => !/^[HG]\d+$/i.test(k) && !/^\d+$/.test(k))
-			.map((k) => k.toLowerCase())
-	);
-
-	for (const row of rows) {
-		if (!row.tokens_json) continue;
-		try {
-			const tokens = typeof row.tokens_json === 'string' ? JSON.parse(row.tokens_json) : row.tokens_json;
-			if (!Array.isArray(tokens)) continue;
-
-			for (const t of tokens) {
-				let surface = '';
-				let norm = '';
-				let tokStrongs = '';
-				let morph = '';
-				let tokLemma = '';
-
-				if (Array.isArray(t)) {
-					surface = t[0] || '';
-					norm = t[1] || surface;
-					tokStrongs = t[2] || '';
-					morph = t[3] || '';
-					tokLemma = t[4] || '';
-				} else if (t && typeof t === 'object') {
-					surface = t.word || t.surface || '';
-					norm = t.normalized || surface;
-					tokStrongs = t.strongs || t.strongs_number || '';
-					morph = t.morph || t.morph_code || '';
-					tokLemma = t.lemma || '';
-				}
-
-				if (!surface) continue;
-
-				let isMatch = false;
-				if (strongsSet.size > 0) {
-					if (tokStrongs) {
-						const normSt = tokStrongs.trim().toUpperCase();
-						if (strongsSet.has(normSt) || (normSt.length > 1 && strongsSet.has(normSt.slice(1)))) {
-							// Strong's ID matches. However, if a lemma was also queried and the token has tokLemma,
-							// verify that tokLemma does not blatantly conflict with the queried lemma
-							// (e.g. BHS data corruption where unrelated verbs like 'סות' were assigned Strong's H430).
-							if (tokLemma && lemmaLowerSet.size > 0) {
-								const lemLow = tokLemma.trim().toLowerCase();
-								const unpointedTokLemma = (lang === 'hebrew' || corpusId === 'wlc')
-									? lemLow.replace(/[\u0591-\u05C7]/g, '')
-									: lemLow.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-								if (
-									lemmaLowerSet.has(lemLow) ||
-									lemmaLowerSet.has(lemLow.normalize('NFC')) ||
-									lemmaLowerSet.has(unpointedTokLemma)
-								) {
-									isMatch = true;
-								}
-							} else {
-								isMatch = true;
-							}
-						}
-						// If tokStrongs is present and does NOT match strongsSet, it is an explicit Strong's
-						// mismatch. Do NOT fall back to unpointed consonant norm or tokLemma!
-					} else {
-						// Token has no Strong's number, fallback to lemma or norm
-						if (tokLemma) {
-							const lemLow = tokLemma.trim().toLowerCase();
-							const unpointedTokLemma = (lang === 'hebrew' || corpusId === 'wlc')
-								? lemLow.replace(/[\u0591-\u05C7]/g, '')
-								: lemLow.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-							if (
-								lemmaLowerSet.has(lemLow) ||
-								lemmaLowerSet.has(lemLow.normalize('NFC')) ||
-								lemmaLowerSet.has(unpointedTokLemma)
-							) {
-								isMatch = true;
-							}
-						}
-						if (!isMatch && norm) {
-							const normLow = norm.trim().toLowerCase();
-							if (lemmaLowerSet.has(normLow) || lemmaLowerSet.has(normLow.normalize('NFC'))) {
-								isMatch = true;
-							}
-						}
-					}
-				} else {
-					// No Strong's ID provided in query; match by tokLemma or norm
-					if (tokLemma) {
-						const lemLow = tokLemma.trim().toLowerCase();
-						const unpointedTokLemma = (lang === 'hebrew' || corpusId === 'wlc')
-							? lemLow.replace(/[\u0591-\u05C7]/g, '')
-							: lemLow.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-						if (
-							lemmaLowerSet.has(lemLow) ||
-							lemmaLowerSet.has(lemLow.normalize('NFC')) ||
-							lemmaLowerSet.has(unpointedTokLemma)
-						) {
-							isMatch = true;
-						}
-					}
-					if (!isMatch && norm) {
-						const normLow = norm.trim().toLowerCase();
-						if (lemmaLowerSet.has(normLow) || lemmaLowerSet.has(normLow.normalize('NFC'))) {
-							isMatch = true;
-						}
-					}
-				}
-
-				if (isMatch) {
-					const analysis = (lang === 'hebrew' || corpusId === 'wlc')
-						? parseHebrewMorph(morph)
-						: parseGreekMorph(morph);
-					rawTokens.push({
-						word: surface,
-						morphAnalysis: analysis
-					});
-
-					const cleanWord = surface.replace(/[.,;:·’—\s׃־׀]/g, '').trim().toLowerCase();
-					if (cleanWord) {
-						let wList = workUnitForms.get(row.work_unit_id);
-						if (!wList) {
-							wList = [];
-							workUnitForms.set(row.work_unit_id, wList);
-						}
-						if (!wList.includes(cleanWord)) {
-							wList.push(cleanWord);
-						}
-					}
-				}
-			}
-		} catch (e) {
-			// ignore malformed token rows
+		if (!row || !row.forms_json) {
+			return emptyResult;
 		}
+
+		const parsed = typeof row.forms_json === 'string' ? JSON.parse(row.forms_json) : row.forms_json;
+		const forms: AttestedForm[] = parsed.forms || [];
+		const workUnitForms = new Map<number, string[]>();
+		if (parsed.workUnitForms) {
+			for (const [k, v] of Object.entries(parsed.workUnitForms)) {
+				workUnitForms.set(Number(k), v as string[]);
+			}
+		}
+
+		return { forms, workUnitForms };
+	} catch (err) {
+		console.warn('[fetchAttestedForms] DB query error:', (err as any)?.message || err);
+		return emptyResult;
 	}
-
-	const forms = buildAttestedForms(rawTokens, {
-		canonicalize: true,
-		lang: lang === 'hebrew' ? 'hebrew' : 'greek'
-	});
-
-	return { forms, workUnitForms };
 }
 
 /**

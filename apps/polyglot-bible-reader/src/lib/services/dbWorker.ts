@@ -21,7 +21,9 @@ export async function getDbWorker(): Promise<WorkerHttpvfs> {
 	const baseUrl = getBaseurl();
 	const workerUrl = new URL('sqlite/sqlite.worker.js', baseUrl).toString();
 	const wasmUrl = new URL('sqlite/sql-wasm.wasm', baseUrl).toString();
-	const configUrl = new URL(`db/config.json${APP_VERSION ? '?v=' + APP_VERSION : ''}`, baseUrl).toString();
+	const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV;
+	const cacheParam = isDev ? `dev_${Date.now()}` : (APP_VERSION || 'v.?');
+	const configUrl = new URL(`db/config.json?v=${cacheParam}`, baseUrl).toString();
 
 	workerPromise = createHttpVfsWorker({
 		workerUrl,

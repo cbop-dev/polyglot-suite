@@ -10,11 +10,83 @@
       "gloss": "Achish",
       "reason": "Upstream ETCBC cross-wiring mistagged Achish (>KJC/) as H6030 (עָנָה)"
     },
+    "2881": {
+      "lemma": "יָוֵן",
+      "strongs": "H3121",
+      "gloss": "mire",
+      "reason": "Upstream alignment state-leak mistagged יָוֵן (mire) as H430 instead of H3121"
+    },
+    "2996": {
+      "lemma": "יָנָה",
+      "strongs": "H3238",
+      "gloss": "oppress",
+      "reason": "Upstream alignment state-leak mistagged יָנָה (oppress) as H430 instead of H3238"
+    },
+    "3226": {
+      "lemma": "יִשְׂרָאֵל",
+      "strongs": "H3478",
+      "gloss": "Israel",
+      "reason": "Upstream alignment mistagged יִשְׂרָאֵל (Israel) as H559 (אָמַר) instead of H3478"
+    },
+    "3407": {
+      "lemma": "כֶּסֶא",
+      "strongs": "H3677",
+      "gloss": "full moon",
+      "reason": "Upstream alignment state-leak mistagged כֶּסֶא (full moon) as H430 instead of H3677"
+    },
+    "3487": {
+      "lemma": "כִּרְסֵם",
+      "strongs": "H3765",
+      "gloss": "eat away",
+      "reason": "Upstream alignment state-leak mistagged כִּרְסֵם (eat away) as H430 instead of H3765"
+    },
     "3594": {
       "lemma": "לוט",
       "strongs": "H3874",
       "gloss": "enwrap",
       "reason": "Upstream ETCBC cross-wiring mistagged verbal root לוט (LWV[) as H397 (Achish) instead of H3874 (lût)"
+    },
+    "3950": {
+      "lemma": "מַחֲנֶה",
+      "strongs": "H4264",
+      "gloss": "camp",
+      "reason": "Upstream alignment mistagged מַחֲנֶה (camp) as H413 (אֶל) instead of H4264"
+    },
+    "4075": {
+      "lemma": "מְלֵאָה",
+      "strongs": "H4395",
+      "gloss": "full produce",
+      "reason": "Upstream alignment state-leak mistagged מְלֵאָה (full produce) as H430 instead of H4395"
+    },
+    "5116": {
+      "lemma": "סוּת",
+      "strongs": "H5496",
+      "gloss": "incite",
+      "reason": "Upstream alignment state-leak mistagged סוּת (incite) as H430 instead of H5496"
+    },
+    "5235": {
+      "lemma": "סִפְרָה",
+      "strongs": "H5615",
+      "gloss": "scroll",
+      "reason": "Upstream alignment state-leak mistagged סִפְרָה (scroll) as H430 instead of H5615"
+    },
+    "6477": {
+      "lemma": "קָדַם",
+      "strongs": "H6923",
+      "gloss": "confront",
+      "reason": "Upstream alignment state-leak mistagged קָדַם (confront) as H430 instead of H6923"
+    },
+    "7024": {
+      "lemma": "רָצַד",
+      "strongs": "H7520",
+      "gloss": "watch",
+      "reason": "Upstream alignment state-leak mistagged רָצַד (watch) as H430 instead of H7520"
+    },
+    "7077": {
+      "lemma": "שַׁ־",
+      "strongs": "H7945",
+      "gloss": "who",
+      "reason": "Upstream alignment mistagged relative prefix שַׁ־ as H1571 (גַּם) instead of H7945"
     }
   },
   "tokens": {
