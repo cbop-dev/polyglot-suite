@@ -92,7 +92,7 @@ All database chunks across all three apps were published to dedicated GitHub Rel
 ### 3. Version Tracking in `config.json`
 Each app's `static/db/config.json` maintains explicit linkage to its database release:
 - `apps/polyglot-bible-reader/static/db/config.json`: `"databaseVersion": "database-v0.1.10"`
-- `apps/philo-reader/static/db/config.json`: `"databaseVersion": "philo-db-v0.0.2"`
+- `apps/philo-reader/static/db/config.json`: `"databaseVersion": "philo-db-v0.0.5"`
 - `apps/apostolic-fathers-reader/static/db/config.json`: `"databaseVersion": "af-db-v0.1.5"`
 
 ---
@@ -167,33 +167,34 @@ Even though the database files were untracked from `HEAD`, past commits still he
 
 ## 7. Operational Cheat Sheet for Future Maintenance
 
-### When Rebuilding the Database in the Future
-1. Run the Python pipeline:
-   - **Option A (Fast Targeted Rebuild — ~70s)**:
-     Use when adjusting Hebrew texts (WLC) or lexicons (BDB), or updating the analytical layer. This re-ingests Hebrew sources and then re-indexes lemma statistics, concordance references, and attested forms across **all 10 corpora and languages**:
-     ```bash
-     python3 -m apps.polyglot-bible-reader.pipeline.rebuild_hebrew
-     ```
-   - **Option B (Full Ground-Up Rebuild — ~10–15m)**:
-     Use when updating Greek LXX, Greek NT, Latin Vulgate, Syriac Peshitta, English versions, or TVTMS cross-tradition versification mappings from scratch:
-     ```bash
-     python3 -m apps.polyglot-bible-reader.pipeline.build --all
-     ```
-2. Re-chunk the database:
-   ```bash
-   python3 apps/polyglot-bible-reader/scripts/chunk_database.py
-   ```
-3. Bump the database version in `apps/polyglot-bible-reader/static/db/config.json` (e.g. `database-v0.1.11`).
-4. Publish the new release assets:
-   ```bash
-   npm run publish:db
-   ```
-5. Commit and push code changes (`config.json` and code only):
-   ```bash
-   git add apps/polyglot-bible-reader/static/db/config.json
-   git commit -m "Update database to database-v0.1.11"
-   git push origin main
-   ```
+### When Rebuilding and Publishing Any Database
+
+After rebuilding and re-chunking a database via its Python pipeline:
+- **Philo Reader**: `python3 -m apps.philo-reader.pipeline.build --build-db --chunk`
+- **Apostolic Fathers**: `python3 -m apps.apostolic-fathers-reader.pipeline.build --build-db --chunk`
+- **Polyglot Bible**: `python3 -m apps.polyglot-bible-reader.pipeline.rebuild_hebrew && python3 apps/polyglot-bible-reader/scripts/chunk_database.py`
+
+Run the one-step release automation:
+```bash
+# Philo (bumps patch, e.g. philo-db-v0.0.5 -> philo-db-v0.0.6, uploads to GitHub Releases, commits config.json)
+npm run release:db philo
+
+# Apostolic Fathers
+npm run release:db fathers
+
+# Polyglot Bible
+npm run release:db bible
+```
+
+#### Optional flags:
+- `npm run release:db <app> minor`: Bump minor version instead of patch.
+- `npm run release:db <app> patch --push`: Automatically run `git push origin main` after committing `config.json`.
+- `npm run release:db <app> --dry-run`: Test version calculations and asset checks without modifying files or uploading.
+
+Finally, push to GitHub to trigger GitHub Pages CI deployment (if `--push` was not used):
+```bash
+git push origin main
+```
 
 ### When Setting Up a New Development Machine
 After running `git clone`:

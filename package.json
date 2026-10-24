@@ -1,6 +1,6 @@
 {
   "name": "polyglot-suite",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "private": true,
   "description": "Monorepo workspace for ancient language readers and linguistic toolkits",
   "workspaces": [
@@ -42,6 +42,10 @@
     "push:db:bible": "node scripts/sync_db.js --publish bible",
     "push:db:philo": "node scripts/sync_db.js --publish philo",
     "push:db:fathers": "node scripts/sync_db.js --publish fathers",
+    "release:db": "node scripts/release_db.js",
+    "release:db:bible": "node scripts/release_db.js bible",
+    "release:db:philo": "node scripts/release_db.js philo",
+    "release:db:fathers": "node scripts/release_db.js fathers",
     "version:bump": "node scripts/release.js bump",
     "version:tag": "node scripts/release.js tag",
     "release": "node scripts/release.js release"

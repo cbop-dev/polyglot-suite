@@ -93,9 +93,24 @@ class DatabaseChunker:
         db_sha256 = orig_hasher.hexdigest()
 
         # 4. Generate sql.js-httpvfs config.json
+        config_path = self.output_dir / "config.json"
+        existing_version = None
+        if config_path.exists():
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    old_cfg = json.load(f)
+                    existing_version = old_cfg.get("databaseVersion")
+            except Exception:
+                pass
+
         cache_bust = f"v{int(time.time())}"
         url_prefix = self.chunk_prefix if self.chunk_prefix.endswith(".") else f"{self.chunk_prefix}."
-        config = {
+        
+        config: Dict[str, Any] = {}
+        if existing_version:
+            config["databaseVersion"] = existing_version
+
+        config.update({
             "serverMode": "chunked",
             "requestChunkSize": page_size,
             "urlPrefix": url_prefix,
@@ -103,13 +118,12 @@ class DatabaseChunker:
             "databaseLengthBytes": total_bytes,
             "suffixLength": 2,
             "cacheBust": cache_bust,
-        }
+        })
 
-        config_path = self.output_dir / "config.json"
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
 
         elapsed = time.time() - t0
         print(f"✓ Created {len(chunk_files)} chunks in {elapsed:.2f}s")
-        print(f"✓ Config written to: {config_path}")
+        print(f"✓ Config written to: {config_path} (databaseVersion: {existing_version or 'not set'})")
         return config

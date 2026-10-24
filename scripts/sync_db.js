@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
 
-const APPS = {
+export const APPS = {
   bible: {
     name: 'Polyglot Bible Reader',
     dir: path.join(REPO_ROOT, 'apps/polyglot-bible-reader/static/db'),
@@ -31,8 +31,9 @@ const APPS = {
     notes: 'Pre-computed 5MB SQLite database chunks for Apostolic Fathers Reader.',
   },
 };
+APPS.af = APPS.fathers;
 
-function getGhEnv() {
+export function getGhEnv() {
   const env = { ...process.env };
   // In GitHub Actions CI, preserve the runner token
   if (process.env.GITHUB_ACTIONS) {
@@ -48,10 +49,13 @@ function getGhEnv() {
   }
 }
 
-const ghEnv = getGhEnv();
+export const ghEnv = getGhEnv();
 
-function getAppConfig(appKey) {
+export function getAppConfig(appKey) {
   const app = APPS[appKey];
+  if (!app) {
+    throw new Error(`Unknown app: "${appKey}". Available: ${Object.keys(APPS).join(', ')}`);
+  }
   const configPath = path.join(app.dir, 'config.json');
   if (!fs.existsSync(configPath)) {
     throw new Error(`Config file not found at ${configPath}`);
@@ -64,7 +68,7 @@ function getAppConfig(appKey) {
   return { ...app, configPath, tag };
 }
 
-function pullApp(appKey) {
+export function pullApp(appKey) {
   const app = getAppConfig(appKey);
   console.log(`📥 Downloading database chunks for ${app.name} [release: ${app.tag}]...`);
   fs.mkdirSync(app.dir, { recursive: true });
@@ -79,7 +83,7 @@ function pullApp(appKey) {
   console.log(`✅ Successfully downloaded ${app.name} chunks to ${app.dir}\n`);
 }
 
-function publishApp(appKey) {
+export function publishApp(appKey) {
   const app = getAppConfig(appKey);
   console.log(`📤 Publishing database chunks for ${app.name} [release: ${app.tag}]...`);
   const chunkPattern = path.join(app.dir, app.pattern);
@@ -108,29 +112,33 @@ function publishApp(appKey) {
   console.log(`✅ Successfully published release ${app.tag} for ${app.name}!\n`);
 }
 
-const action = process.argv[2];
-const targetApp = process.argv[3] || 'all';
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === __filename;
 
-const targets = targetApp === 'all' ? Object.keys(APPS) : [targetApp];
+if (isMain) {
+  const action = process.argv[2];
+  const targetApp = process.argv[3] || 'all';
 
-if (!['--pull', 'pull', '--publish', 'publish'].includes(action)) {
-  console.log('Usage: node scripts/sync_db.js [--pull | --publish] [all | bible | philo | fathers]');
-  process.exit(1);
-}
+  const targets = targetApp === 'all' ? ['bible', 'philo', 'fathers'] : [targetApp];
 
-for (const key of targets) {
-  if (!APPS[key]) {
-    console.error(`❌ Unknown app: "${key}". Available apps: ${Object.keys(APPS).join(', ')}`);
+  if (!['--pull', 'pull', '--publish', 'publish'].includes(action)) {
+    console.log('Usage: node scripts/sync_db.js [--pull | --publish] [all | bible | philo | fathers]');
     process.exit(1);
   }
-  try {
-    if (action === '--pull' || action === 'pull') {
-      pullApp(key);
-    } else {
-      publishApp(key);
+
+  for (const key of targets) {
+    if (!APPS[key]) {
+      console.error(`❌ Unknown app: "${key}". Available apps: ${Object.keys(APPS).join(', ')}`);
+      process.exit(1);
     }
-  } catch (err) {
-    console.error(`❌ Error syncing ${key}:`, err.message);
-    process.exit(1);
+    try {
+      if (action === '--pull' || action === 'pull') {
+        pullApp(key);
+      } else {
+        publishApp(key);
+      }
+    } catch (err) {
+      console.error(`❌ Error syncing ${key}:`, err.message);
+      process.exit(1);
+    }
   }
 }
