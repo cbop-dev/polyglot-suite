@@ -84,38 +84,33 @@ To permanently stop Git history bloat, we migrated the database chunks out of Gi
 - **Explicit Versioning**: Releases are tagged semantically (`database-v0.1.10`), ensuring reproducible snapshots.
 
 ### 2. Asset Upload
-All 56 chunks (`polyglot.db.00` – `polyglot.db.55`) and `config.json` were published to the release:
-```text
-https://github.com/cbop-dev/polyglot-suite/releases/tag/database-v0.1.10
-```
+All database chunks across all three apps were published to dedicated GitHub Releases:
+- **Polyglot Bible Reader (56 chunks)**: `https://github.com/cbop-dev/polyglot-suite/releases/tag/database-v0.1.10`
+- **Philo Reader (32 chunks)**: `https://github.com/cbop-dev/polyglot-suite/releases/tag/philo-db-v0.0.2`
+- **Apostolic Fathers Reader (6 chunks)**: `https://github.com/cbop-dev/polyglot-suite/releases/tag/af-db-v0.1.5`
 
 ### 3. Version Tracking in `config.json`
-`apps/polyglot-bible-reader/static/db/config.json` was updated to maintain explicit release linkage:
-```json
-{
-  "databaseVersion": "database-v0.1.10",
-  "serverMode": "chunked",
-  "requestChunkSize": 4096,
-  "urlPrefix": "polyglot.db.",
-  "serverChunkSize": 10485760,
-  "databaseLengthBytes": 581435392,
-  "suffixLength": 2,
-  "cacheBust": "v1792814302"
-}
-```
-`scripts/chunk_database.py` was updated to automatically preserve this `databaseVersion` property during future rechunking.
+Each app's `static/db/config.json` maintains explicit linkage to its database release:
+- `apps/polyglot-bible-reader/static/db/config.json`: `"databaseVersion": "database-v0.1.10"`
+- `apps/philo-reader/static/db/config.json`: `"databaseVersion": "philo-db-v0.0.2"`
+- `apps/apostolic-fathers-reader/static/db/config.json`: `"databaseVersion": "af-db-v0.1.5"`
 
 ---
 
 ## 5. Phase 3: Tooling, Caching, and Deployment Automation
 
-### 1. New Helper Scripts (`scripts/sync_db.js`)
-Added two new npm scripts in `package.json`:
-- `npm run pull:db`: Reads `databaseVersion` from `config.json` and downloads the 56 chunks via `gh release download` (for new developers or CI).
-- `npm run publish:db`: Uploads freshly rebuilt chunks to GitHub Releases whenever a database update occurs.
+### 1. Unified & Granular Helper Scripts (`scripts/sync_db.js`)
+Enhanced helper scripts in root `package.json`:
+- `npm run pull:db`: Downloads all 3 database sets (94 chunks total) in parallel.
+- `npm run pull:db:bible`, `npm run pull:db:philo`, `npm run pull:db:fathers`: Download individual databases.
+- `npm run publish:db:philo`, `npm run publish:db:fathers`: Upload freshly built chunks to GitHub Releases.
 
 ### 2. `.gitignore` Rules
-Added `apps/polyglot-bible-reader/static/db/polyglot.db.*` to `.gitignore`.
+Added wildcard rules to `.gitignore`:
+```gitignore
+**/static/db/*.db.*
+*.db.*
+```
 - On your local development machine, the chunk files remain on disk for local testing.
 - For Apache VPS deployment (`npm run deploy:www`), `deploy_www.sh` runs `npm run build:www` and `rsync`s local `build/www/` over SSH. **Zero VPS workflow changes are needed.**
 
@@ -126,8 +121,11 @@ Updated `.github/workflows/deploy.yml` with intelligent caching and automated re
         id: db-cache
         uses: actions/cache@v4
         with:
-          path: apps/polyglot-bible-reader/static/db/polyglot.db.*
-          key: polyglot-db-${{ hashFiles('apps/polyglot-bible-reader/static/db/config.json') }}
+          path: |
+            apps/polyglot-bible-reader/static/db/polyglot.db.*
+            apps/philo-reader/static/db/philo.db.*
+            apps/apostolic-fathers-reader/static/db/af.db.*
+          key: polyglot-dbs-${{ hashFiles('apps/*/static/db/config.json') }}
 
       - name: Fetch Database Chunks
         if: steps.db-cache.outputs.cache-hit != 'true'
@@ -138,7 +136,7 @@ Updated `.github/workflows/deploy.yml` with intelligent caching and automated re
       - name: Build Polyglot Suite (Apps & Portal)
         run: npm run build:www
 ```
-On routine code commits, the cache hits in 0 seconds. When the database version changes, the runner fetches the new chunks in ~3–5 seconds.
+On routine code commits, the cache hits in 0 seconds. When any database version changes, the runner fetches the new chunks in ~3–5 seconds.
 
 ---
 
