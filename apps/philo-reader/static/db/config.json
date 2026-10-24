@@ -1,4 +1,5 @@
 {
+  "databaseVersion": "philo-db-v0.0.2",
   "serverMode": "chunked",
   "requestChunkSize": 4096,
   "urlPrefix": "philo.db.",
