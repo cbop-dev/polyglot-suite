@@ -76,6 +76,51 @@ function writePkg(filePath, data, indent, dryRun = false) {
   fs.writeFileSync(fullPath, JSON.stringify(data, null, indent) + '\n', 'utf-8');
 }
 
+function updateLockfiles(targetKey, newVer, dryRun = false) {
+  const rootLockPath = path.join(REPO_ROOT, 'package-lock.json');
+  if (fs.existsSync(rootLockPath)) {
+    const { pkg: lock, indent } = readPkgWithIndent('package-lock.json');
+    let modified = false;
+
+    if (targetKey === 'suite') {
+      if (lock.version !== newVer) {
+        lock.version = newVer;
+        modified = true;
+      }
+      if (lock.packages && lock.packages[''] && lock.packages[''].version !== newVer) {
+        lock.packages[''].version = newVer;
+        modified = true;
+      }
+    } else {
+      const target = TARGETS[targetKey];
+      const targetDir = path.dirname(target.file);
+      if (lock.packages && lock.packages[targetDir] && lock.packages[targetDir].version !== newVer) {
+        lock.packages[targetDir].version = newVer;
+        modified = true;
+      }
+    }
+
+    if (modified) {
+      console.log(`🔒 Synchronized root package-lock.json for ${targetKey} -> ${newVer}`);
+      writePkg('package-lock.json', lock, indent, dryRun);
+    }
+  }
+
+  // Also check local package-lock.json in sub-app directory if present
+  const target = TARGETS[targetKey];
+  if (target && target.file !== 'package.json') {
+    const localLock = path.join(path.dirname(target.file), 'package-lock.json');
+    if (fs.existsSync(path.join(REPO_ROOT, localLock))) {
+      const { pkg: lock, indent } = readPkgWithIndent(localLock);
+      lock.version = newVer;
+      if (lock.packages && lock.packages['']) {
+        lock.packages[''].version = newVer;
+      }
+      writePkg(localLock, lock, indent, dryRun);
+    }
+  }
+}
+
 // 1. Granular Bump: bump target package.json
 export function bumpTarget(targetKey, bumpType = 'patch', { dryRun = false } = {}) {
   const target = TARGETS[targetKey];
@@ -90,6 +135,10 @@ export function bumpTarget(targetKey, bumpType = 'patch', { dryRun = false } = {
   console.log(`📦 Bumping ${target.name} (${target.file}): ${oldVer} -> ${newVer} [${bumpType}]`);
   pkg.version = newVer;
   writePkg(target.file, pkg, indent, dryRun);
+
+  // Keep package-lock.json in exact sync
+  updateLockfiles(targetKey, newVer, dryRun);
+
   return {
     targetKey,
     file: target.file,
@@ -161,12 +210,23 @@ export function commitAndTag(message, { dryRun = false, push = false, stageAll =
     }
   }
 
-  // Stage files
+  // Stage files: package.json files PLUS package-lock.json files
   if (stageAll) {
     run('git add -A', { dryRun });
   } else {
-    const filesToStage = changed.map(c => c.file).join(' ');
-    run(`git add ${filesToStage}`, { dryRun });
+    const filesToStage = changed.map(c => c.file);
+    const lockCandidates = [
+      'package-lock.json',
+      'apps/polyglot-bible-reader/package-lock.json',
+      'apps/josephus-reader/package-lock.json',
+      'apps/josephus-reader/app/package-lock.json',
+    ];
+    for (const lf of lockCandidates) {
+      if (fs.existsSync(path.join(REPO_ROOT, lf))) {
+        filesToStage.push(lf);
+      }
+    }
+    run(`git add ${filesToStage.join(' ')}`, { dryRun });
   }
 
   // Generate commit message if not provided
