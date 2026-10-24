@@ -1,6 +1,6 @@
 {
   "name": "polyglot-suite",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "private": true,
   "description": "Monorepo workspace for ancient language readers and linguistic toolkits",
   "workspaces": [
@@ -29,7 +29,9 @@
     "check:fathers": "npm --workspace=apostolic-fathers-reader run check",
     "check:philo": "npm --workspace=philo-reader run check",
     "test:bible": "npm --workspace=polyglot-bible-reader run test",
-    "test:josephus": "npm --workspace=josephus-reader run test"
+    "test:josephus": "npm --workspace=josephus-reader run test",
+    "pull:db": "node scripts/sync_db.js --pull",
+    "publish:db": "node scripts/sync_db.js --publish"
   },
   "allowScripts": {
     "esbuild@0.27.7": true,

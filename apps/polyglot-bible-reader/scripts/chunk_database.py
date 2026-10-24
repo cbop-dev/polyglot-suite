@@ -42,7 +42,19 @@ def rechunk():
 
     # Update config.json
     import time
+    config_path = os.path.join(OUTPUT_DIR, 'config.json')
+    db_version = "database-v0.1.10"
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                old_conf = json.load(f)
+                if "databaseVersion" in old_conf:
+                    db_version = old_conf["databaseVersion"]
+        except Exception:
+            pass
+
     config = {
+        "databaseVersion": db_version,
         "serverMode": "chunked",
         "requestChunkSize": page_size,
         "urlPrefix": "polyglot.db.",
@@ -51,10 +63,9 @@ def rechunk():
         "suffixLength": suffix_len,
         "cacheBust": f"v{int(time.time())}"
     }
-    config_path = os.path.join(OUTPUT_DIR, 'config.json')
     with open(config_path, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2)
-    print(f'Updated config.json (requestChunkSize: {page_size}) with length {total_bytes:,} bytes (suffixLength: {suffix_len}).')
+    print(f'Updated config.json (version: {db_version}, requestChunkSize: {page_size}) with length {total_bytes:,} bytes (suffixLength: {suffix_len}).')
 
     # Verify sha256 checksum of reassembled chunks
     orig_hasher = hashlib.sha256()

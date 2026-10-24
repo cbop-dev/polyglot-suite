@@ -416,7 +416,10 @@ class DatabaseValidator:
         data_h4554 = json.loads(h4554["forms_json"])
         assert len(data_h4554["forms"]) >= 1, "Expected at least 1 attested form for H4554"
         gen43_id = cur.execute("SELECT id FROM text_units WHERE corpus_id='wlc' AND std_book='GEN' AND std_chapter=43 AND std_verse=24").fetchone()[0]
-        assert str(gen43_id) in data_h4554["workUnitForms"], f"Expected Gen 43:24 ({gen43_id}) in H4554 workUnitForms"
+        all_work_units = set()
+        for f in data_h4554["forms"]:
+            all_work_units.update(f.get("work_unit_ids", []))
+        assert gen43_id in all_work_units, f"Expected Gen 43:24 ({gen43_id}) in H4554 work_unit_ids"
         print(f"  Spot-check H4554 (Mispo): total={h4554['total_occurrences']}, forms={[f['form'] for f in data_h4554['forms']]}")
 
         # 3. Spot check OGNT G3195 (Mello)

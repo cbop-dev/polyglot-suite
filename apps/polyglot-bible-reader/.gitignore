@@ -38,6 +38,7 @@ pipeline/data/kjv/
 pipeline/data/brenton/
 pipeline/data/web/
 *.sqlite3
+static/db/polyglot.db.*
 
 .archive/
 

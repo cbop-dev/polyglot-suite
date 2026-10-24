@@ -354,9 +354,9 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
     # concordance set: (corpus_id, lemma_key, display_lemma, native_citation, text_unit_id)
     concordance_set: Set[Tuple[str, str, str, str, int]] = set()
 
-    # Lemma forms aggregation: (corpus_id, lemma_key) -> { total, forms, work_units }
+    # Lemma forms aggregation: (corpus_id, lemma_key) -> { total, forms }
     lemma_forms_data: Dict[Tuple[str, str], Dict[str, Any]] = defaultdict(
-        lambda: {"total": 0, "forms": defaultdict(lambda: {"count": 0, "raw": set(), "analyses": {}}), "work_units": defaultdict(set)}
+        lambda: {"total": 0, "forms": defaultdict(lambda: {"count": 0, "raw": set(), "analyses": {}, "work_units": set()})}
     )
 
     verse_count = 0
@@ -427,17 +427,10 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
                     form_entry = lf_entry["forms"][canonical_form]
                     form_entry["count"] += 1
                     form_entry["raw"].add(surface_clean)
+                    form_entry["work_units"].add(tu_id)
                     if morph_analysis:
                         m_key = morph_analysis.get("rawCode") or morph_analysis.get("summary") or json.dumps(morph_analysis)
                         form_entry["analyses"][m_key] = morph_analysis
-
-                    wu_set = lf_entry["work_units"][tu_id]
-                    wu_set.add(surface_clean.lower())
-                    wu_set.add(canonical_form.lower())
-                    if is_hebrew:
-                        unpointed = re.sub(r'[\u0591-\u05C7]', '', canonical_form)
-                        if unpointed:
-                            wu_set.add(unpointed)
 
     print(
         f"Processed {verse_count:,} verses ({token_count:,} tokens) in {time.time() - start_time:.2f}s."
@@ -573,17 +566,12 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
                 "canonicalForm": cf,
                 "rawForms": sorted(list(f_info["raw"])),
                 "count": f_info["count"],
-                "analyses": list(f_info["analyses"].values())
+                "analyses": list(f_info["analyses"].values()),
+                "work_unit_ids": sorted(list(f_info["work_units"]))
             })
 
-        wuf_dict = {
-            str(tu_id): sorted(list(forms_set))
-            for tu_id, forms_set in lf_data["work_units"].items()
-        }
-
         forms_json = json.dumps({
-            "forms": forms_list,
-            "workUnitForms": wuf_dict
+            "forms": forms_list
         }, separators=(",", ":"), ensure_ascii=False)
 
         lf_rows.append((

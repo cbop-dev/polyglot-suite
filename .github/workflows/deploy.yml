@@ -34,6 +34,19 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Cache Database Chunks
+        id: db-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/polyglot-bible-reader/static/db/polyglot.db.*
+          key: polyglot-db-${{ hashFiles('apps/polyglot-bible-reader/static/db/config.json') }}
+
+      - name: Fetch Database Chunks
+        if: steps.db-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run pull:db
+
       - name: Build Polyglot Suite (Apps & Portal)
         run: npm run build:www
 

@@ -1217,9 +1217,29 @@ export async function fetchAttestedForms(
 		const parsed = typeof row.forms_json === 'string' ? JSON.parse(row.forms_json) : row.forms_json;
 		const forms: AttestedForm[] = parsed.forms || [];
 		const workUnitForms = new Map<number, string[]>();
+
+		// 1. If legacy workUnitForms is present, load it
 		if (parsed.workUnitForms) {
 			for (const [k, v] of Object.entries(parsed.workUnitForms)) {
 				workUnitForms.set(Number(k), v as string[]);
+			}
+		}
+
+		// 2. Reconstruct workUnitForms dynamically from form.work_unit_ids
+		for (const f of forms) {
+			const formName = f.form.toLowerCase();
+			const wids = (f as any).work_unit_ids;
+			if (Array.isArray(wids)) {
+				for (const id of wids) {
+					let list = workUnitForms.get(id);
+					if (!list) {
+						list = [];
+						workUnitForms.set(id, list);
+					}
+					if (!list.includes(formName)) {
+						list.push(formName);
+					}
+				}
 			}
 		}
 
