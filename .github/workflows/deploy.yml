@@ -38,8 +38,11 @@ jobs:
         id: db-cache
         uses: actions/cache@v4
         with:
-          path: apps/polyglot-bible-reader/static/db/polyglot.db.*
-          key: polyglot-db-${{ hashFiles('apps/polyglot-bible-reader/static/db/config.json') }}
+          path: |
+            apps/polyglot-bible-reader/static/db/polyglot.db.*
+            apps/philo-reader/static/db/philo.db.*
+            apps/apostolic-fathers-reader/static/db/af.db.*
+          key: polyglot-dbs-${{ hashFiles('apps/*/static/db/config.json') }}
 
       - name: Fetch Database Chunks
         if: steps.db-cache.outputs.cache-hit != 'true'

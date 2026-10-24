@@ -7,57 +7,120 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
-const DB_DIR = path.join(REPO_ROOT, 'apps/polyglot-bible-reader/static/db');
-const CONFIG_PATH = path.join(DB_DIR, 'config.json');
 
-if (!fs.existsSync(CONFIG_PATH)) {
-  console.error(`❌ Error: Config file not found at ${CONFIG_PATH}`);
-  process.exit(1);
+const APPS = {
+  bible: {
+    name: 'Polyglot Bible Reader',
+    dir: path.join(REPO_ROOT, 'apps/polyglot-bible-reader/static/db'),
+    pattern: 'polyglot.db.*',
+    title: 'Polyglot Bible Reader SQLite Database',
+    notes: 'Pre-computed 10MB SQLite database chunks for Polyglot Bible Reader.',
+  },
+  philo: {
+    name: 'Philo Reader',
+    dir: path.join(REPO_ROOT, 'apps/philo-reader/static/db'),
+    pattern: 'philo.db.*',
+    title: 'Philo Reader SQLite Database',
+    notes: 'Pre-computed 5MB SQLite database chunks for Philo Reader.',
+  },
+  fathers: {
+    name: 'Apostolic Fathers Reader',
+    dir: path.join(REPO_ROOT, 'apps/apostolic-fathers-reader/static/db'),
+    pattern: 'af.db.*',
+    title: 'Apostolic Fathers Reader SQLite Database',
+    notes: 'Pre-computed 5MB SQLite database chunks for Apostolic Fathers Reader.',
+  },
+};
+
+function getGhEnv() {
+  const env = { ...process.env };
+  try {
+    execSync('gh api user', { stdio: 'ignore', env });
+    return env;
+  } catch {
+    delete env.GH_TOKEN;
+    delete env.GITHUB_TOKEN;
+    return env;
+  }
 }
 
-const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
-const tag = config.databaseVersion;
+const ghEnv = getGhEnv();
 
-if (!tag) {
-  console.error('❌ Error: "databaseVersion" is not defined in config.json.');
-  process.exit(1);
+function getAppConfig(appKey) {
+  const app = APPS[appKey];
+  const configPath = path.join(app.dir, 'config.json');
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Config file not found at ${configPath}`);
+  }
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+  const tag = config.databaseVersion;
+  if (!tag) {
+    throw new Error(`"databaseVersion" is not defined in ${configPath}`);
+  }
+  return { ...app, configPath, tag };
+}
+
+function pullApp(appKey) {
+  const app = getAppConfig(appKey);
+  console.log(`📥 Downloading database chunks for ${app.name} [release: ${app.tag}]...`);
+  fs.mkdirSync(app.dir, { recursive: true });
+  execSync(`gh release download "${app.tag}" --pattern "${app.pattern}" --dir "${app.dir}" --clobber`, {
+    stdio: 'inherit',
+    cwd: REPO_ROOT,
+    env: ghEnv,
+  });
+  console.log(`✅ Successfully downloaded ${app.name} chunks to ${app.dir}\n`);
+}
+
+function publishApp(appKey) {
+  const app = getAppConfig(appKey);
+  console.log(`📤 Publishing database chunks for ${app.name} [release: ${app.tag}]...`);
+  const chunkPattern = path.join(app.dir, app.pattern);
+  try {
+    execSync(`gh release view "${app.tag}"`, { stdio: 'ignore', cwd: REPO_ROOT, env: ghEnv });
+    console.log(`Release ${app.tag} exists. Uploading/updating assets...`);
+    execSync(`gh release upload "${app.tag}" ${chunkPattern} "${app.configPath}" --clobber`, {
+      stdio: 'inherit',
+      cwd: REPO_ROOT,
+      env: ghEnv,
+    });
+  } catch {
+    console.log(`Creating new release ${app.tag}...`);
+    execSync(
+      `gh release create "${app.tag}" ${chunkPattern} "${app.configPath}" --title "${app.title} ${app.tag}" --notes "${app.notes}"`,
+      {
+        stdio: 'inherit',
+        cwd: REPO_ROOT,
+        env: ghEnv,
+      }
+    );
+  }
+  console.log(`✅ Successfully published release ${app.tag} for ${app.name}!\n`);
 }
 
 const action = process.argv[2];
+const targetApp = process.argv[3] || 'all';
 
-if (action === '--pull' || action === 'pull') {
-  console.log(`📥 Downloading database chunks for release [${tag}]...`);
-  fs.mkdirSync(DB_DIR, { recursive: true });
-  try {
-    execSync(`gh release download "${tag}" --pattern "polyglot.db.*" --dir "${DB_DIR}" --clobber`, {
-      stdio: 'inherit',
-      cwd: REPO_ROOT,
-    });
-    console.log(`✅ Successfully downloaded database chunks for ${tag} to ${DB_DIR}`);
-  } catch (err) {
-    console.error(`❌ Failed to download release via gh CLI:`, err.message);
+const targets = targetApp === 'all' ? Object.keys(APPS) : [targetApp];
+
+if (!['--pull', 'pull', '--publish', 'publish'].includes(action)) {
+  console.log('Usage: node scripts/sync_db.js [--pull | --publish] [all | bible | philo | fathers]');
+  process.exit(1);
+}
+
+for (const key of targets) {
+  if (!APPS[key]) {
+    console.error(`❌ Unknown app: "${key}". Available apps: ${Object.keys(APPS).join(', ')}`);
     process.exit(1);
   }
-} else if (action === '--publish' || action === 'publish') {
-  console.log(`📤 Publishing database chunks for release [${tag}]...`);
-  const chunkPattern = path.join(DB_DIR, 'polyglot.db.*');
   try {
-    // Check if release exists
-    execSync(`gh release view "${tag}"`, { stdio: 'ignore', cwd: REPO_ROOT });
-    console.log(`Release ${tag} exists. Uploading/updating assets...`);
-    execSync(`gh release upload "${tag}" ${chunkPattern} "${CONFIG_PATH}" --clobber`, {
-      stdio: 'inherit',
-      cwd: REPO_ROOT,
-    });
-  } catch {
-    console.log(`Creating new release ${tag}...`);
-    execSync(`gh release create "${tag}" ${chunkPattern} "${CONFIG_PATH}" --title "Polyglot SQLite Database ${tag}" --notes "Pre-computed 10MB SQLite database chunks for Polyglot Bible Reader."`, {
-      stdio: 'inherit',
-      cwd: REPO_ROOT,
-    });
+    if (action === '--pull' || action === 'pull') {
+      pullApp(key);
+    } else {
+      publishApp(key);
+    }
+  } catch (err) {
+    console.error(`❌ Error syncing ${key}:`, err.message);
+    process.exit(1);
   }
-  console.log(`✅ Successfully published database release ${tag}!`);
-} else {
-  console.log('Usage: node scripts/sync_db.js [--pull | --publish]');
-  process.exit(1);
 }

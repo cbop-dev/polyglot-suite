@@ -31,7 +31,13 @@
     "test:bible": "npm --workspace=polyglot-bible-reader run test",
     "test:josephus": "npm --workspace=josephus-reader run test",
     "pull:db": "node scripts/sync_db.js --pull",
-    "publish:db": "node scripts/sync_db.js --publish"
+    "pull:db:bible": "node scripts/sync_db.js --pull bible",
+    "pull:db:philo": "node scripts/sync_db.js --pull philo",
+    "pull:db:fathers": "node scripts/sync_db.js --pull fathers",
+    "publish:db": "node scripts/sync_db.js --publish",
+    "publish:db:bible": "node scripts/sync_db.js --publish bible",
+    "publish:db:philo": "node scripts/sync_db.js --publish philo",
+    "publish:db:fathers": "node scripts/sync_db.js --publish fathers"
   },
   "allowScripts": {
     "esbuild@0.27.7": true,

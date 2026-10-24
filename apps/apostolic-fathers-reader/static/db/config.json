@@ -1,4 +1,5 @@
 {
+  "databaseVersion": "af-db-v0.1.5",
   "serverMode": "chunked",
   "requestChunkSize": 4096,
   "urlPrefix": "af.db.",
