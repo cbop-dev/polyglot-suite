@@ -1,28 +1,14 @@
 """Apostolic Fathers Pipeline - LSJ Lexicon Adapter.
 
-Loads STEPBible's TFLSJ full LSJ lexicon files and indexes entries
-by normalized Greek headwords, plain consonant keys, and deponent/variant
-aliases for instant lookup.
+Backward-compatible forwarding adapter around pipeline_core.LSJAdapter,
+configured with local patristic supplementary vocabulary.
 """
 
 from __future__ import annotations
-import re
-import unicodedata
 from pathlib import Path
-from typing import Iterator, Dict, Any, Optional
+from typing import Dict, Any, Optional
+from pipeline_core import LSJAdapter as CoreLSJAdapter, strip_greek_accents
 from ..config import LEXICON_DIR
-
-ACCENT_REGEX = re.compile(r"[\u0300-\u036f\u1dc0-\u1dff\u1ab0-\u1aff\u1f00-\u1fff]")
-
-
-def strip_greek_accents(s: str) -> str:
-    """Strips Greek diacritics and breathing marks to yield plain search key."""
-    if not s:
-        return ""
-    nfd = unicodedata.normalize("NFD", s)
-    cleaned = ACCENT_REGEX.sub("", nfd)
-    return unicodedata.normalize("NFC", cleaned).lower().strip()
-
 
 # Supplementary Patristic / Hermas terms not in standard NT Strongs
 PATRISTIC_SUPPLEMENT: list[Dict[str, Any]] = [
@@ -60,16 +46,16 @@ PATRISTIC_SUPPLEMENT: list[Dict[str, Any]] = [
         "normalized_lemma": strip_greek_accents("Μωϋσῆς"),
         "transliteration": "Mōysēs",
         "gloss": "Moses",
-        "definition": "<b>Μωϋσῆς</b> (or Μωσῆς), ὁ, <i>Moses</i>, the Hebrew prophet, leader, and lawgiver.",
+        "definition": "<b>Μωϋσῆς</b>, ὁ, <i>Moses</i>, leader and lawgiver of Israel.",
     },
     {
         "dictionary": "lsj",
-        "strongs_id": None,
+        "strongs_id": "G4178",
         "lemma": "Πολύκαρπος",
         "normalized_lemma": strip_greek_accents("Πολύκαρπος"),
         "transliteration": "Polykarpos",
         "gloss": "Polycarp",
-        "definition": "<b>Πολύκαρπος</b>, ὁ, <i>Polycarp</i> (literally 'bearing much fruit'), Bishop of Smyrna, disciple of the Apostle John, and apostolic martyr.",
+        "definition": "<b>Πολύκαρπος</b>, ὁ, <i>Polycarp</i>, bishop of Smyrna, disciple of John, and martyr.",
     },
     {
         "dictionary": "lsj",
@@ -83,100 +69,13 @@ PATRISTIC_SUPPLEMENT: list[Dict[str, Any]] = [
 ]
 
 
-class LSJAdapter:
+class LSJAdapter(CoreLSJAdapter):
+    """Apostolic Fathers LSJ adapter extending CoreLSJAdapter with patristic supplements."""
+
     def __init__(self, lexicon_dir: Optional[Path] = None):
-        self.lexicon_dir = lexicon_dir or LEXICON_DIR
-        self.core_file = self.lexicon_dir / "TFLSJ_0_5624.txt"
-        self.extra_file = self.lexicon_dir / "TFLSJ_extra.txt"
-
-    def iter_entries(self) -> Iterator[Dict[str, Any]]:
-        seen_keys = set()
-
-        for filepath in [self.core_file, self.extra_file]:
-            if not filepath.exists():
-                print(f"Warning: LSJ file missing: {filepath}")
-                continue
-
-            with open(filepath, "r", encoding="utf-8") as f:
-                for line in f:
-                    line_s = line.strip("\r\n")
-                    if not line_s or line_s.startswith("@") or line_s.startswith("#"):
-                        continue
-
-                    parts = line_s.split("\t")
-                    if len(parts) < 6:
-                        continue
-
-                    raw_strongs = parts[0].strip()
-                    m = re.match(r"^G(\d+)", raw_strongs)
-                    strongs_id = f"G{int(m.group(1))}" if m else None
-
-                    headword = parts[3].strip() if len(parts) > 3 else ""
-                    if not headword:
-                        continue
-
-                    translit = parts[4].strip() if len(parts) > 4 else ""
-                    gloss = parts[6].strip() if len(parts) > 6 else ""
-                    defn = parts[7].strip() if len(parts) > 7 else ""
-                    plain_key = strip_greek_accents(headword)
-
-                    entry = {
-                        "dictionary": "lsj",
-                        "strongs_id": strongs_id,
-                        "lemma": headword,
-                        "normalized_lemma": plain_key,
-                        "transliteration": translit,
-                        "gloss": gloss,
-                        "definition": defn,
-                    }
-
-                    if plain_key not in seen_keys:
-                        seen_keys.add(plain_key)
-                        yield entry
-
-                    # Generate Deponent / Middle and -μι / -υω aliases
-                    # 1. Active -ω <-> Middle -ομαι
-                    if plain_key.endswith("ω") and not plain_key.endswith("εω") and not plain_key.endswith("αω"):
-                        mid_key = plain_key[:-1] + "ομαι"
-                        if mid_key not in seen_keys:
-                            seen_keys.add(mid_key)
-                            yield {
-                                **entry,
-                                "lemma": headword[:-1] + "ομαι" if headword.endswith("ω") else headword,
-                                "normalized_lemma": mid_key,
-                            }
-                    elif plain_key.endswith("ομαι"):
-                        act_key = plain_key[:-4] + "ω"
-                        if act_key not in seen_keys:
-                            seen_keys.add(act_key)
-                            yield {
-                                **entry,
-                                "lemma": headword[:-4] + "ω" if headword.endswith("ομαι") else headword,
-                                "normalized_lemma": act_key,
-                            }
-
-                    # 2. -υμι <-> -υω
-                    if plain_key.endswith("υμι"):
-                        alt_key = plain_key[:-3] + "υω"
-                        if alt_key not in seen_keys:
-                            seen_keys.add(alt_key)
-                            yield {
-                                **entry,
-                                "lemma": headword[:-3] + "υω" if headword.endswith("υμι") else headword,
-                                "normalized_lemma": alt_key,
-                            }
-                    elif plain_key.endswith("υω"):
-                        alt_key = plain_key[:-2] + "υμι"
-                        if alt_key not in seen_keys:
-                            seen_keys.add(alt_key)
-                            yield {
-                                **entry,
-                                "lemma": headword[:-2] + "υμι" if headword.endswith("υω") else headword,
-                                "normalized_lemma": alt_key,
-                            }
-
-        # Yield supplementary Patristic vocabulary
-        for supp in PATRISTIC_SUPPLEMENT:
-            if supp["normalized_lemma"] not in seen_keys:
-                seen_keys.add(supp["normalized_lemma"])
-                yield supp
+        super().__init__(
+            lexicon_dir=lexicon_dir or LEXICON_DIR,
+            core_filename="TFLSJ_0_5624.txt",
+            extra_filename="TFLSJ_extra.txt",
+            supplements=PATRISTIC_SUPPLEMENT,
+        )

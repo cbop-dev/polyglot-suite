@@ -1,8 +1,13 @@
-"""Apostolic Fathers Pipeline - Configuration & Metadata Catalog."""
-
 from pathlib import Path
+import sys
 from dataclasses import dataclass
 from typing import List, Optional
+
+# Ensure packages/pipeline-core is on sys.path
+REPO_ROOT = Path(__file__).resolve().parents[3]
+PIPELINE_CORE_DIR = REPO_ROOT / "packages" / "pipeline-core"
+if str(PIPELINE_CORE_DIR) not in sys.path:
+    sys.path.insert(0, str(PIPELINE_CORE_DIR))
 
 PIPELINE_DIR = Path(__file__).parent.resolve()
 CACHE_DIR = PIPELINE_DIR / "cache"

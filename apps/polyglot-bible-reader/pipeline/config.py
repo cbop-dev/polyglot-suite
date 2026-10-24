@@ -8,11 +8,18 @@ Defines:
 
 from __future__ import annotations
 import os
+import sys
 from pathlib import Path
 
 # Paths
 PIPELINE_DIR = Path(__file__).resolve().parent
-REPO_ROOT = PIPELINE_DIR.parent
+APP_ROOT = PIPELINE_DIR.parent
+REPO_ROOT = APP_ROOT
+MONOREPO_ROOT = PIPELINE_DIR.parents[2]
+PIPELINE_CORE_DIR = MONOREPO_ROOT / "packages" / "pipeline-core"
+if str(PIPELINE_CORE_DIR) not in sys.path:
+    sys.path.insert(0, str(PIPELINE_CORE_DIR))
+
 CACHE_DIR = PIPELINE_DIR / "cache"
 BUILD_DIR = PIPELINE_DIR / "build"
 STATIC_DB_DIR = REPO_ROOT / "static" / "db"

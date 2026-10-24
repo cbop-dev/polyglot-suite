@@ -4,7 +4,8 @@ import argparse
 import sys
 from .fetcher import fetch_all
 from .db_builder import build_database
-from .chunker import DatabaseChunker
+from pipeline_core import DatabaseChunker
+from .config import BUILD_DIR, STATIC_DB_DIR
 from .export_canonical_works import export_ts
 
 
@@ -32,7 +33,14 @@ def main():
 
     if args.all or args.chunk:
         print("\n>>> Stage 3: Chunking Database for sql.js-httpvfs")
-        DatabaseChunker().chunk()
+        db_file = BUILD_DIR / "apostolic-fathers.sqlite3"
+        chunker = DatabaseChunker(
+            db_path=db_file,
+            output_dir=STATIC_DB_DIR,
+            chunk_prefix="af.db",
+            chunk_size=5 * 1024 * 1024,
+        )
+        chunker.chunk()
 
     if args.all or args.export_ts:
         print("\n>>> Stage 4: Exporting TypeScript Definitions")

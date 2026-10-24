@@ -12,11 +12,11 @@ import sys
 import time
 from pathlib import Path
 
-from .config import BUILD_DIR, CACHE_DIR
+from .config import BUILD_DIR, CACHE_DIR, STATIC_DB_DIR
 from .fetcher import fetch_all_sources
 from .db_builder import DatabaseBuilder
 from .validate import DatabaseValidator
-from .chunker import DatabaseChunker
+from pipeline_core import DatabaseChunker
 
 
 def main():
@@ -74,7 +74,12 @@ def main():
     # Stage 4: Chunk for static web deployment
     if args.all or args.chunk:
         print("\n>>> STAGE 4: Chunking Database for Static Web VFS <<<")
-        chunker = DatabaseChunker()
+        chunker = DatabaseChunker(
+            db_path=BUILD_DIR / "polyglot-working.sqlite3",
+            output_dir=STATIC_DB_DIR,
+            chunk_prefix="polyglot.db",
+            chunk_size=5 * 1024 * 1024,
+        )
         chunker.chunk()
 
     # Stage 5: Generate TypeScript Book Definitions

@@ -9,20 +9,21 @@ Monorepo workspace for ancient language readers, lexical engines, and comparativ
 | **Polyglot Bible Reader** | [`apps/polyglot-bible-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/polyglot-bible-reader) | SvelteKit 5, Tailwind CSS, `sql.js-httpvfs` | Multi-corpus biblical reader (Hebrew MT, Greek LXX, Greek SBLGNT, Latin Vulgate, English KJV/NET/Brenton) with TVTMS alignment, LSJ/BDB lexicons, and concordance search. |
 | **Josephus Reader** | [`apps/josephus-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/josephus-reader) | Astro, Svelte 5, SQLite | Parallel Greek and English reader for Flavius Josephus (*Jewish War*, *Antiquities*, *Life*, *Against Apion*). |
 | **Apostolic Fathers Reader** | [`apps/apostolic-fathers-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/apostolic-fathers-reader) | SvelteKit 5, `sql.js-httpvfs` | Trilingual Greek, Latin, and English reader for the 15 Apostolic Fathers works, with LSJ definitions, lemma search, and multi-color highlighting. |
+| **Philo Reader** | [`apps/philo-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/philo-reader) | SvelteKit 5, `@polyglot/db-vfs` | Complete 31-treatise critical reader for Philo of Alexandria with Cohn-Wendland Greek, Yonge English, Mangey 1742 milestones, full LSJ lexicon, and Biblical Citation Explorer (1,595 Septuagint references). |
 
 ## Workspace Structure
 
 ```
 polyglot-suite/
 ├── apps/
-│   ├── polyglot-bible-reader/      # Imported via git subtree from cbop-dev/polyglot-bible-reader
-│   ├── josephus-reader/            # Imported via git subtree from cbop-dev/josephus-reader
-│   └── apostolic-fathers-reader/   # SvelteKit 5 + sql.js-httpvfs reader & pipeline
-├── packages/                       # Shared packages (Phase 2 extraction)
-│   ├── reader-core/                # WASM SQLite HTTP-VFS client & theme engine
-│   ├── lemma-ui/                   # Lemma modals, lexicon viewers (LSJ, Lewis & Short, BDB)
-│   ├── search-engine/              # Lemma search panel, transliteration, highlighting store
-│   └── pipeline-toolkit/           # Python builders, chunkers, and concordance indexers
+│   ├── polyglot-bible-reader/      # Multi-corpus biblical reader & pipeline
+│   ├── josephus-reader/            # Astro + Svelte parallel Josephus reader
+│   ├── apostolic-fathers-reader/   # SvelteKit 5 + VFS Apostolic Fathers reader & pipeline
+│   └── philo-reader/               # SvelteKit 5 + VFS Philo reader with Scripture Explorer
+├── packages/                       # Shared monorepo packages
+│   ├── ancient-languages/          # Morphology decoders, diacritic cleaners, inflection filters
+│   ├── db-vfs/                     # WASM SQLite HTTP-VFS client worker & row parser
+│   └── pipeline-core/              # Python database chunkers, LSJ adapters & cache fetchers
 └── package.json                    # Root npm workspace configuration
 ```
 
@@ -43,6 +44,9 @@ npm run dev:josephus
 
 # Start Apostolic Fathers Reader
 npm run dev:fathers
+
+# Start Philo Reader
+npm run dev:philo
 ```
 
 ### Git Subtree Maintenance
