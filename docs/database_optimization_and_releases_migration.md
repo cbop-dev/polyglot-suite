@@ -170,11 +170,17 @@ Even though the database files were untracked from `HEAD`, past commits still he
 ## 7. Operational Cheat Sheet for Future Maintenance
 
 ### When Rebuilding the Database in the Future
-Whenever source texts or lexicons are modified:
 1. Run the Python pipeline:
-   ```bash
-   python3 -m apps.polyglot-bible-reader.pipeline.rebuild_hebrew
-   ```
+   - **Option A (Fast Targeted Rebuild — ~70s)**:
+     Use when adjusting Hebrew texts (WLC) or lexicons (BDB), or updating the analytical layer. This re-ingests Hebrew sources and then re-indexes lemma statistics, concordance references, and attested forms across **all 10 corpora and languages**:
+     ```bash
+     python3 -m apps.polyglot-bible-reader.pipeline.rebuild_hebrew
+     ```
+   - **Option B (Full Ground-Up Rebuild — ~10–15m)**:
+     Use when updating Greek LXX, Greek NT, Latin Vulgate, Syriac Peshitta, English versions, or TVTMS cross-tradition versification mappings from scratch:
+     ```bash
+     python3 -m apps.polyglot-bible-reader.pipeline.build --all
+     ```
 2. Re-chunk the database:
    ```bash
    python3 apps/polyglot-bible-reader/scripts/chunk_database.py
