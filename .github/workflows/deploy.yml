@@ -48,6 +48,7 @@ jobs:
         if: steps.db-cache.outputs.cache-hit != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run pull:db
 
       - name: Build Polyglot Suite (Apps & Portal)

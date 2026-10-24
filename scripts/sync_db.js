@@ -34,8 +34,12 @@ const APPS = {
 
 function getGhEnv() {
   const env = { ...process.env };
+  // In GitHub Actions CI, preserve the runner token
+  if (process.env.GITHUB_ACTIONS) {
+    return env;
+  }
   try {
-    execSync('gh api user', { stdio: 'ignore', env });
+    execSync('gh repo view cbop-dev/polyglot-suite --json name', { stdio: 'ignore', env });
     return env;
   } catch {
     delete env.GH_TOKEN;
@@ -64,11 +68,14 @@ function pullApp(appKey) {
   const app = getAppConfig(appKey);
   console.log(`📥 Downloading database chunks for ${app.name} [release: ${app.tag}]...`);
   fs.mkdirSync(app.dir, { recursive: true });
-  execSync(`gh release download "${app.tag}" --pattern "${app.pattern}" --dir "${app.dir}" --clobber`, {
-    stdio: 'inherit',
-    cwd: REPO_ROOT,
-    env: ghEnv,
-  });
+  execSync(
+    `gh release download "${app.tag}" --repo cbop-dev/polyglot-suite --pattern "${app.pattern}" --dir "${app.dir}" --clobber`,
+    {
+      stdio: 'inherit',
+      cwd: REPO_ROOT,
+      env: ghEnv,
+    }
+  );
   console.log(`✅ Successfully downloaded ${app.name} chunks to ${app.dir}\n`);
 }
 
@@ -77,17 +84,20 @@ function publishApp(appKey) {
   console.log(`📤 Publishing database chunks for ${app.name} [release: ${app.tag}]...`);
   const chunkPattern = path.join(app.dir, app.pattern);
   try {
-    execSync(`gh release view "${app.tag}"`, { stdio: 'ignore', cwd: REPO_ROOT, env: ghEnv });
+    execSync(`gh release view "${app.tag}" --repo cbop-dev/polyglot-suite`, { stdio: 'ignore', cwd: REPO_ROOT, env: ghEnv });
     console.log(`Release ${app.tag} exists. Uploading/updating assets...`);
-    execSync(`gh release upload "${app.tag}" ${chunkPattern} "${app.configPath}" --clobber`, {
-      stdio: 'inherit',
-      cwd: REPO_ROOT,
-      env: ghEnv,
-    });
+    execSync(
+      `gh release upload "${app.tag}" ${chunkPattern} "${app.configPath}" --repo cbop-dev/polyglot-suite --clobber`,
+      {
+        stdio: 'inherit',
+        cwd: REPO_ROOT,
+        env: ghEnv,
+      }
+    );
   } catch {
     console.log(`Creating new release ${app.tag}...`);
     execSync(
-      `gh release create "${app.tag}" ${chunkPattern} "${app.configPath}" --title "${app.title} ${app.tag}" --notes "${app.notes}"`,
+      `gh release create "${app.tag}" ${chunkPattern} "${app.configPath}" --repo cbop-dev/polyglot-suite --title "${app.title} ${app.tag}" --notes "${app.notes}"`,
       {
         stdio: 'inherit',
         cwd: REPO_ROOT,
