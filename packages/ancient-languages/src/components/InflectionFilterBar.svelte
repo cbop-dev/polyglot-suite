@@ -47,13 +47,10 @@
 	let hasActive = $derived(isCriteriaActive(criteria));
 
 	let hasAnyOptions = $derived(
-		available.moods.length > 0 ||
-			available.tenses.length > 0 ||
-			available.voices.length > 0 ||
-			available.persons.length > 0 ||
+		(available.isVerb && (available.moods.length > 0 || available.tenses.length > 0 || available.voices.length > 0)) ||
+			showPerson ||
 			available.numbers.length > 0 ||
-			available.cases.length > 0 ||
-			available.genders.length > 0 ||
+			(showCaseAndGender && (available.cases.length > 0 || available.genders.length > 0)) ||
 			available.degrees.length > 0
 	);
 
@@ -158,7 +155,7 @@
 			<div class="state-msg empty-msg">No inflection options recorded for this lemma.</div>
 		{:else}
 			<!-- Mood (Verbs) -->
-			{#if available.moods.length > 0}
+			{#if available.isVerb && available.moods.length > 0}
 				<div class="dimension-row">
 					<span class="dimension-label">Mood:</span>
 					<div class="pills-group">
@@ -180,7 +177,7 @@
 			{/if}
 
 			<!-- Tense (Verbs) -->
-			{#if available.tenses.length > 0}
+			{#if available.isVerb && available.tenses.length > 0}
 				<div class="dimension-row">
 					<span class="dimension-label">Tense:</span>
 					<div class="pills-group">
@@ -202,7 +199,7 @@
 			{/if}
 
 			<!-- Voice (Verbs) -->
-			{#if available.voices.length > 0}
+			{#if available.isVerb && available.voices.length > 0}
 				<div class="dimension-row">
 					<span class="dimension-label">Voice:</span>
 					<div class="pills-group">

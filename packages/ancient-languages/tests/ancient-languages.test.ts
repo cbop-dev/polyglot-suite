@@ -365,6 +365,43 @@ describe('@polyglot/ancient-languages', () => {
 			expect(available.genders).toEqual(['Masculine']);
 		});
 
+		it('identifies nouns and suppresses verbal dimensions even if stray verbal tokens exist', () => {
+			const tokens = [
+				// Majority noun forms (e.g. אֱלֹהִים or λόγος)
+				{ word: 'אֱלֹהִים', morphAnalysis: parseHebrewMorph('4c.subs.m.pl.a') },
+				{ word: 'אֱלֹהֵיכֶם', morphAnalysis: parseHebrewMorph('4c.subs.m.pl.a') },
+				{ word: 'אֱלֹהֵינוּ', morphAnalysis: parseHebrewMorph('4c.subs.m.pl.a') },
+				// Stray corrupted verb token (e.g. H430 attached to a verb)
+				{ word: 'יָּסֶת', morphAnalysis: parseHebrewMorph('4c.verb.hif.wayq.p3.m.sg') }
+			];
+			const forms = buildAttestedForms(tokens);
+			const available = extractAvailableInflections(forms);
+
+			expect(available.isVerb).toBe(false);
+			expect(available.hasParticiple).toBe(false);
+			expect(available.moods).toEqual([]);
+			expect(available.tenses).toEqual([]);
+			expect(available.voices).toEqual([]);
+			expect(available.genders).toEqual(['Masculine']);
+			expect(available.numbers).toEqual(['Plural']);
+		});
+
+		it('identifies prepositions and suppresses verbal dimensions', () => {
+			const tokens = [
+				{ word: 'בֵּין', morphAnalysis: parseHebrewMorph('4c.prep') },
+				{ word: 'וּבֵין', morphAnalysis: parseHebrewMorph('4c.prep') },
+				// Stray homographic verb (e.g. from בִּין)
+				{ word: 'הָבִין', morphAnalysis: parseHebrewMorph('4c.verb.hif.infc') }
+			];
+			const forms = buildAttestedForms(tokens);
+			const available = extractAvailableInflections(forms);
+
+			expect(available.isVerb).toBe(false);
+			expect(available.moods).toEqual([]);
+			expect(available.tenses).toEqual([]);
+			expect(available.voices).toEqual([]);
+		});
+
 		it('filters forms with multi-select OR within dimension and AND across dimensions', () => {
 			const tokens = [
 				{ word: 'ἔμελλε', pos: 'V-', morph: '3IAI-S--' }, // Impf Ind

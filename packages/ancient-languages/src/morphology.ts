@@ -1309,20 +1309,48 @@ export function extractAvailableInflections(forms: AttestedForm[]): AvailableInf
 	const caseSet = new Set<string>();
 	const genderSet = new Set<string>();
 	const degreeSet = new Set<string>();
-	let isVerb = false;
+
+	// Calculate POS weights to determine dominant POS and filter out corrupt/stray verbal forms
+	let verbWeight = 0;
+	let nonVerbWeight = 0;
+	let hasVerbalFeatures = false;
+
+	for (const f of forms) {
+		const weight = f.count || 1;
+		for (const a of f.analyses) {
+			if (a.pos === 'Verb') {
+				verbWeight += weight;
+			} else if (a.pos) {
+				nonVerbWeight += weight;
+			}
+			if (a.tense || a.mood || a.voice) {
+				hasVerbalFeatures = true;
+			}
+		}
+	}
+
+	const isVerb = verbWeight > 0
+		? verbWeight >= nonVerbWeight
+		: (nonVerbWeight === 0 && hasVerbalFeatures);
+
 	let hasParticiple = false;
 
 	for (const f of forms) {
 		for (const a of f.analyses) {
-			if (a.pos === 'Verb' || a.tense || a.mood || a.voice) {
-				isVerb = true;
+			if (isVerb) {
+				// Lemma is primarily verbal: ignore stray non-verbal analyses
+				if (a.pos && a.pos !== 'Verb') continue;
+				if (a.mood === 'Participle') {
+					hasParticiple = true;
+				}
+				if (a.mood) moodSet.add(a.mood);
+				if (a.tense) tenseSet.add(a.tense);
+				if (a.voice) voiceSet.add(a.voice);
+			} else {
+				// Lemma is non-verbal (noun, preposition, pronoun, etc.): ignore stray verbal analyses
+				if (a.pos === 'Verb') continue;
 			}
-			if (a.mood === 'Participle') {
-				hasParticiple = true;
-			}
-			if (a.mood) moodSet.add(a.mood);
-			if (a.tense) tenseSet.add(a.tense);
-			if (a.voice) voiceSet.add(a.voice);
+
 			if (a.person) personSet.add(a.person);
 			if (a.number) numberSet.add(a.number);
 			if (a.case) caseSet.add(a.case);
@@ -1338,23 +1366,27 @@ export function extractAvailableInflections(forms: AttestedForm[]): AvailableInf
 	return {
 		isVerb,
 		hasParticiple,
-		moods: sortOrder(moodSet, [
-			'Indicative',
-			'Subjunctive',
-			'Optative',
-			'Imperative',
-			'Infinitive',
-			'Participle'
-		]),
-		tenses: sortOrder(tenseSet, [
-			'Present',
-			'Imperfect',
-			'Future',
-			'Aorist',
-			'Perfect',
-			'Pluperfect'
-		]),
-		voices: sortOrder(voiceSet, ['Active', 'Middle', 'Passive', 'Middle/Passive']),
+		moods: isVerb
+			? sortOrder(moodSet, [
+					'Indicative',
+					'Subjunctive',
+					'Optative',
+					'Imperative',
+					'Infinitive',
+					'Participle'
+				])
+			: [],
+		tenses: isVerb
+			? sortOrder(tenseSet, [
+					'Present',
+					'Imperfect',
+					'Future',
+					'Aorist',
+					'Perfect',
+					'Pluperfect'
+				])
+			: [],
+		voices: isVerb ? sortOrder(voiceSet, ['Active', 'Middle', 'Passive', 'Middle/Passive']) : [],
 		persons: sortOrder(personSet, ['1st', '2nd', '3rd']),
 		numbers: sortOrder(numberSet, ['Singular', 'Plural', 'Dual']),
 		cases: sortOrder(caseSet, ['Nominative', 'Genitive', 'Dative', 'Accusative', 'Vocative']),

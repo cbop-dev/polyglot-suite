@@ -1188,6 +1188,10 @@ export async function fetchAttestedForms(
 		distinctKeys.push(targetKey);
 		const lNFC = targetKey.normalize('NFC');
 		if (lNFC !== targetKey) distinctKeys.push(lNFC);
+		if (lang === 'hebrew' || corpusId === 'wlc') {
+			const unpointed = targetKey.replace(/[\u0591-\u05C7]/g, '');
+			if (unpointed && unpointed !== targetKey) distinctKeys.push(unpointed);
+		}
 	}
 
 	const uniqueKeys = Array.from(new Set(distinctKeys));
@@ -1212,7 +1216,11 @@ export async function fetchAttestedForms(
 			.filter((k) => k.startsWith('H') || k.startsWith('G'))
 			.map((k) => k.toUpperCase())
 	);
-	const lemmaLowerSet = new Set(uniqueKeys.map((k) => k.toLowerCase()));
+	const lemmaLowerSet = new Set(
+		uniqueKeys
+			.filter((k) => !/^[HG]\d+$/i.test(k) && !/^\d+$/.test(k))
+			.map((k) => k.toLowerCase())
+	);
 
 	for (const row of rows) {
 		if (!row.tokens_json) continue;
@@ -1244,22 +1252,73 @@ export async function fetchAttestedForms(
 				if (!surface) continue;
 
 				let isMatch = false;
-				if (tokStrongs && strongsSet.size > 0) {
-					const normSt = tokStrongs.trim().toUpperCase();
-					if (strongsSet.has(normSt) || (normSt.length > 1 && strongsSet.has(normSt.slice(1)))) {
-						isMatch = true;
+				if (strongsSet.size > 0) {
+					if (tokStrongs) {
+						const normSt = tokStrongs.trim().toUpperCase();
+						if (strongsSet.has(normSt) || (normSt.length > 1 && strongsSet.has(normSt.slice(1)))) {
+							// Strong's ID matches. However, if a lemma was also queried and the token has tokLemma,
+							// verify that tokLemma does not blatantly conflict with the queried lemma
+							// (e.g. BHS data corruption where unrelated verbs like 'סות' were assigned Strong's H430).
+							if (tokLemma && lemmaLowerSet.size > 0) {
+								const lemLow = tokLemma.trim().toLowerCase();
+								const unpointedTokLemma = (lang === 'hebrew' || corpusId === 'wlc')
+									? lemLow.replace(/[\u0591-\u05C7]/g, '')
+									: lemLow.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+								if (
+									lemmaLowerSet.has(lemLow) ||
+									lemmaLowerSet.has(lemLow.normalize('NFC')) ||
+									lemmaLowerSet.has(unpointedTokLemma)
+								) {
+									isMatch = true;
+								}
+							} else {
+								isMatch = true;
+							}
+						}
+						// If tokStrongs is present and does NOT match strongsSet, it is an explicit Strong's
+						// mismatch. Do NOT fall back to unpointed consonant norm or tokLemma!
+					} else {
+						// Token has no Strong's number, fallback to lemma or norm
+						if (tokLemma) {
+							const lemLow = tokLemma.trim().toLowerCase();
+							const unpointedTokLemma = (lang === 'hebrew' || corpusId === 'wlc')
+								? lemLow.replace(/[\u0591-\u05C7]/g, '')
+								: lemLow.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+							if (
+								lemmaLowerSet.has(lemLow) ||
+								lemmaLowerSet.has(lemLow.normalize('NFC')) ||
+								lemmaLowerSet.has(unpointedTokLemma)
+							) {
+								isMatch = true;
+							}
+						}
+						if (!isMatch && norm) {
+							const normLow = norm.trim().toLowerCase();
+							if (lemmaLowerSet.has(normLow) || lemmaLowerSet.has(normLow.normalize('NFC'))) {
+								isMatch = true;
+							}
+						}
 					}
-				}
-				if (!isMatch && tokLemma) {
-					const lemLow = tokLemma.trim().toLowerCase();
-					if (lemmaLowerSet.has(lemLow) || lemmaLowerSet.has(lemLow.normalize('NFC'))) {
-						isMatch = true;
+				} else {
+					// No Strong's ID provided in query; match by tokLemma or norm
+					if (tokLemma) {
+						const lemLow = tokLemma.trim().toLowerCase();
+						const unpointedTokLemma = (lang === 'hebrew' || corpusId === 'wlc')
+							? lemLow.replace(/[\u0591-\u05C7]/g, '')
+							: lemLow.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+						if (
+							lemmaLowerSet.has(lemLow) ||
+							lemmaLowerSet.has(lemLow.normalize('NFC')) ||
+							lemmaLowerSet.has(unpointedTokLemma)
+						) {
+							isMatch = true;
+						}
 					}
-				}
-				if (!isMatch && norm) {
-					const normLow = norm.trim().toLowerCase();
-					if (lemmaLowerSet.has(normLow) || lemmaLowerSet.has(normLow.normalize('NFC'))) {
-						isMatch = true;
+					if (!isMatch && norm) {
+						const normLow = norm.trim().toLowerCase();
+						if (lemmaLowerSet.has(normLow) || lemmaLowerSet.has(normLow.normalize('NFC'))) {
+							isMatch = true;
+						}
 					}
 				}
 
