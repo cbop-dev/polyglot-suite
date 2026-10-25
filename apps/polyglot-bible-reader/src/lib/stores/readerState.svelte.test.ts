@@ -283,10 +283,11 @@ describe('realign cell', ()=>{
         expect(rs.showLemmaModal).toBe(true);
         expect(rs.activeWord).toBeDefined();
         expect(rs.activeWord?.work_id).toBe(8);
+        expect(rs.activeWord?.corpus_id).toBe('peshitta');
         expect(rs.activeWord?.corpus).toBe('peshitta');
         expect(rs.activeWord?.dictionary).toBe('sedra');
         expect(rs.activeWord?.lemma).toBe('ܒܪܐ');
-        expect(countSpy).toHaveBeenCalledWith(8, 'ܒܪܐ', undefined);
+        expect(countSpy).toHaveBeenCalledWith('peshitta', 'ܒܪܐ', undefined);
         expect(rs.activeWord?.total_count).toBe(45);
     });
 

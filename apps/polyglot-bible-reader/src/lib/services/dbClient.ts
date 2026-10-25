@@ -2,6 +2,13 @@ import { getDbWorker } from './dbWorker';
 import { mylog } from '$lib/lemma-ui/env/env';
 import { normalizeBookName, getBookForVersion, formatDisplayReference, formatBookAbbreviation } from '$lib/config/bookMapping.js';
 import { getStaticCorpusTotalWords, getStaticBookWordStats } from '$lib/config/corpusBookStats';
+import {
+	type CorpusId,
+	resolveCorpusId,
+	CORPUS_ID_TO_VERSION,
+	VERSION_TO_CORPUS_ID
+} from '$lib/config/corpora.generated';
+export { type CorpusId, resolveCorpusId };
 import { myDataSets } from '$lib/config/versions';
 import {
 	stripGreekAccents,
@@ -48,6 +55,7 @@ export interface VerseResult {
 export interface WordRow {
 	id: number;
 	work_id: number;
+	corpus_id?: CorpusId;
 	work_unit_id: number;
 	position: number;
 	surface: string;
@@ -63,6 +71,7 @@ export interface WordRow {
 }
 
 function unpackToken(t: any, rowId: number, corpusId: string, idx: number): WordRow {
+	const cid = resolveCorpusId(corpusId);
 	if (Array.isArray(t)) {
 		// Tuple format: [word, norm, strongs, morph, lemma, gloss, trailer, flags]
 		const word = t[0] || '';
@@ -75,7 +84,8 @@ function unpackToken(t: any, rowId: number, corpusId: string, idx: number): Word
 		const flags = typeof t[7] === 'number' ? t[7] : 0;
 		return {
 			id: (rowId * 1000) + idx,
-			work_id: getCorpusWorkId(corpusId),
+			work_id: getCorpusWorkId(cid),
+			corpus_id: cid,
 			work_unit_id: rowId,
 			position: idx,
 			surface: word,
@@ -92,7 +102,8 @@ function unpackToken(t: any, rowId: number, corpusId: string, idx: number): Word
 	}
 	return {
 		id: (rowId * 1000) + idx,
-		work_id: getCorpusWorkId(corpusId),
+		work_id: getCorpusWorkId(cid),
+		corpus_id: cid,
 		work_unit_id: rowId,
 		position: idx,
 		surface: t.word || '',
@@ -351,18 +362,13 @@ export function getCorpusWorkId(corpusId: string): number {
 	return CORPUS_WORK_IDS[c] || 1;
 }
 
-export function workIdToCorpusId(workId: number): string {
-	switch (workId) {
-		case 2: return 'wlc';
-		case 24: return 'swete_lxx';
-		case 40: return 'ognt';
-		case 1: return 'vulgate';
-		case 5: return 'kjv';
-		case 6: return 'webbe';
-		case 7: return 'brenton-lxx';
-		case 8: return 'peshitta';
-		default: return 'wlc';
-	}
+
+/**
+ * Resolves a legacy workId (number) or version/corpus string into a canonical CorpusId.
+ * Maintained for backward compatibility.
+ */
+export function workIdToCorpusId(workId: number | string): CorpusId {
+	return resolveCorpusId(workId);
 }
 
 // Cached canonical works
@@ -865,12 +871,12 @@ export function cleanSyriac(s: string): string {
  * Retrieve total occurrence count of a lemma directly from lemma_stats.total_count.
  */
 export async function getLemmaTotalCount(
-	workId: number,
+	corpusOrWork: string | number,
 	lemma: string,
 	strongs?: string
 ): Promise<number> {
-	if (!workId) return 0;
-	const corpusId = workIdToCorpusId(workId);
+	if (!corpusOrWork) return 0;
+	const corpusId = resolveCorpusId(corpusOrWork);
 
 	try {
 		// 1. Check pre-computed lemma_stats by strongs first
@@ -878,7 +884,7 @@ export async function getLemmaTotalCount(
 			const sNorm = strongs.trim().toUpperCase();
 			const sCode = sNorm.startsWith('H') || sNorm.startsWith('G')
 				? sNorm
-				: (workId === 2 ? `H${sNorm}` : `G${sNorm}`);
+				: (corpusId === 'wlc' ? `H${sNorm}` : `G${sNorm}`);
 			const distinctKeys = sCode === sNorm ? [sCode] : [sCode, sNorm];
 			const keyClause = distinctKeys.length === 1 ? 'lemma_key = ?' : '(lemma_key = ? OR lemma_key = ?)';
 
@@ -916,7 +922,7 @@ export async function getLemmaTotalCount(
 
 		// 3. Fallback: count from indexed concordance_refs
 		if (lemma || strongs) {
-			const occs = await getConcordance(workId, lemma, 0, strongs);
+			const occs = await getConcordance(corpusId, lemma, 0, strongs);
 			return occs ? occs.length : 0;
 		}
 	} catch (e) {
@@ -930,12 +936,12 @@ export async function getLemmaTotalCount(
  * Retrieve frequency distribution of a lemma grouped by canonical biblical book.
  */
 export async function getWordFrequencyByBook(
-	workId: number,
+	corpusOrWork: string | number,
 	lemma: string,
 	strongs?: string
 ): Promise<BookFrequency[]> {
-	if (!workId) return [];
-	const corpusId = workIdToCorpusId(workId);
+	if (!corpusOrWork) return [];
+	const corpusId = resolveCorpusId(corpusOrWork);
 
 	const formatItems = (raw: any): BookFrequency[] => {
 		if (!Array.isArray(raw)) return [];
@@ -969,7 +975,7 @@ export async function getWordFrequencyByBook(
 		const sNorm = strongs.trim().toUpperCase();
 		const sCode = sNorm.startsWith('H') || sNorm.startsWith('G')
 			? sNorm
-			: (workId === 2 ? `H${sNorm}` : `G${sNorm}`);
+			: (corpusId === 'wlc' ? `H${sNorm}` : `G${sNorm}`);
 		const distinctKeys = sCode === sNorm ? [sCode] : [sCode, sNorm];
 		const keyClause = distinctKeys.length === 1 ? 'lemma_key = ?' : '(lemma_key = ? OR lemma_key = ?)';
 
@@ -1012,7 +1018,7 @@ export async function getWordFrequencyByBook(
 	// 3. Fallback: aggregate from indexed concordance_refs (fast indexed lookup)
 	if (lemma || strongs) {
 		try {
-			const occs = await getConcordance(workId, lemma, 0, strongs);
+			const occs = await getConcordance(corpusId, lemma, 0, strongs);
 			if (occs && occs.length > 0) {
 				const bookMap = new Map<string, { title: string; count: number }>();
 				for (const occ of occs) {
@@ -1046,25 +1052,27 @@ export async function getWordFrequencyByBook(
 /**
  * Retrieve total words in a corpus.
  */
-export async function getCorpusTotalWords(corpusId: string): Promise<number> {
+export async function getCorpusTotalWords(corpusId: string | number): Promise<number> {
 	if (!corpusId) return 0;
+	const cid = resolveCorpusId(corpusId);
 	try {
 		const row = await queryOne<{ total: number }>(`
 			SELECT SUM(total_words) as total
 			FROM corpus_book_stats
 			WHERE corpus_id = ?
-		`, [corpusId.toLowerCase()]);
+		`, [cid]);
 		if (row && row.total > 0) return row.total;
 	} catch (e) {}
 
-	return getStaticCorpusTotalWords(corpusId);
+	return getStaticCorpusTotalWords(cid);
 }
 
 /**
  * Retrieve total words for a specific book in a corpus.
  */
-export async function getCorpusBookWords(corpusId: string, bookIdentifier: string): Promise<number> {
+export async function getCorpusBookWords(corpusId: string | number, bookIdentifier: string): Promise<number> {
 	if (!corpusId || !bookIdentifier) return 0;
+	const cid = resolveCorpusId(corpusId);
 	const code = resolveBookCode(bookIdentifier);
 	if (!code) return 0;
 
@@ -1074,11 +1082,11 @@ export async function getCorpusBookWords(corpusId: string, bookIdentifier: strin
 			FROM corpus_book_stats
 			WHERE corpus_id = ? AND book_code = ?
 			LIMIT 1
-		`, [corpusId.toLowerCase(), code.toUpperCase()]);
+		`, [cid, code.toUpperCase()]);
 		if (row && row.total_words > 0) return row.total_words;
 	} catch (e) {}
 
-	const stat = getStaticBookWordStats(corpusId, code);
+	const stat = getStaticBookWordStats(cid, code);
 	return stat ? stat.words : 0;
 }
 
@@ -1086,13 +1094,13 @@ export async function getCorpusBookWords(corpusId: string, bookIdentifier: strin
  * Retrieve sample concordance occurrences containing a specific lemma or Strong's ID.
  */
 export async function getConcordance(
-	workId: number,
+	corpusOrWork: string | number,
 	lemma: string,
 	limit: number = 0,
 	strongs?: string
 ): Promise<ConcordanceOccurrence[]> {
-	if (!workId) return [];
-	const corpusId = workIdToCorpusId(workId);
+	if (!corpusOrWork) return [];
+	const corpusId = resolveCorpusId(corpusOrWork);
 	const ver = SLUG_TO_VERSION[corpusId] || corpusId;
 
 	const hasLimit = typeof limit === 'number' && limit > 0;
@@ -1104,7 +1112,7 @@ export async function getConcordance(
 		const sNorm = strongs.trim().toUpperCase();
 		const sCode = sNorm.startsWith('H') || sNorm.startsWith('G')
 			? sNorm
-			: (workId === 2 ? `H${sNorm}` : `G${sNorm}`);
+			: (corpusId === 'wlc' ? `H${sNorm}` : `G${sNorm}`);
 		const distinctKeys = sCode === sNorm ? [sCode] : [sCode, sNorm];
 		const keyClause = distinctKeys.length === 1 ? 'lemma_key = ?' : '(lemma_key = ? OR lemma_key = ?)';
 
@@ -1160,14 +1168,14 @@ export interface AttestedFormsResult {
  * Asynchronously fetch all attested surface forms and grammatical analyses for a lemma or Strong's ID.
  */
 export async function fetchAttestedForms(
-	workId: number,
+	corpusOrWork: string | number,
 	lemma: string,
 	strongs?: string,
 	lang: string = 'greek'
 ): Promise<AttestedFormsResult> {
 	const emptyResult: AttestedFormsResult = { forms: [], workUnitForms: new Map() };
-	if (!workId && !lemma && !strongs) return emptyResult;
-	const corpusId = workId ? workIdToCorpusId(workId) : (lang === 'hebrew' ? 'wlc' : 'ognt');
+	if (!corpusOrWork && !lemma && !strongs) return emptyResult;
+	const corpusId = corpusOrWork ? resolveCorpusId(corpusOrWork, lang === 'hebrew' ? 'wlc' : 'ognt') : (lang === 'hebrew' ? 'wlc' : 'ognt');
 
 	const distinctKeys: string[] = [];
 	let sCode = '';

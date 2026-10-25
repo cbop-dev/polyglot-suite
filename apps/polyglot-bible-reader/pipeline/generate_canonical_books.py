@@ -544,9 +544,187 @@ def generate_typescript():
     TARGET_TS.write_text("\n".join(ts_lines), encoding="utf-8")
     print(f"Successfully generated: {TARGET_TS}")
 
+    # Generate corpora.generated.ts directly from the SQLite corpora table
+    generate_corpora_definitions(conn)
+
     # Generate corpusBookStats.ts sorted in canonical order
     generate_corpus_book_stats(conn, version_canonical_codes, corpus_to_version)
     conn.close()
+
+
+def generate_corpora_definitions(conn: sqlite3.Connection):
+    cur = conn.cursor()
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='corpora'")
+    if not cur.fetchone():
+        print("Notice: corpora table not found, skipping corpora.generated.ts generation.")
+        return
+
+    cur.execute("""
+        SELECT id, title, language, direction, category, default_scheme, has_tokens, has_audio, license, attribution
+        FROM corpora
+        ORDER BY id
+    """)
+    rows = cur.fetchall()
+    if not rows:
+        return
+
+    canonical_ids = [r[0] for r in rows]
+    corpora_metadata = {}
+    for r in rows:
+        cid, title, lang, direction, cat, scheme, has_tok, has_aud, lic, attr = r
+        corpora_metadata[cid] = {
+            "id": cid,
+            "title": title,
+            "language": lang,
+            "direction": direction,
+            "category": cat,
+            "default_scheme": scheme,
+            "has_tokens": bool(has_tok),
+            "has_audio": bool(has_aud),
+            "license": lic,
+            "attribution": attr,
+        }
+
+    version_to_corpus = {
+        "bhs": "wlc",
+        "BHS": "wlc",
+        "wlc": "wlc",
+        "WLC": "wlc",
+        "lxx": "swete_lxx",
+        "LXX": "swete_lxx",
+        "swete_lxx": "swete_lxx",
+        "swete-lxx": "swete_lxx",
+        "ognt": "ognt",
+        "OGNT": "ognt",
+        "opengnt": "ognt",
+        "OpenGNT": "ognt",
+        "sblgnt": "ognt",
+        "SBLGNT": "ognt",
+        "sbl": "ognt",
+        "peshitta": "peshitta",
+        "Peshitta": "peshitta",
+        "syc": "peshitta",
+        "kjv": "kjv",
+        "KJV": "kjv",
+        "vulgate": "vulgate",
+        "Vulgate": "vulgate",
+        "vulgate-clementine": "vulgate",
+        "webbe": "webbe",
+        "web": "webbe",
+        "WEB": "webbe",
+        "brenton-lxx": "brenton-lxx",
+        "brenton": "brenton-lxx",
+        "Brenton": "brenton-lxx",
+        "bdb": "bdb",
+        "BDB": "bdb",
+        "lsj": "lsj",
+        "LSJ": "lsj",
+    }
+
+    corpus_to_version = {
+        "wlc": "BHS",
+        "swete_lxx": "LXX",
+        "ognt": "OpenGNT",
+        "peshitta": "Peshitta",
+        "kjv": "KJV",
+        "vulgate": "Vulgate",
+        "webbe": "WEB",
+        "brenton-lxx": "Brenton",
+        "bdb": "BDB",
+        "lsj": "LSJ",
+    }
+
+    work_id_to_corpus = {
+        1: "vulgate",
+        2: "wlc",
+        5: "kjv",
+        6: "webbe",
+        7: "brenton-lxx",
+        8: "peshitta",
+        24: "swete_lxx",
+        40: "ognt",
+    }
+
+    corpus_to_work_id = {
+        "vulgate": 1,
+        "wlc": 2,
+        "kjv": 5,
+        "webbe": 6,
+        "brenton-lxx": 7,
+        "peshitta": 8,
+        "swete_lxx": 24,
+        "ognt": 40,
+        "bdb": 2,
+        "lsj": 24,
+    }
+
+    target_ts = REPO_ROOT / "src" / "lib" / "config" / "corpora.generated.ts"
+    lines = [
+        "/**",
+        " * Canonical Corpus Definitions and Mappings.",
+        " * Auto-generated from SQLite `corpora` table via pipeline/generate_canonical_books.py.",
+        " * DO NOT EDIT MANUALLY.",
+        " */",
+        "",
+        "export type TextDirection = 'ltr' | 'rtl';",
+        "",
+        "export interface CorpusMetadata {",
+        "	id: string;",
+        "	title: string;",
+        "	language: string;",
+        "	direction: TextDirection;",
+        "	category: 'bible' | 'lexicon' | string;",
+        "	default_scheme: string;",
+        "	has_tokens: boolean;",
+        "	has_audio: boolean;",
+        "	license: string | null;",
+        "	attribution: string | null;",
+        "}",
+        "",
+        f"export const CANONICAL_CORPORA = {json.dumps(canonical_ids, indent=2)} as const;",
+        "",
+        "export type CorpusId = (typeof CANONICAL_CORPORA)[number];",
+        "",
+        f"export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {json.dumps(corpora_metadata, indent=2)};",
+        "",
+        "/**",
+        " * Mapping of UI version names, abbreviations, and aliases to canonical database CorpusId.",
+        " */",
+        f"export const VERSION_TO_CORPUS_ID: Record<string, CorpusId> = {json.dumps(version_to_corpus, indent=2)};",
+        "",
+        "/**",
+        " * Primary UI display label for each corpus.",
+        " */",
+        f"export const CORPUS_ID_TO_VERSION: Record<CorpusId, string> = {json.dumps(corpus_to_version, indent=2)};",
+        "",
+        "/**",
+        " * Legacy numeric workId mapping for backward compatibility.",
+        " */",
+        f"export const WORK_ID_TO_CORPUS_ID: Record<number, CorpusId> = {json.dumps(work_id_to_corpus, indent=2)};",
+        "",
+        f"export const CORPUS_ID_TO_WORK_ID: Record<CorpusId, number> = {json.dumps(corpus_to_work_id, indent=2)};",
+        "",
+        "/**",
+        " * Resolves any version abbreviation, alias, corpus ID, or legacy work_id into a canonical CorpusId.",
+        " */",
+        "export function resolveCorpusId(input: string | number | null | undefined, fallback: CorpusId = 'wlc'): CorpusId {",
+        "	if (input === null || input === undefined) return fallback;",
+        "	if (typeof input === 'number') {",
+        "		return WORK_ID_TO_CORPUS_ID[input] || fallback;",
+        "	}",
+        "	const clean = String(input).trim();",
+        "	if (!clean) return fallback;",
+        "	if (VERSION_TO_CORPUS_ID[clean]) return VERSION_TO_CORPUS_ID[clean];",
+        "	const lower = clean.toLowerCase();",
+        "	if (VERSION_TO_CORPUS_ID[lower]) return VERSION_TO_CORPUS_ID[lower];",
+        "	const match = CANONICAL_CORPORA.find((c) => c.toLowerCase() === lower);",
+        "	if (match) return match;",
+        "	return fallback;",
+        "}",
+        ""
+    ]
+    target_ts.write_text("\n".join(lines), encoding="utf-8")
+    print(f"Successfully generated: {target_ts}")
 
 
 def generate_corpus_book_stats(conn: sqlite3.Connection, version_canonical_codes: dict, corpus_to_version: dict):
@@ -593,6 +771,8 @@ def generate_corpus_book_stats(conn: sqlite3.Connection, version_canonical_codes
         " * AUTO-GENERATED - books are ordered in authentic canonical sequence.",
         " */",
         "",
+        "import { resolveCorpusId, type CorpusId } from './corpora.generated';",
+        "",
         "export interface BookWordStat {",
         "	words: number;",
         "	verses: number;",
@@ -602,13 +782,13 @@ def generate_corpus_book_stats(conn: sqlite3.Connection, version_canonical_codes
         "",
         "export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = " + json.dumps(sorted_corpus_stats, indent=2) + ";",
         "",
-        "export function getStaticCorpusTotalWords(corpusId: string): number {",
-        "	const c = corpusId.toLowerCase();",
+        "export function getStaticCorpusTotalWords(corpusId: string | number): number {",
+        "	const c = resolveCorpusId(corpusId);",
         "	return CORPUS_TOTAL_WORDS[c] || 0;",
         "}",
         "",
-        "export function getStaticBookWordStats(corpusId: string, bookCode: string): BookWordStat | null {",
-        "	const c = corpusId.toLowerCase();",
+        "export function getStaticBookWordStats(corpusId: string | number, bookCode: string): BookWordStat | null {",
+        "	const c = resolveCorpusId(corpusId);",
         "	const b = (bookCode || '').toUpperCase();",
         "	return CORPUS_BOOK_STATS[c]?.[b] || null;",
         "}",

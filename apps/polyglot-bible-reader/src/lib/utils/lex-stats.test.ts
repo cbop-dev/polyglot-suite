@@ -6,6 +6,7 @@ import {
 	LemmaSectionStats,
 	sortBookFrequencies
 } from './lex-stats';
+import { getStaticCorpusTotalWords, getStaticBookWordStats } from '$lib/config/corpusBookStats';
 
 describe('LexStats utilities', () => {
 	it('calculates frequency per 1,000 words correctly', () => {
@@ -54,6 +55,47 @@ describe('LexStats utilities', () => {
 
 		// % of corpus use: (50 / 200) * 100 = 25%
 		expect(stats.percentageUse).toBeCloseTo(25.0);
+	});
+
+	it('calculates lemma stats for היה (Strong\'s H1961) in BHS/WLC Genesis vs corpus correctly', () => {
+		// BHS/WLC total words in corpus (420,141) and Genesis (28,478)
+		const corpusTotalWords = getStaticCorpusTotalWords('BHS');
+		const genBookStats = getStaticBookWordStats('BHS', 'GEN');
+		const genTotalWords = genBookStats?.words || 0;
+
+		expect(corpusTotalWords).toBe(420141);
+		expect(genTotalWords).toBe(28478);
+
+		const totalCorpusOccurrences = 3569;
+		const genesisOccurrences = 316;
+
+		const stats = new LemmaSectionStats(
+			genesisOccurrences,
+			totalCorpusOccurrences,
+			genTotalWords,
+			corpusTotalWords
+		);
+
+		// 1. Total word count in corpus: 3569
+		expect(stats.lexCounts.corpus).toBe(3569);
+
+		// 2. Total word count in Genesis: 316
+		expect(stats.lexCounts.section).toBe(316);
+
+		// 3. Rest of BHS word count: 3253
+		expect(stats.lexCounts.rest).toBe(3253);
+
+		// 4. Total frequency: 8.495 per 1,000 words
+		expect(stats.freq.corpus).toBeCloseTo(8.495, 3);
+		expect(floatRound(stats.freq.corpus, 3)).toBe(8.495);
+
+		// 5. Gen freq.: 11.096 per 1,000 words
+		expect(stats.freq.section).toBeCloseTo(11.096, 3);
+		expect(floatRound(stats.freq.section, 3)).toBe(11.096);
+
+		// 6. Rest of BHS frequency: 8.306 per 1,000 words
+		expect(stats.freq.rest).toBeCloseTo(8.306, 3);
+		expect(floatRound(stats.freq.rest, 3)).toBe(8.306);
 	});
 
 	it('handles zero section occurrences gracefully', () => {

@@ -4,6 +4,8 @@
  * AUTO-GENERATED - books are ordered in authentic canonical sequence.
  */
 
+import { resolveCorpusId, type CorpusId } from './corpora.generated';
+
 export interface BookWordStat {
 	words: number;
 	verses: number;
@@ -1178,13 +1180,13 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
   }
 };
 
-export function getStaticCorpusTotalWords(corpusId: string): number {
-	const c = corpusId.toLowerCase();
+export function getStaticCorpusTotalWords(corpusId: string | number): number {
+	const c = resolveCorpusId(corpusId);
 	return CORPUS_TOTAL_WORDS[c] || 0;
 }
 
-export function getStaticBookWordStats(corpusId: string, bookCode: string): BookWordStat | null {
-	const c = corpusId.toLowerCase();
+export function getStaticBookWordStats(corpusId: string | number, bookCode: string): BookWordStat | null {
+	const c = resolveCorpusId(corpusId);
 	const b = (bookCode || '').toUpperCase();
 	return CORPUS_BOOK_STATS[c]?.[b] || null;
 }

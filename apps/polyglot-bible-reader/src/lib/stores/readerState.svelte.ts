@@ -14,6 +14,8 @@ import {
 	translateReference,
 	getLexiconEntry,
 	cleanSyriac,
+	resolveCorpusId,
+	getCorpusWorkId,
 	type WorkRow,
 	type LexiconEntryRow
 } from '$lib/services/dbClient';
@@ -822,18 +824,16 @@ export class ReaderState {
 
 	async inspectWord(wordObj: any, colVersion: string) {
 		if (!wordObj) return;
-		const corpus = colVersion.toLowerCase();
-		const isGreekNT = colVersion === 'OpenGNT' || colVersion === 'OGNT' || colVersion === 'SBLGNT' || corpus === 'ognt' || corpus === 'sblgnt';
-		const isSyriac = colVersion === 'Peshitta' || corpus === 'peshitta' || wordObj.corpus === 'peshitta';
-		const workId =
-			wordObj.work_id ||
-			(isSyriac ? 8 : (colVersion === 'BHS' || corpus === 'wlc' || corpus === 'bhs' ? 2 : colVersion === 'LXX' || corpus === 'swete_lxx' ? 24 : isGreekNT ? 40 : 0));
-		const dictionary = isSyriac ? 'sedra' : ((colVersion === 'BHS' || corpus === 'wlc' || corpus === 'bhs') ? 'bdb' : 'lsj');
+		const corpusId = resolveCorpusId(wordObj.corpus_id || colVersion);
+		const isSyriac = corpusId === 'peshitta';
+		const workId = wordObj.work_id || getCorpusWorkId(corpusId);
+		const dictionary = isSyriac ? 'sedra' : (corpusId === 'wlc' ? 'bdb' : 'lsj');
 
 		this.activeWord = {
 			...wordObj,
 			isLoading: true,
-			corpus: isSyriac ? 'peshitta' : corpus,
+			corpus_id: corpusId,
+			corpus: corpusId,
 			colVersion,
 			work_id: workId,
 			dictionary
@@ -844,7 +844,7 @@ export class ReaderState {
 			// Query lexemes table directly, prioritizing strongs when available
 			const rawKey = wordObj.lemma || wordObj.normalized || wordObj.word || wordObj.surface || wordObj.id;
 			const lookupKey = isSyriac ? cleanSyriac(rawKey) : (wordObj.normalized || wordObj.word || wordObj.id);
-			const lexData = isSyriac ? null : await getLemma(corpus, lookupKey, wordObj.strongs);
+			const lexData = isSyriac ? null : await getLemma(corpusId, lookupKey, wordObj.strongs);
 
 			// Query lexicon entry (BDB or LSJ) to get the true dictionary headword
 			let lexiconRow: LexiconEntryRow | null = null;
@@ -863,7 +863,7 @@ export class ReaderState {
 
 			let totalCount = 0;
 			try {
-				totalCount = await getLemmaTotalCount(workId, lookupKey, primaryStrongs);
+				totalCount = await getLemmaTotalCount(corpusId, lookupKey, primaryStrongs);
 			} catch (e) {
 				console.warn('[ReaderState] Error fetching lemma total_count:', e);
 			}
@@ -871,7 +871,8 @@ export class ReaderState {
 			this.activeWord = {
 				...wordObj,
 				...(lexData || {}),
-				corpus: isSyriac ? 'peshitta' : corpus,
+				corpus_id: corpusId,
+				corpus: corpusId,
 				colVersion,
 				work_id: workId,
 				dictionary,
@@ -889,7 +890,8 @@ export class ReaderState {
 			console.warn('[ReaderState] Error inspecting word:', err);
 			this.activeWord = {
 				...wordObj,
-				corpus: isSyriac ? 'peshitta' : corpus,
+				corpus_id: corpusId,
+				corpus: corpusId,
 				colVersion,
 				work_id: workId,
 				dictionary,

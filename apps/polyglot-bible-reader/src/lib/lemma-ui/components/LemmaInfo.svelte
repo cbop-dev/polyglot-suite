@@ -94,7 +94,8 @@
 					gloss: p.gloss,
 					pos: p.name,
 					strongs: p.strongs,
-					corpus: lemma?.corpus || 'bhs',
+					corpus: lemma?.corpus_id || lemma?.corpus || 'wlc',
+					corpus_id: lemma?.corpus_id || 'wlc',
 					colVersion: lemma?.colVersion || 'BHS',
 					dictionary: 'bdb',
 					work_id: lemma?.work_id || 2,
@@ -192,14 +193,15 @@
 		const workId = data?.work_id || lemma?.work_id;
 		const key = lookupKey;
 		const strongs = data?.strongs;
+		const targetCorpus = currentLemmaData?.corpus_id || lemma?.corpus_id || workId;
 
 		if (selectedSegment === 'stem' && (lemma?.total_count !== undefined || lemma?.total !== undefined)) {
 			totalCount = lemma?.total_count ?? lemma?.total ?? 0;
 			return;
 		}
 
-		if (workId) {
-			getLemmaTotalCount(workId, key, strongs)
+		if (targetCorpus) {
+			getLemmaTotalCount(targetCorpus, key, strongs)
 				.then((cnt) => {
 					totalCount = cnt;
 				})
@@ -213,10 +215,9 @@
 		if (bookFrequencies.length > 0 && corpusWordsTotal > 0) return;
 		isFetchingStats = true;
 		try {
-			const workId = currentLemmaData?.work_id || lemma?.work_id;
-			const corpusId = isSyriac ? 'peshitta' : (lemma?.corpus || (isHebrew ? 'wlc' : (lemma?.colVersion === 'LXX' ? 'swete_lxx' : (lemma?.corpus === 'ognt' ? 'ognt' : 'swete_lxx'))));
+			const corpusId = currentLemmaData?.corpus_id || lemma?.corpus_id;
 			const [freqs, totalW] = await Promise.all([
-				getWordFrequencyByBook(workId, lookupKey, currentLemmaData?.strongs),
+				getWordFrequencyByBook(corpusId, lookupKey, currentLemmaData?.strongs),
 				getCorpusTotalWords(corpusId)
 			]);
 			bookFrequencies = freqs;
@@ -239,8 +240,8 @@
 		if (concordanceOccurrences.length > 0 || isFetchingReferences) return;
 		isFetchingReferences = true;
 		try {
-			const workId = currentLemmaData?.work_id || lemma?.work_id;
-			const occs = await getConcordance(workId, lookupKey, 0, currentLemmaData?.strongs);
+			const corpusId = currentLemmaData?.corpus_id || lemma?.corpus_id;
+			const occs = await getConcordance(corpusId, lookupKey, 0, currentLemmaData?.strongs);
 			concordanceOccurrences = occs;
 			if (occs && occs.length > 0 && (!totalCount || totalCount === 0)) {
 				totalCount = occs.length;
@@ -257,8 +258,8 @@
 		isAttestedFormsLoading = true;
 		attestedFormsError = null;
 		try {
-			const workId = currentLemmaData?.work_id || lemma?.work_id || 0;
-			const res = await fetchAttestedForms(workId, lookupKey, currentLemmaData?.strongs, lang);
+			const corpusId = currentLemmaData?.corpus_id || lemma?.corpus_id;
+			const res = await fetchAttestedForms(corpusId, lookupKey, currentLemmaData?.strongs, lang);
 			attestedForms = res.forms;
 			workUnitFormMap = res.workUnitForms;
 			attestedFormsLoaded = true;
@@ -316,7 +317,7 @@
 	$effect(() => {
 		const target = chosenBook;
 		if (!target) return;
-		const corpusId = isSyriac ? 'peshitta' : (lemma?.corpus || (isHebrew ? 'wlc' : (lemma?.colVersion === 'LXX' ? 'swete_lxx' : (lemma?.corpus === 'ognt' ? 'ognt' : 'swete_lxx'))));
+		const corpusId = currentLemmaData?.corpus_id || lemma?.corpus_id;
 		const match = bookFrequencies.find(
 			(b) => b.sbl_abbreviation === target || b.title === target
 		);

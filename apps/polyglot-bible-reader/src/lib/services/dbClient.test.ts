@@ -17,6 +17,9 @@ import {
 	getLexiconEntry,
 	translateReference,
 	cleanSyriac,
+	resolveCorpusId,
+	getCorpusTotalWords,
+	getCorpusBookWords,
 	_clearDbClientCache
 } from './dbClient';
 import * as dbWorker from './dbWorker';
@@ -854,6 +857,54 @@ describe('dbClient service', () => {
 				expect.stringContaining('WHERE std_book = ? AND std_chapter = ?'),
 				['SUS', 1, 'swete_lxx']
 			);
+		});
+
+		it('resolveCorpusId normalizes versions, aliases, and legacy workIds', () => {
+			expect(resolveCorpusId('BHS')).toBe('wlc');
+			expect(resolveCorpusId('bhs')).toBe('wlc');
+			expect(resolveCorpusId('wlc')).toBe('wlc');
+			expect(resolveCorpusId('LXX')).toBe('swete_lxx');
+			expect(resolveCorpusId('lxx')).toBe('swete_lxx');
+			expect(resolveCorpusId('swete_lxx')).toBe('swete_lxx');
+			expect(resolveCorpusId('OpenGNT')).toBe('ognt');
+			expect(resolveCorpusId('opengnt')).toBe('ognt');
+			expect(resolveCorpusId('sblgnt')).toBe('ognt');
+			expect(resolveCorpusId('Peshitta')).toBe('peshitta');
+			expect(resolveCorpusId('peshitta')).toBe('peshitta');
+			expect(resolveCorpusId(2)).toBe('wlc');
+			expect(resolveCorpusId(24)).toBe('swete_lxx');
+			expect(resolveCorpusId(40)).toBe('ognt');
+			expect(resolveCorpusId(8)).toBe('peshitta');
+		});
+
+		it('getCorpusTotalWords resolves version aliases and returns correct totals', async () => {
+			// Test with static fallback (query returns null/0)
+			mockQuery.mockResolvedValueOnce([]);
+			const bhsTotal = await getCorpusTotalWords('BHS');
+			expect(bhsTotal).toBe(420141);
+
+			mockQuery.mockResolvedValueOnce([]);
+			const lxxTotal = await getCorpusTotalWords('lxx');
+			expect(lxxTotal).toBe(605183);
+
+			mockQuery.mockResolvedValueOnce([]);
+			const ogntTotal = await getCorpusTotalWords('opengnt');
+			expect(ogntTotal).toBe(138013);
+
+			// Test with DB result
+			mockQuery.mockResolvedValueOnce([{ total: 99999 }]);
+			const customTotal = await getCorpusTotalWords('bhs');
+			expect(customTotal).toBe(99999);
+			expect(mockQuery).toHaveBeenCalledWith(
+				expect.stringContaining('WHERE corpus_id = ?'),
+				['wlc']
+			);
+		});
+
+		it('getCorpusBookWords resolves version aliases and book codes', async () => {
+			mockQuery.mockResolvedValueOnce([]);
+			const genWords = await getCorpusBookWords('bhs', 'GEN');
+			expect(genWords).toBeGreaterThan(0);
 		});
 	});
 });
