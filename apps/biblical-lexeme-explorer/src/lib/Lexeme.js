@@ -4,6 +4,7 @@ import { HebrewUtils } from "./utils/hebrew-utils.js";
 export class Lexeme {
     lang = "greek";
     stats=new LexStats();
+    posDict = null;
 
     static PosEnum = {
         NOUN: 4,
