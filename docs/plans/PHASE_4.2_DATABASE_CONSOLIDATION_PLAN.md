@@ -158,14 +158,40 @@ flowchart LR
 
 ## 7. Action Plan for Implementation (Phase 4.2 Steps)
 
-1. **Phase 4.2.1: Lemma & Corpus Inventory Audit**
-   - Run a Python audit script comparing distinct lemmas in PBV's `lemma_stats` / `lexicon_entries` vs BLE's `lxxLexes6.json`, `bhsLexes3.1.json`, and `sblgntLexes.json`.
-   - Identify normalization discrepancies (combining characters, final sigmas, oxia/tonos).
-2. **Phase 4.2.2: Master `lexemes` Schema & Migration**
-   - Implement the `lexemes` table with auto-incrementing integer IDs in `polyglot-working.sqlite3`.
-   - Re-index `concordance_refs` and `corpus_lemma_stats` by `lexeme_id`.
-3. **Phase 4.2.3: Build-Time Manifest Generator**
-   - Create `scripts/export_ble_manifests.js` to dump the optimized, lightweight JSON files into `apps/biblical-lexeme-explorer/static/data/`.
-4. **Phase 4.2.4: Unified GitHub Release & Client Integration**
-   - Update `scripts/release_db.js` to push the chunked DB to a shared tag.
-   - Update both PBV and BLE to fetch from this release URL and use integer-based cross-linking.
+1. **Phase 4.2.1: Lemma & Corpus Inventory Audit** *(COMPLETED)*
+   - Run Python audit comparing distinct lemmas in PBV's `lemma_stats`/`lexicon_entries` vs BLE's `lxx`, `bhs`, and `sblgnt` datasets.
+   - Identified and documented root causes: 797 conflated Hebrew lemmas, 9,852 unaccented LXX pseudo-lemmas in PBV, Oxia vs. Tonos encoding discrepancies, and 75% missing Strong's numbers in LXX.
+   - **Artifacts**: [`scripts/audit_lemma_inventory.py`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/scripts/audit_lemma_inventory.py) and [`docs/reports/PHASE_4.2.1_LEMMA_INVENTORY_AUDIT.md`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/docs/reports/PHASE_4.2.1_LEMMA_INVENTORY_AUDIT.md).
+
+2. **Phase 4.2.2: Master `lexemes` Schema & Migration** *(COMPLETED)*
+   - Implemented master `lexemes` table with auto-incrementing integer IDs in `polyglot-working.sqlite3` (74,200 total lemmas: 20,449 Greek, 8,091 Hebrew, 45,660 Syriac).
+   - Unified 4,044 Greek NT lemmas with LXX; un-collapsed all 797 Hebrew lemmas.
+   - Created `corpus_lemma_stats` table for multi-corpus distribution.
+   - Linked `lexeme_id` foreign keys into `lexicon_entries`, `lemma_stats`, `concordance_refs`, and `lemma_forms`.
+   - Updated `db_builder.py` and added self-bootstrapping CLI + `npm run chunk:bible`.
+   - **Artifact**: [`scripts/migrate_phase4_2_lexemes.py`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/scripts/migrate_phase4_2_lexemes.py).
+
+3. **Phase 4.2.3: Build-Time Manifest Generator** *(COMPLETED)*
+   - Created build script ([`scripts/export_ble_manifests.py`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/scripts/export_ble_manifests.py)) to extract optimized, lightweight JSON manifests directly from the master SQLite database:
+     - `apps/biblical-lexeme-explorer/static/data/{lxx, bhs, sblgnt}/lexemes.json`
+     - `apps/biblical-lexeme-explorer/static/data/{lxx, bhs, sblgnt}/concordance.json`
+     - `apps/biblical-lexeme-explorer/static/data/{lxx, bhs, sblgnt}/sections.json`
+     - Columnar search manifests (`lxxLexes6.json`, `bhsLexes3.1.json`, `sblGntLexes.json`)
+   - Added `"export:manifests"` command to root `package.json`.
+   - Re-keyed all BLE manifests and tests to master `lexeme_id`. All 58 BLE unit tests and 135 PBV tests pass.
+   - Guaranteed 100% ID alignment between BLE and the master SQLite database.
+
+4. **Phase 4.2.4: Elevate Pipeline & Shared DB to Monorepo Scope** *(COMPLETED)*
+   - Elevated pipeline out of `apps/polyglot-bible-reader/pipeline` into monorepo package `packages/data-pipeline/` with its own `package.json` (`@polyglot/data-pipeline`).
+   - Maintained 100% backward compatibility via symlink at `apps/polyglot-bible-reader/pipeline -> ../../packages/data-pipeline`.
+   - Set up `dist/shared-db/` symlinked directly to the pre-computed database chunks, eliminating duplicated disk usage.
+   - Standardized root monorepo scripts in `package.json`:
+     - `npm run build:db` (builds SQLite DB and generates BLE manifests)
+     - `npm run chunk:db` (chunks SQLite DB into 5MB slices)
+     - `npm run data:all` (end-to-end build, chunk, and manifest generation)
+   - Verified: All 58 BLE unit tests and 135 PBV tests pass.
+
+5. **Phase 4.2.5: Unified GitHub Release & Client Integration**
+   - Update release scripts (`scripts/release_db.js` / `sync_db.js`) to push chunked DBs and manifests under a single monorepo release tag (e.g. `polyglot-data-v1.0.0`).
+   - Update client query layers in both PBV and BLE to point to the shared release URL.
+   - Implement deterministic cross-app deep linking using integer `lexeme_id` (e.g. `/lexemes/lxx/?id=8110` for `θεός`).

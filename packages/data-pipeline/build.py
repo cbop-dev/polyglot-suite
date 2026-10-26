@@ -12,6 +12,21 @@ import sys
 import time
 from pathlib import Path
 
+# Enable direct script execution from any directory without manual PYTHONPATH
+if __name__ == "__main__" and (__package__ is None or __package__ == ""):
+    import importlib.util
+    pkg_dir = Path(__file__).resolve().parent
+    sys.path.insert(0, str(pkg_dir.parent))
+    init_path = pkg_dir / "__init__.py"
+    if not init_path.exists():
+        init_path.touch()
+    spec = importlib.util.spec_from_file_location("pipeline", str(init_path))
+    if spec and spec.loader:
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["pipeline"] = mod
+        spec.loader.exec_module(mod)
+        __package__ = "pipeline"
+
 from .config import BUILD_DIR, CACHE_DIR, STATIC_DB_DIR
 from .fetcher import fetch_all_sources
 from .db_builder import DatabaseBuilder

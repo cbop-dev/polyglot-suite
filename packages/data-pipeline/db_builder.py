@@ -10,11 +10,12 @@ Populates:
 
 from __future__ import annotations
 import sqlite3
+import sys
 import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
-from .config import BUILD_DIR, CANONICAL_BOOKS
+from .config import BUILD_DIR, CANONICAL_BOOKS, MONOREPO_ROOT, APP_ROOT
 from .tvtms import load_tvtms, TVTMSResolver
 from .adapters import (
     BaseAdapter,
@@ -81,9 +82,22 @@ CREATE TABLE IF NOT EXISTS text_units (
     tokens_json TEXT
 );
 
--- 4. Lexicon Entries (Strong's, Morphology, Glosses)
+-- 4. Master Universal Lexemes (Phase 4.2 Consolidated Model)
+CREATE TABLE IF NOT EXISTS lexemes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    language TEXT NOT NULL,         -- 'hebrew', 'aramaic', 'greek', 'syriac', 'latin'
+    lemma TEXT NOT NULL,            -- Standard NFC display form (Greek Tonos-normalized, pointed Hebrew)
+    lemma_clean TEXT NOT NULL,      -- Accent/vowel-stripped search/sort key
+    strongs_id TEXT,                -- 'G2316', 'H430' (normalized, nullable)
+    pos TEXT,                       -- Standardized POS
+    gloss TEXT,                     -- Primary English gloss
+    source_id TEXT                  -- Original Text-Fabric / source node ID
+);
+
+-- 5. Lexicon Entries (Strong's, Morphology, Glosses)
 CREATE TABLE IF NOT EXISTS lexicon_entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lexeme_id INTEGER REFERENCES lexemes(id),
     strongs_id TEXT NOT NULL,
     dictionary TEXT NOT NULL,
     lemma TEXT NOT NULL,
@@ -93,27 +107,39 @@ CREATE TABLE IF NOT EXISTS lexicon_entries (
     definition TEXT
 );
 
--- 5. Pre-computed Lemma Statistics (O(1) Book Frequency Distributions)
+-- 6. Normalized Cross-Corpus Lemma Statistics
+CREATE TABLE IF NOT EXISTS corpus_lemma_stats (
+    lexeme_id INTEGER NOT NULL REFERENCES lexemes(id),
+    corpus_id TEXT NOT NULL,
+    total_count INTEGER NOT NULL,
+    frequency_per_10k REAL,
+    book_counts_json TEXT NOT NULL,
+    PRIMARY KEY (lexeme_id, corpus_id)
+);
+
+-- 7. Pre-computed Lemma Statistics (O(1) Book Frequency Distributions)
 CREATE TABLE IF NOT EXISTS lemma_stats (
     corpus_id TEXT NOT NULL,
     lemma_key TEXT NOT NULL,
     display_lemma TEXT NOT NULL,
     total_count INTEGER NOT NULL,
     book_counts_json TEXT NOT NULL,
+    lexeme_id INTEGER REFERENCES lexemes(id),
     PRIMARY KEY (corpus_id, lemma_key)
 );
 
--- 6. Pre-indexed Concordance References (O(1) Occurrence Range Scans)
+-- 8. Pre-indexed Concordance References (O(1) Occurrence Range Scans)
 CREATE TABLE IF NOT EXISTS concordance_refs (
     corpus_id TEXT NOT NULL,
     lemma_key TEXT NOT NULL,
     display_lemma TEXT NOT NULL,
     ref_label TEXT NOT NULL,
     work_unit_id INTEGER NOT NULL,
+    lexeme_id INTEGER,
     PRIMARY KEY (corpus_id, lemma_key, work_unit_id)
 ) WITHOUT ROWID;
 
--- 7. Pre-computed Corpus Book Statistics (Word & Verse totals per book)
+-- 9. Pre-computed Corpus Book Statistics (Word & Verse totals per book)
 CREATE TABLE IF NOT EXISTS corpus_book_stats (
     corpus_id TEXT NOT NULL,
     book_code TEXT NOT NULL,
@@ -122,13 +148,14 @@ CREATE TABLE IF NOT EXISTS corpus_book_stats (
     PRIMARY KEY (corpus_id, book_code)
 );
 
--- 8. Pre-computed Lemma Attested Forms (O(1) Inflections & Grammatical Analyses)
+-- 10. Pre-computed Lemma Attested Forms (O(1) Inflections & Grammatical Analyses)
 CREATE TABLE IF NOT EXISTS lemma_forms (
     corpus_id TEXT NOT NULL,
     lemma_key TEXT NOT NULL,
     display_lemma TEXT NOT NULL,
     total_occurrences INTEGER NOT NULL,
     forms_json TEXT NOT NULL,
+    lexeme_id INTEGER REFERENCES lexemes(id),
     PRIMARY KEY (corpus_id, lemma_key)
 );
 """
@@ -140,6 +167,24 @@ ON text_units(std_book, std_chapter, std_verse, corpus_id);
 CREATE INDEX IF NOT EXISTS idx_text_units_native 
 ON text_units(corpus_id, native_book, native_chapter, native_verse);
 
+CREATE INDEX IF NOT EXISTS idx_lexemes_lookup 
+ON lexemes(language, lemma_clean);
+
+CREATE INDEX IF NOT EXISTS idx_lexemes_strongs 
+ON lexemes(strongs_id) WHERE strongs_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_lexemes_lang_lemma 
+ON lexemes(language, lemma);
+
+CREATE INDEX IF NOT EXISTS idx_lexemes_source_id 
+ON lexemes(source_id);
+
+CREATE INDEX IF NOT EXISTS idx_cls_corpus_count 
+ON corpus_lemma_stats(corpus_id, total_count DESC);
+
+CREATE INDEX IF NOT EXISTS idx_cls_lexeme 
+ON corpus_lemma_stats(lexeme_id);
+
 CREATE INDEX IF NOT EXISTS idx_lexicon_strongs 
 ON lexicon_entries(strongs_id);
 
@@ -149,14 +194,26 @@ ON lexicon_entries(dictionary, strongs_id);
 CREATE INDEX IF NOT EXISTS idx_lexicon_consonant 
 ON lexicon_entries(consonant_key);
 
+CREATE INDEX IF NOT EXISTS idx_lexicon_lexeme_id 
+ON lexicon_entries(lexeme_id);
+
 CREATE INDEX IF NOT EXISTS idx_lemma_stats_lookup 
 ON lemma_stats(corpus_id, lemma_key);
+
+CREATE INDEX IF NOT EXISTS idx_lemma_stats_lexeme_id 
+ON lemma_stats(lexeme_id);
 
 CREATE INDEX IF NOT EXISTS idx_concordance_refs_lookup 
 ON concordance_refs(corpus_id, lemma_key, work_unit_id);
 
+CREATE INDEX IF NOT EXISTS idx_concordance_lexeme_id 
+ON concordance_refs(lexeme_id);
+
 CREATE INDEX IF NOT EXISTS idx_lemma_forms_lookup 
 ON lemma_forms(corpus_id, lemma_key);
+
+CREATE INDEX IF NOT EXISTS idx_lemma_forms_lexeme_id 
+ON lemma_forms(lexeme_id);
 """
 
 
@@ -489,13 +546,18 @@ class DatabaseBuilder:
             # 7. Lemma Statistics and Concordance References
             index_lemmas_and_concordance(conn)
 
+            # 7b. Phase 4.2: Master Lexemes & Corpus Lemma Stats Consolidation
+            root_scripts = MONOREPO_ROOT / "scripts"
+            if str(root_scripts) not in sys.path:
+                sys.path.insert(0, str(root_scripts))
+            from migrate_phase4_2_lexemes import migrate_connection
+            migrate_connection(conn)
+
             # Auto-export compact lemma search indexes for single-request client search
             try:
-                import sys
-                from pathlib import Path
-                scripts_dir = Path(__file__).resolve().parent.parent / "scripts"
-                if str(scripts_dir) not in sys.path:
-                    sys.path.insert(0, str(scripts_dir))
+                app_scripts = APP_ROOT / "scripts"
+                if str(app_scripts) not in sys.path:
+                    sys.path.insert(0, str(app_scripts))
                 from export_lemma_search_json import export_lemma_indexes
                 export_lemma_indexes(conn)
             except Exception as e:

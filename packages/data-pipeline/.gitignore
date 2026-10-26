@@ -1,0 +1,22 @@
+# Build & cache directories
+build/
+cache/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Extracted corpus directories (unpacked from .tar.gz)
+data/lxx/
+data/bhs/
+data/kjv/
+data/brenton/
+data/web/
+
+# Local databases
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+
+# Temporary downloads
+*.download

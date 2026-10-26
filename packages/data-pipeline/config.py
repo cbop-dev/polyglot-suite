@@ -13,16 +13,26 @@ from pathlib import Path
 
 # Paths
 PIPELINE_DIR = Path(__file__).resolve().parent
-APP_ROOT = PIPELINE_DIR.parent
-REPO_ROOT = APP_ROOT
-MONOREPO_ROOT = PIPELINE_DIR.parents[2]
+
+def _find_monorepo_root(start: Path) -> Path:
+    curr = start
+    for _ in range(5):
+        if (curr / "package.json").exists() and (curr / "packages").exists():
+            return curr
+        curr = curr.parent
+    return start.parent.parent
+
+MONOREPO_ROOT = _find_monorepo_root(PIPELINE_DIR)
+APP_ROOT = MONOREPO_ROOT / "apps" / "polyglot-bible-reader"
+REPO_ROOT = MONOREPO_ROOT
 PIPELINE_CORE_DIR = MONOREPO_ROOT / "packages" / "pipeline-core"
 if str(PIPELINE_CORE_DIR) not in sys.path:
     sys.path.insert(0, str(PIPELINE_CORE_DIR))
 
 CACHE_DIR = PIPELINE_DIR / "cache"
 BUILD_DIR = PIPELINE_DIR / "build"
-STATIC_DB_DIR = REPO_ROOT / "static" / "db"
+STATIC_DB_DIR = APP_ROOT / "static" / "db"
+SHARED_CHUNK_DIR = MONOREPO_ROOT / "dist" / "shared-db"
 
 # Ensure runtime directories exist
 CACHE_DIR.mkdir(parents=True, exist_ok=True)

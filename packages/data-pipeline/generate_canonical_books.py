@@ -13,9 +13,14 @@ import sys
 from pathlib import Path
 
 # Paths
-REPO_ROOT = Path(__file__).resolve().parent.parent
-DB_PATH = REPO_ROOT / "pipeline" / "build" / "polyglot-working.sqlite3"
-TARGET_TS = REPO_ROOT / "src" / "lib" / "config" / "canonicalBooks.generated.ts"
+PIPELINE_DIR = Path(__file__).resolve().parent
+MONOREPO_ROOT = PIPELINE_DIR.parent.parent
+APP_ROOT = MONOREPO_ROOT / "apps" / "polyglot-bible-reader"
+REPO_ROOT = APP_ROOT
+DB_PATH = PIPELINE_DIR / "build" / "polyglot-working.sqlite3"
+if not DB_PATH.exists():
+    DB_PATH = APP_ROOT / "pipeline" / "build" / "polyglot-working.sqlite3"
+TARGET_TS = APP_ROOT / "src" / "lib" / "config" / "canonicalBooks.generated.ts"
 
 # Standard UI Abbreviations for all 90 canonical books
 STANDARD_ABBREVS = {
