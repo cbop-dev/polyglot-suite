@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://biblical-lexeme-explorer.dev/schemas/books.schema.json",
+  "title": "Biblical Books Metadata",
+  "description": "Mapping of book node IDs to metadata including canonical name, abbreviation, word count, and chapter node mappings.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["name", "abbrev", "node", "words", "chapters"],
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Full English canonical book name."
+      },
+      "abbrev": {
+        "type": "string",
+        "description": "Standard 3-6 letter book abbreviation (e.g. Gen, Matt, 1Sam)."
+      },
+      "node": {
+        "type": "integer",
+        "description": "Unique Text-Fabric or corpus node ID for the book."
+      },
+      "words": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Total word count in this book."
+      },
+      "chapters": {
+        "type": "object",
+        "description": "Mapping of chapter node IDs to chapter label strings (e.g. '1', '2', 'Prol').",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="%paraglide.lang%" dir="%paraglide.textDirection%" data-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="%sveltekit.assets%/aleph-omega-favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script>
+			try {
+				var stored = localStorage.getItem('biblical_reading_theme');
+				var t = stored !== null ? parseInt(stored, 10) : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 75 : 25);
+				if (!isNaN(t) && t >= 50) {
+					document.documentElement.setAttribute('data-theme', 'dark');
+					document.documentElement.style.colorScheme = 'dark';
+				} else {
+					document.documentElement.setAttribute('data-theme', 'light');
+					document.documentElement.style.colorScheme = 'light';
+				}
+			} catch (e) {}
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

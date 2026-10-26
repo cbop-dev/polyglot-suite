@@ -1,0 +1,7 @@
+{
+  "name": "@polyglot/greek-morphology",
+  "version": "0.1.0",
+  "private": true,
+  "description": "High-performance Ancient and Hellenistic Greek lemmatization and morphological parsing engine",
+  "type": "module"
+}

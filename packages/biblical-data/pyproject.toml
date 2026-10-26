@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "biblical-data"
+version = "0.1.0"
+description = "Python models, readers, and schemas for Biblical Corpora (LXX, SBLGNT, BHS) and LSJ Dictionary."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "CC-BY-SA-4.0" }
+authors = [
+    { name = "C. Brannan", email = "cbop-dev@users.noreply.github.com" }
+]
+keywords = ["septuagint", "sblgnt", "bhs", "bible", "lexicon", "lsj", "greek", "hebrew"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src/python"]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["src/python"]

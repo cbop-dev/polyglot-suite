@@ -1,0 +1,39 @@
+test-results
+node_modules
+.env.deploy
+node_modules*
+# Output
+.output
+.vercel
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.deploy.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# SQLite
+*.db
+
+build-storybook.log
+
+src/lib/components/lemma2/
+
+# Python
+__pycache__/
+*.pyc
+
+# Pipeline temporary sources and build artifacts
+pipeline/build/
+pipeline/sources/

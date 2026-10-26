@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/python/biblical_data/__init__.py
+src/python/biblical_data/models.py
+src/python/biblical_data/reader.py
+src/python/biblical_data.egg-info/PKG-INFO
+src/python/biblical_data.egg-info/SOURCES.txt
+src/python/biblical_data.egg-info/dependency_links.txt
+src/python/biblical_data.egg-info/top_level.txt
+tests/test_readers.py

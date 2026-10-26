@@ -1,0 +1,147 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+:root {
+    --color-page: #fdf6e3;
+    --color-ink: #073642;
+    --color-rule: #d33682;
+    --color-lemma-btn-bg: #8c1828;
+    --color-lemma-btn-hover: #701320;
+    --color-lemma-btn-text: #ffffff;
+    --color-lemma-btn-border: rgba(0, 0, 0, 0.2);
+    --color-lemma-btn-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    --color-lookup-btn-bg: #0f172a;
+    --color-lookup-btn-hover: #1e293b;
+    --color-lookup-btn-text: #ffffff;
+    --color-lookup-btn-border: rgba(0, 0, 0, 0.3);
+    --color-lookup-btn-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    background-color: var(--color-page);
+    color: var(--color-ink);
+}
+
+:root[data-theme="dark"] {
+    --color-lemma-btn-bg: #2469a2;
+    --color-lemma-btn-hover: #357cb7;
+    --color-lemma-btn-text: #ffffff;
+    --color-lemma-btn-border: rgba(255, 255, 255, 0.25);
+    --color-lemma-btn-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    --color-lookup-btn-bg: #f8fafc;
+    --color-lookup-btn-hover: #ffffff;
+    --color-lookup-btn-text: #0f172a;
+    --color-lookup-btn-border: rgba(255, 255, 255, 0.35);
+    --color-lookup-btn-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+body {
+    background-color: var(--color-page);
+    color: var(--color-ink);
+    min-height: 100vh;
+}
+
+/* Dynamic theme-aware Lemma Button */
+.btn-lemma {
+    background-color: var(--color-lemma-btn-bg, #8c1828) !important;
+    color: var(--color-lemma-btn-text, #ffffff) !important;
+    border: 1px solid var(--color-lemma-btn-border, rgba(0, 0, 0, 0.2)) !important;
+    box-shadow: var(--color-lemma-btn-shadow, 0 1px 3px rgba(0, 0, 0, 0.25)) !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.btn-lemma:hover {
+    background-color: var(--color-lemma-btn-hover, #701320) !important;
+    color: var(--color-lemma-btn-text, #ffffff) !important;
+    transform: translateY(-1px);
+}
+
+.btn-lemma:active {
+    transform: translateY(0);
+}
+
+/* Lemma button spacing and sizing */
+.lex-div {
+    display: inline-block;
+    margin: 0.25rem 0.2rem;
+}
+
+.lex-div button,
+.lex-div :global(button),
+.lex-button button,
+.lex-button :global(button) {
+    padding-left: 0.65rem !important;
+    padding-right: 0.65rem !important;
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+    min-height: 2.2rem !important;
+    height: auto !important;
+}
+
+/* Dynamic Contrast-Inverted Lookup Button ("Find All Lexemes", etc.) */
+.btn-lookup {
+    background-color: var(--color-lookup-btn-bg, #0f172a) !important;
+    color: var(--color-lookup-btn-text, #ffffff) !important;
+    border: 1px solid var(--color-lookup-btn-border, rgba(0, 0, 0, 0.3)) !important;
+    box-shadow: var(--color-lookup-btn-shadow, 0 1px 3px rgba(0, 0, 0, 0.2)) !important;
+    font-weight: 700 !important;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.btn-lookup:hover:not(:disabled) {
+    background-color: var(--color-lookup-btn-hover, #1e293b) !important;
+    color: var(--color-lookup-btn-text, #ffffff) !important;
+    transform: translateY(-1px);
+}
+
+.btn-lookup:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-lookup:disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+}
+
+/* Book anchor jump buttons in Lemma Details modal */
+.btn-book-jump {
+    background-color: var(--color-page, var(--fallback-b1, #ffffff)) !important;
+    color: var(--color-ink, var(--fallback-bc, #073642)) !important;
+    border: 1px solid var(--color-rule, rgba(0, 0, 0, 0.2)) !important;
+    font-weight: 700 !important;
+    transition: all 0.15s ease;
+}
+
+.btn-book-jump:hover {
+    background-color: var(--color-link, #1f4d8a) !important;
+    color: #ffffff !important;
+    border-color: var(--color-link, #1f4d8a) !important;
+}
+
+:root[data-theme="dark"] .btn-book-jump:hover {
+    color: #073642 !important;
+}
+
+h1 {
+    font-size: 150% !important;
+    text-decoration: underline;
+    
+ 
+}
+
+h1,h2{
+    font-weight: bold !important;
+    padding-bottom: 0.3em !important;
+}
+
+@font-face {
+    font-family: 'SBL BibLit';
+    font-style: normal;
+    font-weight: 500;
+    src: url('/fonts/SBL_BibLit_Regular.ttf'); /* IE9 Compat Modes */
+    src: local('SBL-BibLit'), local('SBL BibLit'), url('/fonts/SBL_BibLit_Regular.ttf?#iefix') format('truetype'),
+        /* Modern Browsers */ url('/fonts/SBL_BibLit_Regular.ttf') format('truetype');
+    
+}
+
+.greek {
+    font-family: "SBL BibLit", "Gentium";
+}

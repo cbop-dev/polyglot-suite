@@ -1,0 +1,128 @@
+{
+  "$schema": "bhs-errata-v1",
+  "version": "1.0.0",
+  "description": "Curated errata registry for ETCBC BHS Hebrew morphology, lexemes, and Strong's number alignments.",
+  "updated_at": "2026-10-11",
+  "lexemes": {
+    "366": {
+      "lemma": "אָכִישׁ",
+      "strongs": "H397",
+      "gloss": "Achish",
+      "reason": "Upstream ETCBC cross-wiring mistagged Achish (>KJC/) as H6030 (עָנָה)"
+    },
+    "2881": {
+      "lemma": "יָוֵן",
+      "strongs": "H3121",
+      "gloss": "mire",
+      "reason": "Upstream alignment state-leak mistagged יָוֵן (mire) as H430 instead of H3121"
+    },
+    "2996": {
+      "lemma": "יָנָה",
+      "strongs": "H3238",
+      "gloss": "oppress",
+      "reason": "Upstream alignment state-leak mistagged יָנָה (oppress) as H430 instead of H3238"
+    },
+    "3226": {
+      "lemma": "יִשְׂרָאֵל",
+      "strongs": "H3478",
+      "gloss": "Israel",
+      "reason": "Upstream alignment mistagged יִשְׂרָאֵל (Israel) as H559 (אָמַר) instead of H3478"
+    },
+    "3407": {
+      "lemma": "כֶּסֶא",
+      "strongs": "H3677",
+      "gloss": "full moon",
+      "reason": "Upstream alignment state-leak mistagged כֶּסֶא (full moon) as H430 instead of H3677"
+    },
+    "3487": {
+      "lemma": "כִּרְסֵם",
+      "strongs": "H3765",
+      "gloss": "eat away",
+      "reason": "Upstream alignment state-leak mistagged כִּרְסֵם (eat away) as H430 instead of H3765"
+    },
+    "3594": {
+      "lemma": "לוט",
+      "strongs": "H3874",
+      "gloss": "enwrap",
+      "reason": "Upstream ETCBC cross-wiring mistagged verbal root לוט (LWV[) as H397 (Achish) instead of H3874 (lût)"
+    },
+    "3950": {
+      "lemma": "מַחֲנֶה",
+      "strongs": "H4264",
+      "gloss": "camp",
+      "reason": "Upstream alignment mistagged מַחֲנֶה (camp) as H413 (אֶל) instead of H4264"
+    },
+    "4075": {
+      "lemma": "מְלֵאָה",
+      "strongs": "H4395",
+      "gloss": "full produce",
+      "reason": "Upstream alignment state-leak mistagged מְלֵאָה (full produce) as H430 instead of H4395"
+    },
+    "5116": {
+      "lemma": "סוּת",
+      "strongs": "H5496",
+      "gloss": "incite",
+      "reason": "Upstream alignment state-leak mistagged סוּת (incite) as H430 instead of H5496"
+    },
+    "5235": {
+      "lemma": "סִפְרָה",
+      "strongs": "H5615",
+      "gloss": "scroll",
+      "reason": "Upstream alignment state-leak mistagged סִפְרָה (scroll) as H430 instead of H5615"
+    },
+    "6477": {
+      "lemma": "קָדַם",
+      "strongs": "H6923",
+      "gloss": "confront",
+      "reason": "Upstream alignment state-leak mistagged קָדַם (confront) as H430 instead of H6923"
+    },
+    "7024": {
+      "lemma": "רָצַד",
+      "strongs": "H7520",
+      "gloss": "watch",
+      "reason": "Upstream alignment state-leak mistagged רָצַד (watch) as H430 instead of H7520"
+    },
+    "7077": {
+      "lemma": "שַׁ־",
+      "strongs": "H7945",
+      "gloss": "who",
+      "reason": "Upstream alignment mistagged relative prefix שַׁ־ as H1571 (גַּם) instead of H7945"
+    }
+  },
+  "tokens": {
+    "ISA.25.7": [
+      {
+        "word": "לֹּ֥וט׀",
+        "match_index": 0,
+        "strongs": "H3875",
+        "gloss": "covering",
+        "reason": "Isa 25:7 first occurrence is noun H3875 (lôwt: veil/covering)"
+      },
+      {
+        "word": "לֹּ֖וט",
+        "match_index": 1,
+        "strongs": "H3874",
+        "gloss": "enwrap",
+        "reason": "Isa 25:7 second occurrence is Qal active participle H3874 (lût: enfolding/wrapping)"
+      }
+    ]
+  },
+  "bdb": {
+    "lamed.json": {
+      "לוט": {
+        "headword": "לוט",
+        "strongs": "H3874",
+        "matchType": "strongs",
+        "def": "<div><p><b>H3874. lut</b></p><p> [<heb><ref0 class=\"word\" entry=\"לוּט\"><font class='c3'>לוּט</font></ref0></heb>&#x200E;] <b>verb</b> <b>wrap closely, tightly, enwrap, envelope</b> (Arabic <i>cleave, stick</i> to a thing; also transitive <i>make to stick</i>, or <i>adhere</i>); — </p><p><b>Qal</b> <i>Perfect</i>3masculine singular <heb><ref0 class=\"word\" entry=\"לָאט\"><font class='c3'>לָאט</font></ref0></heb>&#x200E; <a href='bible://2Sa.19.15'>2Sam 19:15</a> (so read, for <heb><ref0 class=\"word\" entry=\"לָאַט ᵑ0\"><font class='c3'>לָאַט ᵑ0</font></ref0></heb>&#x200E;, We Klo Dr Bu); <i>Participle active</i> <heb><ref0 class=\"word\" entry=\"לוֺט\"><font class='c3'>לוֺט</font></ref0></heb>&#x200E; <a href='bible://Isa.25.7'>Isa 25:7</a> (compare Kö<sup>i. 445</sup>); <i>Passive participle</i> feminine <heb><ref0 class=\"word\" entry=\"לוּטָה\"><font class='c3'>לוּטָה</font></ref0></heb>&#x200E; <a href='bible://1Sa.21.10'>1Sam 21:10</a>; &#8212; <heb><ref0 class=\"word\" entry=\"בַשִּׂמְלָה לוּטָה\"><font class='c3'>בַשִּׂמְלָה לוּטָה</font></ref0></heb>&#x200E; <a href='bible://1Sa.21.10'>21:10</a> it is <i>wrapped up in a garment</i> (of sword of Goliath); figurative of covering as sign of mourning, <heb><ref0 class=\"word\" entry=\"עַלכָֿלהָֿעַמִּים מְּנֵיהַֿלּוֺט הַלּוֺט\"><font class='c3'>עַלכָֿלהָֿעַמִּים מְּנֵיהַֿלּוֺט הַלּוֺט</font></ref0></heb>&#x200E; <a href='bible://Isa.25.7'>Isa 25:7</a> <i>the surface of covering which covereth over all the peoples</i> <heb><ref0 class=\"word\" entry=\"ׅ\"><font class='c3'>ׅ</font></ref0></heb>&#x200E; || <heb><ref0 class=\"word\" entry=\"הַנְּסוּכָה (מַסֵּכָה\"><font class='c3'>הַנְּסוּכָה (מַסֵּכָה</font></ref0></heb>&#x200E;. </p><p><b>Hiph`il</b> <i>Imperfect envelope, wrap</i> <heb><ref0 class=\"word\" entry=\"בְּאַדַּרְתּוֺ מָּנָיוּ וַּיָּ֫לָט\"><font class='c3'>בְּאַדַּרְתּוֺ מָּנָיוּ וַּיָּ֫לָט</font></ref0></heb>&#x200E; <a href='bible://1Ki.19.13'>1Kin 19:13</a>. </p></div>"
+      }
+    },
+    "aleph.json": {
+      "אכיש": {
+        "headword": "אָכִישׁ",
+        "strongs": "H397",
+        "matchType": "strongs",
+        "def": "<div><p><b>H397. Akish</b></p><p> <heb><ref0 class=\"word\" entry=\"אָכִישׁ\"><font class='c3'>אָכִישׁ</font></ref0></heb>&#x200E; <b>proper name, masculine</b> <b>king of Gath</b> <a href='bible://1Sa.21.11'>1Sam 21:11</a>; <a href='bible://1Sa.21.12'>21:12</a>; <a href='bible://1Sa.21.13'>21:13</a>; <a href='bible://1Sa.21.15'>21:15</a> <a href='bible://1Sa.21.15'>15</a>t. 27-29 + <a href='bible://1Ki.2.39'>1Kin 2:39-40</a>, (perhaps compare <i>anger</i>). </p></div>"
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "@polyglot/lemma-ui",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Unified lexical components, dictionary inspectors (LSJ, BDB, SEDRA), and frequency visualization charts for the Polyglot Suite",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./LSJEntry.svelte": "./src/components/LSJEntry.svelte",
+    "./BDBEntry.svelte": "./src/components/BDBEntry.svelte",
+    "./SEDRAEntry.svelte": "./src/components/SEDRAEntry.svelte",
+    "./LemmaInfo.svelte": "./src/components/LemmaInfo.svelte",
+    "./Modal2.svelte": "./src/components/ui/Modal2.svelte",
+    "./CopyText.svelte": "./src/components/ui/CopyText.svelte",
+    "./BarChart.svelte": "./src/components/ui/BarChart.svelte",
+    "./PieChart.svelte": "./src/components/ui/PieChart.svelte",
+    "./components/*": "./src/components/*"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
+  },
+  "dependencies": {
+    "@polyglot/ancient-languages": "*",
+    "@polyglot/theme": "*",
+    "chart.js": "^4.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://biblical-lexeme-explorer.dev/schemas/verses.schema.json",
+  "title": "Biblical Verse Texts",
+  "description": "Mapping of verse node IDs to canonical references and plain text strings.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["id", "section", "text"],
+    "properties": {
+      "id": {
+        "type": "integer",
+        "description": "Unique integer verse node ID."
+      },
+      "section": {
+        "type": "string",
+        "description": "Canonical section reference (e.g. 'Gen 1:1', 'Matt 1:1')."
+      },
+      "text": {
+        "type": "string",
+        "description": "Full verse text in original script."
+      }
+    }
+  }
+}

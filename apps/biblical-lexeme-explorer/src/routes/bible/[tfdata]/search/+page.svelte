@@ -1,0 +1,198 @@
+<script>
+	/** @type {{ data: import('./$types').PageData }} */
+
+	import { LexQuery, LexQueryFilter } from '$lib/components/LexQuery.svelte';
+	import LemmaInfo from '$lib/components/LemmaInfo.svelte';
+	//    import * as lxxLexesList from '$lib/lxx/lxxLexes.json';
+	import * as lxxLexesList from '$lib/lxx/lxxLexes6.json';
+	import { TfLxxDataset } from '$lib/lxx/tfLXX';
+	import { TfDataset } from '$lib/data/VocabDataset.js';
+	import { Lexeme } from '$lib/Lexeme';
+	import Button from '$lib/components/ui/Button.svelte';
+
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import { TF } from '$lib/TF';
+
+	//    import FilterInput from '$lib/components/ui/FilterInput.svelte';
+	// import { Utils } from '$lib/utils/utils';
+	import LexFilterInput from '$lib/components/LexFilterInput.svelte';
+	import Modal2 from '$lib/components/ui/Modal2.svelte';
+	//let { data } = $props();
+	//let userentry=$state('');
+
+	const tfLXX = new TfLxxDataset();
+	/** @type {TfDataset} tfData*/
+	let tfData = tfLXX;
+	/**
+	 * @type {number[]} matchedIndexes
+	 */
+	let bestMatchedIndexes = $state([]);
+
+	/**
+	 * @type {number[]} matchedIndexes
+	 */
+	let otherMatchedIndexes = $state([]);
+
+	//let theMatches=$derived(lookupLexemesFromBeta(userentry));
+	//let fun=$derived(userentry +'_red');
+	let selectedLexeme = $state();
+	let showModal = $state(false);
+
+	/**
+	 *
+	 * @param {string} beta
+	 * @returns {Object[]}
+	 */
+	function lookupLexemesFromBeta(beta) {
+		//1. find indexes of matches in beta
+		// 2. return greek from greek!
+
+		beta = beta.trim().toLowerCase();
+		let matches = [];
+		if (beta.length > 0) {
+			beta = beta.replace('h', 'e').replace('w', 'o');
+			const max = 50;
+			let count = 0;
+
+			for (const [k, lexBeta] of Object.entries(lxxLexesList.plain)) {
+				if (lexBeta.toLowerCase().includes(beta)) {
+					matches.push({ id: lxxLexesList.id[k], greek: lxxLexesList.greek[k] });
+					count += 1;
+					if (count > max) break;
+				}
+			}
+		}
+		return matches;
+	}
+	/**
+	 *
+	 * @param {number} id
+	 */
+	async function selectLemma(id) {
+		selectedLexeme = id;
+		fetchLemma();
+	}
+	async function fetchLemma() {
+		let id = Number(selectedLexeme);
+		//console.debug("fetching lemma " + id);
+		showModal = true;
+		let lemma = new Lexeme();
+
+		if (id >= 0) {
+			queryReady = false;
+			await TF.fetchLexInfo(id, lemma, tfData);
+			if (lemma.id == id) {
+				foundLemma = lemma;
+				queryReady = true;
+				//console.debug("got lemma info!")
+			} else {
+				//console.debug("didn't work!")
+			}
+		} else {
+			//console.debug("didn't do a fetch();")
+			null;
+		}
+	}
+	let queryReady = $state(false);
+	let foundLemma = $state();
+	/**
+	 *
+	 * @param {string} input
+	 * @returns {string[]}
+	 */
+	function betaFilter(input) {
+		input = input
+			.trim()
+			.toLowerCase()
+			.replace('w', 'o')
+			.replace(/[^a-z]/g, '');
+		return [input, input.replace('h', 'e')];
+	}
+</script>
+
+<div class="block items-center">
+	<h1>Lookup LXX Lexemes</h1>
+	<h2>Search for a Lexeme:</h2>
+
+	<LexFilterInput
+		lang={tfData.lang}
+		itemsList={lxxLexesList.plain}
+		bind:bestMatches={bestMatchedIndexes}
+		bind:otherMatches={otherMatchedIndexes}
+		tooltip="Enter (case-sensitive) Latin characters, which will convert automatically to Greek!"
+		caseinsensitive={false}
+	/>
+</div>
+<hr />
+
+<div>
+	{#if bestMatchedIndexes.length > 0 || otherMatchedIndexes.length > 0}
+		<div>
+			{#if bestMatchedIndexes.length > 0}
+				<h2>Best Matches:</h2>
+				{#each bestMatchedIndexes as key}
+					<Button
+						buttonText={lxxLexesList.greek[key]}
+						toggled={() => {
+							selectLemma(lxxLexesList.id[key]);
+						}}
+						textSize="text-2xl "
+						buttonColors="btn-lemma"
+						style="font-bold greek "
+					/> &nbsp;
+				{/each}
+			{/if}
+
+			{#if otherMatchedIndexes.length > 0}
+				{#if bestMatchedIndexes.length > 0}<hr />{/if}
+				<h2>
+					{#if bestMatchedIndexes.length > 0}Other{/if} Matches:
+				</h2>
+				{#each otherMatchedIndexes as key}
+					<Button
+						buttonText={lxxLexesList.greek[key]}
+						toggled={() => {
+							selectLemma(lxxLexesList.id[key]);
+						}}
+						textSize="text-2xl "
+						buttonColors="btn-lemma"
+						style="font-bold greek "
+					/> &nbsp;
+				{/each}
+			{/if}
+		</div>
+	{:else}
+		Type some text above to search for Greek words.
+	{/if}
+</div>
+
+<svelte:head>
+	<title>LXX Lexeme Search</title>
+</svelte:head>
+
+<Modal bind:showModal title="Greek Lemma Details">
+	{#if queryReady == true && foundLemma.id >= 0}
+		<LemmaInfo {tfData} lemma={foundLemma} />
+	{:else}
+		Retreiving Lemma information...<span class="loading loading-spinner loading-lg"></span>
+	{/if}
+</Modal>
+
+<style>
+	h1,
+	h2,
+	input,
+	p,
+	select,
+	div {
+		@apply items-center self-center text-center;
+	}
+
+	h1,
+	h2 {
+		@apply break-after-all break-after-column;
+	}
+	hr {
+		@apply m-1 p-1;
+	}
+</style>

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://biblical-lexeme-explorer.dev/schemas/dictionary.schema.json",
+  "title": "LSJ Greek Lexicon Shard",
+  "description": "Mapping of normalized/plain Greek headwords to LSJ dictionary definitions, citation numbers, and match types.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["headword", "def"],
+    "properties": {
+      "headword": {
+        "type": "string",
+        "description": "Original dictionary headword with polytonic accents."
+      },
+      "lsjIndex": {
+        "type": "string",
+        "description": "Unique Perseus / Logeion LSJ XML citation ID (e.g. 'n18980')."
+      },
+      "matchType": {
+        "type": "string",
+        "enum": ["exact", "variation", "plain", "neuter_adjective", "override"],
+        "description": "Type of match resolution used."
+      },
+      "def": {
+        "type": "string",
+        "description": "Markdown formatted full lexical definition."
+      }
+    }
+  }
+}

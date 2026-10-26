@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "greek-morphology"
+version = "0.1.0"
+description = "High-performance Ancient and Hellenistic Greek lemmatization and morphological parsing engine."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "AGPL-3.0" }
+authors = [
+    { name = "C. Brannan", email = "cbop-dev@users.noreply.github.com" }
+]
+keywords = ["greek", "septuagint", "nlp", "morphology", "lemmatization", "linguistics", "ancient-greek"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Text Processing :: Linguistic",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = []
+
+[project.optional-dependencies]
+neural = [
+    "stanza>=1.8.0",
+    "torch>=2.0.0",
+]
+inflexion = [
+    "greek-inflexion>=0.6.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+all = [
+    "stanza>=1.8.0",
+    "torch>=2.0.0",
+    "pytest>=7.0.0",
+]
+
+[project.scripts]
+greek-morph = "greek_morphology.cli:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

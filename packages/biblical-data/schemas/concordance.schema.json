@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://biblical-lexeme-explorer.dev/schemas/concordance.schema.json",
+  "title": "Biblical Concordance Inverted Index",
+  "description": "Corpus-wide concordance mapping lexeme IDs to total frequencies, per-book distribution counts, reference strings, and verse node IDs.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["total", "bookcounts", "refs", "nodes"],
+    "properties": {
+      "total": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Total corpus occurrences of this lexeme."
+      },
+      "bookcounts": {
+        "type": "object",
+        "description": "Mapping of book abbreviation/node to count of occurrences in that book.",
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "refs": {
+        "type": "array",
+        "description": "List of verse reference strings where this lexeme occurs (e.g. 'Gen 1:1').",
+        "items": {
+          "type": "string"
+        }
+      },
+      "nodes": {
+        "type": "array",
+        "description": "List of verse node IDs where this lexeme occurs.",
+        "items": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

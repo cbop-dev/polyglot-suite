@@ -1,0 +1,2 @@
+[console_scripts]
+greek-morph = greek_morphology.cli:main

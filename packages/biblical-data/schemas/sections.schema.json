@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://biblical-lexeme-explorer.dev/schemas/sections.schema.json",
+  "title": "Biblical Sections Frequency Distributions",
+  "description": "Mapping of section/chapter node IDs to word counts and lexeme occurrence frequency histograms.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["words", "lex"],
+    "properties": {
+      "words": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Total word count in this section/chapter."
+      },
+      "lex": {
+        "type": "object",
+        "description": "Mapping of lexeme ID strings to integer occurrence counts within this section.",
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

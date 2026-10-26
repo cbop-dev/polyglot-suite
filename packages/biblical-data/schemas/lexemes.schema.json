@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://biblical-lexeme-explorer.dev/schemas/lexemes.schema.json",
+  "title": "Biblical Lexemes Dictionary",
+  "description": "Mapping of lexeme IDs to lexicon entries including lemma, gloss, POS enum, total count, Beta Code, and Strong's number.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["id", "lemma", "pos", "total", "beta", "plain"],
+    "properties": {
+      "id": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Unique integer identifier for the lexeme."
+      },
+      "lemma": {
+        "type": "string",
+        "description": "Authoritative lexical headword form in original language script."
+      },
+      "gloss": {
+        "type": "string",
+        "description": "English student gloss or definition."
+      },
+      "pos": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 16,
+        "description": "Standardized Part-of-Speech enum (0=ADJ, 1=CONJ, 2=ADV, 3=INTJ, 4=NOUN, 5=PREP, 6=ARTICLE, 7=DEM_PRON, 8=INTER_PRON, 9=PERS_PRON, 10=REL_PRON, 11=VERB, 12=PART, 13=PROPN, 14=NUM, 15=UNSPECIFIED, 16=PRON)."
+      },
+      "total": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Corpus-wide occurrence count of this lexeme."
+      },
+      "beta": {
+        "type": "string",
+        "description": "Simplified ASCII Beta Code or transliteration for searching."
+      },
+      "plain": {
+        "type": "string",
+        "description": "Lowercase unaccented plain text for fuzzy and case-insensitive search."
+      },
+      "strongs": {
+        "type": "string",
+        "description": "Strong's Exhaustive Concordance identifier number (if assigned)."
+      }
+    }
+  }
+}

@@ -1,0 +1,90 @@
+Metadata-Version: 2.4
+Name: biblical-data
+Version: 0.1.0
+Summary: Python models, readers, and schemas for Biblical Corpora (LXX, SBLGNT, BHS) and LSJ Dictionary.
+Author-email: "C. Brannan" <cbop-dev@users.noreply.github.com>
+License: CC-BY-SA-4.0
+Keywords: septuagint,sblgnt,bhs,bible,lexicon,lsj,greek,hebrew
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+
+# Biblical Corpora Data (`@biblical-data/corpora` / `biblical-data`)
+
+Canonical, schema-validated, and open datasets for Biblical scholarship across:
+- **Septuagint (LXX)**: Based on Henry Barclay Swete (1887–1912, reprint 1930) with neural & rule-based morphology.
+- **Greek New Testament (SBLGNT)**: MorphGNT / SBLGNT open dataset.
+- **Hebrew Bible (BHS)**: ETCBC / Text-Fabric morphological dataset.
+- **LSJ Greek-English Lexicon**: Sharded Liddell-Scott-Jones dictionary from Perseus / Logeion.
+
+## Schemas
+
+All datasets conform to strict JSON Schemas located in `./schemas/`:
+- [`lexemes.schema.json`](./schemas/lexemes.schema.json): Lexicon entries (lemma, gloss, POS enum, counts, Beta code, Strong's numbers).
+- [`books.schema.json`](./schemas/books.schema.json): Book metadata, word counts, and chapter node mappings.
+- [`sections.schema.json`](./schemas/sections.schema.json): Frequency distributions and histograms per chapter.
+- [`concordance.schema.json`](./schemas/concordance.schema.json): Inverted occurrence indexes and verse node maps.
+- [`verses.schema.json`](./schemas/verses.schema.json): Flat map of verse node IDs to references and texts.
+- [`dictionary.schema.json`](./schemas/dictionary.schema.json): Sharded LSJ Greek dictionary definitions.
+
+---
+
+## TypeScript / JavaScript Client Reader
+
+### Installation
+```bash
+npm install @biblical-data/corpora
+```
+
+### Usage
+```typescript
+import { CorpusReader, LsjDictionaryReader } from '@biblical-data/corpora';
+
+// 1. Initialize Reader for LXX (or sblgnt / bhs)
+const reader = new CorpusReader('lxx', '/path/to/static/data/lxx');
+
+// 2. Load lexemes
+const lexemes = await reader.getLexemes();
+console.log(`Loaded ${Object.keys(lexemes).length} lemmata`);
+
+// 3. Find a specific lemma
+const logos = await reader.findLexemeByLemma('λόγος');
+console.log(logos); // { id: 1, lemma: "λόγος", pos: 4, ... }
+
+// 4. Lookup LSJ Greek dictionary definition
+const dict = new LsjDictionaryReader('/path/to/static/data/dictionary');
+const def = await dict.lookup('λόγος');
+console.log(def?.def);
+```
+
+---
+
+## Python Client Reader
+
+### Installation
+```bash
+pip install -e ./packages/biblical-corpora-data
+```
+
+### Usage
+```python
+from pathlib import Path
+from biblical_data import CorpusReader, LsjDictionaryReader
+
+# 1. Read Septuagint dataset
+reader = CorpusReader(Path("static/data"), corpus="lxx")
+lexemes = reader.get_lexemes()
+print(f"Loaded {len(lexemes)} LXX lexemes")
+
+# 2. Lookup LSJ definition
+dict_reader = LsjDictionaryReader(Path("static/data/dictionary"))
+entry = dict_reader.lookup("λογος")
+if entry:
+    print(f"Headword: {entry.headword}\nDef:\n{entry.def_markdown}")
+```
+
+---
+
+## Licensing & Provenance
+
+- **Data Assets**: Licensed under the [Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/).
+- **Reader Code**: Licensed under the [GNU AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html).
