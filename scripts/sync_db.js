@@ -10,16 +10,18 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 
 export const APPS = {
   bible: {
-    name: 'Polyglot Bible Reader',
+    name: 'Polyglot Bible & BLE Engine',
     dir: path.join(REPO_ROOT, 'apps/polyglot-bible-reader/static/db'),
     pattern: 'polyglot.db.*',
-    title: 'Polyglot Bible Reader SQLite Database',
-    notes: 'Pre-computed 10MB SQLite database chunks for Polyglot Bible Reader.',
+    defaultPrefix: 'bible-data-v',
+    title: 'Polyglot Bible & Lexeme Explorer SQLite Database',
+    notes: 'Consolidated master SQLite database (5MB chunks) and unified lexemes for Polyglot Bible Reader and Biblical Lexeme Explorer.',
   },
   philo: {
     name: 'Philo Reader',
     dir: path.join(REPO_ROOT, 'apps/philo-reader/static/db'),
     pattern: 'philo.db.*',
+    defaultPrefix: 'philo-db-v',
     title: 'Philo Reader SQLite Database',
     notes: 'Pre-computed 5MB SQLite database chunks for Philo Reader.',
   },
@@ -27,10 +29,13 @@ export const APPS = {
     name: 'Apostolic Fathers Reader',
     dir: path.join(REPO_ROOT, 'apps/apostolic-fathers-reader/static/db'),
     pattern: 'af.db.*',
+    defaultPrefix: 'af-db-v',
     title: 'Apostolic Fathers Reader SQLite Database',
     notes: 'Pre-computed 5MB SQLite database chunks for Apostolic Fathers Reader.',
   },
 };
+APPS.data = APPS.bible;
+APPS['bible-data'] = APPS.bible;
 APPS.af = APPS.fathers;
 
 export function getGhEnv() {
@@ -112,16 +117,56 @@ export function publishApp(appKey) {
   console.log(`✅ Successfully published release ${app.tag} for ${app.name}!\n`);
 }
 
+export function printUsage() {
+  console.log(`
+Database Sync Script (scripts/sync_db.js)
+========================================
+Synchronizes pre-computed SQLite database chunks between GitHub Releases and local static/db/ directories.
+
+Usage:
+  node scripts/sync_db.js <--pull | --publish> [app]
+  npm run pull:db [app]
+  npm run push:db [app]
+
+Actions:
+  --pull, pull         Download database chunks from GitHub Releases to local static/db/
+  --publish, publish   Upload local database chunks to GitHub Releases
+
+Apps:
+  all                  Sync all reader databases (bible, philo, fathers) [default for pull]
+  bible (or data)      Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
+  philo                Philo Reader database (tag: philo-db-vX.Y.Z)
+  fathers (or af)      Apostolic Fathers Reader database (tag: af-db-vX.Y.Z)
+
+Options:
+  --help, -h, help     Show this help message
+
+Workflow Note:
+  Before running 'npm run build:gh', ensure database chunks exist locally by running 'npm run pull:db'.
+  In GitHub Actions CI, 'npm run pull:db' is executed automatically during deployment.
+
+Examples:
+  npm run pull:db                       # Pull all reader databases from GitHub Releases
+  node scripts/sync_db.js pull bible    # Pull only the biblical database
+  node scripts/sync_db.js publish bible # Upload local bible chunks to GitHub Releases
+`);
+}
+
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === __filename;
 
 if (isMain) {
   const action = process.argv[2];
   const targetApp = process.argv[3] || 'all';
 
+  if (!action || action === '--help' || action === '-h' || action === 'help') {
+    printUsage();
+    process.exit(0);
+  }
+
   const targets = targetApp === 'all' ? ['bible', 'philo', 'fathers'] : [targetApp];
 
   if (!['--pull', 'pull', '--publish', 'publish'].includes(action)) {
-    console.log('Usage: node scripts/sync_db.js [--pull | --publish] [all | bible | philo | fathers]');
+    printUsage();
     process.exit(1);
   }
 

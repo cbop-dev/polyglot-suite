@@ -80,10 +80,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       48,
       49,
       50
-    ],
-    "extraAliases": [
-      "gen",
-      "genesis"
     ]
   },
   {
@@ -135,11 +131,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       38,
       39,
       40
-    ],
-    "extraAliases": [
-      "exo",
-      "exod",
-      "exodus"
     ]
   },
   {
@@ -178,10 +169,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       25,
       26,
       27
-    ],
-    "extraAliases": [
-      "lev",
-      "leviticus"
     ]
   },
   {
@@ -229,10 +216,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       34,
       35,
       36
-    ],
-    "extraAliases": [
-      "num",
-      "numbers"
     ]
   },
   {
@@ -278,11 +261,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       32,
       33,
       34
-    ],
-    "extraAliases": [
-      "deu",
-      "deut",
-      "deuteronomy"
     ]
   },
   {
@@ -318,11 +296,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       22,
       23,
       24
-    ],
-    "extraAliases": [
-      "jos",
-      "josh",
-      "joshua"
     ]
   },
   {
@@ -355,11 +328,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       19,
       20,
       21
-    ],
-    "extraAliases": [
-      "jdg",
-      "judg",
-      "judges"
     ]
   },
   {
@@ -375,10 +343,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       2,
       3,
       4
-    ],
-    "extraAliases": [
-      "rut",
-      "ruth"
     ]
   },
   {
@@ -424,18 +388,10 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     ],
     "extraAliases": [
       "1 Kingdoms",
-      "1 kingdoms",
-      "1 samuel",
       "1Kgdms",
       "1Sam",
       "1_Sam",
-      "1kgdms",
-      "1sa",
-      "1sam",
-      "1samuel",
-      "I Kingdoms",
-      "i sam",
-      "i samuel"
+      "I Kingdoms"
     ]
   },
   {
@@ -474,18 +430,10 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     ],
     "extraAliases": [
       "2 Kingdoms",
-      "2 kingdoms",
-      "2 samuel",
       "2Kgdms",
       "2Sam",
       "2_Sam",
-      "2kgdms",
-      "2sa",
-      "2sam",
-      "2samuel",
-      "II Kingdoms",
-      "ii sam",
-      "ii samuel"
+      "II Kingdoms"
     ]
   },
   {
@@ -521,19 +469,11 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       22
     ],
     "extraAliases": [
-      "1 kings",
       "1Kgs",
       "1_Kgs",
-      "1kgs",
-      "1ki",
-      "1kings",
       "3 Kingdoms",
-      "3 kingdoms",
       "3Kgdms",
-      "3kgdms",
-      "III Kingdoms",
-      "i kgs",
-      "i kings"
+      "III Kingdoms"
     ]
   },
   {
@@ -572,19 +512,11 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       25
     ],
     "extraAliases": [
-      "2 kings",
       "2Kgs",
       "2_Kgs",
-      "2kgs",
-      "2ki",
-      "2kings",
       "4 Kingdoms",
-      "4 kingdoms",
       "4Kgdms",
-      "4kgdms",
-      "IV Kingdoms",
-      "ii kgs",
-      "ii kings"
+      "IV Kingdoms"
     ]
   },
   {
@@ -628,15 +560,9 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     ],
     "extraAliases": [
       "1 Chron",
-      "1 chronicles",
       "1_Chr",
-      "1ch",
-      "1chr",
-      "1chronicles",
       "I Chron",
-      "I Chronicles",
-      "i chr",
-      "i chronicles"
+      "I Chronicles"
     ]
   },
   {
@@ -687,15 +613,9 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     ],
     "extraAliases": [
       "2 Chron",
-      "2 chronicles",
       "2_Chr",
-      "2ch",
-      "2chr",
-      "2chronicles",
       "II Chron",
-      "II Chronicles",
-      "ii chr",
-      "ii chronicles"
+      "II Chronicles"
     ]
   },
   {
@@ -723,11 +643,8 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     },
     "extraAliases": [
       "1 Ezra",
-      "1 esdras (vulgate)",
       "1Esdr (Vulgate)",
-      "I Esdras",
-      "ezr",
-      "ezra"
+      "I Esdras"
     ]
   },
   {
@@ -758,11 +675,8 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     },
     "extraAliases": [
       "2 Ezra",
-      "2 esdras (vulgate)",
       "2Esdr (Vulgate)",
-      "II Esdras",
-      "neh",
-      "nehemiah"
+      "II Esdras"
     ]
   },
   {
@@ -784,11 +698,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       8,
       9,
       10
-    ],
-    "extraAliases": [
-      "est",
-      "esth",
-      "esther"
     ]
   },
   {
@@ -842,9 +751,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       40,
       41,
       42
-    ],
-    "extraAliases": [
-      "job"
     ]
   },
   {
@@ -1010,11 +916,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "extraAliases": [
       "Psa",
       "Psalm",
-      "Psalmi",
-      "ps",
-      "psa",
-      "psalm",
-      "psalms"
+      "Psalmi"
     ]
   },
   {
@@ -1057,11 +959,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       29,
       30,
       31
-    ],
-    "extraAliases": [
-      "pro",
-      "prov",
-      "proverbs"
     ]
   },
   {
@@ -1097,11 +994,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "extraAliases": [
       "Ecclesiastes",
       "Qoh",
-      "Qoheleth",
-      "ecc",
-      "eccl",
-      "ecclesiastes",
-      "qoh"
+      "Qoheleth"
     ]
   },
   {
@@ -1134,12 +1027,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       "Cant",
       "Canticles",
       "Song of Solomon",
-      "Song of Songs",
-      "cant",
-      "canticles",
-      "sng",
-      "song",
-      "song of solomon"
+      "Song of Songs"
     ]
   },
   {
@@ -1217,10 +1105,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       64,
       65,
       66
-    ],
-    "extraAliases": [
-      "isa",
-      "isaiah"
     ]
   },
   {
@@ -1284,10 +1168,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       50,
       51,
       52
-    ],
-    "extraAliases": [
-      "jer",
-      "jeremiah"
     ]
   },
   {
@@ -1304,10 +1184,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       3,
       4,
       5
-    ],
-    "extraAliases": [
-      "lam",
-      "lamentations"
     ]
   },
   {
@@ -1367,11 +1243,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       46,
       47,
       48
-    ],
-    "extraAliases": [
-      "ezek",
-      "ezekiel",
-      "ezk"
     ]
   },
   {
@@ -1404,10 +1275,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     },
     "extraAliases": [
       "DanTh",
-      "Daniel (Theodotion)",
-      "dan",
-      "daniel",
-      "danth"
+      "Daniel (Theodotion)"
     ]
   },
   {
@@ -1433,10 +1301,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       12,
       13,
       14
-    ],
-    "extraAliases": [
-      "hos",
-      "hosea"
     ]
   },
   {
@@ -1451,11 +1315,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       1,
       2,
       3
-    ],
-    "extraAliases": [
-      "joe",
-      "joel",
-      "jol"
     ]
   },
   {
@@ -1476,10 +1335,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       7,
       8,
       9
-    ],
-    "extraAliases": [
-      "amo",
-      "amos"
     ]
   },
   {
@@ -1492,11 +1347,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "totalChapters": 1,
     "chapters": [
       1
-    ],
-    "extraAliases": [
-      "oba",
-      "obad",
-      "obadiah"
     ]
   },
   {
@@ -1512,10 +1362,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       2,
       3,
       4
-    ],
-    "extraAliases": [
-      "jon",
-      "jonah"
     ]
   },
   {
@@ -1534,10 +1380,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       5,
       6,
       7
-    ],
-    "extraAliases": [
-      "mic",
-      "micah"
     ]
   },
   {
@@ -1552,11 +1394,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       1,
       2,
       3
-    ],
-    "extraAliases": [
-      "nah",
-      "nahum",
-      "nam"
     ]
   },
   {
@@ -1571,10 +1408,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       1,
       2,
       3
-    ],
-    "extraAliases": [
-      "hab",
-      "habakkuk"
     ]
   },
   {
@@ -1589,11 +1422,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       1,
       2,
       3
-    ],
-    "extraAliases": [
-      "zep",
-      "zeph",
-      "zephaniah"
     ]
   },
   {
@@ -1607,10 +1435,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "chapters": [
       1,
       2
-    ],
-    "extraAliases": [
-      "hag",
-      "haggai"
     ]
   },
   {
@@ -1636,11 +1460,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       12,
       13,
       14
-    ],
-    "extraAliases": [
-      "zec",
-      "zech",
-      "zechariah"
     ]
   },
   {
@@ -1656,10 +1475,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       2,
       3,
       4
-    ],
-    "extraAliases": [
-      "mal",
-      "malachi"
     ]
   },
   {
@@ -1697,11 +1512,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       "TobBA",
       "TobS",
       "Tobit (BA)",
-      "Tobit (Sinaiticus)",
-      "tob",
-      "tobba",
-      "tobit",
-      "tobs"
+      "Tobit (Sinaiticus)"
     ]
   },
   {
@@ -1729,10 +1540,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       14,
       15,
       16
-    ],
-    "extraAliases": [
-      "jdt",
-      "judith"
     ]
   },
   {
@@ -1760,14 +1567,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       "KJV": "AddEsth",
       "WEB": "AddEsth",
       "Brenton": "AddEsth"
-    },
-    "extraAliases": [
-      "addest",
-      "addesth",
-      "esg",
-      "esther (greek)",
-      "esther greek"
-    ]
+    }
   },
   {
     "code": "WIS",
@@ -1797,11 +1597,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       17,
       18,
       19
-    ],
-    "extraAliases": [
-      "wis",
-      "wisdom",
-      "wisdom of solomon"
     ]
   },
   {
@@ -1867,10 +1662,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     ],
     "extraAliases": [
       "Ecclesiasticus",
-      "Sir",
-      "ecclesiasticus",
-      "sir",
-      "sirach"
+      "Sir"
     ]
   },
   {
@@ -1887,10 +1679,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       3,
       4,
       5
-    ],
-    "extraAliases": [
-      "bar",
-      "baruch"
     ]
   },
   {
@@ -1903,11 +1691,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "totalChapters": 1,
     "chapters": [
       1
-    ],
-    "extraAliases": [
-      "epjer",
-      "letter of jeremiah",
-      "lje"
     ]
   },
   {
@@ -1920,10 +1703,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "totalChapters": 1,
     "chapters": [
       1
-    ],
-    "extraAliases": [
-      "prayer of azariah",
-      "s3y"
     ]
   },
   {
@@ -1945,10 +1724,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     },
     "extraAliases": [
       "SusTh",
-      "Susanna (Theodotion)",
-      "sus",
-      "susanna",
-      "susth"
+      "Susanna (Theodotion)"
     ]
   },
   {
@@ -1970,10 +1746,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     },
     "extraAliases": [
       "Bel and the Dragon (Theodotion)",
-      "BelTh",
-      "bel",
-      "bel and the dragon",
-      "belth"
+      "BelTh"
     ]
   },
   {
@@ -2012,16 +1785,9 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "extraAliases": [
       "1 Macc",
       "1 Maccabees",
-      "1 maccabees",
       "1Mac",
       "1Macc",
-      "1ma",
-      "1mac",
-      "1macc",
-      "1maccabees",
-      "I Maccabees",
-      "i macc",
-      "i maccabees"
+      "I Maccabees"
     ]
   },
   {
@@ -2059,16 +1825,9 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "extraAliases": [
       "2 Macc",
       "2 Maccabees",
-      "2 maccabees",
       "2Mac",
       "2Macc",
-      "2ma",
-      "2mac",
-      "2macc",
-      "2maccabees",
-      "II Maccabees",
-      "ii macc",
-      "ii maccabees"
+      "II Maccabees"
     ]
   },
   {
@@ -2095,15 +1854,9 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "extraAliases": [
       "3 Macc",
       "3 Maccabees",
-      "3 maccabees",
       "3Mac",
       "3Macc",
-      "3ma",
-      "3mac",
-      "3macc",
-      "3maccabees",
-      "III Maccabees",
-      "iii maccabees"
+      "III Maccabees"
     ]
   },
   {
@@ -2141,15 +1894,9 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "extraAliases": [
       "4 Macc",
       "4 Maccabees",
-      "4 maccabees",
       "4Mac",
       "4Macc",
-      "4ma",
-      "4mac",
-      "4macc",
-      "4maccabees",
-      "IV Maccabees",
-      "iv maccabees"
+      "IV Maccabees"
     ]
   },
   {
@@ -2174,15 +1921,10 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "extraAliases": [
       "1 Esdr",
       "1 Esdras",
-      "1 esdras",
       "1Esd",
-      "1es",
-      "1esdr",
       "3 Ezra",
-      "3 esdras",
       "EsdrA",
-      "Greek Ezra",
-      "i esdras"
+      "Greek Ezra"
     ]
   },
   {
@@ -2214,15 +1956,10 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "extraAliases": [
       "2 Esdr",
       "2 Esdras",
-      "2 esdras",
       "2Esd",
-      "2es",
-      "2esdr",
       "4 Ezra",
-      "4 esdras",
       "EsdrB",
-      "Ezra-Nehemiah (Greek)",
-      "ii esdras"
+      "Ezra-Nehemiah (Greek)"
     ]
   },
   {
@@ -2235,12 +1972,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "totalChapters": 1,
     "chapters": [
       1
-    ],
-    "extraAliases": [
-      "man",
-      "prayer of manasseh",
-      "prayer of manasses",
-      "prman"
     ]
   },
   {
@@ -2253,12 +1984,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "totalChapters": 1,
     "chapters": [
       1
-    ],
-    "extraAliases": [
-      "additional psalm",
-      "ps151",
-      "ps2",
-      "psalm 151"
     ]
   },
   {
@@ -2284,11 +2009,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       12,
       13,
       14
-    ],
-    "extraAliases": [
-      "od",
-      "oda",
-      "odes"
     ]
   },
   {
@@ -2322,11 +2042,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "extraAliases": [
       "Psalms of Solomon",
       "Pss. Sol.",
-      "PssSol",
-      "psalms of solomon",
-      "pss",
-      "pssol",
-      "psssol"
+      "PssSol"
     ]
   },
   {
@@ -2358,9 +2074,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "extraAliases": [
       "DanOG",
       "Daniel (Old Greek)",
-      "Greek Daniel",
-      "dag",
-      "daniel (old greek)"
+      "Greek Daniel"
     ]
   },
   {
@@ -2400,11 +2114,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       26,
       27,
       28
-    ],
-    "extraAliases": [
-      "mat",
-      "matt",
-      "matthew"
     ]
   },
   {
@@ -2432,10 +2141,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       14,
       15,
       16
-    ],
-    "extraAliases": [
-      "mark",
-      "mrk"
     ]
   },
   {
@@ -2455,8 +2160,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     },
     "extraAliases": [
       "SusOG",
-      "Susanna (Old Greek)",
-      "sug"
+      "Susanna (Old Greek)"
     ]
   },
   {
@@ -2476,8 +2180,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     },
     "extraAliases": [
       "Bel and the Dragon (Old Greek)",
-      "BelOG",
-      "blg"
+      "BelOG"
     ]
   },
   {
@@ -2513,10 +2216,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       22,
       23,
       24
-    ],
-    "extraAliases": [
-      "luk",
-      "luke"
     ]
   },
   {
@@ -2549,10 +2248,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       19,
       20,
       21
-    ],
-    "extraAliases": [
-      "jhn",
-      "john"
     ]
   },
   {
@@ -2568,9 +2263,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     ],
     "extraAliases": [
       "Epistle to Laodiceans",
-      "Laodiceans",
-      "lao",
-      "laodiceans"
+      "Laodiceans"
     ]
   },
   {
@@ -2610,10 +2303,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       26,
       27,
       28
-    ],
-    "extraAliases": [
-      "act",
-      "acts"
     ]
   },
   {
@@ -2641,10 +2330,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       14,
       15,
       16
-    ],
-    "extraAliases": [
-      "rom",
-      "romans"
     ]
   },
   {
@@ -2672,15 +2357,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       14,
       15,
       16
-    ],
-    "extraAliases": [
-      "1 corinthians",
-      "1_cor",
-      "1co",
-      "1cor",
-      "1corinthians",
-      "i cor",
-      "i corinthians"
     ]
   },
   {
@@ -2705,15 +2381,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       11,
       12,
       13
-    ],
-    "extraAliases": [
-      "2 corinthians",
-      "2_cor",
-      "2co",
-      "2cor",
-      "2corinthians",
-      "ii cor",
-      "ii corinthians"
     ]
   },
   {
@@ -2731,10 +2398,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       4,
       5,
       6
-    ],
-    "extraAliases": [
-      "gal",
-      "galatians"
     ]
   },
   {
@@ -2752,10 +2415,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       4,
       5,
       6
-    ],
-    "extraAliases": [
-      "eph",
-      "ephesians"
     ]
   },
   {
@@ -2771,11 +2430,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       2,
       3,
       4
-    ],
-    "extraAliases": [
-      "phil",
-      "philippians",
-      "php"
     ]
   },
   {
@@ -2791,10 +2445,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       2,
       3,
       4
-    ],
-    "extraAliases": [
-      "col",
-      "colossians"
     ]
   },
   {
@@ -2811,14 +2461,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       3,
       4,
       5
-    ],
-    "extraAliases": [
-      "1 thessalonians",
-      "1_thess",
-      "1th",
-      "1thess",
-      "i thess",
-      "i thessalonians"
     ]
   },
   {
@@ -2833,14 +2475,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       1,
       2,
       3
-    ],
-    "extraAliases": [
-      "2 thessalonians",
-      "2_thess",
-      "2th",
-      "2thess",
-      "ii thess",
-      "ii thessalonians"
     ]
   },
   {
@@ -2858,14 +2492,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       4,
       5,
       6
-    ],
-    "extraAliases": [
-      "1 timothy",
-      "1_tim",
-      "1ti",
-      "1tim",
-      "i tim",
-      "i timothy"
     ]
   },
   {
@@ -2881,14 +2507,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       2,
       3,
       4
-    ],
-    "extraAliases": [
-      "2 timothy",
-      "2_tim",
-      "2ti",
-      "2tim",
-      "ii tim",
-      "ii timothy"
     ]
   },
   {
@@ -2903,10 +2521,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       1,
       2,
       3
-    ],
-    "extraAliases": [
-      "tit",
-      "titus"
     ]
   },
   {
@@ -2919,11 +2533,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "totalChapters": 1,
     "chapters": [
       1
-    ],
-    "extraAliases": [
-      "philemon",
-      "phlm",
-      "phm"
     ]
   },
   {
@@ -2948,10 +2557,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       11,
       12,
       13
-    ],
-    "extraAliases": [
-      "heb",
-      "hebrews"
     ]
   },
   {
@@ -2968,10 +2573,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       3,
       4,
       5
-    ],
-    "extraAliases": [
-      "james",
-      "jas"
     ]
   },
   {
@@ -2988,14 +2589,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       3,
       4,
       5
-    ],
-    "extraAliases": [
-      "1 peter",
-      "1_pet",
-      "1pe",
-      "1pet",
-      "i pet",
-      "i peter"
     ]
   },
   {
@@ -3010,14 +2603,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       1,
       2,
       3
-    ],
-    "extraAliases": [
-      "2 peter",
-      "2_pet",
-      "2pe",
-      "2pet",
-      "ii pet",
-      "ii peter"
     ]
   },
   {
@@ -3034,13 +2619,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       3,
       4,
       5
-    ],
-    "extraAliases": [
-      "1 john",
-      "1_john",
-      "1jn",
-      "1john",
-      "i john"
     ]
   },
   {
@@ -3053,13 +2631,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "totalChapters": 1,
     "chapters": [
       1
-    ],
-    "extraAliases": [
-      "2 john",
-      "2_john",
-      "2jn",
-      "2john",
-      "ii john"
     ]
   },
   {
@@ -3072,13 +2643,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "totalChapters": 1,
     "chapters": [
       1
-    ],
-    "extraAliases": [
-      "3 john",
-      "3_john",
-      "3jn",
-      "3john",
-      "iii john"
     ]
   },
   {
@@ -3091,10 +2655,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "totalChapters": 1,
     "chapters": [
       1
-    ],
-    "extraAliases": [
-      "jud",
-      "jude"
     ]
   },
   {
@@ -3128,11 +2688,6 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       20,
       21,
       22
-    ],
-    "extraAliases": [
-      "rev",
-      "revelation",
-      "revelation of john"
     ]
   }
 ];
@@ -3146,13 +2701,26 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "Deut",
     "Josh",
     "Judg",
+    "Ruth",
     "1Sam",
     "2Sam",
     "1Kgs",
     "2Kgs",
+    "1Chr",
+    "2Chr",
+    "Ezra",
+    "Neh",
+    "Esth",
+    "Job",
+    "Ps",
+    "Prov",
+    "Qoh",
+    "Cant",
     "Isa",
     "Jer",
+    "Lam",
     "Ezek",
+    "Dan",
     "Hos",
     "Joel",
     "Amos",
@@ -3164,20 +2732,7 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "Zeph",
     "Hag",
     "Zech",
-    "Mal",
-    "Ps",
-    "Prov",
-    "Job",
-    "Cant",
-    "Ruth",
-    "Lam",
-    "Qoh",
-    "Esth",
-    "Dan",
-    "Ezra",
-    "Neh",
-    "1Chr",
-    "2Chr"
+    "Mal"
   ],
   "LXX": [
     "Gen",
@@ -3194,49 +2749,49 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "2Kgs",
     "1Chr",
     "2Chr",
-    "1Esdr",
     "2Esdr",
+    "Esth",
+    "Job",
     "Ps",
     "Prov",
     "Qoh",
     "Cant",
-    "Job",
-    "Wis",
-    "Sir",
-    "Esth",
-    "Jdt",
-    "TobBA",
-    "TobS",
+    "Isa",
+    "Jer",
+    "Lam",
+    "Ezek",
+    "DanTh",
     "Hos",
-    "Amos",
-    "Mic",
     "Joel",
+    "Amos",
     "Obad",
     "Jonah",
+    "Mic",
     "Nah",
     "Hab",
     "Zeph",
     "Hag",
     "Zech",
     "Mal",
-    "Isa",
-    "Jer",
+    "TobBA",
+    "TobS",
+    "Jdt",
+    "Wis",
+    "Sir",
     "Bar",
-    "Lam",
     "EpJer",
-    "Ezek",
-    "Dan",
-    "DanTh",
-    "Sus",
     "SusTh",
-    "Bel",
     "BelTh",
     "1Mac",
     "2Mac",
     "3Mac",
     "4Mac",
+    "1Esdr",
+    "Od",
     "PsSol",
-    "Od"
+    "Dan",
+    "Sus",
+    "Bel"
   ],
   "OpenGNT": [
     "Matt",
@@ -3307,8 +2862,6 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "Hag",
     "Zech",
     "Mal",
-    "1Esdr",
-    "2Esdr",
     "Tob",
     "Jdt",
     "AddEsth",
@@ -3318,9 +2871,11 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "PrAzar",
     "Sus",
     "Bel",
-    "PrMan",
     "1Mac",
     "2Mac",
+    "1Esdr",
+    "2Esdr",
+    "PrMan",
     "Matt",
     "Mark",
     "Luke",
@@ -3366,24 +2921,17 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "2Chr",
     "Ezra",
     "Neh",
-    "Tob",
-    "Jdt",
     "Esth",
     "Job",
     "Ps",
     "Prov",
     "Eccl",
     "Song",
-    "Wis",
-    "Sir",
     "Isa",
     "Jer",
     "Lam",
-    "Bar",
     "Ezek",
     "Dan",
-    "Sus",
-    "Bel",
     "Hos",
     "Joel",
     "Amos",
@@ -3396,12 +2944,24 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "Hag",
     "Zech",
     "Mal",
+    "Tob",
+    "Jdt",
+    "Wis",
+    "Sir",
+    "Bar",
+    "Sus",
+    "Bel",
     "1Mac",
     "2Mac",
+    "1Esdr",
+    "2Esdr",
+    "PrMan",
+    "Ps151",
     "Matt",
     "Mark",
     "Luke",
     "John",
+    "Lao",
     "Acts",
     "Rom",
     "1_Cor",
@@ -3424,12 +2984,7 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "2_John",
     "3_John",
     "Jude",
-    "Rev",
-    "PrMan",
-    "1Esdr",
-    "2Esdr",
-    "Ps151",
-    "Lao"
+    "Rev"
   ],
   "WEB": [
     "Gen",
@@ -3479,12 +3034,12 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "Bar",
     "1Mac",
     "2Mac",
+    "3Mac",
+    "4Mac",
     "1Esdr",
+    "2Esdr",
     "PrMan",
     "Ps151",
-    "3Mac",
-    "2Esdr",
-    "4Mac",
     "Matt",
     "Mark",
     "Luke",
@@ -3561,10 +3116,10 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "Bel",
     "1Mac",
     "2Mac",
-    "1Esdr",
-    "PrMan",
     "3Mac",
     "4Mac",
+    "1Esdr",
+    "PrMan",
     "Dan"
   ],
   "Peshitta": [
@@ -3573,24 +3128,28 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "Lev",
     "Num",
     "Deut",
-    "Job",
     "Josh",
     "Judg",
+    "Ruth",
     "1Sam",
     "2Sam",
-    "Ps",
     "1Kgs",
     "2Kgs",
+    "1Chr",
+    "2Chr",
+    "Ezra",
+    "Neh",
+    "Esth",
+    "Job",
+    "Ps",
     "Prov",
-    "Wis",
     "Eccl",
     "Song",
     "Isa",
     "Jer",
     "Lam",
-    "EpJer",
-    "Bar",
     "Ezek",
+    "Dan",
     "Hos",
     "Joel",
     "Amos",
@@ -3603,28 +3162,24 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "Hag",
     "Zech",
     "Mal",
-    "Dan",
-    "Bel",
-    "Ruth",
-    "Sus",
-    "Esth",
+    "Tob",
     "Jdt",
+    "Wis",
     "Sir",
-    "1Chr",
-    "2Chr",
-    "2Esdr",
-    "Ezra",
-    "Neh",
+    "Bar",
+    "EpJer",
+    "Sus",
+    "Bel",
     "1Mac",
     "2Mac",
     "3Mac",
     "4Mac",
-    "Od",
+    "1Esdr",
+    "2Esdr",
     "PrMan",
     "Ps151",
+    "Od",
     "PsSol",
-    "Tob",
-    "1Esdr",
     "Matt",
     "Mark",
     "Luke",
@@ -3664,13 +3219,26 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "DEU",
     "JOS",
     "JDG",
+    "RUT",
     "1SA",
     "2SA",
     "1KI",
     "2KI",
+    "1CH",
+    "2CH",
+    "EZR",
+    "NEH",
+    "EST",
+    "JOB",
+    "PSA",
+    "PRO",
+    "ECC",
+    "SNG",
     "ISA",
     "JER",
+    "LAM",
     "EZK",
+    "DAN",
     "HOS",
     "JOL",
     "AMO",
@@ -3682,20 +3250,7 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "ZEP",
     "HAG",
     "ZEC",
-    "MAL",
-    "PSA",
-    "PRO",
-    "JOB",
-    "SNG",
-    "RUT",
-    "LAM",
-    "ECC",
-    "EST",
-    "DAN",
-    "EZR",
-    "NEH",
-    "1CH",
-    "2CH"
+    "MAL"
   ],
   "LXX": [
     "GEN",
@@ -3712,49 +3267,49 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "2KI",
     "1CH",
     "2CH",
-    "1ES",
     "EZR",
     "NEH",
+    "EST",
+    "JOB",
     "PSA",
     "PRO",
     "ECC",
     "SNG",
-    "JOB",
-    "WIS",
-    "SIR",
-    "EST",
-    "JDT",
-    "TOB",
+    "ISA",
+    "JER",
+    "LAM",
+    "EZK",
+    "DAN",
     "HOS",
-    "AMO",
-    "MIC",
     "JOL",
+    "AMO",
     "OBA",
     "JON",
+    "MIC",
     "NAM",
     "HAB",
     "ZEP",
     "HAG",
     "ZEC",
     "MAL",
-    "ISA",
-    "JER",
+    "TOB",
+    "JDT",
+    "WIS",
+    "SIR",
     "BAR",
-    "LAM",
     "LJE",
-    "EZK",
-    "DAG",
-    "DAN",
-    "SUG",
     "SUS",
-    "BLG",
     "BEL",
     "1MA",
     "2MA",
     "3MA",
     "4MA",
+    "1ES",
+    "ODA",
     "PSS",
-    "ODA"
+    "DAG",
+    "SUG",
+    "BLG"
   ],
   "OpenGNT": [
     "MAT",
@@ -3825,8 +3380,6 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "HAG",
     "ZEC",
     "MAL",
-    "1ES",
-    "2ES",
     "TOB",
     "JDT",
     "ESG",
@@ -3836,9 +3389,11 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "S3Y",
     "SUS",
     "BEL",
-    "MAN",
     "1MA",
     "2MA",
+    "1ES",
+    "2ES",
+    "MAN",
     "MAT",
     "MRK",
     "LUK",
@@ -3884,24 +3439,17 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "2CH",
     "EZR",
     "NEH",
-    "TOB",
-    "JDT",
     "EST",
     "JOB",
     "PSA",
     "PRO",
     "ECC",
     "SNG",
-    "WIS",
-    "SIR",
     "ISA",
     "JER",
     "LAM",
-    "BAR",
     "EZK",
     "DAN",
-    "SUS",
-    "BEL",
     "HOS",
     "JOL",
     "AMO",
@@ -3914,12 +3462,24 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "HAG",
     "ZEC",
     "MAL",
+    "TOB",
+    "JDT",
+    "WIS",
+    "SIR",
+    "BAR",
+    "SUS",
+    "BEL",
     "1MA",
     "2MA",
+    "1ES",
+    "2ES",
+    "MAN",
+    "PS2",
     "MAT",
     "MRK",
     "LUK",
     "JHN",
+    "LAO",
     "ACT",
     "ROM",
     "1CO",
@@ -3942,12 +3502,7 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "2JN",
     "3JN",
     "JUD",
-    "REV",
-    "MAN",
-    "1ES",
-    "2ES",
-    "PS2",
-    "LAO"
+    "REV"
   ],
   "WEB": [
     "GEN",
@@ -3997,12 +3552,12 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "BAR",
     "1MA",
     "2MA",
+    "3MA",
+    "4MA",
     "1ES",
+    "2ES",
     "MAN",
     "PS2",
-    "3MA",
-    "2ES",
-    "4MA",
     "DAG",
     "MAT",
     "MRK",
@@ -4080,10 +3635,10 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "BEL",
     "1MA",
     "2MA",
-    "1ES",
-    "MAN",
     "3MA",
     "4MA",
+    "1ES",
+    "MAN",
     "DAG"
   ],
   "Peshitta": [
@@ -4092,24 +3647,28 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "LEV",
     "NUM",
     "DEU",
-    "JOB",
     "JOS",
     "JDG",
+    "RUT",
     "1SA",
     "2SA",
-    "PSA",
     "1KI",
     "2KI",
+    "1CH",
+    "2CH",
+    "EZR",
+    "NEH",
+    "EST",
+    "JOB",
+    "PSA",
     "PRO",
-    "WIS",
     "ECC",
     "SNG",
     "ISA",
     "JER",
     "LAM",
-    "LJE",
-    "BAR",
     "EZK",
+    "DAN",
     "HOS",
     "JOL",
     "AMO",
@@ -4122,28 +3681,24 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "HAG",
     "ZEC",
     "MAL",
-    "DAN",
-    "BEL",
-    "RUT",
-    "SUS",
-    "EST",
+    "TOB",
     "JDT",
+    "WIS",
     "SIR",
-    "1CH",
-    "2CH",
-    "2ES",
-    "EZR",
-    "NEH",
+    "BAR",
+    "LJE",
+    "SUS",
+    "BEL",
     "1MA",
     "2MA",
     "3MA",
     "4MA",
-    "ODA",
+    "1ES",
+    "2ES",
     "MAN",
     "PS2",
+    "ODA",
     "PSS",
-    "TOB",
-    "1ES",
     "MAT",
     "MRK",
     "LUK",

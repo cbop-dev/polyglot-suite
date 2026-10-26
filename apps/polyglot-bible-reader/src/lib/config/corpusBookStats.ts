@@ -177,14 +177,6 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 639,
       "verses": 55
     },
-    "1ES": {
-      "words": 11790,
-      "verses": 448
-    },
-    "2ES": {
-      "words": 20446,
-      "verses": 874
-    },
     "TOB": {
       "words": 6978,
       "verses": 244
@@ -221,10 +213,6 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 1074,
       "verses": 42
     },
-    "MAN": {
-      "words": 408,
-      "verses": 1
-    },
     "1MA": {
       "words": 23177,
       "verses": 924
@@ -232,6 +220,18 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
     "2MA": {
       "words": 16370,
       "verses": 555
+    },
+    "1ES": {
+      "words": 11790,
+      "verses": 448
+    },
+    "2ES": {
+      "words": 20446,
+      "verses": 874
+    },
+    "MAN": {
+      "words": 408,
+      "verses": 1
     },
     "MAT": {
       "words": 15899,
@@ -473,10 +473,6 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 14136,
       "verses": 959
     },
-    "JOB": {
-      "words": 9219,
-      "verses": 1065
-    },
     "JOS": {
       "words": 10041,
       "verses": 656
@@ -484,6 +480,10 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
     "JDG": {
       "words": 9793,
       "verses": 617
+    },
+    "RUT": {
+      "words": 1392,
+      "verses": 86
     },
     "1SA": {
       "words": 12937,
@@ -493,10 +493,6 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 11072,
       "verses": 693
     },
-    "PSA": {
-      "words": 20092,
-      "verses": 2454
-    },
     "1KI": {
       "words": 12883,
       "verses": 816
@@ -505,13 +501,37 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 12026,
       "verses": 719
     },
+    "1CH": {
+      "words": 11264,
+      "verses": 891
+    },
+    "2CH": {
+      "words": 13568,
+      "verses": 768
+    },
+    "EZR": {
+      "words": 3908,
+      "verses": 280
+    },
+    "NEH": {
+      "words": 5492,
+      "verses": 405
+    },
+    "EST": {
+      "words": 2907,
+      "verses": 168
+    },
+    "JOB": {
+      "words": 9219,
+      "verses": 1065
+    },
+    "PSA": {
+      "words": 20092,
+      "verses": 2454
+    },
     "PRO": {
       "words": 8052,
       "verses": 914
-    },
-    "WIS": {
-      "words": 6059,
-      "verses": 436
     },
     "ECC": {
       "words": 3020,
@@ -533,17 +553,13 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 1762,
       "verses": 159
     },
-    "LJE": {
-      "words": 1088,
-      "verses": 73
-    },
-    "BAR": {
-      "words": 1940,
-      "verses": 142
-    },
     "EZK": {
       "words": 18329,
       "verses": 1271
+    },
+    "DAN": {
+      "words": 6472,
+      "verses": 412
     },
     "HOS": {
       "words": 2580,
@@ -593,53 +609,37 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 933,
       "verses": 55
     },
-    "DAN": {
-      "words": 6472,
-      "verses": 412
-    },
-    "BEL": {
-      "words": 790,
-      "verses": 42
-    },
-    "RUT": {
-      "words": 1392,
-      "verses": 86
-    },
-    "SUS": {
-      "words": 1215,
-      "verses": 65
-    },
-    "EST": {
-      "words": 2907,
-      "verses": 168
+    "TOB": {
+      "words": 6061,
+      "verses": 343
     },
     "JDT": {
       "words": 5686,
       "verses": 341
     },
+    "WIS": {
+      "words": 6059,
+      "verses": 436
+    },
     "SIR": {
       "words": 13074,
       "verses": 1261
     },
-    "1CH": {
-      "words": 11264,
-      "verses": 891
+    "BAR": {
+      "words": 1940,
+      "verses": 142
     },
-    "2CH": {
-      "words": 13568,
-      "verses": 768
+    "LJE": {
+      "words": 1088,
+      "verses": 73
     },
-    "2ES": {
-      "words": 10627,
-      "verses": 714
+    "SUS": {
+      "words": 1215,
+      "verses": 65
     },
-    "EZR": {
-      "words": 3908,
-      "verses": 280
-    },
-    "NEH": {
-      "words": 5492,
-      "verses": 405
+    "BEL": {
+      "words": 790,
+      "verses": 42
     },
     "1MA": {
       "words": 23578,
@@ -657,9 +657,13 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 7496,
       "verses": 479
     },
-    "ODA": {
-      "words": 2200,
-      "verses": 209
+    "1ES": {
+      "words": 6474,
+      "verses": 406
+    },
+    "2ES": {
+      "words": 10627,
+      "verses": 714
     },
     "MAN": {
       "words": 551,
@@ -669,17 +673,13 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 637,
       "verses": 65
     },
+    "ODA": {
+      "words": 2200,
+      "verses": 209
+    },
     "PSS": {
       "words": 3362,
       "verses": 343
-    },
-    "TOB": {
-      "words": 6061,
-      "verses": 343
-    },
-    "1ES": {
-      "words": 6474,
-      "verses": 406
     },
     "MAT": {
       "words": 13979,
@@ -847,10 +847,6 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 21353,
       "verses": 821
     },
-    "1ES": {
-      "words": 8994,
-      "verses": 434
-    },
     "EZR": {
       "words": 5586,
       "verses": 280
@@ -858,6 +854,14 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
     "NEH": {
       "words": 7676,
       "verses": 392
+    },
+    "EST": {
+      "words": 5843,
+      "verses": 164
+    },
+    "JOB": {
+      "words": 13561,
+      "verses": 1069
     },
     "PSA": {
       "words": 34964,
@@ -875,45 +879,37 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 2025,
       "verses": 117
     },
-    "JOB": {
-      "words": 13561,
-      "verses": 1069
+    "ISA": {
+      "words": 27075,
+      "verses": 1289
     },
-    "WIS": {
-      "words": 6943,
-      "verses": 435
+    "JER": {
+      "words": 28948,
+      "verses": 1298
     },
-    "SIR": {
-      "words": 18658,
-      "verses": 1402
+    "LAM": {
+      "words": 2391,
+      "verses": 151
     },
-    "EST": {
-      "words": 5843,
-      "verses": 164
+    "EZK": {
+      "words": 29658,
+      "verses": 1267
     },
-    "JDT": {
-      "words": 9174,
-      "verses": 340
-    },
-    "TOB": {
-      "words": 12736,
-      "verses": 480
+    "DAN": {
+      "words": 10453,
+      "verses": 424
     },
     "HOS": {
       "words": 3941,
       "verses": 197
     },
-    "AMO": {
-      "words": 3210,
-      "verses": 146
-    },
-    "MIC": {
-      "words": 2368,
-      "verses": 105
-    },
     "JOL": {
       "words": 1580,
       "verses": 73
+    },
+    "AMO": {
+      "words": 3210,
+      "verses": 146
     },
     "OBA": {
       "words": 472,
@@ -922,6 +918,10 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
     "JON": {
       "words": 1090,
       "verses": 48
+    },
+    "MIC": {
+      "words": 2368,
+      "verses": 105
     },
     "NAM": {
       "words": 937,
@@ -947,49 +947,33 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 1416,
       "verses": 55
     },
-    "ISA": {
-      "words": 27075,
-      "verses": 1289
+    "TOB": {
+      "words": 12736,
+      "verses": 480
     },
-    "JER": {
-      "words": 28948,
-      "verses": 1298
+    "JDT": {
+      "words": 9174,
+      "verses": 340
+    },
+    "WIS": {
+      "words": 6943,
+      "verses": 435
+    },
+    "SIR": {
+      "words": 18658,
+      "verses": 1402
     },
     "BAR": {
       "words": 3869,
       "verses": 213
     },
-    "LAM": {
-      "words": 2391,
-      "verses": 151
-    },
     "LJE": {
       "words": 24,
       "verses": 1
     },
-    "EZK": {
-      "words": 29658,
-      "verses": 1267
-    },
-    "DAG": {
-      "words": 10781,
-      "verses": 406
-    },
-    "DAN": {
-      "words": 10453,
-      "verses": 424
-    },
-    "SUG": {
-      "words": 792,
-      "verses": 36
-    },
     "SUS": {
       "words": 1134,
       "verses": 64
-    },
-    "BLG": {
-      "words": 901,
-      "verses": 37
     },
     "BEL": {
       "words": 871,
@@ -1011,13 +995,29 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 7859,
       "verses": 479
     },
-    "PSS": {
-      "words": 4926,
-      "verses": 310
+    "1ES": {
+      "words": 8994,
+      "verses": 434
     },
     "ODA": {
       "words": 4187,
       "verses": 288
+    },
+    "PSS": {
+      "words": 4926,
+      "verses": 310
+    },
+    "DAG": {
+      "words": 10781,
+      "verses": 406
+    },
+    "SUG": {
+      "words": 792,
+      "verses": 36
+    },
+    "BLG": {
+      "words": 901,
+      "verses": 37
     }
   },
   "wlc": {
@@ -1049,6 +1049,10 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 13899,
       "verses": 618
     },
+    "RUT": {
+      "words": 1787,
+      "verses": 85
+    },
     "1SA": {
       "words": 18665,
       "verses": 811
@@ -1065,6 +1069,46 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 17107,
       "verses": 719
     },
+    "1CH": {
+      "words": 15333,
+      "verses": 943
+    },
+    "2CH": {
+      "words": 19448,
+      "verses": 822
+    },
+    "EZR": {
+      "words": 5217,
+      "verses": 280
+    },
+    "NEH": {
+      "words": 7717,
+      "verses": 405
+    },
+    "EST": {
+      "words": 4551,
+      "verses": 167
+    },
+    "JOB": {
+      "words": 10737,
+      "verses": 1070
+    },
+    "PSA": {
+      "words": 24964,
+      "verses": 2527
+    },
+    "PRO": {
+      "words": 8725,
+      "verses": 915
+    },
+    "ECC": {
+      "words": 4144,
+      "verses": 222
+    },
+    "SNG": {
+      "words": 1632,
+      "verses": 117
+    },
     "ISA": {
       "words": 22501,
       "verses": 1291
@@ -1073,9 +1117,17 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
       "words": 29261,
       "verses": 1364
     },
+    "LAM": {
+      "words": 1893,
+      "verses": 154
+    },
     "EZK": {
       "words": 25746,
       "verses": 1273
+    },
+    "DAN": {
+      "words": 8021,
+      "verses": 357
     },
     "HOS": {
       "words": 3086,
@@ -1124,58 +1176,6 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
     "MAL": {
       "words": 1168,
       "verses": 55
-    },
-    "PSA": {
-      "words": 24964,
-      "verses": 2527
-    },
-    "PRO": {
-      "words": 8725,
-      "verses": 915
-    },
-    "JOB": {
-      "words": 10737,
-      "verses": 1070
-    },
-    "SNG": {
-      "words": 1632,
-      "verses": 117
-    },
-    "RUT": {
-      "words": 1787,
-      "verses": 85
-    },
-    "LAM": {
-      "words": 1893,
-      "verses": 154
-    },
-    "ECC": {
-      "words": 4144,
-      "verses": 222
-    },
-    "EST": {
-      "words": 4551,
-      "verses": 167
-    },
-    "DAN": {
-      "words": 8021,
-      "verses": 357
-    },
-    "EZR": {
-      "words": 5217,
-      "verses": 280
-    },
-    "NEH": {
-      "words": 7717,
-      "verses": 405
-    },
-    "1CH": {
-      "words": 15333,
-      "verses": 943
-    },
-    "2CH": {
-      "words": 19448,
-      "verses": 822
     }
   }
 };

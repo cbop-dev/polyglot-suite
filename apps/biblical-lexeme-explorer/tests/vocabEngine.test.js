@@ -47,3 +47,25 @@ test('VocabEngine.fetchText', async () => {
 	expect(result).toHaveProperty('section', 'Gen 1:1');
 	expect(result.text.toLowerCase()).toContain('ἐν ἀρχῇ');
 });
+
+test('VocabEngine cross-app deep link ID verification (theos & elohim)', async () => {
+	const lxx = new LxxVocabDataset();
+	const theos = new Lexeme();
+	await VocabEngine.fetchLexInfo(8110, theos, lxx.posDict, 'lxx');
+	expect(theos.id).toBe(8110);
+	expect(theos.lemma).toBe('θεός');
+	expect(theos.strongs).toBe('G2316');
+
+	const sbl = new SblGntVocabDataset();
+	const theosNt = new Lexeme();
+	await VocabEngine.fetchLexInfo(8110, theosNt, sbl.posDict, 'sblgnt');
+	expect(theosNt.id).toBe(8110);
+	expect(theosNt.lemma).toBe('θεός');
+
+	const bhs = new BhsVocabDataset();
+	const elohim = new Lexeme();
+	await VocabEngine.fetchLexInfo(391, elohim, bhs.posDict, 'bhs');
+	expect(elohim.id).toBe(391);
+	expect(elohim.lemma).toBe('אֱלֹהִים');
+	expect(elohim.strongs).toBe('H430');
+});

@@ -26,15 +26,16 @@
 			: '')
 	);
 	let urlLemma = $derived(page.url.searchParams.get('lemma') || page.url.searchParams.get('lex') || '');
+	let urlId = $derived(page.url.searchParams.get('id') || '');
 
 	$effect(() => {
-		const activePanel = urlPanel || options?.view?.panel;
+		const activePanel = urlPanel || (urlId || urlLemma ? 'lex' : null) || options?.view?.panel;
 		if (activePanel && panes.includes(activePanel)) {
 			selectedPane = panes.indexOf(activePanel);
 		}
 	});
 	onMount(() => {
-		if (typeof window !== 'undefined' && !urlRefs && !urlLemma && !urlPanel) {
+		if (typeof window !== 'undefined' && !urlRefs && !urlLemma && !urlId && !urlPanel) {
 			window.history.pushState({}, document.title, window.location.pathname);
 		}
 	});
@@ -87,7 +88,7 @@
 </div>
 
 <div class={panes[selectedPane] == 'lex' ? 'block' : 'hidden'}>
-	<LexSearch {tfData} initialLemma={urlLemma || ''} />
+	<LexSearch {tfData} initialLemma={urlLemma || ''} initialId={urlId || ''} />
 </div>
 <div class={panes[selectedPane] == 'wc' ? 'block' : 'hidden'}>
 	<WordCloud2 {tfData} {options}/>

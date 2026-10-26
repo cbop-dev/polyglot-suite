@@ -123,9 +123,10 @@ export interface LexemeRow {
 	id: number;
 	corpus: string;
 	lex_id: number;
+	lexeme_id?: number;
 	lemma: string;
 	gloss: string;
-	pos: number | null;
+	pos: number | null | string;
 	strongs: string;
 	beta: string;
 	plain: string;
@@ -760,7 +761,9 @@ export async function getLemma(
 	strongs?: string
 ): Promise<LexemeRow | null> {
 	if (!identifier && !strongs) return null;
-	const dict = (corpus === 'bhs' || corpus === 'wlc' || corpus === 'hebrew') ? 'bdb' : 'lsj';
+	const isHebrew = (corpus === 'bhs' || corpus === 'wlc' || corpus === 'hebrew');
+	const dict = isHebrew ? 'bdb' : 'lsj';
+	const lang = isHebrew ? 'hebrew' : 'greek';
 
 	try {
 		if (strongs) {
@@ -771,23 +774,26 @@ export async function getLemma(
 
 			const row = await queryOne<{
 				id: number;
+				lexeme_id?: number | null;
 				dictionary: string;
 				strongs_id: string;
 				lemma: string;
 				gloss: string;
 				consonant_key: string;
 			}>(`
-				SELECT id, dictionary, strongs_id, lemma, gloss, consonant_key
+				SELECT id, lexeme_id, dictionary, strongs_id, lemma, gloss, consonant_key
 				FROM lexicon_entries
 				WHERE dictionary = ? AND strongs_id = ?
 				LIMIT 1
 			`, [dict, sCode]);
 
 			if (row) {
+				const masterId = row.lexeme_id || row.id;
 				return {
-					id: row.id,
+					id: masterId,
+					lexeme_id: masterId,
 					corpus: dict,
-					lex_id: row.id,
+					lex_id: masterId,
 					lemma: row.lemma,
 					gloss: row.gloss,
 					pos: null,
@@ -803,23 +809,26 @@ export async function getLemma(
 		if (str) {
 			const row = await queryOne<{
 				id: number;
+				lexeme_id?: number | null;
 				dictionary: string;
 				strongs_id: string;
 				lemma: string;
 				gloss: string;
 				consonant_key: string;
 			}>(`
-				SELECT id, dictionary, strongs_id, lemma, gloss, consonant_key
+				SELECT id, lexeme_id, dictionary, strongs_id, lemma, gloss, consonant_key
 				FROM lexicon_entries
 				WHERE dictionary = ? AND (lemma = ? OR consonant_key = ?)
 				LIMIT 1
 			`, [dict, str, str]);
 
 			if (row) {
+				const masterId = row.lexeme_id || row.id;
 				return {
-					id: row.id,
+					id: masterId,
+					lexeme_id: masterId,
 					corpus: dict,
-					lex_id: row.id,
+					lex_id: masterId,
 					lemma: row.lemma,
 					gloss: row.gloss,
 					pos: null,
@@ -831,33 +840,70 @@ export async function getLemma(
 			}
 		}
 	} catch (e) {
-		// Fallback to legacy lexemes table
+		// Fallback to master lexemes table
 	}
 
-	// Legacy lexemes query fallback
-	if (strongs) {
-		const sCode = String(strongs).trim();
-		const sWithPrefix = corpus === 'bhs'
-			? (sCode.toUpperCase().startsWith('H') ? sCode.toUpperCase() : `H${sCode}`)
-			: (sCode.toUpperCase().startsWith('G') ? sCode.toUpperCase() : `G${sCode}`);
-		const sNumOnly = sCode.replace(/^[HG]/i, '');
+	// Master lexemes query fallback
+	try {
+		if (strongs) {
+			const sCode = String(strongs).trim();
+			const sWithPrefix = isHebrew
+				? (sCode.toUpperCase().startsWith('H') ? sCode.toUpperCase() : `H${sCode}`)
+				: (sCode.toUpperCase().startsWith('G') ? sCode.toUpperCase() : `G${sCode}`);
+			const sNumOnly = sCode.replace(/^[HG]/i, '');
+			const sStandard = `${sWithPrefix[0]}${parseInt(sNumOnly, 10)}`;
 
-		const rows = await query<LexemeRow>(`
-			SELECT id, corpus, lex_id, lemma, gloss, pos, strongs, beta, plain, total
+			const rows = await query<any>(`
+				SELECT id, language, lemma, lemma_clean, strongs_id, pos, gloss
+				FROM lexemes
+				WHERE language = ? AND (strongs_id = ? OR strongs_id = ? OR strongs_id = ?)
+				LIMIT 1
+			`, [lang, sWithPrefix, sNumOnly, sStandard]);
+			if (rows.length > 0) {
+				const r = rows[0];
+				return {
+					id: r.id,
+					lexeme_id: r.id,
+					corpus: dict,
+					lex_id: r.id,
+					lemma: r.lemma,
+					gloss: r.gloss,
+					pos: r.pos,
+					strongs: r.strongs_id || sWithPrefix,
+					beta: '',
+					plain: r.lemma_clean || '',
+					total: 0
+				};
+			}
+		}
+
+		const rows = await query<any>(`
+			SELECT id, language, lemma, lemma_clean, strongs_id, pos, gloss
 			FROM lexemes
-			WHERE corpus = ? AND (strongs = ? OR strongs = ?)
+			WHERE language = ? AND (lemma = ? OR lemma_clean = ?)
 			LIMIT 1
-		`, [corpus, sWithPrefix, sNumOnly]);
-		if (rows.length > 0) return rows[0];
+		`, [lang, String(identifier), String(identifier)]);
+		if (rows.length > 0) {
+			const r = rows[0];
+			return {
+				id: r.id,
+				lexeme_id: r.id,
+				corpus: dict,
+				lex_id: r.id,
+				lemma: r.lemma,
+				gloss: r.gloss,
+				pos: r.pos,
+				strongs: r.strongs_id || '',
+				beta: '',
+				plain: r.lemma_clean || '',
+				total: 0
+			};
+		}
+	} catch (e) {
+		// Ignore
 	}
 
-	const rows = await query<LexemeRow>(`
-		SELECT id, corpus, lex_id, lemma, gloss, pos, strongs, beta, plain, total
-		FROM lexemes
-		WHERE corpus = ? AND (lemma = ? OR plain = ?)
-		LIMIT 1
-	`, [corpus, String(identifier), String(identifier)]);
-	return rows.length > 0 ? rows[0] : null;
+	return null;
 }
 
 const SYRIAC_PUNCT_DIACRITICS = /[\u0730-\u074F\u0300-\u036F\.\,\;\:\?\!\(\)\[\]]/g;

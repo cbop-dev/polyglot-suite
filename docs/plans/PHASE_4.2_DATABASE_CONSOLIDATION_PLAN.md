@@ -183,15 +183,21 @@ flowchart LR
 
 4. **Phase 4.2.4: Elevate Pipeline & Shared DB to Monorepo Scope** *(COMPLETED)*
    - Elevated pipeline out of `apps/polyglot-bible-reader/pipeline` into monorepo package `packages/data-pipeline/` with its own `package.json` (`@polyglot/data-pipeline`).
-   - Maintained 100% backward compatibility via symlink at `apps/polyglot-bible-reader/pipeline -> ../../packages/data-pipeline`.
-   - Set up `dist/shared-db/` symlinked directly to the pre-computed database chunks, eliminating duplicated disk usage.
+   - Cleaned architecture with zero symlinks tracked in git for true cross-platform and git tool compatibility.
    - Standardized root monorepo scripts in `package.json`:
      - `npm run build:db` (builds SQLite DB and generates BLE manifests)
      - `npm run chunk:db` (chunks SQLite DB into 5MB slices)
      - `npm run data:all` (end-to-end build, chunk, and manifest generation)
    - Verified: All 58 BLE unit tests and 135 PBV tests pass.
 
-5. **Phase 4.2.5: Unified GitHub Release & Client Integration**
-   - Update release scripts (`scripts/release_db.js` / `sync_db.js`) to push chunked DBs and manifests under a single monorepo release tag (e.g. `polyglot-data-v1.0.0`).
-   - Update client query layers in both PBV and BLE to point to the shared release URL.
-   - Implement deterministic cross-app deep linking using integer `lexeme_id` (e.g. `/lexemes/lxx/?id=8110` for `θεός`).
+5. **Phase 4.2.5: Unified GitHub Release & Client Integration** *(COMPLETED)*
+   - **Task 1: Deterministic Cross-App Deep Linking** *(COMPLETED)*:
+     - PBV query layer (`dbClient.ts`) populates universal `lexeme_id` on all inspected words (from `lexicon_entries.lexeme_id` or `lexemes.id`).
+     - `getLexemeExplorerUrl` in `navigation.ts` generates links with `?id=<lexeme_id>&panel=lex` (e.g. `/lexemes/lxx/?id=8110&lemma=θεός&panel=lex`).
+     - BLE (`LexSearch.svelte` and routes `/lxx`, `/bhs`, `/sblgnt`, `/lex/[db]`) ingests `?id=...`, automatically switches to the `lex` tab, and looks up the exact lemma by ID without diacritic or spelling discrepancies.
+     - Added comprehensive unit tests in `navigation.test.ts` and `vocabEngine.test.js` (139 PBV tests and 59 BLE tests passing).
+   - **Task 2: Unified Release & Sync Scripting** *(COMPLETED)*:
+     - Retained separate lifecycles for Philo Reader (`philo-db-v...`) and Apostolic Fathers (`af-db-v...`).
+     - Established tag naming convention `bible-data-vX.Y.Z` for the consolidated Polyglot Bible & Lexeme Explorer database (starting at `bible-data-v1.0.0`).
+     - Updated `scripts/sync_db.js` and `scripts/release_db.js` with rich CLI usage/help (`--help`), aliases (`data`, `bible-data`), `--dry-run`, dynamic branch detection for git push, and clean error reporting.
+     - All 198 unit tests (139 PBV + 59 BLE) passing.
