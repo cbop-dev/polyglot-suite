@@ -97,11 +97,14 @@
 	onMount(() => {
 		if (initialLemma && tfData?.lexemes) {
 			const langKeys = tfData.lexemes[tfData.lang] || [];
+			
 			const plainKeys = tfData.lexemes.plain || [];
 			const ids = tfData.lexemes.id || [];
-			let foundIdx = langKeys.findIndex((k) => k === initialLemma);
+			const normLemma =  initialLemma.normalize('NFC');
+			let foundIdx = langKeys.findIndex((k) => k === normLemma || k === initialLemma);
 			if (foundIdx === -1) {
-				foundIdx = plainKeys.findIndex((k) => k === initialLemma);
+				const plainInput = initialLemma.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    			foundIdx = plainKeys.findIndex((k) => k.toLowerCase() === plainInput);
 			}
 			if (foundIdx !== -1 && ids[foundIdx] !== undefined) {
 				selectLemma(ids[foundIdx]);

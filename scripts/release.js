@@ -14,6 +14,7 @@ const TARGETS = {
   suite: { name: 'polyglot-suite', file: 'package.json', tagPrefix: 'suite' },
   bible: { name: 'polyglot-bible-reader', file: 'apps/polyglot-bible-reader/package.json', tagPrefix: 'bible' },
   philo: { name: 'philo-reader', file: 'apps/philo-reader/package.json', tagPrefix: 'philo' },
+  lex: { name: 'biblical-lexeme-explorer', file: 'apps/biblical-lexeme-explorer/package.json', tagPrefix: 'lex' },
   fathers: { name: 'apostolic-fathers-reader', file: 'apps/apostolic-fathers-reader/package.json', tagPrefix: 'af' },
   af: { name: 'apostolic-fathers-reader', file: 'apps/apostolic-fathers-reader/package.json', tagPrefix: 'af' },
   josephus: { name: 'josephus-reader', file: 'apps/josephus-reader/package.json', tagPrefix: 'josephus' },
@@ -220,6 +221,9 @@ export function commitAndTag(message, { dryRun = false, push = false, stageAll =
       'apps/polyglot-bible-reader/package-lock.json',
       'apps/josephus-reader/package-lock.json',
       'apps/josephus-reader/app/package-lock.json',
+      'apps/philo-reader/package-lock.json',
+      'apps/apostolic-fathers-reader/package-lock.json',
+      'apps/biblical-lexeme-explorer/package-lock.json'
     ];
     for (const lf of lockCandidates) {
       if (fs.existsSync(path.join(REPO_ROOT, lf))) {
