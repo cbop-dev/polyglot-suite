@@ -61,6 +61,7 @@
 		"@polyglot/ancient-languages": "*",
 		"@polyglot/db-vfs": "*",
 		"@polyglot/lemma-ui": "*",
+		"@polyglot/theme": "*",
 		"chart.js": "^4.5.1",
 		"gridjs": "^6.2.0",
 		"gridjs-svelte": "^2.1.1",

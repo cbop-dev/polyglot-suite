@@ -8,6 +8,7 @@ import {
 	rgbCss,
 	rgbaCss,
 	lerpRgb,
+	rgbToDaisyOklch,
 	type ResolvedThemeColors
 } from './core.ts';
 
@@ -33,7 +34,26 @@ export function applyReadingTheme(
 	if (typeof document === 'undefined') return null;
 
 	const colors = resolveThemeColors(themeValue, warmthValue);
-	const { isDark, bg, fg, inkSoft, inkMuted, rule, cardBg, cardBorder, link, accent, accentLight } = colors;
+	const {
+		isDark,
+		bg,
+		fg,
+		inkSoft,
+		inkMuted,
+		rule,
+		cardBg,
+		cardBorder,
+		link,
+		accent,
+		accentLight,
+		lemmaBtnBg,
+		lemmaBtnHover,
+		lemmaBtnBorder,
+		lookupBtnBg,
+		lookupBtnHover,
+		lookupBtnBorder,
+		lookupBtnText
+	} = colors;
 
 	const root = document.documentElement;
 	const profile = options.profile ?? 'all';
@@ -47,7 +67,7 @@ export function applyReadingTheme(
 	}
 	root.style.colorScheme = isDark ? 'dark' : 'light';
 
-	// Standard CSS tokens (Apostolic Fathers, Bible Reader baseline)
+	// Standard CSS tokens (Apostolic Fathers, Bible Reader, BLE baseline)
 	if (profile === 'standard' || profile === 'all') {
 		root.style.setProperty('--color-page', rgbCss(bg));
 		root.style.setProperty('--color-ink', rgbCss(fg));
@@ -57,6 +77,39 @@ export function applyReadingTheme(
 		root.style.setProperty('--color-accent', rgbCss(accent));
 		root.style.setProperty('--color-card-bg', rgbCss(cardBg));
 		root.style.setProperty('--color-card-border', rgbCss(cardBorder));
+		root.style.setProperty('--bg-content', rgbCss(bg));
+
+		// DaisyUI color system variables (OKLCH format)
+		root.style.setProperty('--b1', rgbToDaisyOklch(bg));
+		root.style.setProperty('--b2', rgbToDaisyOklch(cardBg));
+		root.style.setProperty('--b3', rgbToDaisyOklch(cardBorder));
+		root.style.setProperty('--bc', rgbToDaisyOklch(fg));
+
+		// DaisyUI color system fallback variables (RGB format)
+		root.style.setProperty('--fallback-b1', rgbCss(bg));
+		root.style.setProperty('--fallback-b2', rgbCss(cardBg));
+		root.style.setProperty('--fallback-b3', rgbCss(cardBorder));
+		root.style.setProperty('--fallback-bc', rgbCss(fg));
+
+		// Lemma button tokens
+		root.style.setProperty('--color-lemma-btn-bg', rgbCss(lemmaBtnBg));
+		root.style.setProperty('--color-lemma-btn-hover', rgbCss(lemmaBtnHover));
+		root.style.setProperty('--color-lemma-btn-text', '#ffffff');
+		root.style.setProperty('--color-lemma-btn-border', rgbCss(lemmaBtnBorder));
+		root.style.setProperty(
+			'--color-lemma-btn-shadow',
+			isDark ? '0 2px 8px rgba(0, 0, 0, 0.6)' : '0 1px 3px rgba(0, 0, 0, 0.25)'
+		);
+
+		// Lookup / Action button tokens
+		root.style.setProperty('--color-lookup-btn-bg', rgbCss(lookupBtnBg));
+		root.style.setProperty('--color-lookup-btn-hover', rgbCss(lookupBtnHover));
+		root.style.setProperty('--color-lookup-btn-text', rgbCss(lookupBtnText));
+		root.style.setProperty('--color-lookup-btn-border', lookupBtnBorder);
+		root.style.setProperty(
+			'--color-lookup-btn-shadow',
+			isDark ? '0 2px 8px rgba(0, 0, 0, 0.45)' : '0 1px 3px rgba(0, 0, 0, 0.2)'
+		);
 	}
 
 	// Josephus Reader specific tokens

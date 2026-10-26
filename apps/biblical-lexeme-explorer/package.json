@@ -93,6 +93,7 @@
     "@biblical-data/corpora": "*",
     "@polyglot/ancient-languages": "*",
     "@polyglot/lemma-ui": "*",
+    "@polyglot/theme": "*",
     "@inlang/paraglide-sveltekit": "^0.11.1",
     "@oslojs/crypto": "^1.0.1",
     "@oslojs/encoding": "^1.1.0",

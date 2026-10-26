@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 	import { APP_REPO } from '$lib/config/version.js';
-	import ThemeSlider from './ThemeSlider.svelte';
+	import ThemeSlider from '@polyglot/theme/ThemeSlider.svelte';
 
 	let isCollapsed = $state(false);
 	let userToggled = false;
@@ -68,7 +68,13 @@
 
 			<!-- Right: Sliding scale reading theme selector -->
 			<div class="theme-control shrink-0">
-				<ThemeSlider />
+				<ThemeSlider
+					placement="top"
+					align="right"
+					storageKey="biblical_reading_theme"
+					warmthStorageKey="biblical_reading_warmth"
+					profile="all"
+				/>
 			</div>
 		</footer>
 	</div>
