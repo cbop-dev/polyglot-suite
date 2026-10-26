@@ -95,8 +95,9 @@
 </div>
 
 <style>
+	@reference "tailwindcss";
 	.tabs .tab-active {
-		@apply bg-accent !important;
+		background-color: var(--color-accent) !important;
 		font-weight: bold;
 	}
 

@@ -14,6 +14,7 @@
     let highlightInputField = $state(false);
 </script>
 <style>
+	@reference "tailwindcss";
     svg {
         margin: auto;
     }

@@ -541,27 +541,40 @@ That is, the <LemmaInfo> tag should be surrounded by tags such as : {#key lemma 
 		text-align: center;
 	}
 	h1 {
-		@apply text-3xl font-bold;
+		font-size: 1.875rem;
+		line-height: 2.25rem;
+		font-weight: 700;
 	}
-		hr {
-		@apply my-3 border-base-300;
+	hr {
+		margin: 0.75rem 0;
+		border-color: var(--color-rule, #d4d8d3);
 	}
 
 	.stats {
-		@apply bg-base-200/80 m-1 p-3 border border-base-300 shadow-md text-base-content;
+		background-color: color-mix(in srgb, var(--color-card-bg, #ffffff) 80%, transparent);
+		margin: 0.25rem;
+		padding: 0.75rem;
+		border: 1px solid var(--color-card-border, #d4d8d3);
+		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+		color: var(--color-ink, #171a1c);
 		border-radius: 0.75rem;
 	}
 
 	.stat-title {
-		@apply font-semibold opacity-75 text-xs sm:text-sm;
+		font-weight: 600;
+		opacity: 0.75;
+		font-size: 0.875rem;
 	}
 
 	.stat-value {
-		@apply font-bold text-xl sm:text-2xl text-primary;
+		font-weight: 700;
+		font-size: 1.5rem;
+		color: var(--color-link, #1f6f7a);
 	}
 
 	.stat-desc {
-		@apply opacity-70 text-xs;
+		opacity: 0.7;
+		font-size: 0.75rem;
 	}
 
 	:global(.gridjs-container) {

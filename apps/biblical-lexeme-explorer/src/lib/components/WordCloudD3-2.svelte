@@ -272,6 +272,7 @@
 
 
 <style>
+	@reference "tailwindcss";
 	div#wordcloud2 {
 		display: block;
 		margin: auto;

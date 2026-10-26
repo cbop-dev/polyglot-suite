@@ -166,6 +166,7 @@
 </Modal>
 
 <style>
+	@reference "tailwindcss";
 	h1,
 	h2,
 	input,

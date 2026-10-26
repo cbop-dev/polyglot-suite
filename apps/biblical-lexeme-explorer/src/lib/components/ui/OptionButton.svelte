@@ -73,6 +73,7 @@
 </script>
   
   <style>
+	@reference "tailwindcss";
     .base {
       @apply text-white font-bold py-2 px-4 rounded cursor-pointer;
       

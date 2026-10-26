@@ -176,8 +176,10 @@
 </div>
 
 <style>
+	@reference "tailwindcss";
 	hr.thick {
-		@apply mb-2 border-b-2 border-base-300;
+		margin-bottom: 0.5rem;
+		border-bottom: 2px solid var(--color-rule, #d4d8d3);
 	}
 
 	.query-panel-toggle-btn {

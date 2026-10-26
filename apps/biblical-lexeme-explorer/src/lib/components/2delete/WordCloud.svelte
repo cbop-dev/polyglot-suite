@@ -25,6 +25,7 @@
 </div>
 
 <style>
+	@reference "tailwindcss";
 	svg {
 		margin: auto;
 	}

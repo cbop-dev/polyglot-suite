@@ -48,6 +48,7 @@
 </button>
 
 <style>
+	@reference "tailwindcss";
 	/*.base {
       @apply font-bold py-2 px-4 rounded cursor-pointer;
       

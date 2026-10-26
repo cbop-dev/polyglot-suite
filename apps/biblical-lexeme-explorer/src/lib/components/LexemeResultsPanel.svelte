@@ -734,6 +734,7 @@
 					</select>
 					<ModalButton buttonText="What is this?" title="Uniqueness">
 						<style>
+	@reference "tailwindcss";
 							p {
 								@apply mb-4 text-left;
 							}

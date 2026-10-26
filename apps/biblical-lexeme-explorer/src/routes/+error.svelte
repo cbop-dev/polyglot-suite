@@ -14,6 +14,7 @@
 </div>
 
 <style>
+	@reference "tailwindcss";
 	.errorPage {
 		background-image: var(--bgimage);
 
