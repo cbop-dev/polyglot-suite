@@ -14,6 +14,9 @@ from pathlib import Path
 
 # Paths
 PIPELINE_DIR = Path(__file__).resolve().parent
+if str(PIPELINE_DIR) not in sys.path:
+    sys.path.insert(0, str(PIPELINE_DIR))
+
 MONOREPO_ROOT = PIPELINE_DIR.parent.parent
 APP_ROOT = MONOREPO_ROOT / "apps" / "polyglot-bible-reader"
 REPO_ROOT = APP_ROOT
@@ -143,14 +146,17 @@ def get_extra_aliases(code: str, name_en: str) -> list[str]:
     """Generates rich academic and typing aliases for a canonical book."""
     aliases: set[str] = set()
 
-    # Import BOOK_ALIASES from pipeline.config if available
+    # Import BOOK_ALIASES from config
     try:
-        from pipeline.config import BOOK_ALIASES
-        for alias, target in BOOK_ALIASES.items():
-            if target == code:
-                aliases.add(alias)
+        from .config import BOOK_ALIASES
     except Exception:
-        pass
+        try:
+            from config import BOOK_ALIASES
+        except Exception:
+            BOOK_ALIASES = {}
+    for alias, target in BOOK_ALIASES.items():
+        if target == code:
+            aliases.add(alias)
 
     # Add common variants
     if code == "1SA":
@@ -237,9 +243,12 @@ def generate_typescript():
     }
 
     try:
-        from pipeline.config import VERSION_CANONICAL_ORDERS
+        from .config import VERSION_CANONICAL_ORDERS
     except Exception:
-        VERSION_CANONICAL_ORDERS = {}
+        try:
+            from config import VERSION_CANONICAL_ORDERS
+        except Exception:
+            VERSION_CANONICAL_ORDERS = {}
 
     version_available_books = {}
     version_canonical_codes = {}
