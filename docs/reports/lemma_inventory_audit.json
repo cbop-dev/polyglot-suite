@@ -1,0 +1,124 @@
+{
+  "pbv_corpora": {
+    "text_units": {
+      "brenton-lxx": 29004,
+      "kjv": 36819,
+      "ognt": 7941,
+      "peshitta": 38544,
+      "swete_lxx": 29567,
+      "vulgate": 37255,
+      "webbe": 38029,
+      "wlc": 23213
+    },
+    "lemma_stats_rows": {
+      "kjv": 33499,
+      "ognt": 5399,
+      "peshitta": 45660,
+      "swete_lxx": 13844,
+      "wlc": 7294
+    }
+  },
+  "ble_corpora": {
+    "lxx": {
+      "entry_count": 19032,
+      "total_tokens": 608170,
+      "with_strongs": 4796,
+      "without_strongs": 14236,
+      "strongs_coverage_pct": 25.2
+    },
+    "sblgnt": {
+      "entry_count": 5461,
+      "total_tokens": 137554,
+      "with_strongs": 5461,
+      "without_strongs": 0,
+      "strongs_coverage_pct": 100.0
+    },
+    "bhs": {
+      "entry_count": 8091,
+      "total_tokens": 426590,
+      "with_strongs": 7970,
+      "without_strongs": 121,
+      "strongs_coverage_pct": 98.5
+    }
+  },
+  "lxx_comparison": {
+    "ble_entries": 19032,
+    "pbv_lemma_stats_rows": 13844,
+    "ble_total_tokens": 608170,
+    "pbv_total_tokens": 605183,
+    "token_count_diff": 2987,
+    "token_count_diff_pct": 0.49,
+    "strongs": {
+      "ble_with_strongs": 3912,
+      "pbv_with_strongs": 3992,
+      "strongs_id_overlap": 3832,
+      "ble_without_strongs": 15120,
+      "pbv_without_strongs": 9852
+    },
+    "unicode_matches": {
+      "raw_exact_match": 505,
+      "nfc_exact_match": 3723,
+      "tonos_normalized_match": 3723,
+      "stripped_match": 9838,
+      "in_pbv_not_ble_stripped": 3915,
+      "in_ble_not_pbv_stripped": 8499
+    }
+  },
+  "gnt_comparison": {
+    "ble_entries": 5461,
+    "pbv_lemma_stats_rows": 5399,
+    "ble_total_tokens": 137554,
+    "pbv_total_tokens": 138013,
+    "strongs": {
+      "ble_with_strongs": 5081,
+      "pbv_with_strongs": 5399,
+      "strongs_id_overlap": 5067,
+      "strongs_match_pct": 99.72
+    },
+    "stripped_lemma_overlap": 4906
+  },
+  "hebrew_comparison": {
+    "ble_entries": 8091,
+    "pbv_lemma_stats_rows": 7294,
+    "ble_total_tokens": 426590,
+    "pbv_total_tokens": 420141,
+    "strongs_conflation": {
+      "distinct_strongs_shared_by_multiple_lemmas": 606,
+      "lost_distinct_entries_in_pbv": 797,
+      "explanation": "PBV keyed lemma_stats on PRIMARY KEY(corpus_id, lemma_key) where lemma_key=strongs_id. Because 606 Strong's numbers in BHS map to multiple distinct Hebrew lemmas, PBV collapsed 797 distinct lemmas into a single row each. Exactly 7,294 (PBV) + 797 (collapsed) = 8,091 (BLE)."
+    },
+    "strongs": {
+      "ble_with_strongs": 7173,
+      "pbv_with_strongs": 7174,
+      "strongs_id_overlap": 7173,
+      "ble_without_strongs": 121,
+      "pbv_without_strongs": 120
+    },
+    "lemma_matching": {
+      "exact_pointed_overlap": 7191,
+      "consonantal_stripped_overlap": 5881
+    }
+  },
+  "secondary_corpora": {
+    "philo": {
+      "corpus_id": "grc",
+      "unique_lemmas": 39704,
+      "total_tokens": 477100
+    },
+    "apostolic_fathers": {
+      "corpus_id": "lake_grc",
+      "unique_lemmas": 5966,
+      "total_tokens": 63192
+    }
+  },
+  "cross_corpus_greek": {
+    "total_distinct_greek_lemmas_across_suite": 54592,
+    "lxx_lemmas": 18337,
+    "nt_lemmas": 5430,
+    "philo_lemmas": 37496,
+    "af_lemmas": 5730,
+    "in_both_lxx_and_nt": 3838,
+    "pct_of_nt_appearing_in_lxx": 70.68,
+    "in_all_four_corpora": 1810
+  }
+}
