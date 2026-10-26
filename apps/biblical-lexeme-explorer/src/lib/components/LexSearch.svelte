@@ -16,13 +16,14 @@
 	import { LexRefQueries } from '$lib/LexRefQueries.svelte';
 	/**
 	 * @typedef LexSearchProps
-	 * @propery {TfDataset} tfData
-	 * @propery {string} [initialLemma]
+	 * @property {TfDataset} tfData
+	 * @property {string} [initialLemma]
+	 * @property {string|number} [initialId]
 	 */
 	/**
 	 * @type {LexSearchProps} props
 	 */
-	let { tfData, initialLemma = '' } = $props();
+	let { tfData, initialLemma = '', initialId = '' } = $props();
 
 	let lang = $derived(tfData?.lang || 'greek');
 	/**
@@ -95,6 +96,15 @@
 	let filter = new LexQueryFilter();
 
 	onMount(() => {
+		if (initialId && tfData?.lexemes) {
+			const idNum = Number(initialId);
+			const ids = tfData.lexemes.id || [];
+			if (!isNaN(idNum) && ids.includes(idNum)) {
+				selectLemma(idNum);
+				return;
+			}
+		}
+
 		if (initialLemma && tfData?.lexemes) {
 			const langKeys = tfData.lexemes[tfData.lang] || [];
 			

@@ -7,6 +7,8 @@ export interface LexemeExplorerLinkOptions {
 	chapter?: string | number;
 	verse?: string | number;
 	lemma?: string;
+	id?: number | string;
+	lexemeId?: number | string;
 	panel?: 'book' | 'lex' | 'wc';
 }
 
@@ -39,6 +41,10 @@ export function getLexemeExplorerUrl(options: LexemeExplorerLinkOptions): string
 	}
 
 	const params = new URLSearchParams();
+	const targetId = options.id ?? options.lexemeId;
+	if (targetId !== undefined && targetId !== null && targetId !== '') {
+		params.set('id', String(targetId));
+	}
 	if (options.panel) {
 		params.set('panel', options.panel);
 	}

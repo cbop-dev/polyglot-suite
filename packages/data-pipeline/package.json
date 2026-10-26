@@ -1,0 +1,12 @@
+{
+  "name": "@polyglot/data-pipeline",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Unified data pipeline and SQLite compiler for Polyglot Suite ancient text readers",
+  "type": "module",
+  "scripts": {
+    "build:db": "python3 build.py --build",
+    "chunk:db": "python3 build.py --chunk",
+    "data:all": "python3 build.py --all"
+  }
+}

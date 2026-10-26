@@ -871,6 +871,7 @@ export class ReaderState {
 			this.activeWord = {
 				...wordObj,
 				...(lexData || {}),
+				lexeme_id: lexData?.lexeme_id || lexData?.id || wordObj?.lexeme_id || wordObj?.id,
 				corpus_id: corpusId,
 				corpus: corpusId,
 				colVersion,

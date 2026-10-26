@@ -518,6 +518,7 @@
 			<a
 				href={getLexemeExplorerUrl({
 					corpusId: lemma?.corpus_id || lemma?.corpus,
+					id: currentLemmaData?.lexeme_id || currentLemmaData?.id || lemma?.lexeme_id || lemma?.id,
 					lemma: currentLemmaData?.headword || currentLemmaData?.lemma || currentLemmaData?.word,
 					panel: 'lex'
 				})}

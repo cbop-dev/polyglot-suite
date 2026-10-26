@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import { existsSync, realpathSync } from 'node:fs';
 import { CANONICAL_BOOK_DEFINITIONS, normalizeBookName, resolveBookCode, getCanonicalSlug } from './canonicalBooks.generated.js';
 
 describe('canonicalBooks Parity with SQLite Database', () => {
-	const dbPath = resolve(process.cwd(), 'pipeline/build/polyglot-working.sqlite3');
+	const monorepoDbPath = resolve(process.cwd(), '../../packages/data-pipeline/build/polyglot-working.sqlite3');
+	const rootDbPath = resolve(process.cwd(), 'packages/data-pipeline/build/polyglot-working.sqlite3');
+	const dbPath = existsSync(monorepoDbPath) ? monorepoDbPath : rootDbPath;
 
 	it('should match the exact count of canonical_books in the database (90 books)', () => {
 		const raw = execSync(`sqlite3 "${dbPath}" "SELECT COUNT(*) FROM canonical_books;"`, { encoding: 'utf-8' }).trim();

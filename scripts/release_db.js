@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
 
 function parseTag(tag) {
-  // Matches e.g. "philo-db-v0.0.5", "af-db-v0.1.5", "database-v0.1.10"
+  // Matches e.g. "bible-data-v1.0.0", "philo-db-v0.0.5", "af-db-v0.1.5", "database-v0.1.10"
   const match = tag.match(/^(.*-v)(\d+)\.(\d+)\.(\d+)$/);
   if (match) {
     return {
@@ -21,7 +21,7 @@ function parseTag(tag) {
     };
   }
   // Fallback for tags without "-v"
-  const matchNoV = tag.match(/^(.*)(\d+)\.(\d+)\.(\d+)$/);
+  const matchNoV = tag.match(/^(.*?)(\d+)\.(\d+)\.(\d+)$/);
   if (matchNoV) {
     return {
       prefix: matchNoV[1],
@@ -30,32 +30,42 @@ function parseTag(tag) {
       patch: parseInt(matchNoV[4], 10),
     };
   }
-  throw new Error(`Unable to parse semver from tag "${tag}". Expected format like "philo-db-v0.0.5"`);
+  throw new Error(`Unable to parse semver from tag "${tag}". Expected format like "bible-data-v1.0.0" or "philo-db-v0.0.5"`);
 }
 
-function bumpVersion(currentTag, bumpType = 'patch') {
-  const parsed = parseTag(currentTag);
-  let { prefix, major, minor, patch } = parsed;
+function bumpVersion(currentTag, bumpType = 'patch', defaultPrefix = null) {
+  // If bumpType is already a full tag (e.g. "bible-data-v1.0.0" or "philo-db-v0.1.0")
+  if (bumpType.includes('-v') || (defaultPrefix && bumpType.startsWith(defaultPrefix))) {
+    return bumpType;
+  }
 
-  if (bumpType === 'major') {
+  const parsed = parseTag(currentTag);
+  const targetPrefix = defaultPrefix || parsed.prefix;
+  let { major, minor, patch } = parsed;
+
+  const isMigratingPrefix = Boolean(defaultPrefix && parsed.prefix !== defaultPrefix);
+
+  if (/^\d+\.\d+\.\d+$/.test(bumpType)) {
+    return `${targetPrefix}${bumpType}`;
+  } else if (isMigratingPrefix) {
+    // When changing prefix naming convention (e.g. database-v -> bible-data-v),
+    // default starting version is 1.0.0
+    return `${targetPrefix}1.0.0`;
+  } else if (bumpType === 'major') {
     major += 1;
     minor = 0;
     patch = 0;
-    return `${prefix}${major}.${minor}.${patch}`;
+    return `${targetPrefix}${major}.${minor}.${patch}`;
   } else if (bumpType === 'minor') {
     minor += 1;
     patch = 0;
-    return `${prefix}${major}.${minor}.${patch}`;
+    return `${targetPrefix}${major}.${minor}.${patch}`;
   } else if (bumpType === 'patch') {
     patch += 1;
-    return `${prefix}${major}.${minor}.${patch}`;
-  } else if (/^\d+\.\d+\.\d+$/.test(bumpType)) {
-    return `${prefix}${bumpType}`;
-  } else if (bumpType.startsWith(prefix)) {
-    return bumpType;
+    return `${targetPrefix}${major}.${minor}.${patch}`;
   } else {
     throw new Error(
-      `Unknown bump type: "${bumpType}". Expected "patch", "minor", "major", or an explicit version like "0.0.6".`
+      `Unknown bump type: "${bumpType}". Expected "patch", "minor", "major", or an explicit version like "1.0.0".`
     );
   }
 }
@@ -68,24 +78,47 @@ function getMatchingChunks(app) {
 
 function printUsage() {
   console.log(`
+Unified Database Release Script (scripts/release_db.js)
+======================================================
+Prepares, versions, tags, and publishes chunked SQLite databases to GitHub Releases.
+
 Usage:
   node scripts/release_db.js <app> [bump-type] [options]
   npm run release:db <app> [bump-type] [options]
 
-Arguments:
-  app         Target reader app: "bible", "philo", "fathers" (or "af")
-  bump-type   "patch" (default), "minor", "major", or explicit version (e.g. "0.0.6")
+Apps:
+  bible (or data)     Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
+  philo               Philo Reader database (tag: philo-db-vX.Y.Z)
+  fathers (or af)     Apostolic Fathers Reader database (tag: af-db-vX.Y.Z)
+
+Bump Types:
+  patch               Increment patch version (e.g. 1.0.0 -> 1.0.1) [default]
+  minor               Increment minor version (e.g. 1.0.0 -> 1.1.0)
+  major               Increment major version (e.g. 1.0.0 -> 2.0.0)
+  <X.Y.Z>             Explicit semver (e.g. "1.0.0" -> "bible-data-v1.0.0")
+  <full-tag>          Explicit full tag (e.g. "bible-data-v1.0.0")
 
 Options:
-  --push       Automatically run "git push origin main" after committing config.json
-  --no-commit  Skip the git commit step
-  --dry-run    Simulate version bump and asset check without modifying files or uploading
+  --dry-run           Preview tag bump and verify chunks without uploading or modifying files
+  --push              Automatically run "git push" after committing config.json
+  --no-commit         Skip automatic "git commit" of the updated config.json
+  --help, -h          Show this help message
+
+Release Workflow Order:
+  1. Build & Chunk DB:   npm run chunk:bible    (or npm run data:all)
+  2. Release DB Chunks:  npm run release:db bible 1.0.0
+     -> Updates static/db/config.json with the new tag
+     -> Uploads chunked DB files to GitHub Releases
+     -> Commits config.json
+  3. Deploy Site:        git push origin <branch>
+     -> GitHub Actions downloads DB chunks matching config.json tag
+     -> Builds and deploys static sites to GitHub Pages
 
 Examples:
-  npm run release:db philo
-  npm run release:db philo minor
-  npm run release:db fathers patch --push
-  npm run release:db bible patch
+  node scripts/release_db.js bible 1.0.0 --dry-run   # Test release of unified bible data v1.0.0
+  node scripts/release_db.js bible 1.0.0             # Release bible-data-v1.0.0
+  node scripts/release_db.js bible patch             # Bump to next patch version
+  node scripts/release_db.js philo minor             # Bump philo DB minor version
 `);
 }
 
@@ -100,7 +133,7 @@ function main() {
   const noCommit = flags.has('--no-commit');
   const isDryRun = flags.has('--dry-run');
 
-  if (flags.has('--help') || flags.has('-h')) {
+  if (flags.has('--help') || flags.has('-h') || positional.includes('help')) {
     printUsage();
     process.exit(0);
   }
@@ -131,7 +164,7 @@ function main() {
     process.exit(1);
   }
 
-  const newTag = bumpVersion(currentTag, bumpType);
+  const newTag = bumpVersion(currentTag, bumpType, app.defaultPrefix);
   console.log(`\n📦 Database Release: ${app.name}`);
   console.log(`   Current version : ${currentTag}`);
   console.log(`   New version     : ${newTag}`);
@@ -147,6 +180,11 @@ function main() {
   }
   console.log(`   Found ${chunks.length} database chunk files to publish.`);
 
+  let currentBranch = 'main';
+  try {
+    currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: REPO_ROOT, encoding: 'utf-8' }).trim();
+  } catch {}
+
   if (isDryRun) {
     console.log(`\n[dry-run] Would update ${configPath} with "databaseVersion": "${newTag}"`);
     console.log(`[dry-run] Would create GitHub Release "${newTag}" and upload ${chunks.length} chunks.`);
@@ -154,7 +192,7 @@ function main() {
       console.log(`[dry-run] Would commit ${configPath} with message: chore(${appKey}): bump databaseVersion to ${newTag}`);
     }
     if (shouldPush) {
-      console.log(`[dry-run] Would run: git push origin main`);
+      console.log(`[dry-run] Would run: git push origin ${currentBranch}`);
     }
     console.log('\n[dry-run] Complete.\n');
     return;
@@ -192,12 +230,12 @@ function main() {
 
   // 4. Push if requested
   if (shouldPush) {
-    console.log(`\n🚀 Pushing commit to GitHub (main)...`);
-    execSync(`git push origin main`, { cwd: REPO_ROOT, stdio: 'inherit' });
-    console.log(`✓ Successfully pushed to GitHub! Pages deployment is now starting.`);
+    console.log(`\n🚀 Pushing commit to GitHub (${currentBranch})...`);
+    execSync(`git push origin ${currentBranch}`, { cwd: REPO_ROOT, stdio: 'inherit' });
+    console.log(`✓ Successfully pushed to GitHub (${currentBranch})! Pages deployment will trigger when merged to main.`);
   } else {
     console.log(`\n🎉 Success!`);
-    console.log(`👉 Next step: Run "git push origin main" to trigger GitHub Pages CI deployment.\n`);
+    console.log(`👉 Next step: Push your commit to GitHub to trigger GitHub Pages CI deployment.\n`);
   }
 }
 

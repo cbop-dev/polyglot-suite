@@ -369,8 +369,9 @@ describe('dbClient service', () => {
 			expect(lemma).not.toBeNull();
 			expect(lemma?.lemma).toBe('λόγος');
 			expect(lemma?.strongs).toBe('G3056');
+			expect(lemma?.lexeme_id).toBe(14680);
 			expect(mockQuery).toHaveBeenCalledWith(
-				expect.stringContaining('SELECT id, dictionary, strongs_id, lemma, gloss, consonant_key\n\t\t\t\tFROM lexicon_entries'),
+				expect.stringContaining('SELECT id, lexeme_id, dictionary, strongs_id, lemma, gloss, consonant_key\n\t\t\t\tFROM lexicon_entries'),
 				['lsj', 'λόγος', 'λόγος']
 			);
 		});

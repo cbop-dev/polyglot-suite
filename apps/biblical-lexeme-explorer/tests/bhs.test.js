@@ -82,12 +82,12 @@ test('BHS lexemes and BDB dictionary errata: לוט and אכיש', async () => {
     const { bdbProvider } = await import('$lib/engine/BdbProvider.js');
     const { staticDatasetProvider } = await import('$lib/engine/StaticDatasetProvider.js');
 
-    const lutLex = await staticDatasetProvider.getLexInfo('bhs', 3594);
+    const lutLex = await staticDatasetProvider.getLexInfo('bhs', 3595);
     expect(lutLex).toBeDefined();
     expect(lutLex.strongs).toBe('H3874');
     expect(lutLex.gloss).toBe('enwrap');
 
-    const achishLex = await staticDatasetProvider.getLexInfo('bhs', 366);
+    const achishLex = await staticDatasetProvider.getLexInfo('bhs', 367);
     expect(achishLex).toBeDefined();
     expect(achishLex.strongs).toBe('H397');
     expect(achishLex.gloss).toBe('Achish');
