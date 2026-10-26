@@ -1,5 +1,5 @@
 {
-  "databaseVersion": "database-v0.1.10",
+  "databaseVersion": "bible-data-v0.2.0",
   "serverMode": "chunked",
   "requestChunkSize": 4096,
   "urlPrefix": "polyglot.db.",
