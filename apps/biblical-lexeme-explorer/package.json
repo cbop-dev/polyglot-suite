@@ -1,6 +1,6 @@
 {
   "name": "biblical-lexeme-explorer",
-  "version": "2.2.20",
+  "version": "2.2.21",
   "private": true,
   "repository": "https://github.com/cbop-dev/biblical-lexeme-explorer",
   "type": "module",

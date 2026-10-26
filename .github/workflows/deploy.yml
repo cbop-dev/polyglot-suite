@@ -52,7 +52,7 @@ jobs:
         run: npm run pull:db
 
       - name: Build Polyglot Suite (Apps & Portal)
-        run: npm run build:www
+        run: npm run build:gh
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v4

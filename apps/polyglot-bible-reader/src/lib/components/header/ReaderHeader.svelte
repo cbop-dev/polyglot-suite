@@ -10,6 +10,7 @@
   import { versionGroups, formatVersionLabel, getVersionLanguage, dataSets } from '$lib/config/versions';
   import { formatBookAbbreviation, normalizeBookName } from '$lib/config/bookMapping.js';
   import { readerState } from '$lib/stores/readerState.svelte';
+  import { getLexemeExplorerUrl } from '$lib/utils/navigation';
   //import gridIcon from '$env/static/public'
   //import { expandRefs } from '$lib/utils/bible-utils';
   import GridButtonReactive from '../ui/grid-button-reactive.svelte';
@@ -616,6 +617,29 @@ gap-2 sm:gap-4 -mx-3 px-1 sm:-mx-4 sm:px-4 md:-mx-8 md:px-3">
         </div>
       {/if}
     </div>
+
+      <!-- Analyze Chapter in Biblical Lexeme Explorer -->
+      <div class="relative hidden sm:block ml-1">
+        <label class="hidden lg:block text-sm font-bold mb-1 opacity-0 pointer-events-none">Lex</label>
+        <a
+          href={getLexemeExplorerUrl({
+            version: readerState.selectedVersion,
+            book: readerState.selectedBook,
+            chapter: readerState.selectedChapter,
+            panel: 'book'
+          })}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="border border-rule rounded p-1 sm:p-2 h-[26px] sm:h-[38px] flex items-center justify-center bg-page text-ink-soft hover:text-ink hover:bg-rule/40 transition-colors shadow-xs sm:shadow-sm"
+          title="Analyze {formatBookAbbreviation(readerState.selectedBook)} {readerState.selectedChapter} in Biblical Lexeme Explorer"
+          aria-label="Analyze chapter in Biblical Lexeme Explorer"
+        >
+          <svg class="w-4 h-4 text-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+          </svg>
+        </a>
+      </div>
     </div>
 
     {/if}

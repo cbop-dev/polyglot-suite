@@ -3,22 +3,31 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-// Load .env.deploy (root suite first, then app-local) so PUBLIC_* vars are always available
-for (const envPath of [resolve(import.meta.dirname, '../../.env.deploy'), resolve(import.meta.dirname, '.env.deploy')]) {
-	if (existsSync(envPath)) {
-		const content = readFileSync(envPath, 'utf-8');
-		for (const line of content.split('\n')) {
-			const trimmed = line.trim();
-			if (!trimmed || trimmed.startsWith('#')) continue;
-			const eq = trimmed.indexOf('=');
-			if (eq !== -1) {
-				const k = trimmed.slice(0, eq).trim();
-				let v = trimmed.slice(eq + 1).trim();
-				if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
-					v = v.slice(1, -1);
-				}
-				if (process.env[k] === undefined) {
-					process.env[k] = v;
+const isGithubTarget = process.env.TARGET === 'github' || process.env.BUILD_TARGET === 'github' || process.env.ADAPTER === 'github';
+
+if (isGithubTarget) {
+	// Strip any inherited VPS URLs so clean relative /polyglot-suite/ links are generated
+	for (const k of Object.keys(process.env)) {
+		if (k.startsWith('PUBLIC_')) delete process.env[k];
+	}
+} else {
+	// Load .env.deploy (root suite first, then app-local) so PUBLIC_* vars are always available for VPS
+	for (const envPath of [resolve(import.meta.dirname, '../../.env.deploy'), resolve(import.meta.dirname, '.env.deploy')]) {
+		if (existsSync(envPath)) {
+			const content = readFileSync(envPath, 'utf-8');
+			for (const line of content.split('\n')) {
+				const trimmed = line.trim();
+				if (!trimmed || trimmed.startsWith('#')) continue;
+				const eq = trimmed.indexOf('=');
+				if (eq !== -1) {
+					const k = trimmed.slice(0, eq).trim();
+					let v = trimmed.slice(eq + 1).trim();
+					if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+						v = v.slice(1, -1);
+					}
+					if (process.env[k] === undefined) {
+						process.env[k] = v;
+					}
 				}
 			}
 		}

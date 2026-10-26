@@ -37,6 +37,9 @@ if (existsSync(envPath)) {
   console.log(`   (Copy .env.deploy.example to .env.deploy to configure custom VPS domains)\n`);
 }
 
+process.env.TARGET = 'vps';
+process.env.BUILD_TARGET = 'vps';
+
 console.log('🚀 Running production suite build (build:www)...');
 const build = spawn('npm', ['run', 'build:www'], {
   stdio: 'inherit',

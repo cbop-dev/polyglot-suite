@@ -1,6 +1,6 @@
 {
   "name": "polyglot-suite",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "private": true,
   "description": "Monorepo workspace for ancient language readers and linguistic toolkits",
   "workspaces": [
@@ -22,7 +22,9 @@
     "build:fathers": "npm --workspace=apostolic-fathers-reader run build",
     "build:philo": "npm --workspace=philo-reader run build",
     "build:www": "npm run build:www:bible && npm run build:www:lexeme && npm run build:www:josephus && npm run build:www:fathers && npm run build:www:philo && npm run build:www:portal",
+    "build:gh": "node scripts/build_gh.js",
     "build:vps": "node scripts/build_vps.js",
+    "preview:gh": "node scripts/preview.js",
     "preview:www": "node scripts/preview.js",
     "build:www:bible": "ADAPTER=static BASE_PATH=/polyglot-suite/bible BUILD_DIR=../../dist/bible npm --workspace=polyglot-bible-reader run build",
     "build:www:lexeme": "ADAPTER=static BASE_PATH=/polyglot-suite/lexemes BUILD_DIR=../../dist/lexemes npm --workspace=biblical-lexeme-explorer run build:www",

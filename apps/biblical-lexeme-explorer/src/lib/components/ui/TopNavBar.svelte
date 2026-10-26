@@ -1,5 +1,5 @@
 <script>
-	import { base } from '$app/paths';
+	import { base, resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import VersionButton from './VersionButton.svelte';
 
@@ -20,7 +20,7 @@
 		console.log('currentVersion', currentVersion);
 		*/
 		if (targetVersion && targetVersion !== currentVersion) {
-			window.location.assign(`${base}/bible/${targetVersion}`);
+			goto(resolve(`/${targetVersion}`, {}));
 			/*goto(`${base}/bible/${targetVersion}`, { replaceState: true });*/
 		} else {
 			console.log('WHAT??');

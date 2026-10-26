@@ -47,6 +47,7 @@
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { highlightStore } from '$lib/stores/highlightStore.svelte';
 	import { getBookCanonicalIndex } from '$lib/config/bookMapping.js';
+	import { getLexemeExplorerUrl } from '$lib/utils/navigation';
     import { mylog } from '../env/env';
 
 	let { lemma }: { lemma: any } = $props();
@@ -512,6 +513,22 @@
 		{/if}
 		<span class="text-rule opacity-60">•</span>
 		<span class="italic text-xs opacity-75">Corpus: {corpusLabel}</span>
+		{#if !isSyriac && (currentLemmaData?.headword || currentLemmaData?.lemma || currentLemmaData?.word)}
+			<span class="text-rule opacity-60">•</span>
+			<a
+				href={getLexemeExplorerUrl({
+					corpusId: lemma?.corpus_id || lemma?.corpus,
+					lemma: currentLemmaData?.headword || currentLemmaData?.lemma || currentLemmaData?.word,
+					panel: 'lex'
+				})}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-link/10 text-link border border-link/25 hover:bg-link hover:text-white transition-colors"
+				title="Explore in Biblical Lexeme Explorer"
+			>
+				<span>Explore in Lexemes ↗</span>
+			</a>
+		{/if}
 	</div>
 
 	<!-- Morpheme breakdown buttons for compound Hebrew words -->
