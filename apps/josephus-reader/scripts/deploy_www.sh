@@ -33,9 +33,18 @@ for arg in "$@"; do
   esac
 done
 
-# Load environment variables from .env.deploy if present
+# Load environment variables (root suite .env.deploy first, then local .env.deploy)
+if [ -f ../../.env.deploy ]; then
+  echo "📋 Loading shared suite configuration from ../../.env.deploy"
+  set -a
+  . ../../.env.deploy
+  set +a
+fi
 if [ -f .env.deploy ]; then
-  export $(grep -v '^#' .env.deploy | xargs)
+  echo "📋 Loading app configuration from .env.deploy"
+  set -a
+  . .env.deploy
+  set +a
 fi
 
 # Verify required environment variables

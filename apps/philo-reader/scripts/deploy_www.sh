@@ -68,10 +68,19 @@ if [ -n "$CUSTOM_ENV_FILE" ]; then
     echo "❌ Error: Specified environment file '$CUSTOM_ENV_FILE' not found."
     exit 1
   fi
-elif [ -f .env.deploy ]; then
-  export $(grep -v '^#' .env.deploy | xargs)
-elif [ -f ../.env.deploy ]; then
-  export $(grep -v '^#' ../.env.deploy | xargs)
+else
+  if [ -f ../../.env.deploy ]; then
+    echo "📋 Loading shared suite configuration from ../../.env.deploy"
+    set -a
+    . ../../.env.deploy
+    set +a
+  fi
+  if [ -f .env.deploy ]; then
+    echo "📋 Loading app configuration from .env.deploy"
+    set -a
+    . .env.deploy
+    set +a
+  fi
 fi
 
 # Verify required environment variables

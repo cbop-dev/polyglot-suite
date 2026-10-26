@@ -1,7 +1,7 @@
 {
 	"name": "polyglot-bible-reader",
 	"private": true,
-	"version": "0.2.34",
+	"version": "0.2.35",
 	"repository": {
 		"url": "https://github.com/cbop-dev/polyglot-suite/tree/main/apps/polyglot-bible-reader"
 	},
@@ -57,6 +57,7 @@
 	"dependencies": {
 		"@polyglot/ancient-languages": "*",
 		"@polyglot/db-vfs": "*",
+		"@polyglot/lemma-ui": "*",
 		"chart.js": "^4.5.1",
 		"gridjs": "^6.2.0",
 		"gridjs-svelte": "^2.1.1",

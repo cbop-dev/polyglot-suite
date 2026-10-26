@@ -59,7 +59,13 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# Load environment variables (from custom file, .env.deploy, .env.production, .env.local, or .env)
+# Resolve script and repository paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ROOT_DIR="$(cd "${APP_DIR}/../.." && pwd)"
+cd "${APP_DIR}"
+
+# Load environment variables (from custom file, root suite .env.deploy, app .env.deploy, .env.production, etc.)
 TARGET_ENV="${CUSTOM_ENV_FILE:-$ENV_FILE}"
 
 if [ -n "$TARGET_ENV" ]; then
@@ -73,26 +79,37 @@ if [ -n "$TARGET_ENV" ]; then
     echo "❌ Error: Specified env file '$TARGET_ENV' not found."
     exit 1
   fi
-elif [ -f .env.deploy ]; then
-  echo "📋 Loading configuration from .env.deploy"
-  set -a
-  . .env.deploy
-  set +a
-elif [ -f .env.production ]; then
-  echo "📋 Loading configuration from .env.production"
-  set -a
-  . .env.production
-  set +a
-elif [ -f .env.local ]; then
-  echo "📋 Loading configuration from .env.local"
-  set -a
-  . .env.local
-  set +a
-elif [ -f .env ]; then
-  echo "📋 Loading configuration from .env"
-  set -a
-  . .env
-  set +a
+else
+  # 1. Inherit shared suite settings (e.g. PUBLIC_*_APP_URL) from monorepo root if present
+  if [ -f "${ROOT_DIR}/.env.deploy" ]; then
+    echo "📋 Loading shared suite configuration from ${ROOT_DIR}/.env.deploy"
+    set -a
+    . "${ROOT_DIR}/.env.deploy"
+    set +a
+  fi
+
+  # 2. Load app-specific environment overrides
+  if [ -f .env.deploy ]; then
+    echo "📋 Loading app configuration from .env.deploy"
+    set -a
+    . .env.deploy
+    set +a
+  elif [ -f .env.production ]; then
+    echo "📋 Loading app configuration from .env.production"
+    set -a
+    . .env.production
+    set +a
+  elif [ -f .env.local ]; then
+    echo "📋 Loading app configuration from .env.local"
+    set -a
+    . .env.local
+    set +a
+  elif [ -f .env ]; then
+    echo "📋 Loading app configuration from .env"
+    set -a
+    . .env
+    set +a
+  fi
 fi
 
 # Verify required environment variables
