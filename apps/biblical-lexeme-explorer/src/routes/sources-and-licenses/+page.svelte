@@ -7,16 +7,16 @@
 	<title>Sources &amp; Licenses | Biblical Lexeme Explorer</title>
 </svelte:head>
 
-<div class="license-page mx-auto max-w-4xl px-4 py-8 text-base-content">
+<div class="license-page mx-auto max-w-4xl px-4 py-8 text-ink">
 	<!-- Navigation -->
 	<div class="mb-6">
-		<a href="{base}/" class="btn btn-outline btn-sm gap-2 hover:btn-primary">
+		<a href="{base}/" class="inline-flex items-center justify-center font-semibold rounded-lg border border-rule bg-page text-ink hover:bg-rule/20 transition-colors px-3 py-1.5 text-xs shadow-xs gap-2 cursor-pointer">
 			<span aria-hidden="true">&larr;</span> Back to Biblical Lexeme Explorer
 		</a>
 	</div>
 
 	<!-- Title Section -->
-	<header class="mb-10 border-b border-base-300 pb-6">
+	<header class="mb-10 border-b border-rule/40 pb-6">
 		<h1 class="mb-2 text-3xl font-bold tracking-tight sm:text-4xl">Sources &amp; Licenses</h1>
 		<p class="text-base opacity-80 sm:text-lg">
 			Licensing framework, upstream source attributions, and copyright notices for the <strong
@@ -29,13 +29,13 @@
 	<div class="mb-12 grid gap-6 md:grid-cols-2">
 		<!-- AGPL Code Card -->
 		<div
-			class="card flex flex-col justify-between border border-base-300 bg-base-100 p-6 shadow-md"
+			class="rounded-xl flex flex-col justify-between border border-rule/40 bg-page p-6 shadow-xs"
 		>
 			<div>
 				<div class="mb-4 flex items-center justify-between gap-3">
 					<h2 class="text-xl font-bold">Application Code &amp; Markup</h2>
 					<span
-						class="badge badge-secondary shrink-0 whitespace-nowrap px-3 py-1.5 font-mono text-xs font-semibold"
+						class="inline-flex items-center px-3 py-1 rounded-full font-mono text-xs font-semibold bg-rule text-white border border-rule shrink-0 whitespace-nowrap"
 						>GNU AGPL v3.0</span
 					>
 				</div>
@@ -58,15 +58,15 @@
 					<li>Provided without warranty of any kind.</li>
 				</ul>
 			</div>
-			<div class="flex flex-wrap gap-2 border-t border-base-200 pt-4 text-xs">
-				<a href={APP_REPO} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-xs">
+			<div class="flex flex-wrap gap-2 border-t border-rule/30 pt-4 text-xs">
+				<a href={APP_REPO} target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center font-medium rounded-md border border-rule/60 bg-page/70 text-ink hover:bg-rule/20 transition-colors px-2.5 py-1 text-xs shadow-xs cursor-pointer">
 					View GitHub Repository
 				</a>
 				<a
 					href="https://www.gnu.org/licenses/agpl-3.0.html"
 					target="_blank"
 					rel="noopener noreferrer"
-					class="btn btn-ghost btn-xs"
+					class="inline-flex items-center justify-center font-medium rounded-md text-ink hover:bg-rule/20 transition-colors px-2.5 py-1 text-xs cursor-pointer"
 				>
 					View AGPL-3.0 License
 				</a>
@@ -75,17 +75,17 @@
 
 		<!-- CC BY-SA Data Card -->
 		<div
-			class="card flex flex-col justify-between border border-base-300 bg-base-100 p-6 shadow-md"
+			class="rounded-xl flex flex-col justify-between border border-rule/40 bg-page p-6 shadow-xs"
 		>
 			<div>
 				<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
 					<h2 class="text-xl font-bold">Curated Datasets &amp; Static Indexes</h2>
 					<span
-						class="badge badge-primary shrink-0 whitespace-nowrap px-3 py-1.5 font-mono text-xs font-semibold flex-1"
+						class="inline-flex items-center px-3 py-1 rounded-full font-mono text-xs font-semibold bg-accent text-white border border-accent shrink-0 whitespace-nowrap"
 						>CC BY-SA 4.0</span
 					> or 
 					<a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" ><span
-						class="badge badge-primary shrink-0 whitespace-nowrap px-3 py-1.5 font-mono text-xs font-semibold hover:bg-white hover:text-black"
+						class="inline-flex items-center px-3 py-1 rounded-full font-mono text-xs font-semibold bg-accent text-white border border-accent shrink-0 whitespace-nowrap hover:opacity-90"
 						>CC BY-NC 4.0 (BHS)</span></a>
 				</div>
 				<p class="mb-3 text-sm opacity-90">
@@ -117,12 +117,12 @@
 					</li>
 				</ul>
 			</div>
-			<div class="flex flex-wrap gap-2 border-t border-base-200 pt-4 text-xs">
+			<div class="flex flex-wrap gap-2 border-t border-rule/30 pt-4 text-xs">
 				<a
 					href="https://creativecommons.org/licenses/by-sa/4.0/"
 					target="_blank"
 					rel="noopener noreferrer"
-					class="btn btn-outline btn-xs"
+					class="inline-flex items-center justify-center font-medium rounded-md border border-rule/60 bg-page/70 text-ink hover:bg-rule/20 transition-colors px-2.5 py-1 text-xs shadow-xs cursor-pointer"
 				>
 					View CC BY-SA 4.0 Deed
 				</a>
@@ -130,7 +130,7 @@
 					href="https://creativecommons.org/licenses/by-nc/4.0/"
 					target="_blank"
 					rel="noopener noreferrer"
-					class="btn btn-outline btn-xs"
+					class="inline-flex items-center justify-center font-medium rounded-md border border-rule/60 bg-page/70 text-ink hover:bg-rule/20 transition-colors px-2.5 py-1 text-xs shadow-xs cursor-pointer"
 				>
 					View CC BY-NC 4.0 Deed
 				</a>
@@ -140,7 +140,7 @@
 
 	<!-- Upstream Sources and Attributions Section -->
 	<section class="space-y-6">
-		<h2 class="border-b border-base-300 pb-2 text-2xl font-bold">
+		<h2 class="border-b border-rule/40 pb-2 text-2xl font-bold">
 			Underlying Datasets &amp; Attributions
 		</h2>
 		<p class="text-sm opacity-80">
@@ -150,12 +150,12 @@
 
 		<div class="space-y-4">
 			<!-- Swete LXX Text -->
-			<div class="shadow-xs card border border-base-300 bg-base-100 p-5">
+			<div class="shadow-xs rounded-xl border border-rule/40 bg-page/80 p-5">
 				<div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
 					<h3 class="text-lg font-bold">
 						Henry Barclay Swete Septuagint Edition (1887–1912, reprint 1930)
 					</h3>
-					<span class="badge badge-outline font-mono text-xs">Public Domain</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono border border-rule/60 text-ink bg-page/60">Public Domain</span>
 				</div>
 				<p class="text-sm opacity-90">
 					Base text: Henry Barclay Swete, <em
@@ -172,10 +172,10 @@
 			</div>
 
 			<!-- In-House Greek Morphology Pipeline -->
-			<div class="shadow-xs card border border-base-300 bg-base-100 p-5">
+			<div class="shadow-xs rounded-xl border border-rule/40 bg-page/80 p-5">
 				<div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
 					<h3 class="text-lg font-bold">Septuagint Neural &amp; Rule-Based Morphology Pipeline</h3>
-					<span class="badge badge-outline font-mono text-xs">AGPL-3.0 / CC BY-SA 4.0</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono border border-rule/60 text-ink bg-page/60">AGPL-3.0 / CC BY-SA 4.0</span>
 				</div>
 				<p class="text-sm opacity-90">
 					Morphological parsing, POS tagging, and lemmatization generated via the open-source
@@ -196,10 +196,10 @@
 			</div>
 
 			<!-- Open Scriptures Septuagint Project -->
-			<div class="shadow-xs card border border-base-300 bg-base-100 p-5">
+			<div class="shadow-xs rounded-xl border border-rule/40 bg-page/80 p-5">
 				<div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
 					<h3 class="text-lg font-bold">Open Scriptures Septuagint Project</h3>
-					<span class="badge badge-outline font-mono text-xs">CC BY 4.0</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono border border-rule/60 text-ink bg-page/60">CC BY 4.0</span>
 				</div>
 				<p class="text-sm opacity-90">
 					Lexeme gloss alignments and Strong's Concordance cross-reference numbers are provided by
@@ -215,10 +215,10 @@
 			</div>
 
 			<!-- Abbott-Smith Manual Greek Lexicon -->
-			<div class="shadow-xs card border border-base-300 bg-base-100 p-5">
+			<div class="shadow-xs rounded-xl border border-rule/40 bg-page/80 p-5">
 				<div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
 					<h3 class="text-lg font-bold">Abbott-Smith Manual Greek Lexicon (1922)</h3>
-					<span class="badge badge-outline font-mono text-xs">Public Domain</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono border border-rule/60 text-ink bg-page/60">Public Domain</span>
 				</div>
 				<p class="text-sm opacity-90">
 					G. Abbott-Smith, <em>A Manual Greek Lexicon of the New Testament</em> (New York: Charles
@@ -233,12 +233,12 @@
 			</div>
 
 			<!-- LSJ Lexicon -->
-			<div class="shadow-xs card border border-base-300 bg-base-100 p-5">
+			<div class="shadow-xs rounded-xl border border-rule/40 bg-page/80 p-5">
 				<div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
 					<h3 class="text-lg font-bold">
 						Liddell-Scott-Jones (LSJ) &amp; Middle Liddell Greek-English Lexicon
 					</h3>
-					<span class="badge badge-outline font-mono text-xs">Public Domain</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono border border-rule/60 text-ink bg-page/60">Public Domain</span>
 				</div>
 				<p class="text-sm opacity-90">
 					H.G. Liddell, R. Scott, H.S. Jones, <em>A Greek-English Lexicon</em> (Oxford: Clarendon
@@ -250,10 +250,10 @@
 			</div>
 
 			<!-- BHS Hebrew Bible / ETCBC -->
-			<div class="shadow-xs card border border-base-300 bg-base-100 p-5">
+			<div class="shadow-xs rounded-xl border border-rule/40 bg-page/80 p-5">
 				<div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
 					<h3 class="text-lg font-bold">Biblia Hebraica Stuttgartensia Amstelodamensis (BHS / ETCBC)</h3>
-					<span class="badge badge-outline font-mono text-xs"><a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a></span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono border border-rule/60 text-ink bg-page/60"><a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a></span>
 				</div>
 				<p class="text-sm opacity-90">
 					Hebrew Bible morphological and syntactic data developed by the
@@ -261,17 +261,15 @@
 						>Eep Talstra Centre for Bible and Computer</a
 					> (Vrije Universiteit Amsterdam).
 				</p>
-
-				
 			</div>
 
 			<!-- SBLGNT & MorphGNT -->
-			<div class="shadow-xs card border border-base-300 bg-base-100 p-5">
+			<div class="shadow-xs rounded-xl border border-rule/40 bg-page/80 p-5">
 				<div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
 					<h3 class="text-lg font-bold">
 						The Greek New Testament: SBL Edition (SBLGNT) &amp; MorphGNT
 					</h3>
-					<span class="badge badge-outline font-mono text-xs">CC BY 4.0</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono border border-rule/60 text-ink bg-page/60">CC BY 4.0</span>
 				</div>
 				<p class="text-sm opacity-90">
 					Edited by Michael W. Holmes in collaboration with the Society of Biblical Literature and
@@ -287,10 +285,10 @@
 			</div>
 
 			<!-- Text-Fabric Tooling -->
-			<div class="shadow-xs card border border-base-300 bg-base-100 p-5">
+			<div class="shadow-xs rounded-xl border border-rule/40 bg-page/80 p-5">
 				<div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
 					<h3 class="text-lg font-bold">Text-Fabric</h3>
-					<span class="badge badge-ghost font-mono text-xs">Tooling &amp; Data Pipeline (MIT)</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono border border-rule/30 bg-rule/20 text-ink">Tooling &amp; Data Pipeline (MIT)</span>
 				</div>
 				<p class="text-sm opacity-90">
 					Build-time corpus modeling, node structures, and feature graphs utilize
@@ -304,10 +302,10 @@
 			</div>
 
 			<!-- OpenScriptorium Theme Slider Design -->
-			<div class="shadow-xs card border border-base-300 bg-base-100 p-5">
+			<div class="shadow-xs rounded-xl border border-rule/40 bg-page/80 p-5">
 				<div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
 					<h3 class="text-lg font-bold">OpenScriptorium Reading Theme Architecture</h3>
-					<span class="badge badge-ghost font-mono text-xs">UI Design Pattern (ISC License)</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono border border-rule/30 bg-rule/20 text-ink">UI Design Pattern (ISC License)</span>
 				</div>
 				<p class="text-sm opacity-90">
 					The sliding scale reading theme selector and contrast-invariant piecewise color stop
@@ -329,10 +327,10 @@
 			</div>
 
 			<!-- AI Development & Methodology -->
-			<div id="ai-attribution" class="shadow-xs card border border-base-300 bg-base-100 p-5">
+			<div id="ai-attribution" class="shadow-xs rounded-xl border border-rule/40 bg-page/80 p-5">
 				<div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
 					<h3 class="text-lg font-bold">Google DeepMind Antigravity 2.0 &amp; Gemini</h3>
-					<span class="badge badge-ghost font-mono text-xs">AI Engineering &amp; Development</span>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono border border-rule/30 bg-rule/20 text-ink">AI Engineering &amp; Development</span>
 				</div>
 				<p class="text-sm opacity-90">
 					The application developer used Google DeepMind's Antigravity 2.0 and Gemini models in the
@@ -343,7 +341,7 @@
 	</section>
 
 	<!-- Copyright Notice -->
-	<footer class="mt-12 border-t border-base-300 pt-6 text-center text-xs opacity-75">
+	<footer class="mt-12 border-t border-rule/40 pt-6 text-center text-xs opacity-75">
 		Web application &copy; Fr. Christopher Brannan, O.P., 2026. All rights reserved for original
 		creative works where not otherwise licensed above.
 	</footer>
@@ -371,16 +369,5 @@
 	div.license-page {
 		background-color: var(--bg-content, #ffffff);
 		border-radius: 12px;
-	}
-
-	.license-page :global(.badge),
-	.license-page .badge {
-		height: auto !important;
-		min-height: 1.6rem;
-		padding-top: 0.25rem;
-		padding-bottom: 0.25rem;
-		line-height: 1.25;
-		display: inline-flex;
-		align-items: center;
 	}
 </style>

@@ -310,7 +310,7 @@ That is, the <LemmaInfo> tag should be surrounded by tags such as : {#key lemma 
 					{/each}
 				</select><Button
 					buttonText="Go!"
-					buttonColors="btn-primary btn-sm"
+					buttonColors="bg-accent text-white px-3 py-1 text-xs"
 					toggled={() => {
 						chosenBookId=bookIdSelectOption;
 					}}

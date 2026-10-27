@@ -52,9 +52,8 @@
             
         />
     {/each}
-    <br/>
-    <button  class="btn" onclick={selectAll}>Select All</button>
-    <button  class="btn" onclick={deselect}>Deselect All</button>
-    <button  class="btn" onclick={invert}>Invert</button>
+    <button type="button" class="btn px-3 py-1 text-xs font-semibold rounded-lg border border-rule/60 bg-page text-ink hover:bg-rule/20 cursor-pointer transition-colors shadow-xs" onclick={selectAll}>Select All</button>
+    <button type="button" class="btn px-3 py-1 text-xs font-semibold rounded-lg border border-rule/60 bg-page text-ink hover:bg-rule/20 cursor-pointer transition-colors shadow-xs" onclick={deselect}>Deselect All</button>
+    <button type="button" class="btn px-3 py-1 text-xs font-semibold rounded-lg border border-rule/60 bg-page text-ink hover:bg-rule/20 cursor-pointer transition-colors shadow-xs" onclick={invert}>Invert</button>
 </div>
        

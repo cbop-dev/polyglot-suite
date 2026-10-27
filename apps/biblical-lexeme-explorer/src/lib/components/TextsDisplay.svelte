@@ -144,7 +144,7 @@ let {
         {#each books as book}
             <button
                 type="button"
-                class="btn btn-xs sm:btn-sm btn-book-jump rounded-md px-2.5 py-1"
+                class="btn-book-jump px-2.5 py-1 text-xs sm:text-sm font-semibold rounded-lg border border-rule/60 bg-page text-ink hover:bg-rule/20 cursor-pointer transition-colors shadow-xs"
                 onclick={() => jumpToDiv(book.replaceAll(" ", "_"))}
             >
                 {book}
@@ -204,7 +204,7 @@ let {
                 href={getReaderVerseUrl(theRef, tfData?.dbAbbrev)}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="btn btn-sm btn-primary inline-flex items-center gap-1.5"
+                class="px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg bg-accent text-white hover:opacity-90 transition-opacity inline-flex items-center gap-1.5 shadow-xs"
                 title="Read {theRef} in Polyglot Bible Reader"
             >
                 <span>Read in Polyglot Bible Reader ↗</span>

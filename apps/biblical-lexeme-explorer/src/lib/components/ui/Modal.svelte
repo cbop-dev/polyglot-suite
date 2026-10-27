@@ -24,7 +24,7 @@
 		{@render children?.()}
 		<hr />
 		<!-- svelte-ignore a11y_autofocus -->
-		<button class="btn" autofocus onclick={() => dialog.close()}>Close</button>
+		<button type="button" class="btn px-4 py-1.5 text-sm font-semibold rounded-lg border border-rule/60 bg-page text-ink hover:bg-rule/20 cursor-pointer transition-colors shadow-xs" autofocus onclick={() => dialog.close()}>Close</button>
 	</div>
 </dialog>
 

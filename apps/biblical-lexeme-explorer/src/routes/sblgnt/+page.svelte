@@ -7,10 +7,16 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import TopNavBar from '$lib/components/ui/TopNavBar.svelte';
+	import { Tabs2 } from '@polyglot/lemma-ui';
 	/** @type {{ data: import('./$types').PageData }} */
 	let { data } = $props();
 
 	const panes = ['book', 'lex', 'wc'];
+	const paneHeadings = [
+		{ label: 'Book Search', shortLabel: 'Book' },
+		{ label: 'Lexeme Search', shortLabel: 'Lexeme' },
+		{ label: 'Word Cloud', shortLabel: 'Cloud' }
+	];
 	let selectedPane = $state(0);
 	const sblGntData = new SblGntVocabDataset();
 	/** @type {VocabDataset} tfData */
@@ -46,41 +52,10 @@
 
 <TopNavBar currentVersion="sblgnt" />
 
-<div role="tablist" class="tabs tabs-lifted">
-	<a
-		role="tab"
-		class="tab {selectedPane == 0 ? 'tab-active' : ''} "
-		tabindex="0"
-		onclick={() => {
-			selectedPane = 0;
-		}}
-	>
-		<span class="sm:hidden">Book</span>
-		<span class="hidden sm:inline">Book Search</span>
-	</a>
-	<a
-		role="tab"
-		class="tab {selectedPane == 1 ? 'tab-active' : ''} "
-		tabindex="1"
-		onclick={() => {
-			selectedPane = 1;
-		}}
-	>
-		<span class="sm:hidden">Lexeme</span>
-		<span class="hidden sm:inline">Lexeme Search</span>
-	</a>
-	<a
-		role="tab"
-		class="tab {selectedPane == 2 ? 'tab-active' : ''} "
-		tabindex="2"
-		onclick={() => {
-			selectedPane = 2;
-		}}
-	>
-		<span class="sm:hidden">Cloud</span>
-		<span class="hidden sm:inline">Word Cloud</span>
-	</a>
+<div class="flex justify-center my-3">
+	<Tabs2 headings={paneHeadings} bind:selectedTabIndex={selectedPane} />
 </div>
+
 <div class={panes[selectedPane] == 'book' ? 'block' : 'hidden'}>
 	<LexInBooks {tfData} initialRefs={urlRefs || options?.request?.refs || ''} hidden={panes[selectedPane] != 'book'} />
 </div>
@@ -91,15 +66,3 @@
 <div class={panes[selectedPane] == 'wc' ? 'block' : 'hidden'}>
 	<WordCloud2 {tfData} {options} />
 </div>
-
-<style>
-	@reference "tailwindcss";
-	.tabs .tab-active {
-		background-color: var(--color-accent) !important;
-		font-weight: bold;
-	}
-
-	.tab {
-		height: auto;
-	}
-</style>

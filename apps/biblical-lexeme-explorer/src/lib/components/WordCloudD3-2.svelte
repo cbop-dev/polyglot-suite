@@ -215,13 +215,11 @@
 	><img width="20" height="20" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAACAklEQVR4nO2XwUtUURTGf005bpJ0ghASNBTcZ9CywEVboVXpH5CSpQtbzULDldCuadeizdC0iRYugplN4NJxZlOkO1MhkJhwUSmmXDgPDs/35t773pvdfHB48M2c73wz995z7oMu3DEEfAKOgLOI+C2fj9EhzMYUDsc+UOiEgTwwKc8o3AQ2xUQx6+JlCRteiIFGlsVHRPSdwx6pq6UweZnguQg+VNyaw154lpWBGvAP6FPcNwcDJi81+oFj4LPiRh1PwwkwkNbAtIg9VdyiowETj9MaeB+xoWqqwFeLgUqa4nnpbk3FXZMlCQrcA/63MWC6Zm9SAw9EZFVxj5T4lnANy79gdBLhjQjcVVxZCS8Lt2IxUEpS/BLwA/gJ5IS7DBwq4dvCT1gM7ImeF+5I8lvF3Y8RNc9diwlj0gsvJXFKca+U4OvQ90sWA2aZvNAE/gJXFffd4/yHw2s4DUvSuuLGUxQP4pbv8HmiuKUMDDgPp5o0FzNeA3zJwEDVZ/jUFVeQwZLWwLHLcJoONRmDGY9fUU07nD5EnNuKEpi35M+nGU45GT4Hqsn0AC2Pa1ZwguKipTrrBQxG3GQmE5zlLYuJG3GJV4BfwB/pgObsb6hE16t2sU3xQ5kpsViMSdzzeNm4Li8nUToLLgJzwA5wKmv2Ue6BPhiVvJbobIcaWxcEOAfahVortHVzxwAAAABJRU5ErkJggg==" alt="a">
 	</Button>
 
-	<div id="enable-word-click-div" class="inline-block grid items-center">
-	<div class="form-control align-middle">
-	<label class="label cursor-pointer tooltip " for="enable-word-click" data-tip="Enable word click for lemma info.">
-		<span class="label-text">Lemma info </span>
-		<input type="checkbox" class="toggle" bind:checked={enableWordClick} />
-	</label>
-	</div>
+	<div id="enable-word-click-div" class="inline-flex items-center">
+		<label class="cursor-pointer inline-flex items-center gap-1.5 text-xs font-medium" for="enable-word-click" title="Enable word click for lemma info.">
+			<span>Lemma info</span>
+			<input id="enable-word-click" type="checkbox" class="w-4 h-4 rounded text-accent border-rule cursor-pointer" bind:checked={enableWordClick} />
+		</label>
 	</div>
 </div>
 <!-- <ColorPicker

@@ -40,8 +40,8 @@ Loading...<span class="loading loading-spinner loading-lg"></span>
     <p class="greek text-2xl text-center">{responseObj.text}</p>
     <div class="flex items-center justify-center gap-2 mt-2 flex-wrap">
         <Button
-            buttonColors="btn btn-secondary"
-            buttonStyle="m-1 p-1 mt-0 mb-0 p-0" 
+            buttonColors=""
+            buttonStyle="px-2.5 py-1 text-xs font-semibold rounded-lg border border-rule/60 bg-page text-ink hover:bg-rule/20 cursor-pointer shadow-xs" 
             toggled={() => { Utils.copyToClipboard(ref + ": " + responseObj.text); }}
             buttonText="Copy"
         /> 
@@ -49,7 +49,7 @@ Loading...<span class="loading loading-spinner loading-lg"></span>
             href={getReaderVerseUrl(ref, tfData?.dbAbbrev)}
             target="_blank"
             rel="noopener noreferrer"
-            class="btn btn-sm btn-outline btn-primary inline-flex items-center gap-1.5"
+            class="px-2.5 py-1 text-xs font-semibold rounded-lg border border-accent text-accent hover:bg-accent hover:text-white transition-colors inline-flex items-center gap-1.5 shadow-xs"
             title="Read {ref} in Polyglot Bible Reader"
         >
             <span>Read in Reader ↗</span>
