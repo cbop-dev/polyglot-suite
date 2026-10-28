@@ -6,6 +6,7 @@ import {
 	normalizeStrongsId,
 	getPaletteColor
 } from '@polyglot/ancient-languages';
+import { getLexemeById } from '$lib/services/dbClient';
 
 export type { PaletteColor };
 export { HIGHLIGHT_PALETTE };
@@ -202,8 +203,8 @@ export class HighlightStore {
 	/**
 	 * Fast O(1) matching for a word token in VerseCard.
 	 */
-	getHighlightForToken(token: any, lang: 'greek' | 'hebrew' | 'syriac'): HighlightedLemma | null {
-		if (!token || this.items.length === 0) return null;
+	getHighlightForToken(token: any, lang?: 'greek' | 'hebrew' | 'syriac' | null): HighlightedLemma | null {
+		if (!token || !lang || this.items.length === 0) return null;
 
 		// 1. Check by Strong's number / lemma_key
 		const sRaw = token.strongs || token.strongs_number || token.lemma_key;
@@ -243,13 +244,133 @@ export class HighlightStore {
 	/**
 	 * Generates CSS inline style string for a highlighted token.
 	 */
-	getInlineStyle(hl: HighlightedLemma, themeMode: string = 'light'): string {
+	getInlineStyle(hl: HighlightedLemma, themeMode?: string | null): string {
 		const pal = HIGHLIGHT_PALETTE[hl.colorIndex] || HIGHLIGHT_PALETTE[0];
 		const isDark = themeMode === 'dark';
 		const bg = isDark ? pal.bgDark : pal.bgLight;
 		const color = isDark ? pal.textDark : pal.textLight;
 		const border = isDark ? pal.borderDark : pal.borderLight;
 		return `background-color: ${bg}; color: ${color}; border-bottom: 2px solid ${border}; border-radius: 4px; padding: 1px 3px; font-weight: 600;`;
+	}
+
+	/**
+	 * Serializes active highlights into a URL parameter string.
+	 * Format: "lemma:colorIndex:strongs" or "lemma:colorIndex" or "strongs:colorIndex", comma-separated.
+	 * Example: "λόγος:0:G3056,בָּרָא:1:H1254"
+	 */
+	toUrlParam(): string {
+		if (this.items.length === 0) return '';
+		return this.items
+			.map((item) => {
+				const parts = [item.lemma || item.strongs || ''];
+				if (typeof item.colorIndex === 'number') {
+					parts.push(String(item.colorIndex));
+				}
+				if (item.strongs && item.strongs !== item.lemma) {
+					parts.push(item.strongs);
+				}
+				return parts.join(':');
+			})
+			.join(',');
+	}
+
+	/**
+	 * Parses and loads highlights from a URL parameter string.
+	 * Replaces active highlights to ensure the shared passage view matches the sender's view.
+	 * Supports:
+	 * - Lemma + color + Strong's: "λόγος:0:G3056"
+	 * - Lemma + color: "λόγος:0"
+	 * - Simple lemma list: "λόγος,θεός"
+	 * - Strong's ID: "G3056:0"
+	 * - Master numeric lexeme ID: "14680:0"
+	 */
+	async fromUrlParam(param: string): Promise<void> {
+		if (!param || !param.trim()) return;
+		const entries = param.split(',').map((s) => s.trim()).filter(Boolean);
+		const loaded: HighlightedLemma[] = [];
+
+		for (const entry of entries) {
+			const parts = entry.split(':').map((p) => p.trim());
+			const rawTarget = parts[0];
+			if (!rawTarget) continue;
+
+			const colorIndex =
+				parts[1] !== undefined && parts[1] !== '' && !isNaN(Number(parts[1]))
+					? parseInt(parts[1], 10)
+					: undefined;
+
+			// Check if rawTarget is a purely numerical lexeme ID (e.g. "14680")
+			if (/^\d+$/.test(rawTarget)) {
+				const numId = parseInt(rawTarget, 10);
+				try {
+					const lex = await getLexemeById(numId);
+					if (lex && lex.lemma) {
+						const lang = this.detectLanguage(lex.lemma, lex.corpus);
+						const plain = this.normalizePlain(lex.lemma, lang);
+						const id = this.makeId(plain || lex.strongs || '', lang);
+						const cIdx =
+							typeof colorIndex === 'number' && colorIndex >= 0 && colorIndex < HIGHLIGHT_PALETTE.length
+								? colorIndex
+								: getNextPaletteColorIndex(loaded.map((i) => i.colorIndex));
+						const paletteColor = HIGHLIGHT_PALETTE[cIdx];
+						loaded.push({
+							id,
+							lemma: lex.lemma,
+							plain,
+							strongs: lex.strongs
+								? lang === 'syriac'
+									? lex.strongs.trim()
+									: normalizeStrongsId(lex.strongs)
+								: undefined,
+							lang,
+							colorIndex: cIdx,
+							color: paletteColor.hex,
+							createdAt: Date.now()
+						});
+						continue;
+					}
+				} catch (err) {
+					console.warn('[HighlightStore] Failed to resolve numeric lexeme ID:', numId, err);
+				}
+			}
+
+			const isStrongsOnly = /^[GH]\d+[a-z]?$/i.test(rawTarget);
+			const strongs = parts[2] || (isStrongsOnly ? rawTarget : undefined);
+			const lemma = isStrongsOnly ? (parts[2] || rawTarget) : rawTarget;
+
+			const lang = this.detectLanguage(
+				lemma || rawTarget,
+				isStrongsOnly ? (rawTarget.toUpperCase().startsWith('H') ? 'hebrew' : 'greek') : undefined
+			);
+			const plain = this.normalizePlain(lemma, lang);
+			const id = this.makeId(plain || strongs || '', lang);
+
+			const cIdx =
+				typeof colorIndex === 'number' && colorIndex >= 0 && colorIndex < HIGHLIGHT_PALETTE.length
+					? colorIndex
+					: getNextPaletteColorIndex(loaded.map((i) => i.colorIndex));
+			const paletteColor = HIGHLIGHT_PALETTE[cIdx];
+
+			loaded.push({
+				id,
+				lemma,
+				plain,
+				strongs: strongs
+					? lang === 'syriac'
+						? strongs.trim()
+						: normalizeStrongsId(strongs)
+					: undefined,
+				lang,
+				colorIndex: cIdx,
+				color: paletteColor.hex,
+				createdAt: Date.now()
+			});
+		}
+
+		if (loaded.length > 0) {
+			this.items = loaded;
+			this.saveToStorage();
+		}
 	}
 }
 

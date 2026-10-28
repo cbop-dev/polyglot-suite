@@ -40,13 +40,13 @@
 	}
 </script>
 
-<!-- Fixed Footer Bar Container (clips horizontal slide without viewport overflow) -->
-<div class="fixed bottom-0 left-0 right-0 z-40 pointer-events-none overflow-hidden">
+<!-- Fixed Footer Bar Container -->
+<div class="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
 	<div
 		id="page-footer-div"
-		class="pointer-events-auto border-t border-base-300 backdrop-blur-md transition-transform duration-300 ease-in-out {isCollapsed
+		class="pointer-events-auto border-t border-rule/40 backdrop-blur-md transition-transform duration-300 ease-in-out {isCollapsed
 			? 'translate-x-full'
-			: 'translate-x-0'}"
+			: ''}"
 	>
 		<footer
 			id="footer-panel"

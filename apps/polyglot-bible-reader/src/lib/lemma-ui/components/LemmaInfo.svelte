@@ -5,15 +5,11 @@
 	import BarsSvg from './ui/icons/colorful-bar-chart.svg';
 	import BookOpenSvg from './ui/icons/book-open.svg';
 	import BookSvg from './ui/icons/book.svg';
-	import OptionButton from './ui/OptionButton.svelte';
-	import Tabs from './ui/Tabs2.svelte';
-	import BarChart from './ui/BarChart.svelte';
-	import PieChart from './ui/PieChart.svelte';
+	import { OptionButton, Tabs2 as Tabs, BarChart, PieChart, CopyText } from '@polyglot/lemma-ui';
 	import LSJEntry from './LSJEntry.svelte';
 	import BDBEntry from './BDBEntry.svelte';
 	import SEDRAEntry from './SEDRAEntry.svelte';
 	import TextsDisplay from './TextsDisplay.svelte';
-	import CopyText from './ui/CopyText.svelte';
 	import AttestedFormsSection from '@polyglot/ancient-languages/AttestedFormsSection.svelte';
 	import InflectionFilterBar from '@polyglot/ancient-languages/InflectionFilterBar.svelte';
 	import {

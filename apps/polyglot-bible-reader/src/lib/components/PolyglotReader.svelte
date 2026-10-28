@@ -12,6 +12,7 @@ import FloatingSidePanel from '$lib/components/ui/FloatingSidePanel.svelte';
 import LemmaSearchPanel from '$lib/components/search/LemmaSearchPanel.svelte';
 import { hotkeyManager } from '$lib/services/hotkeyManager';
 import { readerState } from '$lib/stores/readerState.svelte';
+import { highlightStore } from '$lib/stores/highlightStore.svelte';
 import { getVersionBooks, myDataSets } from '$lib/config/versions';
 import { page } from '$app/state';
 import { mylog } from '$lib/lemma-ui/env/env';
@@ -24,9 +25,18 @@ let {
     chapter='',
     verse='',
     grid=[],
-    meditate=false
+    meditate=false,
+    highlights=''
 
-} : {version: string, book: string,chapter: string, verse: string, grid: string[][], meditate:boolean} = $props();
+} : {
+    version: string,
+    book: string,
+    chapter: string,
+    verse: string,
+    grid: string[][],
+    meditate: boolean,
+    highlights?: string
+} = $props();
 
 readerState.isLoading=true;
 
@@ -34,6 +44,11 @@ readerState.isLoading=true;
 onMount(async ()=>{
     readerState.isLoading=true;    
     readerState.closeAllPopups();
+
+    if (highlights) {
+        await highlightStore.fromUrlParam(highlights);
+    }
+
     if(version){
         
         await readerState.selectVersion(version, false);

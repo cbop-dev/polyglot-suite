@@ -7,16 +7,20 @@ export function jumpToDiv(divId = '') {
 }
 
 export function getBaseurl(): string {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.location) {
         const origin = window.location.origin;
         const resolvedPath = resolve('/');
         return `${origin}${resolvedPath.endsWith('/') ? resolvedPath : resolvedPath + '/'}`;
     }
-    if (page?.url && page.url.protocol !== 'a:') {
-        const port = page.url.port ? `:${page.url.port}` : '';
-        const origin = `${page.url.protocol}//${page.url.hostname}${port}`;
-        const resolvedPath = resolve('/');
-        return `${origin}${resolvedPath.endsWith('/') ? resolvedPath : resolvedPath + '/'}`;
+    try {
+        if (page?.url && page.url.protocol !== 'a:') {
+            const port = page.url.port ? `:${page.url.port}` : '';
+            const origin = `${page.url.protocol}//${page.url.hostname}${port}`;
+            const resolvedPath = resolve('/');
+            return `${origin}${resolvedPath.endsWith('/') ? resolvedPath : resolvedPath + '/'}`;
+        }
+    } catch {
+        // Outside component render context (e.g. unit tests or server load)
     }
     const resolvedPath = resolve('/');
     return resolvedPath.endsWith('/') ? resolvedPath : resolvedPath + '/';

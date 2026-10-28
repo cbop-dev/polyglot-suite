@@ -906,6 +906,46 @@ export async function getLemma(
 	return null;
 }
 
+/**
+ * Lookup master lexeme entry by integer id.
+ */
+export async function getLexemeById(id: number): Promise<LexemeRow | null> {
+	try {
+		const row = await queryOne<{
+			id: number;
+			language: string;
+			lemma: string;
+			lemma_clean: string;
+			strongs_id: string;
+			pos: string;
+			gloss: string;
+		}>(`
+			SELECT id, language, lemma, lemma_clean, strongs_id, pos, gloss
+			FROM lexemes
+			WHERE id = ?
+			LIMIT 1
+		`, [id]);
+		if (row) {
+			return {
+				id: row.id,
+				lexeme_id: row.id,
+				corpus: row.language,
+				lex_id: row.id,
+				lemma: row.lemma,
+				gloss: row.gloss || '',
+				pos: row.pos || null,
+				strongs: row.strongs_id || '',
+				beta: '',
+				plain: row.lemma_clean || '',
+				total: 0
+			};
+		}
+	} catch (e) {
+		// Ignore
+	}
+	return null;
+}
+
 const SYRIAC_PUNCT_DIACRITICS = /[\u0730-\u074F\u0300-\u036F\.\,\;\:\?\!\(\)\[\]]/g;
 
 export function cleanSyriac(s: string): string {
@@ -1006,7 +1046,7 @@ export async function getWordFrequencyByBook(
 			}
 			const canon = normalizeBookName(bCode);
 			const abbrev = formatBookAbbreviation(getBookForVersion(bCode, ver));
-			const words = bookWords || getStaticBookWordStats(corpusId, canon?.usfm || bCode)?.words || 0;
+			const words = bookWords || getStaticBookWordStats(corpusId, canon?.code || bCode)?.words || 0;
 			return {
 				title: canon?.title || bCode,
 				sbl_abbreviation: abbrev || formatBookAbbreviation(bCode),

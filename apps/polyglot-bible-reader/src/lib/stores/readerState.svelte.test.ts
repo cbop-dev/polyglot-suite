@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ReaderState, readerState } from './readerState.svelte';
+import { highlightStore } from './highlightStore.svelte';
 import * as dbClient from '$lib/services/dbClient';
 import * as bibleDataLoader from '$lib/services/bibleDataLoader';
 
@@ -182,7 +183,7 @@ describe('realign cell', ()=>{
         const opengntVerse = rs.getVerseData('1', 'OpenGNT');
         expect(opengntVerse.exists).toBe(true);
         expect(opengntVerse.omitted).toBe(false);
-        expect(opengntVerse.verseData?.body || opengntVerse.verseData?.text).toBe('Βίβλος γενέσεως Ἰησοῦ Χριστοῦ...');
+        expect((opengntVerse.verseData as any)?.body || opengntVerse.verseData?.text).toBe('Βίβλος γενέσεως Ἰησοῦ Χριστοῦ...');
 
         const kjvVerse = rs.getVerseData('1', 'KJV');
         expect(kjvVerse.exists).toBe(true);
@@ -212,7 +213,7 @@ describe('realign cell', ()=>{
             transliteration: '',
             gloss: 'beginning',
             definition: 'beginning'
-        });
+        } as any);
 
         await rs.inspectWord(
             {
@@ -467,5 +468,37 @@ describe('realign cell', ()=>{
         const prevChExpected = String(rs.availableChapters[rs.availableChapters.length - 2]);
         await rs.prevChapter();
         expect(selectChapterSpy).toHaveBeenCalledWith(prevChExpected);
+    });
+
+    describe('generatePageStateURL', () => {
+        it('generates URL without highlights parameter when no highlights are active', () => {
+            highlightStore.clearAll();
+            const rs = new ReaderState();
+            rs.selectedVersion = 'BHS';
+            rs.selectedBook = 'Gen';
+            rs.selectedChapter = '1';
+
+            const url = rs.generatePageStateURL('3');
+            expect(url).toContain('version=BHS');
+            expect(url).toContain('book=Gen');
+            expect(url).toContain('chapter=1');
+            expect(url).toContain('verse=3');
+            expect(url).not.toContain('highlights=');
+        });
+
+        it('generates URL with highlights parameter when highlights exist', () => {
+            highlightStore.clearAll();
+            highlightStore.addLemma('λόγος', 'G3056', 'greek', 0);
+            const rs = new ReaderState();
+            rs.selectedVersion = 'OpenGNT';
+            rs.selectedBook = 'JHN';
+            rs.selectedChapter = '1';
+
+            const url = rs.generatePageStateURL('1');
+            expect(url).toContain('highlights=');
+            const parsed = new URL(url, 'http://localhost');
+            expect(parsed.searchParams.get('highlights')).toBe('λόγος:0:G3056');
+            highlightStore.clearAll();
+        });
     });
 });

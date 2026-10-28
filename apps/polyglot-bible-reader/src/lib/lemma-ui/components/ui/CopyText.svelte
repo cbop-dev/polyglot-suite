@@ -18,7 +18,7 @@
 
     let copied = $state(false);
 
-    async function copyToClipboard(e) {
+    async function copyToClipboard(e?: Event) {
         if (e) {
             e.stopPropagation();
             e.preventDefault();

@@ -200,4 +200,67 @@ describe('HighlightStore', () => {
 			expect(styleDark).toContain(HIGHLIGHT_PALETTE[0].textDark);
 		});
 	});
+
+	describe('toUrlParam & fromUrlParam serialization', () => {
+		it('returns empty string when no highlights exist', () => {
+			expect(store.toUrlParam()).toBe('');
+		});
+
+		it('serializes single and multiple highlights with color index and strongs', () => {
+			store.addLemma('λόγος', 'G3056', 'greek', 0);
+			store.addLemma('בָּרָא', 'H1254', 'hebrew', 2);
+
+			const serialized = store.toUrlParam();
+			expect(serialized).toBe('λόγος:0:G3056,בָּרָא:2:H1254');
+		});
+
+		it('parses URL parameter with lemma, color index, and strongs', async () => {
+			await store.fromUrlParam('λόγος:0:G3056,בָּרָא:2:H1254');
+
+			expect(store.items.length).toBe(2);
+			expect(store.items[0].lemma).toBe('λόγος');
+			expect(store.items[0].colorIndex).toBe(0);
+			expect(store.items[0].strongs).toBe('G3056');
+			expect(store.items[0].lang).toBe('greek');
+
+			expect(store.items[1].lemma).toBe('בָּרָא');
+			expect(store.items[1].colorIndex).toBe(2);
+			expect(store.items[1].strongs).toBe('H1254');
+			expect(store.items[1].lang).toBe('hebrew');
+		});
+
+		it('parses simple lemma list without color index or strongs', async () => {
+			await store.fromUrlParam('λόγος,ἀγάπη');
+
+			expect(store.items.length).toBe(2);
+			expect(store.items[0].lemma).toBe('λόγος');
+			expect(store.items[0].lang).toBe('greek');
+			expect(store.items[1].lemma).toBe('ἀγάπη');
+			expect(store.items[1].lang).toBe('greek');
+			// Cycles palette colors
+			expect(store.items[0].colorIndex).not.toBe(store.items[1].colorIndex);
+		});
+
+		it('parses Strongs-only identifiers', async () => {
+			await store.fromUrlParam('G3056:1,H7225:3');
+
+			expect(store.items.length).toBe(2);
+			expect(store.items[0].strongs).toBe('G3056');
+			expect(store.items[0].colorIndex).toBe(1);
+			expect(store.items[0].lang).toBe('greek');
+
+			expect(store.items[1].strongs).toBe('H7225');
+			expect(store.items[1].colorIndex).toBe(3);
+			expect(store.items[1].lang).toBe('hebrew');
+		});
+
+		it('ignores empty or blank param without clearing existing items', async () => {
+			store.addLemma('λόγος', 'G3056', 'greek');
+			await store.fromUrlParam('');
+			expect(store.items.length).toBe(1);
+
+			await store.fromUrlParam('   ');
+			expect(store.items.length).toBe(1);
+		});
+	});
 });

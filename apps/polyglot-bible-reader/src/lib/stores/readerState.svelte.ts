@@ -7,6 +7,7 @@ import { loadChapterFromDb, loadChaptersForBook } from '$lib/services/bibleDataL
 import { isValidVersion, availableBibles,dataSets,getCorrectVersionName } from '$lib/config/versions'
 import {page} from "$app/state";
 import { getBaseurl } from '$lib/utils/ui-utils';
+import { highlightStore } from '$lib/stores/highlightStore.svelte';
 import {
 	getLemma,
 	getLemmaTotalCount,
@@ -850,7 +851,7 @@ export class ReaderState {
 			let lexiconRow: LexiconEntryRow | null = null;
 			if (!isSyriac) {
 				try {
-					lexiconRow = await getLexiconEntry(dictionary, lookupKey, wordObj.strongs);
+					lexiconRow = await getLexiconEntry(dictionary as 'bdb' | 'lsj', lookupKey, wordObj.strongs);
 				} catch (e) {
 					console.warn('[ReaderState] Error fetching lexicon entry in inspectWord:', e);
 				}
@@ -909,16 +910,21 @@ export class ReaderState {
 	
 	generatePageStateURL(verse="1", meditate=this.meditationMode){
 		const base = getBaseurl();
-		const params = {
-			'version': this.selectedVersion,
-			'chapter':this.selectedChapter,
-			'book':this.selectedBook,
-			'grid':this.versionGrid.map((row)=>row.join(',')).join("|"),
-			'verse':verse,
-			'meditate':meditate ? 1 : 0
+		const searchParams = new URLSearchParams();
+		searchParams.set('version', this.selectedVersion);
+		searchParams.set('book', this.selectedBook);
+		searchParams.set('chapter', this.selectedChapter);
+		searchParams.set('verse', verse);
+		searchParams.set('grid', this.versionGrid.map((row)=>row.join(',')).join("|"));
+		searchParams.set('meditate', meditate ? '1' : '0');
+
+		const hlParam = highlightStore.toUrlParam();
+		if (hlParam) {
+			searchParams.set('highlights', hlParam);
 		}
 
-		return base+'?'+Object.entries(params).map(([k,v])=>`${k}=${v}`).join("&");
+		const queryString = searchParams.toString();
+		return queryString ? `${base}?${queryString}` : base;
 	}
 }
 
