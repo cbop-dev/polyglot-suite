@@ -1,9 +1,9 @@
-<script lang="ts">
+<script>
 	let {
 		buttonText = 'Button',
 		buttonSubtext = '',
 		buttonStyle = '',
-		buttonSize = 'gap-1.5 px-3 py-1.5 ',
+		buttonSize='gap-1.5 px-3 py-1.5 ',
 		buttonColors = 'bg-link text-white bg-blue-500 hover:opacity-90',
 		style = '',
 		textSize = 'text-sm',
@@ -11,18 +11,6 @@
 		tooltip = '',
 		ready = true,
 		children = null
-	}: {
-		buttonText?: string;
-		buttonSubtext?: string;
-		buttonStyle?: string;
-		buttonSize?: string;
-		buttonColors?: string;
-		style?: string;
-		textSize?: string;
-		toggled?: (event: MouseEvent) => void;
-		tooltip?: string;
-		ready?: boolean;
-		children?: any;
 	} = $props();
 </script>
 

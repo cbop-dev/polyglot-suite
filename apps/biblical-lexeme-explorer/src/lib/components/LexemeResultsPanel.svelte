@@ -888,7 +888,7 @@
 								}}
 								tooltip={lex.gloss}
 								buttonColors={getGradientColorClass(lex)}
-								style="greek inline-block m-auto h-auto "
+								style="greek lemma inline-block m-auto h-auto "
 								buttonSubtext={showGlosses ? lex.gloss : ''}
 							>
 								
@@ -1082,5 +1082,10 @@
 		padding: 0.25rem 0.65rem !important;
 		min-height: 2.2rem !important;
 		height: auto !important;
+	}
+
+	.btn.lemma, .btn-lemma{
+		font-size: 1rem !important;
+		
 	}
 </style>

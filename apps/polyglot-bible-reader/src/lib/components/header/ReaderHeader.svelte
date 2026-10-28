@@ -17,8 +17,6 @@
   import Icon from '../ui/Icon.svelte';
   import { theme,size } from '$lib/stores/ThemeObserver.svelte';
   
-  //  import OptionButton from '$lib/lemma-ui/components/ui/OptionButton.svelte';
-    //import Button from '$lib/lemma-ui/components/ui/Button.svelte';
   let displayedLanguages: string[]=$derived(Array.from(new Set(readerState.visibleVersions.map((v)=>getVersionLanguage(v)))));
   //$inspect('readerState.visibleVersions',readerState.visibleVersions);
 

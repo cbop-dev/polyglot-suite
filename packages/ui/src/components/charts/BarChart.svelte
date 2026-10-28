@@ -8,7 +8,7 @@
     
 -->
 <script>
-import { mylog } from '../../env/env';
+const mylog = (...args) => {};
 import Chart from 'chart.js/auto';
 import { generateHslColorGradient } from './chartUtils';
 /**

@@ -1,14 +1,10 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import * as StringUtils from '$lib/utils/string-utils.js';
-	import Icon from './ui/icons/Icon.svelte';
-	import BarsSvg from './ui/icons/colorful-bar-chart.svg';
-	import BookOpenSvg from './ui/icons/book-open.svg';
-	import BookSvg from './ui/icons/book.svg';
-	import { OptionButton, Tabs2 as Tabs, BarChart, PieChart, CopyText } from '@polyglot/lemma-ui';
-	import LSJEntry from './LSJEntry.svelte';
-	import BDBEntry from './BDBEntry.svelte';
-	import SEDRAEntry from './SEDRAEntry.svelte';
+	import { OptionButton, Tabs2 as Tabs, BarChart, PieChart, CopyText, LSJEntry, BDBEntry, SEDRAEntry, Icon } from '@polyglot/lemma-ui';
+	import BarsSvg from '$lib/assets/colorful-bar-chart.svg';
+	import BookOpenSvg from '$lib/assets/book-open.svg';
+	import BookSvg from '$lib/assets/book.svg';
 	import TextsDisplay from './TextsDisplay.svelte';
 	import AttestedFormsSection from '@polyglot/ancient-languages/AttestedFormsSection.svelte';
 	import InflectionFilterBar from '@polyglot/ancient-languages/InflectionFilterBar.svelte';
@@ -44,7 +40,7 @@
 	import { highlightStore } from '$lib/stores/highlightStore.svelte';
 	import { getBookCanonicalIndex } from '$lib/config/bookMapping.js';
 	import { getLexemeExplorerUrl } from '$lib/utils/navigation';
-    import { mylog } from '../env/env';
+    import { mylog } from '$lib/utils/logger';
 
 	let { lemma }: { lemma: any } = $props();
 

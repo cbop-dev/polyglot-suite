@@ -1,4 +1,4 @@
-import { mylog } from '$lib/lemma-ui/env/env';
+import { mylog } from '$lib/utils/logger';
 //import { tfNtBooksDict } from "./ntbooks";
 import * as mathUtils from '$lib/utils/math-utils.js';
 

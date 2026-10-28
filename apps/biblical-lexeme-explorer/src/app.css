@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @source "../../../packages/lemma-ui";
+@source "../../../packages/ui";
 @source "../../../packages/theme";
 @source "../../../packages/ancient-languages";
 
@@ -166,6 +167,7 @@ body {
 .btn-lemma {
     background-color: var(--color-lemma-btn-bg, #8c1828) !important;
     color: var(--color-lemma-btn-text, #ffffff) !important;
+    font-size: 1.5rem;
     border: 1px solid var(--color-lemma-btn-border, rgba(0, 0, 0, 0.2)) !important;
     box-shadow: var(--color-lemma-btn-shadow, 0 1px 3px rgba(0, 0, 0, 0.25)) !important;
     transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;

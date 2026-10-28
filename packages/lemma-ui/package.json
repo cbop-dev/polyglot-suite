@@ -23,6 +23,7 @@
   "dependencies": {
     "@polyglot/ancient-languages": "*",
     "@polyglot/theme": "*",
+    "@polyglot/ui": "*",
     "chart.js": "^4.4.0"
   },
   "devDependencies": {

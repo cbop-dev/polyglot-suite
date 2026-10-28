@@ -24,7 +24,7 @@
   let activeClass = $derived(
     isSelected
       ? 'bg-ink text-page border-ink font-bold shadow-xs'
-      : 'bg-page/70 text-ink border-rule/50 hover:bg-rule/20 hover:border-ink/40'
+      : 'bg-page/70 text-ink border-ink/80 hover:bg-ink/15  hover:border-ink'
   );
 
   let theButton;
@@ -52,15 +52,18 @@
     if (isSelected) select();
   });
 </script>
-
+<style>
+    
+</style>
 <button
   type="button"
   disabled={!ready}
   onclick={toggle}
   bind:this={theButton}
   title={tooltip}
-  class="inline-flex items-center justify-center font-medium rounded-lg border transition-all duration-150 cursor-pointer {textSize} {buttonSize} {activeClass} {buttonStyle} {buttonColors} {miscStyle} {!ready ? 'opacity-40 cursor-not-allowed' : ''}"
+  class="btn inline-flex items-center justify-center font-medium rounded-lg border transition-all duration-150 cursor-pointer {textSize} {buttonSize} {activeClass} {buttonStyle} {buttonColors} {miscStyle} {!ready ? 'opacity-40 cursor-not-allowed' : ''}"
 >
   {#if buttonText}{buttonText}{/if}
   {#if children}{@render children?.()}{/if}
 </button>
+

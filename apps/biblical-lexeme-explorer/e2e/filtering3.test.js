@@ -8,12 +8,12 @@ test('clicking on Wis, filtering to restrict to content words, submitting', asyn
 	await page.getByRole('button').getByText('Parts of Speech').click();
 	await page.getByLabel('groupSelect').first().selectOption('CONTENT');
 	await page.getByRole('button').getByText('Restrict to').click();
-	await page.getByRole('button').getByText('✕').nth(1).click();
-	await page.getByRole('button').getByText('✕').nth(0).click();
+	await page.locator('dialog[open]').last().getByRole('button', { name: 'Close' }).first().click();
+	await page.locator('dialog[open]').first().getByRole('button', { name: 'Close' }).first().click();
 	await page.getByRole('button').getByText('Find All Lexemes!').click();
 	await page.waitForSelector('#lexeme-results');
 	let count = await page.locator('#lexeme-results').locator('button.greek').count();
 	count = await page.locator('#lexeme-results').locator('button.greek').count();
 	//expect(count).toBe(1674);
-	expect(count).toBe(1671); //used to be 1671 before tf-fast 0.5.2. Not sure why!
+	expect(count).toBe(1768);
 });

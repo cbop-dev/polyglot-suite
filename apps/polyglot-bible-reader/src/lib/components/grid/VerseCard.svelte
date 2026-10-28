@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CopyText from '$lib/lemma-ui/components/ui/CopyText.svelte';
+  import { CopyText, LinkIcon } from '@polyglot/lemma-ui';
   import { readerState } from '$lib/stores/readerState.svelte';
   import { formatVerseText } from '$lib/services/bibleDataLoader';
   import { dataSets, getCorrectVersionName, myDataSets } from '$lib/config/versions';
@@ -8,7 +8,6 @@
   import Icon from '../ui/Icon.svelte';
   import shareSvg from '$lib/assets/share-this.svg';
   import linkSvg from '$lib/assets/link-336.svg';
-  import LinkIcon from '$lib/lemma-ui/components/ui/icons/LinkIcon.svelte';
   import { highlightStore } from '$lib/stores/highlightStore.svelte';
   let { verseKey }: { verseKey: string } = $props();
   function getTopMostVerse():string{

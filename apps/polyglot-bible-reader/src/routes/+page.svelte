@@ -2,7 +2,7 @@
 import PolylotReader from '$lib/components/PolyglotReader.svelte';
 	
 import { page } from '$app/state';
-import { mylog } from '$lib/lemma-ui/env/env';
+import { mylog } from '$lib/utils/logger';
 
   
 const version = page.url.searchParams.get('version') ?? '';

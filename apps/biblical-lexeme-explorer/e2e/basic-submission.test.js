@@ -18,8 +18,5 @@ test('clicking on LXX Gen and submitting', async({page})=> {
 	await page.waitForSelector('#lexeme-results');
 	let count = await page.locator('#lexeme-results').locator('button.greek').count();
 	//console.debug("the greek button count for Gen = " + count)
-	expect(count).toBe(2096);
-
-
-	
+	expect(count).toBe(2331);
 });

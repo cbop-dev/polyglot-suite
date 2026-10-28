@@ -1,6 +1,6 @@
-<script>
+<script lang="ts">
     import { onMount } from "svelte";
-    import Button from "./ui/Button.svelte";
+    import { Button } from "@polyglot/lemma-ui";
     import { Utils } from "$lib/utils/utils.js";
     import { getVerseText } from "$lib/services/dbClient";
 
@@ -9,6 +9,11 @@
         ref = '',
         lang = 'greek',
         showRefTitle = true,
+    }: {
+        workUnitId?: number;
+        ref?: string;
+        lang?: string;
+        showRefTitle?: boolean;
     } = $props();
 
     let ready = $state(false);

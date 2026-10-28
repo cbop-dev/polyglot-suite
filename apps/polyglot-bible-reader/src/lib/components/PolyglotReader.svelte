@@ -13,10 +13,9 @@ import LemmaSearchPanel from '$lib/components/search/LemmaSearchPanel.svelte';
 import { hotkeyManager } from '$lib/services/hotkeyManager';
 import { readerState } from '$lib/stores/readerState.svelte';
 import { highlightStore } from '$lib/stores/highlightStore.svelte';
-import { getVersionBooks, myDataSets } from '$lib/config/versions';
 import { page } from '$app/state';
-import { mylog } from '$lib/lemma-ui/env/env';
 import { onMount } from 'svelte';
+import { mylog } from '$lib/utils/logger';
 
     
 let {

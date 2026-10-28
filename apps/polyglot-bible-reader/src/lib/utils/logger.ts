@@ -16,17 +16,13 @@ export const levels = {
 
 let defaultLevel = 0;
 
-export function mylog(msg, debugOn = get(debug), thelevel = defaultLevel) {
+export function mylog(msg: any, debugOn: boolean = get(debug), thelevel: number = defaultLevel): void {
     if (debugOn && thelevel >= defaultLevel) {
         console.log(msg);
     }
 }
 
-/**
- * @param {number} level
- * @returns {boolean}
- */
-export function setLogLevel(level) {
+export function setLogLevel(level: number): boolean {
     let success = false;
     if (Object.values(levels).includes(level)) {
         success = true;
@@ -35,14 +31,14 @@ export function setLogLevel(level) {
 }
 
 export let log = {
-    debug: debug,
-    defaultLevel: defaultLevel,
-    levels: levels,
-    mylog: mylog,
-    setLogLevel: setLogLevel
+    debug,
+    defaultLevel,
+    levels,
+    mylog,
+    setLogLevel
 };
 
 export default {
-    debug: debug,
-    mylog: mylog
+    debug,
+    mylog
 };

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Modal2 from '$lib/lemma-ui/components/ui/Modal2.svelte';
-  import LemmaInfo from '$lib/lemma-ui/components/LemmaInfo.svelte';
+  import { Modal2 } from '@polyglot/lemma-ui';
+  import LemmaInfo from './LemmaInfo.svelte';
   import { readerState } from '$lib/stores/readerState.svelte';
 </script>
 

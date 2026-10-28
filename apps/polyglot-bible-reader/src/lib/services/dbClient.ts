@@ -1,5 +1,5 @@
 import { getDbWorker } from './dbWorker';
-import { mylog } from '$lib/lemma-ui/env/env';
+import { mylog } from '$lib/utils/logger';
 import { normalizeBookName, getBookForVersion, formatDisplayReference, formatBookAbbreviation } from '$lib/config/bookMapping.js';
 import { getStaticCorpusTotalWords, getStaticBookWordStats } from '$lib/config/corpusBookStats';
 import {

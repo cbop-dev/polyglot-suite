@@ -1,8 +1,6 @@
 <script lang="ts">
     import * as bibleUtils from '$lib/utils/bible-utils.js';
-    import Modal2 from "./ui/Modal2.svelte";
-    import CopyText from "./ui/CopyText.svelte";
-    import ArrowUp from "./ui/icons/arrow-up.svelte";
+    import { Modal2, CopyText, ArrowUp } from "@polyglot/lemma-ui";
     import { jumpToDiv } from "$lib/utils/ui-utils";
     import { getVerseText, getBatchVerseTexts, getVerseDetail, type BatchVerseItem } from "$lib/services/dbClient";
     import { readerState } from "$lib/stores/readerState.svelte";

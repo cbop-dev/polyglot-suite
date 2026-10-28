@@ -1,5 +1,5 @@
 import { getVersionBooks, myDataSets, getVersionBookChapters } from '$lib/config/versions';
-import { mylog } from '$lib/lemma-ui/env/env';
+import { mylog } from '$lib/utils/logger';
 import { getBookForVersion, normalizeBookName, formatBookAbbreviation } from '$lib/config/bookMapping.js';
 import type { HebrewDiacriticMode } from '$lib/utils/diacritics';
 import { loadChapterFromDb, loadChaptersForBook } from '$lib/services/bibleDataLoader';

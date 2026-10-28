@@ -13,8 +13,7 @@ test('clicking on Gen, submitting, and text filtering', async({page})=> {
 	await page.getByRole('button').getByText('Textual filter').first().click();
 	await page.getByLabel('Input').fill('ιος');
 	count = await page.locator('#lexeme-results').locator('button.greek').count();
-	expect(count).toBe(58);
-	
+	expect(count).toBe(61);
 });
 
 

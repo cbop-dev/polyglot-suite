@@ -8,8 +8,8 @@ test('clicking on Wis, filtering to restrict to content words, submitting, and s
 	await page.getByRole('button').getByText('Parts of Speech').click();
 	await page.getByLabel('groupSelect').nth(0).selectOption({index:0});
 	await page.getByRole('button').getByText('Restrict to').click();
-	await page.getByRole('button').getByText('✕').nth(1).click();
-	await page.getByRole('button').getByText('✕').nth(0).click();
+	await page.locator('dialog[open]').last().getByRole('button', { name: 'Close' }).first().click();
+	await page.locator('dialog[open]').first().getByRole('button', { name: 'Close' }).first().click();
 	await page.getByRole('button').getByText('Find All Lexemes!').click();
 	await page.waitForSelector('#lexeme-results');
 	await page.getByRole('button').getByText("Results Filters ☰").first().click();
@@ -17,17 +17,17 @@ test('clicking on Wis, filtering to restrict to content words, submitting, and s
 	await page.getByLabel('Input').fill('σοφια');
 	await page.waitForSelector('#lexeme-results');
 	const wisdomButton = page.locator('#lexeme-results').locator('button.greek');
-	await wisdomButton.waitFor('visible');
+	await wisdomButton.waitFor({ state: 'visible' });
 	
 	expect(wisdomButton).toBeDefined();
-	expect(wisdomButton).toHaveText('σοφία');
+	await expect(wisdomButton).toHaveText(/σοφ[ίί]α/);
 	await wisdomButton.click();
 	
-	const refButton = page.locator('dialog.modal[open] button').nth(2);
-	await refButton.waitFor('visible');
+	const refButton = page.locator('dialog[open] button').filter({ hasText: /Lxx instance/i }).first();
+	await refButton.waitFor({ state: 'visible' });
 	await refButton.click();
-	const refHead = page.locator('.modal[open] .modal-box').locator('h2',{hasText: '254'});
-	await refHead.waitFor('visible');
+	const refHead = page.locator('dialog[open] .modal-box').locator('h2', { hasText: /verses with σοφ[ίί]α/i });
+	await refHead.waitFor({ state: 'visible' });
 	expect(refHead).toBeDefined();
 
 

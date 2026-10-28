@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Modal2 from '$lib/lemma-ui/components/ui/Modal2.svelte';
+	import { Modal2 } from '@polyglot/lemma-ui';
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { READER_HOTKEYS, type HotkeyAction } from '$lib/config/hotkeys';
-    import { mylog } from '$lib/lemma-ui/env/env';
+    import { mylog } from '$lib/utils/logger';
 
 	const categories = ['Navigation', 'View', 'General'] as const;
 
