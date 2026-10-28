@@ -8,6 +8,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
+		"pipeline:fetch": "python3 ../../packages/data-pipeline/fetcher.py --all",
 		"pipeline:chunk": "python3 ../../packages/data-pipeline/build.py --chunk",
 		"pipeline:build": "python3 ../../packages/data-pipeline/build.py --build",
 		"pipeline:all": "python3 ../../packages/data-pipeline/build.py --all",

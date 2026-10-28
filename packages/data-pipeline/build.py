@@ -60,11 +60,14 @@ def main():
     if args.rebuild_lxx_morphology:
         print("\n>>> OPTIONAL STAGE: Rebuilding Swete LXX Morphology Engine <<<")
         import subprocess
-        cmd = [sys.executable, "-m", "pipeline.swete_morphology.run_pipeline", "--all"]
+        runner_path = Path(__file__).resolve().parent / "swete_morphology" / "run_pipeline.py"
+        cmd = [sys.executable, str(runner_path), "--all"]
         subprocess.check_call(cmd)
 
     # Stage 1: Fetch
-    if args.all or args.fetch:
+    # Auto-fetch if requested or if essential upstream files are missing from cache
+    essential_missing = not (CACHE_DIR / "TVTMS.txt").exists() or not (CACHE_DIR / "DictBDB.json").exists()
+    if args.all or args.fetch or (args.build and essential_missing):
         print("\n>>> STAGE 1: Fetching Upstream Sources <<<")
         try:
             fetch_all_sources(force=args.force)

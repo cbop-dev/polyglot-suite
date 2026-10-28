@@ -5,6 +5,8 @@
   "description": "Unified data pipeline and SQLite compiler for Polyglot Suite ancient text readers",
   "type": "module",
   "scripts": {
+    "fetch:db": "python3 fetcher.py --all",
+    "fetch": "npm run fetch:db",
     "build:db": "python3 build.py --build",
     "chunk:db": "python3 build.py --chunk",
     "data:all": "python3 build.py --all"

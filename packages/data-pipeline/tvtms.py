@@ -229,9 +229,18 @@ def load_tvtms(tvtms_path: Optional[Path] = None) -> TVTMSResolver:
         tvtms_path = CACHE_DIR / "TVTMS.txt"
 
     if not tvtms_path.exists():
-        raise FileNotFoundError(
-            f"TVTMS.txt not found at {tvtms_path}. Run `python -m pipeline.fetcher --key tvtms` first."
-        )
+        print(f"TVTMS.txt not found at {tvtms_path}. Auto-fetching from upstream...")
+        try:
+            from .fetcher import fetch_source
+        except (ImportError, ValueError):
+            from fetcher import fetch_source
+        try:
+            fetch_source("tvtms")
+        except Exception as e:
+            raise FileNotFoundError(
+                f"TVTMS.txt not found at {tvtms_path} and auto-fetch failed: {e}. "
+                f"Run `npm run fetch:db` or `python3 packages/data-pipeline/fetcher.py --key tvtms`."
+            ) from e
 
     resolver = TVTMSResolver()
     print(f"Parsing TVTMS alignment rules from: {tvtms_path}")

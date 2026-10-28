@@ -11,7 +11,15 @@ import time
 import urllib.request
 import zipfile
 from pathlib import Path
-from .config import CACHE_DIR, UPSTREAM_SOURCES
+
+PIPELINE_DIR = Path(__file__).resolve().parent
+if str(PIPELINE_DIR) not in sys.path:
+    sys.path.insert(0, str(PIPELINE_DIR))
+
+try:
+    from .config import CACHE_DIR, UPSTREAM_SOURCES
+except (ImportError, ValueError):
+    from config import CACHE_DIR, UPSTREAM_SOURCES
 
 
 def fetch_file(url: str, dest_path: Path, force: bool = False) -> Path:
