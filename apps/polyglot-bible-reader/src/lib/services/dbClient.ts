@@ -565,6 +565,31 @@ export async function translateReference(
 	if (!code && !resolvedBook) return null;
 
 	try {
+		// Attempt bidirectional alignment join from source tradition coordinates to target tradition coordinates
+		const joinRows = await query<{ native_book: string; native_chapter: number; native_verse: number }>(
+			`SELECT t2.native_book, t2.native_chapter, t2.native_verse
+			FROM text_units t1
+			JOIN text_units t2
+			  ON t1.std_book = t2.std_book
+			 AND t1.std_chapter = t2.std_chapter
+			 AND t1.std_verse = t2.std_verse
+			WHERE t1.corpus_id = ?
+			  AND t1.std_book = ?
+			  AND t1.native_chapter = ?
+			  AND t1.native_verse = ?
+			  AND t2.corpus_id = ?
+			LIMIT 1;
+		`, [fromCorpus, code, chapter, verse, toCorpus]);
+
+		if (joinRows.length > 0) {
+			return {
+				book: joinRows[0].native_book || book,
+				chapter: joinRows[0].native_chapter,
+				verse: joinRows[0].native_verse
+			};
+		}
+
+		// Fallback: direct standard coordinate lookup
 		const rows = await query<{ native_book: string; native_chapter: number; native_verse: number }>(
 			`SELECT native_book, native_chapter, native_verse
 			FROM text_units

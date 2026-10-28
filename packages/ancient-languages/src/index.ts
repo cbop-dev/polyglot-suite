@@ -6,3 +6,4 @@ export * from './hebrew-utils.js';
 export * from './greek-utils.js';
 export * from './hotkeys.js';
 export * from './fonts.js';
+export * from './bible/index.js';

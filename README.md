@@ -68,3 +68,74 @@ git subtree pull --prefix=apps/polyglot-bible-reader polyglot-bible-reader main
 # Pull changes from upstream josephus-reader
 git subtree pull --prefix=apps/josephus-reader josephus-reader v1.0
 ```
+
+## Database Management & Releases
+
+Each reader app (`polyglot-bible-reader` / `biblical-lexeme-explorer`, `philo-reader`, `apostolic-fathers-reader`) reads pre-computed SQLite databases served as 5MB chunks via HTTP-VFS. Database releases are hosted on GitHub Releases and tracked locally in each app's `static/db/config.json`.
+
+### 1. Check Database Status (Local vs. GitHub Releases)
+Compare the database version in local `config.json` against the latest published version on GitHub Releases:
+
+```bash
+# Compare all databases (Bible, Philo, Apostolic Fathers)
+npm run status:db:gh
+
+# Compare a specific app database
+npm run status:db:gh bible       # Polyglot Bible Reader & BLE (alias: lex, data)
+npm run status:db:gh philo       # Philo Reader
+npm run status:db:gh fathers     # Apostolic Fathers Reader (alias: af)
+```
+
+The status command will report:
+- **`✅ UP_TO_DATE`**: Local version matches the latest release on GitHub, and chunks exist locally.
+- **`⚠️ LOCAL_AHEAD_UNRELEASED`**: Local `config.json` specifies a version that has not yet been published to GitHub Releases (run `npm run release:db <app>`).
+- **`📥 RELEASED_CHUNKS_MISSING`**: Release exists on GitHub, but chunks are not downloaded locally (run `npm run pull:db <app>`).
+- **`⬇️ LOCAL_BEHIND`**: GitHub has a newer release than local `config.json`.
+
+### 2. Download Database Chunks from GitHub Releases
+If chunks are missing locally or after cloning a fresh repository:
+
+```bash
+# Download chunks for all databases
+npm run pull:db
+
+# Download chunks for a specific app
+npm run pull:db:bible
+npm run pull:db:philo
+npm run pull:db:fathers
+```
+
+### 3. Release a New Database Version
+> [!NOTE]
+> You **only** need to run `release:db` when you modified ancient texts, morphology, or lexicon data and compiled new chunks. Frontend/UI changes do **not** require a database release.
+
+```bash
+# Preview what release will do without modifying files or uploading:
+node scripts/release_db.js bible --dry-run
+
+# Publish a new database version (bumps version, creates GH release, and uploads chunks):
+npm run release:db:bible         # Bumps patch (e.g. 0.2.0 -> 0.2.1)
+npm run release:db:philo minor   # Bumps minor (e.g. 0.0.5 -> 0.1.0)
+npm run release:db bible 1.0.0   # Explicit version
+
+# Automatically push git commit after release:
+npm run release:db:bible -- --push
+```
+
+### 4. Compiling & Building Databases from Source (Data Pipeline)
+To compile the master SQLite database from upstream source files:
+
+```bash
+# Download upstream raw texts and lexicons into cache/
+npm run fetch:db
+
+# Compile pre-aligned SQLite database and export BLE manifests
+npm run build:db
+
+# Slice the database into 5MB HTTP-VFS static chunks
+npm run chunk:db
+
+# Run full end-to-end pipeline (fetch -> compile -> validate -> chunk -> manifests)
+npm run data:all
+```
+

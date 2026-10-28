@@ -24,6 +24,7 @@ DB_PATH = PIPELINE_DIR / "build" / "polyglot-working.sqlite3"
 if not DB_PATH.exists():
     DB_PATH = APP_ROOT / "pipeline" / "build" / "polyglot-working.sqlite3"
 TARGET_TS = APP_ROOT / "src" / "lib" / "config" / "canonicalBooks.generated.ts"
+TARGET_PKG_TS = MONOREPO_ROOT / "packages" / "ancient-languages" / "src" / "bible" / "canonicalBooks.generated.ts"
 
 # Standard UI Abbreviations for all 90 canonical books
 STANDARD_ABBREVS = {
@@ -748,6 +749,9 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
     ]
     target_ts.write_text("\n".join(lines), encoding="utf-8")
     print(f"Successfully generated: {target_ts}")
+    if target_ts == TARGET_TS and TARGET_PKG_TS.parent.exists():
+        TARGET_PKG_TS.write_text("\n".join(lines), encoding="utf-8")
+        print(f"Successfully synced: {TARGET_PKG_TS}")
 
 
 def generate_corpus_book_stats(conn: sqlite3.Connection, version_canonical_codes: dict, corpus_to_version: dict):

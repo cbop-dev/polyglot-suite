@@ -12,6 +12,7 @@
     "./KwicSnippet.svelte": "./src/components/KwicSnippet.svelte",
     "./AttestedFormsSection.svelte": "./src/components/AttestedFormsSection.svelte",
     "./InflectionFilterBar.svelte": "./src/components/InflectionFilterBar.svelte",
+    "./bible": "./src/bible/index.ts",
     "./components/*": "./src/components/*"
   },
   "scripts": {

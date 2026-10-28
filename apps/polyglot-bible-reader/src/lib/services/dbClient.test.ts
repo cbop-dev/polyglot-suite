@@ -117,10 +117,36 @@ describe('dbClient service', () => {
 			);
 		});
 
-		it('translates references between versions using text_units alignment join', async () => {
+		it('translates references between BHS and LXX using text_units alignment join (e.g. BHS Ps 50:1 == LXX 49:1)', async () => {
 			mockQuery.mockResolvedValueOnce([
-				{ native_book: 'Ps', native_chapter: 50, native_verse: 3 }
+				{ native_book: 'Ps', native_chapter: 49, native_verse: 1 }
 			]);
+
+			const trans = await translateReference('Ps', 50, 1, 'BHS', 'LXX');
+			expect(trans).toEqual({ book: 'Ps', chapter: 49, verse: 1 });
+			expect(mockQuery).toHaveBeenCalledWith(
+				expect.stringContaining('FROM text_units t1'),
+				['wlc', 'PSA', 50, 1, 'swete_lxx']
+			);
+		});
+
+		it('translates reverse reference alignment from LXX 49:1 to BHS 50:1', async () => {
+			mockQuery.mockResolvedValueOnce([
+				{ native_book: 'Ps', native_chapter: 50, native_verse: 1 }
+			]);
+
+			const trans = await translateReference('Ps', 49, 1, 'LXX', 'BHS');
+			expect(trans).toEqual({ book: 'Ps', chapter: 50, verse: 1 });
+			expect(mockQuery).toHaveBeenCalledWith(
+				expect.stringContaining('FROM text_units t1'),
+				['swete_lxx', 'PSA', 49, 1, 'wlc']
+			);
+		});
+
+		it('falls back to standard coordinates when join is empty', async () => {
+			mockQuery
+				.mockResolvedValueOnce([]) // join returns empty
+				.mockResolvedValueOnce([{ native_book: 'Ps', native_chapter: 50, native_verse: 3 }]); // fallback
 
 			const trans = await translateReference('Ps', 51, 3, 'BHS', 'LXX');
 			expect(trans).toEqual({ book: 'Ps', chapter: 50, verse: 3 });
@@ -131,7 +157,9 @@ describe('dbClient service', () => {
 		});
 
 		it('returns null when reference translation fails or passage does not exist', async () => {
-			mockQuery.mockResolvedValueOnce([]);
+			mockQuery
+				.mockResolvedValueOnce([])
+				.mockResolvedValueOnce([]);
 
 			const trans = await translateReference('Gen', 999, 1, 'BHS', 'LXX');
 			expect(trans).toBeNull();

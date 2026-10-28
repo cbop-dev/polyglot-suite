@@ -36,6 +36,7 @@ export const APPS = {
 };
 APPS.data = APPS.bible;
 APPS['bible-data'] = APPS.bible;
+APPS.lex = APPS.bible;
 APPS.af = APPS.fathers;
 
 export function getGhEnv() {
