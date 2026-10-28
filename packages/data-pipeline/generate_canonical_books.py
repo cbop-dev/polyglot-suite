@@ -267,11 +267,14 @@ def generate_typescript():
         # 1. Determine canonical sequence of USFM codes for this version
         custom_seq = VERSION_CANONICAL_ORDERS.get(ver, [])
         if custom_seq:
-            ordered_codes = [c for c in custom_seq if c in db_book_codes]
-            # Append any books in db not explicitly in custom_seq
-            for std_code, _ in rows_ver:
-                if std_code not in ordered_codes:
-                    ordered_codes.append(std_code)
+            if len(db_book_codes) < len(custom_seq):
+                ordered_codes = list(custom_seq)
+            else:
+                ordered_codes = [c for c in custom_seq if c in db_book_codes]
+                # Append any books in db not explicitly in custom_seq
+                for std_code, _ in rows_ver:
+                    if std_code not in ordered_codes:
+                        ordered_codes.append(std_code)
         else:
             ordered_codes = [std_code for std_code, _ in rows_ver]
 
@@ -327,6 +330,12 @@ def generate_typescript():
                 if ver not in version_chapter_overrides:
                     version_chapter_overrides[ver] = {}
                 version_chapter_overrides[ver][std_code] = ch_list
+
+    # Ensure LXX Sirach includes Chapter 0 (prologue) through 51
+    if "LXX" not in version_chapter_overrides:
+        version_chapter_overrides["LXX"] = {}
+    if "SIR" not in version_chapter_overrides["LXX"]:
+        version_chapter_overrides["LXX"]["SIR"] = list(range(0, 52))
 
     if len(rows) == 0:
         print("Error: No books found in canonical_books table!")

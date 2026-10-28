@@ -19,6 +19,8 @@
     --color-base-200: color-mix(in srgb, var(--color-rule, #888888) 15%, var(--color-page, #ffffff));
     --color-base-300: color-mix(in srgb, var(--color-rule, #888888) 30%, var(--color-page, #ffffff));
     --color-base-content: var(--color-ink);
+    --font-hebrew: 'Ezra SIL', 'SBL Hebrew', serif;
+    --font-greek: 'SBL BibLit', 'Gentium', 'GFS Didot', 'EB Garamond', serif;
 }
 
 :root {
@@ -260,6 +262,22 @@ h1, h2 {
 }
 
 @font-face {
+    font-family: 'Ezra SIL';
+    src: url('/fonts/SILEOT.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'SBL Hebrew';
+    src: url('/fonts/SBL_Hbrw.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
     font-family: 'SBL BibLit';
     font-style: normal;
     font-weight: 500;
@@ -268,6 +286,13 @@ h1, h2 {
         url('/fonts/SBL_BibLit_Regular.ttf') format('truetype');
 }
 
+.font-hebrew,
+.hebrew {
+    font-family: 'Ezra SIL', 'SBL Hebrew', serif;
+    direction: rtl;
+}
+
+.font-greek,
 .greek {
-    font-family: "SBL BibLit", "Gentium";
+    font-family: 'SBL BibLit', 'Gentium', 'GFS Didot', 'EB Garamond', serif;
 }

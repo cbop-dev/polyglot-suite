@@ -14,6 +14,7 @@
 	import LexFilterInput from '$lib/components/LexFilterInput.svelte';
 	import Modal2 from '$lib/components/ui/Modal2.svelte';
 	import { LexRefQueries } from '$lib/LexRefQueries.svelte';
+	import { getLanguageFontClass } from '@polyglot/ancient-languages';
 	/**
 	 * @typedef LexSearchProps
 	 * @property {TfDataset} tfData
@@ -26,6 +27,7 @@
 	let { tfData, initialLemma = '', initialId = '' } = $props();
 
 	let lang = $derived(tfData?.lang || 'greek');
+	let langFontClass = $derived(getLanguageFontClass(lang, tfData?.dbAbbrev));
 	/**
 	 * @type {number[]} matchedIndexes
 	 */
@@ -157,7 +159,7 @@
 							}}
 							textSize="text-2xl "
 							buttonColors="btn-lemma"
-							style="font-bold greek "
+							style="font-bold {langFontClass} "
 						/>
 					</div>
 				{/each}
@@ -177,7 +179,7 @@
 							}}
 							textSize="text-2xl "
 							buttonColors="btn-lemma"
-							style="font-bold greek "
+							style="font-bold {langFontClass} "
 						/>
 					</div>
 				{/each}

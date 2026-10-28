@@ -6,13 +6,14 @@
 	import ModalButton from './ui/ModalButton.svelte';
 	import { LexQuery, LexQueryFilter } from './LexQuery.svelte.js';
 	import Icon from '$lib/components/ui/icons/Icon.svelte';
-	import TextsDisplay from './TextsDisplay.svelte';
+	import { TextsDisplay } from '@polyglot/lemma-ui';
 	import { VocabEngine, TF } from '$lib/engine/VocabEngine.js';
 	import BookOpenSvg from '$lib/components/ui/icons/book-open.svg';
 	import Modal2 from './ui/Modal2.svelte';
 	import * as BibleUtils from '$lib/utils/bible-utils.js';
 	import OptionButton from './ui/OptionButton.svelte';
 	import CopyText from './ui/CopyText.svelte';
+	import { getReaderVerseUrl } from '$lib/utils/navigation.js';
 
 	/**
 	 * @type {{
@@ -71,13 +72,30 @@
 			copyText={tfData.booksDict.combineRefs(lexRefQuery.response['refs'])} />
 		</div>
 		<TextsDisplay
-				{tfData}
-				lexID={lexId}
-				sectionIDs={lexRefQuery.response['nodes']}
-				refs={refsString}
-				
-			/>
-			{/if}
+			sectionIDs={lexRefQuery.response['nodes']}
+			refs={refsString}
+			lang={tfData?.lang || (tfData?.dbAbbrev === 'bhs' ? 'hebrew' : 'greek')}
+			dbAbbrev={tfData?.dbAbbrev || 'lxx'}
+			lemma={lemma}
+			lookupKey={lemma}
+			fetchBatchTexts={async (ids) => {
+				const batch = {};
+				await Promise.all(ids.map(async (id) => {
+					const res = await VocabEngine.fetchText(id, tfData.dbAbbrev);
+					if (res?.text) {
+						batch[id] = { text: res.text, matchedWords: [lemma] };
+					}
+				}));
+				return batch;
+			}}
+			fetchVerseDetail={async (id) => {
+				const res = await VocabEngine.fetchText(id, tfData.dbAbbrev);
+				return res?.text ? { text: res.text, matchedWords: [lemma] } : null;
+			}}
+			getReaderVerseUrl={(ref) => getReaderVerseUrl(ref, tfData?.dbAbbrev)}
+			formatBookAbbrev={(book) => tfData?.booksDict?.lookupBookAbbrev?.(book) || book}
+		/>
+		{/if}
 		<!--{tfData.booksDict.combineRefs(lexRefQuery.response['refs'])}--><br/>
 		<CopyText 
 			copyText={tfData.booksDict.combineRefs(lexRefQuery.response['refs'])} 

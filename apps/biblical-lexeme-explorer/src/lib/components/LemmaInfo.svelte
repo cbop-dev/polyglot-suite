@@ -32,6 +32,7 @@ That is, the <LemmaInfo> tag should be surrounded by tags such as : {#key lemma 
 	import Loading from './ui/Loading.svelte';
 	import LSJEntry from './LSJEntry.svelte';
 	import BDBEntry from './BDBEntry.svelte';
+	import { getLanguageFontClass, getLanguageDirection } from '@polyglot/ancient-languages';
 
 	/**
 	 * @typedef LemmaInfoProps
@@ -59,6 +60,8 @@ That is, the <LemmaInfo> tag should be surrounded by tags such as : {#key lemma 
 		//bookId=0,//optional
 	} = $props();
 	
+	let langFontClass = $derived(getLanguageFontClass(tfData?.lang, tfData?.dbAbbrev));
+	let langDir = $derived(getLanguageDirection(tfData?.lang, tfData?.dbAbbrev));
 	
 	let showReferences = $state(false);
 	let showSectionReferences = $state(false);
@@ -215,7 +218,7 @@ That is, the <LemmaInfo> tag should be surrounded by tags such as : {#key lemma 
 </script>
 
 <div class="items-center text-center">
-	<h1 class="text-xxl greek font-bold">{lemma.lemma}</h1>
+	<h1 class="text-xxl {langFontClass} font-bold" dir={langDir}>{lemma.lemma}</h1>
 
 	<h2 class="inline-block">Gloss:</h2>
 	{lemma.gloss}<br />

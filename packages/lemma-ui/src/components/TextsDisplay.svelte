@@ -1,15 +1,8 @@
 <script lang="ts">
-    import * as bibleUtils from '$lib/utils/bible-utils.js';
-    import Modal2 from "./ui/Modal2.svelte";
-    import CopyText from "./ui/CopyText.svelte";
-    import ArrowUp from "./ui/icons/arrow-up.svelte";
-    import { jumpToDiv } from "$lib/utils/ui-utils";
-    import { getVerseText, getBatchVerseTexts, getVerseDetail, type BatchVerseItem } from "$lib/services/dbClient";
-    import { readerState } from "$lib/stores/readerState.svelte";
-    import { formatDisplayReference, formatBookAbbreviation, getBookCanonicalIndex } from "$lib/config/bookMapping.js";
-    import { myDataSets } from "$lib/config/versions";
+    import { Modal2, CopyText, ArrowUp } from "@polyglot/ui";
     import KwicSnippet from "@polyglot/ancient-languages/KwicSnippet.svelte";
-    import { findMatchInText, findAllMatchesInText } from "@polyglot/ancient-languages";
+    import { findAllMatchesInText, getLanguageFontClass, getLanguageDirection, isRtlLanguage } from "@polyglot/ancient-languages";
+    import type { BatchVerseItem, FetchBatchTextsFn, FetchVerseDetailFn } from "../types.js";
 
     let {
         title = '',
@@ -22,7 +15,16 @@
         lemma = '',
         strongs = '',
         lookupKey = '',
-        clickedWord = ''
+        clickedWord = '',
+        // Pluggable data fetching callbacks:
+        fetchBatchTexts = null as FetchBatchTextsFn | null,
+        fetchVerseDetail = null as FetchVerseDetailFn | null,
+        // Pluggable navigation callbacks:
+        onNavigateToVerse = null as ((ref: string, occurrence?: any) => void) | null,
+        getReaderVerseUrl = null as ((ref: string) => string) | null,
+        // Optional formatting & sorting overrides:
+        getBookCanonicalIndex = null as ((book: string) => number) | null,
+        formatBookAbbrev = null as ((book: string) => string) | null
     } = $props();
 
     let showText = $state(false);
@@ -35,39 +37,66 @@
     let currentPage = $state<number>(1);
     let isLoadingBatch = $state<boolean>(false);
 
-    // Target version for canonical sequence sorting (e.g. BHS, LXX, Peshitta, KJV)
-    const activeVersionName = $derived.by(() => {
-        const selected = readerState.selectedVersion;
-        if (selected) return selected;
-        const low = (dbAbbrev || '').toLowerCase();
-        if (low === 'bhs' || low === 'wlc') return 'BHS';
-        if (low === 'peshitta') return 'Peshitta';
-        if (low === 'opengnt' || low === 'ognt') return 'OpenGNT';
-        return 'LXX';
-    });
+    const isRtl = $derived(isRtlLanguage(lang, dbAbbrev));
+    const textDirection = $derived(getLanguageDirection(lang, dbAbbrev));
+    const textAlignClass = $derived(isRtl ? 'text-right' : 'text-left');
+    const langFontClass = $derived(getLanguageFontClass(lang, dbAbbrev));
 
-    const versionObj = $derived(
-        myDataSets.lookup(activeVersionName) || myDataSets.lookup(dbAbbrev)
-    );
-    const textDirection = $derived(versionObj?.direction ?? 'ltr');
-    const isRtl = $derived(textDirection === 'rtl');
-    const textAlignClass = $derived(versionObj?.direction === 'rtl' ? 'text-right' : 'text-left');
+    function jumpToDiv(divId: string) {
+        if (typeof document === 'undefined') return;
+        const targetEl = document.getElementById(divId);
+        if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            document.location = document.location.toString().split('#')[0] + '#' + divId;
+        }
+    }
+
+    function formatBook(book: string): string {
+        if (!book) return '';
+        if (formatBookAbbrev) return formatBookAbbrev(book);
+        return book.replace(/^([0-9]+)([A-Za-z]+)/, '$1 $2');
+    }
+
+    function parseRef(ref: string): { book: string; chap: string; v: string } {
+        if (!ref) return { book: '', chap: '1', v: '1' };
+        const parts = ref.trim().split(/\s+/);
+        if (parts.length >= 2) {
+            const cvPart = parts[parts.length - 1];
+            const [chap, v] = cvPart.split(':');
+            const book = parts.slice(0, -1).join(' ');
+            return { book, chap: chap || '1', v: v || '1' };
+        }
+        if (ref.includes(':')) {
+            const [chap, v] = ref.split(':');
+            return { book: '', chap: chap || '1', v: v || '1' };
+        }
+        return { book: ref, chap: '1', v: '1' };
+    }
+
+    function bCvToString(bcv: any, omitBook = false) {
+        if (!bcv) return '';
+        let ret = (bcv.chap || '1') + ":" + (bcv.v || '1');
+        if (!omitBook) {
+            ret = (bcv.book ? formatBook(bcv.book) + " " : '') + ret;
+        }
+        return ret;
+    }
 
     // Normalize input into unified list of { ref: string, workUnitId: number }
     let normalizedOccurrences = $derived.by(() => {
-        const activeVer = activeVersionName;
         if (occurrences && occurrences.length > 0) {
-            return occurrences.map((occ, idx) => {
+            return occurrences.map((occ: any, idx: number) => {
                 const rawRef = occ.display_label || occ.ref_label || (refs && refs[idx]) || '';
                 return {
-                    ref: formatDisplayReference(rawRef, activeVer),
+                    ref: rawRef,
                     workUnitId: occ.work_unit_id || (sectionIDs && sectionIDs[idx]) || 0
                 };
             });
         }
         if (refs && refs.length > 0) {
-            return refs.map((ref, idx) => ({
-                ref: formatDisplayReference(ref, activeVer),
+            return refs.map((ref: string, idx: number) => ({
+                ref: ref,
                 workUnitId: (sectionIDs && sectionIDs[idx]) || 0
             }));
         }
@@ -83,7 +112,7 @@
 
         for (let i = 0; i < normalizedOccurrences.length; i++) {
             const item = normalizedOccurrences[i];
-            const bCv = bibleUtils.getBookChapVerseFromRef(item.ref);
+            const bCv = parseRef(item.ref);
             if (bCv.book) {
                 currentBook = bCv.book;
             } else {
@@ -98,11 +127,13 @@
             list.push({ bCv, origIndex: i, item });
         }
 
-        // Sort books by authentic version canonical index
+        // Sort books by authentic version canonical index or alphabetical
         const sortedBookKeys = Array.from(bookMap.keys()).sort((a, b) => {
-            const ordA = getBookCanonicalIndex(a, activeVersionName);
-            const ordB = getBookCanonicalIndex(b, activeVersionName);
-            if (ordA !== ordB) return ordA - ordB;
+            if (getBookCanonicalIndex) {
+                const ordA = getBookCanonicalIndex(a);
+                const ordB = getBookCanonicalIndex(b);
+                if (ordA !== ordB) return ordA - ordB;
+            }
             return a.localeCompare(b);
         });
 
@@ -127,7 +158,7 @@
                 book,
                 bookRefs,
                 indexOffset: currentOffset,
-                combinedRefs: bibleUtils.combineRefs(refStrings) || refStrings.join('; ')
+                combinedRefs: refStrings.join('; ')
             });
         }
         return result;
@@ -175,9 +206,10 @@
     });
 
     async function loadBatchTexts(ids: number[]) {
+        if (!fetchBatchTexts) return;
         isLoadingBatch = true;
         try {
-            const batch = await getBatchVerseTexts(ids, {
+            const batch = await fetchBatchTexts(ids, {
                 lemma,
                 strongs,
                 lookupKey,
@@ -225,29 +257,24 @@
         }
     }
 
-    function bCvToString(bcv: any, omitBook = false) {
-        if (!bcv) return '';
-        let ret = (bcv.chap || '1') + ":" + (bcv.v || '1');
-        if (!omitBook) {
-            ret = (bcv.book ? formatBookAbbreviation(bcv.book) + " " : '') + ret;
-        }
-        return ret;
-    }
-
     async function fetchText() {
         if (chosenRefIdx >= 0) {
             const item = normalizedOccurrences[chosenRefIdx];
             if (item && item.workUnitId) {
                 if (!textsFetched[item.workUnitId]) {
-                    const detail = await getVerseDetail(item.workUnitId, {
-                        lemma,
-                        strongs,
-                        lookupKey,
-                        lang,
-                        clickedWord
-                    });
-                    if (detail) {
-                        textsFetched[item.workUnitId] = detail;
+                    if (fetchVerseDetail) {
+                        const detail = await fetchVerseDetail(item.workUnitId, {
+                            lemma,
+                            strongs,
+                            lookupKey,
+                            lang,
+                            clickedWord
+                        });
+                        if (detail) {
+                            textsFetched[item.workUnitId] = detail;
+                        }
+                    } else if (fetchBatchTexts) {
+                        await loadBatchTexts([item.workUnitId]);
                     }
                 }
             }
@@ -311,18 +338,6 @@
             html += escapeHtml(text.slice(curr));
         }
         return html;
-    }
-
-    async function navigateToOccurrence(displayLabel: string) {
-        if (!displayLabel) return;
-        const parts = displayLabel.trim().split(' ');
-        if (parts.length >= 2) {
-            const bookPart = parts.slice(0, -1).join(' ');
-            const cvPart = parts[parts.length - 1];
-            const [ch, v] = cvPart.split(':');
-            showText = false;
-            await readerState.navigateToReference(bookPart, ch || '1', v);
-        }
     }
 </script>
 
@@ -408,7 +423,7 @@
                 class="book-jump-btn"
                 onclick={() => handleBookJump(book)}
             >
-                {formatBookAbbreviation(book)}
+                {formatBook(book)}
             </button>
         {/each}
     </div>
@@ -421,13 +436,13 @@
     <div class="w-full">
         {#each groupedBookEntries as { book, bookRefs, combinedRefs }}
             <div id={book.replaceAll(" ","_")} class="relative bg-rule/30 text-ink font-bold px-3 py-1.5 rounded-lg my-2 flex items-center justify-center border border-rule/50">
-                <span class="text-center font-bold tracking-wide">{formatBookAbbreviation(book)}</span>
+                <span class="text-center font-bold tracking-wide">{formatBook(book)}</span>
                 <div class="absolute right-2 flex items-center gap-1.5">
                     <a href="#refs-top" onclick={()=>jumpToDiv("refs-top")} class="text-ink/70 hover:text-ink transition-colors p-1" title="Jump to top"><ArrowUp width={15} height={15}/></a>
                     <CopyText copyText={combinedRefs}
                         btnSizeCssClass="btn-xs font-bold"
                         btnCssClass="bg-page hover:bg-rule text-ink border border-rule" 
-                        tooltip="Copy {formatBookAbbreviation(book)} references"
+                        tooltip="Copy {formatBook(book)} references"
                         width={15}
                         height={15}
                     />
@@ -450,7 +465,7 @@
 <!-- MODES 2 & 3: TEXTS (Full Verses) & KWIC (Snippets) -->
 {:else}
     <!-- Top Pagination Bar -->
-    <div class="flex items-center justify-between py-2 px-3 my-2 rounded-lg bg-base-200/40 border border-rule/50 text-xs text-ink-soft">
+    <div class="flex items-center justify-between py-2 px-3 my-2 rounded-lg bg-rule/10 border border-rule/50 text-xs text-ink-soft">
         <span>
             Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalItems)} of {totalItems}
         </span>
@@ -480,7 +495,7 @@
         {#if isLoadingBatch && Object.keys(textsFetched).length === 0}
             <div class="py-12 text-center text-xs text-ink-soft space-y-2">
                 <span class="inline-block w-6 h-6 border-2 border-link border-t-transparent rounded-full animate-spin"></span>
-                <p>Loading verses from database...</p>
+                <p>Loading verses...</p>
             </div>
         {:else}
             {#each activePageOccurrences as occ, idx}
@@ -494,8 +509,10 @@
                         class="flex items-center gap-2 pt-3 pb-1.5 my-2 border-b border-rule/60 text-ink font-bold text-sm tracking-wide uppercase scroll-mt-4"
                     >
                         <span class="w-2 h-2 rounded-full bg-link"></span>
-                        <span>{formatBookAbbreviation(occ.book)}</span>
-                        <span class="text-xs font-normal text-ink-soft">({occ.book})</span>
+                        <span>{formatBook(occ.book)}</span>
+                        {#if formatBook(occ.book) !== occ.book}
+                            <span class="text-xs font-normal text-ink-soft">({occ.book})</span>
+                        {/if}
                     </div>
                 {/if}
 
@@ -504,20 +521,32 @@
                         <span class="font-bold text-xs text-link font-mono">
                             {occ.ref}
                         </span>
-                        <button
-                            type="button"
-                            onclick={() => navigateToOccurrence(occ.ref)}
-                            class="text-[11px] font-semibold text-ink-soft hover:text-link flex items-center gap-1 cursor-pointer transition-colors"
-                            title="Jump to verse in reader"
-                        >
-                            Go to Verse &rarr;
-                        </button>
+                        {#if onNavigateToVerse}
+                            <button
+                                type="button"
+                                onclick={() => onNavigateToVerse(occ.ref, occ)}
+                                class="text-[11px] font-semibold text-ink-soft hover:text-link flex items-center gap-1 cursor-pointer transition-colors"
+                                title="Jump to verse in reader"
+                            >
+                                Go to Verse &rarr;
+                            </button>
+                        {:else if getReaderVerseUrl}
+                            <a
+                                href={getReaderVerseUrl(occ.ref)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="text-[11px] font-semibold text-ink-soft hover:text-link flex items-center gap-1 cursor-pointer transition-colors"
+                                title="Read {occ.ref} in Polyglot Bible Reader"
+                            >
+                                <span>Read in Reader ↗</span>
+                            </a>
+                        {/if}
                     </div>
 
                     {#if !theText}
                         <div class="py-2 text-xs text-ink-soft italic">Loading verse...</div>
                     {:else if displayMode === 'kwic'}
-                        <div class="text-sm {textAlignClass} {lang === 'syriac' ? 'font-syriac' : (lang === 'hebrew' ? 'font-hebrew' : 'font-greek')}" dir={textDirection}>
+                        <div class="text-sm {textAlignClass} {langFontClass}" dir={textDirection}>
                             <KwicSnippet
                                 text={theText}
                                 matchWord={matchedWords[0] || lemma || lookupKey}
@@ -528,7 +557,7 @@
                             />
                         </div>
                     {:else}
-                        <div class="text-sm leading-relaxed text-ink {textAlignClass} {lang === 'syriac' ? 'font-syriac text-lg' : (lang === 'hebrew' ? 'font-hebrew text-lg' : 'font-greek')}" dir={textDirection}>
+                        <div class="text-sm leading-relaxed text-ink {textAlignClass} {langFontClass} {isRtl ? 'text-lg' : ''}" dir={textDirection}>
                             {@html highlightMatchedWords(theText, matchedWords)}
                         </div>
                     {/if}
@@ -539,7 +568,7 @@
 
     <!-- Bottom Pagination Bar -->
     {#if totalPages > 1}
-        <div class="flex items-center justify-between py-2 px-3 my-2 rounded-lg bg-base-200/40 border border-rule/50 text-xs text-ink-soft">
+        <div class="flex items-center justify-between py-2 px-3 my-2 rounded-lg bg-rule/10 border border-rule/50 text-xs text-ink-soft">
             <span>
                 Page {currentPage} of {totalPages}
             </span>
@@ -583,18 +612,30 @@
         {:else}
             <div class="block text-center py-2">
                 <h2 class="text-xl font-bold text-ink mb-2">{theRef}</h2>
-                <p class="{lang === 'syriac' || dbAbbrev === 'peshitta' ? 'syriac font-syriac text-3xl' : (lang === 'hebrew' || dbAbbrev === 'bhs' ? 'hebrew font-hebrew text-3xl' : 'greek font-greek text-2xl')} py-4 text-ink leading-relaxed max-w-2xl mx-auto {textAlignClass}" dir={textDirection}>
+                <p class="{langFontClass} {isRtl ? 'text-3xl' : 'text-2xl'} py-4 text-ink leading-relaxed max-w-2xl mx-auto {textAlignClass}" dir={textDirection}>
                     {@html highlightMatchedWords(theText, matchedWords)}
                 </p>
                 <div class="mt-4 flex items-center justify-center gap-3">
                     <CopyText copyText={theRef + ": " + theText} tooltip="Copy verse reference and text" linkText="Copy Verse" />
-                    <button
-                        type="button"
-                        class="px-3 py-1 text-xs font-bold text-ink bg-page border border-rule hover:bg-rule rounded-md shadow-xs cursor-pointer transition-colors"
-                        onclick={() => navigateToOccurrence(theRef)}
-                    >
-                        Go to Verse
-                    </button>
+                    {#if onNavigateToVerse}
+                        <button
+                            type="button"
+                            class="px-3 py-1 text-xs font-bold text-ink bg-page border border-rule hover:bg-rule rounded-md shadow-xs cursor-pointer transition-colors"
+                            onclick={() => { showText = false; onNavigateToVerse(theRef, currentItem); }}
+                        >
+                            Go to Verse
+                        </button>
+                    {:else if getReaderVerseUrl}
+                        <a
+                            href={getReaderVerseUrl(theRef)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-link text-white hover:opacity-90 transition-opacity inline-flex items-center gap-1.5 shadow-xs"
+                            title="Read {theRef} in Polyglot Bible Reader"
+                        >
+                            <span>Read in Bible Reader ↗</span>
+                        </a>
+                    {/if}
                 </div>
             </div>
         {/if}

@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import * as StringUtils from '$lib/utils/string-utils.js';
-	import { OptionButton, Tabs2 as Tabs, BarChart, PieChart, CopyText, LSJEntry, BDBEntry, SEDRAEntry, Icon } from '@polyglot/lemma-ui';
+	import { OptionButton, Tabs2 as Tabs, BarChart, PieChart, CopyText, LSJEntry, BDBEntry, SEDRAEntry, Icon, TextsDisplay } from '@polyglot/lemma-ui';
 	import BarsSvg from '$lib/assets/colorful-bar-chart.svg';
 	import BookOpenSvg from '$lib/assets/book-open.svg';
 	import BookSvg from '$lib/assets/book.svg';
-	import TextsDisplay from './TextsDisplay.svelte';
 	import AttestedFormsSection from '@polyglot/ancient-languages/AttestedFormsSection.svelte';
 	import InflectionFilterBar from '@polyglot/ancient-languages/InflectionFilterBar.svelte';
 	import {
@@ -24,6 +23,8 @@
 		getCorpusBookWords,
 		cleanSyriac,
 		fetchAttestedForms,
+		getBatchVerseTexts,
+		getVerseDetail,
 		type BookFrequency,
 		type ConcordanceOccurrence,
 		type AttestedForm
@@ -38,7 +39,7 @@
 	} from '$lib/utils/lex-stats';
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { highlightStore } from '$lib/stores/highlightStore.svelte';
-	import { getBookCanonicalIndex } from '$lib/config/bookMapping.js';
+	import { getBookCanonicalIndex, formatBookAbbreviation } from '$lib/config/bookMapping.js';
 	import { getLexemeExplorerUrl } from '$lib/utils/navigation';
     import { mylog } from '$lib/utils/logger';
 
@@ -944,6 +945,19 @@
 					strongs={currentLemmaData?.strongs || lemma?.strongs}
 					lookupKey={lookupKey}
 					clickedWord={currentLemmaData?.word || lemma?.word || lemma?.surface || ''}
+					fetchBatchTexts={(ids, meta) => getBatchVerseTexts(ids, meta)}
+					fetchVerseDetail={(id, meta) => getVerseDetail(id, meta)}
+					onNavigateToVerse={async (ref) => {
+						const parts = ref.trim().split(' ');
+						if (parts.length >= 2) {
+							const bookPart = parts.slice(0, -1).join(' ');
+							const cvPart = parts[parts.length - 1];
+							const [ch, v] = cvPart.split(':');
+							await readerState.navigateToReference(bookPart, ch || '1', v);
+						}
+					}}
+					getBookCanonicalIndex={(b) => getBookCanonicalIndex(b, readerState.selectedVersion)}
+					formatBookAbbrev={formatBookAbbreviation}
 				/>
 				{/key}
 			{/if}

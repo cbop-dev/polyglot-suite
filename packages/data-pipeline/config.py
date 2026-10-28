@@ -413,7 +413,7 @@ VERSION_CANONICAL_ORDERS = {
         "1KI", "2KI", "1CH", "2CH", "EZR", "NEH", "EST", "JOB", "PSA", "PRO",
         "ECC", "SNG", "ISA", "JER", "LAM", "EZK", "DAN", "HOS", "JOL", "AMO",
         "OBA", "JON", "MIC", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL",
-        "1ES", "2ES", "TOB", "JDT", "ESG", "WIS", "SIR", "BAR", "LJE", "S3Y",
+        "1ES", "2ES", "TOB", "JDT", "ESG", "WIS", "SIR", "BAR", "S3Y",
         "SUS", "BEL", "MAN", "1MA", "2MA",
         "MAT", "MRK", "LUK", "JHN", "ACT", "ROM", "1CO", "2CO", "GAL", "EPH",
         "PHP", "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAS",
@@ -439,7 +439,7 @@ VERSION_CANONICAL_ORDERS = {
         "1KI", "2KI", "1CH", "2CH", "EZR", "NEH", "JOB", "PSA", "PRO", "ECC",
         "SNG", "ISA", "JER", "LAM", "EZK", "HOS", "JOL", "AMO", "OBA", "JON",
         "MIC", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL",
-        "TOB", "JDT", "ESG", "WIS", "SIR", "BAR", "LJE", "SUS", "BEL",
+        "TOB", "JDT", "ESG", "WIS", "SIR", "BAR", "SUS", "BEL",
         "1MA", "2MA", "1ES", "MAN", "3MA", "4MA", "DAG"
     ]
 }

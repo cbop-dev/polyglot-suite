@@ -10,6 +10,7 @@
     "./LSJEntry.svelte": "./src/components/LSJEntry.svelte",
     "./BDBEntry.svelte": "./src/components/BDBEntry.svelte",
     "./SEDRAEntry.svelte": "./src/components/SEDRAEntry.svelte",
+    "./TextsDisplay.svelte": "./src/components/TextsDisplay.svelte",
     "./LemmaInfo.svelte": "./src/components/LemmaInfo.svelte",
     "./Modal2.svelte": "./src/components/ui/Modal2.svelte",
     "./CopyText.svelte": "./src/components/ui/CopyText.svelte",

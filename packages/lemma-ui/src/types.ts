@@ -39,3 +39,19 @@ export interface LemmaData {
 	dictionary?: LexiconEntry | null;
 	[key: string]: any;
 }
+
+export interface BatchVerseItem {
+	text: string;
+	matchedWords?: string[];
+	translation?: string;
+}
+
+export type FetchBatchTextsFn = (
+	ids: number[],
+	meta: { lemma: string; strongs?: string; lookupKey?: string; lang?: string; clickedWord?: string }
+) => Promise<Record<number, BatchVerseItem>>;
+
+export type FetchVerseDetailFn = (
+	id: number,
+	meta: { lemma: string; strongs?: string; lookupKey?: string; lang?: string; clickedWord?: string }
+) => Promise<BatchVerseItem | null>;

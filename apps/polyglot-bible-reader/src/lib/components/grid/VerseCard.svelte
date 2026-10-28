@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getLanguageFontClass } from '@polyglot/ancient-languages';
   import { CopyText, LinkIcon } from '@polyglot/lemma-ui';
   import { readerState } from '$lib/stores/readerState.svelte';
   import { formatVerseText } from '$lib/services/bibleDataLoader';
@@ -24,20 +25,8 @@
   function getURL(verse="1"){
     return readerState.generatePageStateURL(verse);
   }
-  function getLangFontClass(lang=''){
-      const theDefault = 'font-latin';
-      if (lang === 'Hebrew')
-         return 'font-hebrew';
-      else if (lang === 'Syriac')
-         return 'font-syriac';
-      else if (lang === 'Latin')
-         return 'font-latin';
-      else if (lang=== 'Greek')
-         return 'font-greek';
-      else if (lang==='English')
-        return 'font-english';
-      else
-        return theDefault;
+  function getLangFontClass(lang = '') {
+    return getLanguageFontClass(lang);
   }
 </script>
 

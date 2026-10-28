@@ -25,6 +25,7 @@
 	import Loading from './ui/Loading.svelte';
 	import { TF } from '$lib/TF';
 	import {LexRefQueries} from "$lib/LexRefQueries.svelte.js";
+	import { getLanguageFontClass, getLanguageDirection } from '@polyglot/ancient-languages';
 	// import {TableHandler,Datatable, Search, RowsPerPage, RowCount, Pagination} from '@vincjo/datatables';
 
 	//let datatable = $state();
@@ -41,6 +42,9 @@
 	 * @type ResultsPanelProps {{lexData: {lexemeArray: Lexeme[], frequenciesReady: boolean }, query: LexQuery, hidden: boolean, tfData: TfDataset}}
 	 */
 	let { lexData = $bindable(), query = $bindable(), hidden = false, tfData } = $props();
+
+	let langFontClass = $derived(getLanguageFontClass(tfData?.lang, tfData?.dbAbbrev));
+	let langDir = $derived(getLanguageDirection(tfData?.lang, tfData?.dbAbbrev));
 
 	let ready = $derived(query.ready);
 	let range = $derived.by(() => {
@@ -888,7 +892,7 @@
 								}}
 								tooltip={lex.gloss}
 								buttonColors={getGradientColorClass(lex)}
-								style="greek lemma inline-block m-auto h-auto "
+								style="{langFontClass} lemma inline-block m-auto h-auto "
 								buttonSubtext={showGlosses ? lex.gloss : ''}
 							>
 								
@@ -914,7 +918,7 @@
             -->
 						<!--<div class="block text-left  sm:grid sm:grid-cols-3 sm:gap-1 sm:px-0">-->
 						<div class="grid grid-cols-3 gap-0 px-0 text-left odd:bg-rule/10 hover:bg-rule/20 text-ink transition-colors">
-							<dt class="greek pl-2 text-lg font-bold text-ink" lang="el">
+							<dt class="{langFontClass} pl-2 text-lg font-bold text-ink" dir={langDir}>
 								{lex.lemma}
 							</dt>
 
@@ -935,7 +939,7 @@
 			</div>
 			<div
 				id="lexeme-datatable"
-				class="greek items-center self-center {currentLayout == 'Data Table' ? '' : 'hidden'}"
+				class="{langFontClass} items-center self-center {currentLayout == 'Data Table' ? '' : 'hidden'}"
 			>
 				<Grid
 					data={tableData}
@@ -988,7 +992,7 @@
 				{@const bubbleData=generateBubbleData()}
 					<div
 						id="lexeme-datatable"
-						class="greek items-center self-center {currentLayout == 'Bubble' ? '' : 'hidden'}"
+						class="{langFontClass} items-center self-center {currentLayout == 'Bubble' ? '' : 'hidden'}"
 					>
 						<h2>
 							Bubble Chart: NT frequencies (X-axis) vs. Section frequencies (Y-axis) + Section Count
@@ -1042,7 +1046,7 @@
 </Modal2>
 
 {#key chooseLemma}
-	<div style="font-family: 'SBL BibLit'">
+	<div class={langFontClass}>
 		<Modal2
 			bind:showModal={chooseLemma}
 			title="Select Lemma to View"
@@ -1062,7 +1066,7 @@
 						chooseLemma = false;
 					}}
 					buttonColors="btn-lemma"
-					style="text-2xl mr-1 font-bold"
+					style="{langFontClass} text-2xl mr-1 font-bold"
 					textSize="text-2xl"
 				/>
 			{/each}

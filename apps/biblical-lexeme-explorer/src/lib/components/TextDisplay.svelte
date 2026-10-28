@@ -5,6 +5,7 @@
     import { Utils } from "$lib/utils/utils";
     import { VocabEngine } from "$lib/engine/VocabEngine.js";
     import { getReaderVerseUrl } from "$lib/utils/navigation.js";
+    import { getLanguageFontClass, getLanguageDirection } from "@polyglot/ancient-languages";
 
     let {
         /**
@@ -21,6 +22,8 @@
     let ready = $state(false);
 
     let responseObj = $state('');
+    let langFontClass = $derived(getLanguageFontClass(tfData?.lang, tfData?.dbAbbrev));
+    let langDir = $derived(getLanguageDirection(tfData?.lang, tfData?.dbAbbrev));
 
     onMount(async () => {
         responseObj = await VocabEngine.fetchText(sectionID, tfData.dbAbbrev);
@@ -37,7 +40,7 @@ Loading...<span class="loading loading-spinner loading-lg"></span>
         <h2>{ref}</h2>
     {/if}
 
-    <p class="greek text-2xl text-center">{responseObj.text}</p>
+    <p class="{langFontClass} text-2xl text-center" dir={langDir}>{responseObj.text}</p>
     <div class="flex items-center justify-center gap-2 mt-2 flex-wrap">
         <Button
             buttonColors=""
