@@ -2,7 +2,7 @@
 	import { Modal2 as BaseModal2 } from '@polyglot/lemma-ui';
 
 	let {
-		showModal = $bindable(false),
+		showModal = $bindable(),
 		title = '',
 		onclose = () => {},
 		children,

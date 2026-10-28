@@ -30,7 +30,7 @@
 </script>
 
 <header
-	class="top-navbar shadow-xs mb-3 border-b border-rule/40 bg-page/95 px-3 py-2 sm:px-5 sm:py-2.5"
+	class="top-navbar relative z-30 shadow-xs mb-3 border-b border-rule/40 bg-page/95 px-3 py-2 sm:px-5 sm:py-2.5"
 >
 	<div class="mx-auto flex max-w-7xl items-center justify-between gap-2">
 		<!-- Left: Home link -->

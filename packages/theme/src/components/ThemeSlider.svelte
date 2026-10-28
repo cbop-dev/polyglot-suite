@@ -35,6 +35,7 @@
 	}: Props = $props();
 
 	let isOpen = $state<boolean>(false);
+	let containerEl = $state<HTMLElement | null>(null);
 	let sliderValue = $state<number>(25);
 	let warmthValue = $state<number>(50);
 	let rafPending = false;
@@ -61,12 +62,20 @@
 			}
 		}
 
+		function handlePointerDown(e: PointerEvent) {
+			if (isOpen && containerEl && !containerEl.contains(e.target as Node)) {
+				isOpen = false;
+			}
+		}
+
 		window.addEventListener('cycle-theme', handleCycleTheme);
 		window.addEventListener('keydown', handleKeyDown);
+		document.addEventListener('pointerdown', handlePointerDown);
 
 		return () => {
 			window.removeEventListener('cycle-theme', handleCycleTheme);
 			window.removeEventListener('keydown', handleKeyDown);
+			document.removeEventListener('pointerdown', handlePointerDown);
 		};
 	});
 
@@ -172,7 +181,7 @@
 		</div>
 	</div>
 {:else}
-	<div class="theme-slider-container">
+	<div class="theme-slider-container" bind:this={containerEl}>
 		<!-- Trigger Button -->
 		<button
 			type="button"
@@ -196,14 +205,6 @@
 		</button>
 
 		{#if isOpen}
-			<!-- Backdrop to close on click outside -->
-			<button
-				type="button"
-				class="theme-slider-backdrop"
-				onclick={() => (isOpen = false)}
-				aria-label="Close theme slider popover"
-			></button>
-
 			<!-- Popover Panel -->
 			<div class="theme-slider-panel {align === 'left' ? 'align-left' : 'align-right'} {placement === 'top' ? 'placement-top' : ''}">
 				<div class="panel-header">
@@ -343,21 +344,11 @@
 		color: #f59e0b;
 	}
 
-	.theme-slider-backdrop {
-		position: fixed;
-		inset: 0;
-		z-index: 1050;
-		background: transparent;
-		border: none;
-		cursor: default;
-		padding: 0;
-		margin: 0;
-	}
-
 	.theme-slider-panel {
 		position: absolute;
 		top: calc(100% + 0.5rem);
 		z-index: 1060;
+		pointer-events: auto;
 		width: 280px;
 		max-width: 90vw;
 		background: var(--col-bg, var(--color-card-bg, #ffffff));

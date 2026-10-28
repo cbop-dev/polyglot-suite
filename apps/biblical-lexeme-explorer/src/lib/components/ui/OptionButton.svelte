@@ -11,7 +11,7 @@
     buttonSize = 'm-0 ml-1 mb-1 px-2.5 py-1',
     buttonColors = '',
     textSize = 'text-xs sm:text-sm',
-    selected = $bindable(false),
+    selected = $bindable(),
     ready = true,
     customClickHandler = () => {},
     disableToggle = false,
@@ -20,8 +20,9 @@
     children = null
   } = $props();
 
+  let isSelected = $derived(Boolean(selected));
   let activeClass = $derived(
-    selected
+    isSelected
       ? 'bg-ink text-page border-ink font-bold shadow-xs'
       : 'bg-page/70 text-ink border-rule/50 hover:bg-rule/20 hover:border-ink/40'
   );
@@ -38,7 +39,7 @@
 
   export function toggle() {
     if (!disableToggle) {
-      if (selected) {
+      if (isSelected) {
         deselect();
       } else {
         select();
@@ -48,7 +49,7 @@
   }
 
   onMount(() => {
-    if (selected) select();
+    if (isSelected) select();
   });
 </script>
 

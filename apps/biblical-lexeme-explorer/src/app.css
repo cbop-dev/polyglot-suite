@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@source "../../../packages/lemma-ui";
+@source "../../../packages/theme";
+@source "../../../packages/ancient-languages";
 
 @theme {
     --color-page: var(--color-page);
