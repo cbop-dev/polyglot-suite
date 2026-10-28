@@ -12,7 +12,8 @@
 				'20,097 Greek lemmas from Henry Barclay Swete’s Septuaginta (1887–1912, reprint 1930, Public Domain) with neural and rule-based morphology, Abbott-Smith glosses, Strong’s numbers, and integrated LSJ lexicon.',
 			path: `${base}/bible/lxx`,
 			accentClass: 'border-emerald-500/40 hover:border-emerald-500',
-			badgeClass: 'bg-emerald-500/15 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-300 border border-emerald-500/30'
+			badgeClass: 'bg-emerald-500/10 dark:bg-emerald-400/15 border-emerald-600/30 dark:border-emerald-400/30 text-ink',
+			dotClass: 'bg-emerald-600 dark:bg-emerald-400'
 		},
 		{
 			id: 'bhs',
@@ -23,7 +24,8 @@
 				'Complete Hebrew Bible vocabulary dataset from the ETCBC (Vrije Universiteit Amsterdam). Search lexemes and frequency distributions across all 39 books.',
 			path: `${base}/bible/bhs`,
 			accentClass: 'border-amber-500/40 hover:border-amber-500',
-			badgeClass: 'bg-amber-500/15 text-amber-800 dark:bg-amber-400/20 dark:text-amber-200 border border-amber-500/30'
+			badgeClass: 'bg-amber-500/10 dark:bg-amber-400/15 border-amber-600/30 dark:border-amber-400/30 text-ink',
+			dotClass: 'bg-amber-600 dark:bg-amber-400'
 		},
 		{
 			id: 'sblgnt',
@@ -34,7 +36,8 @@
 				'Michael W. Holmes SBL Greek New Testament with MorphGNT linguistic annotations. Explore lemma occurrences across all 27 New Testament books.',
 			path: `${base}/bible/sblgnt`,
 			accentClass: 'border-sky-500/40 hover:border-sky-500',
-			badgeClass: 'bg-sky-500/15 text-sky-800 dark:bg-sky-400/20 dark:text-sky-300 border border-sky-500/30'
+			badgeClass: 'bg-sky-500/10 dark:bg-sky-400/15 border-sky-600/30 dark:border-sky-400/30 text-ink',
+			dotClass: 'bg-sky-600 dark:bg-sky-400'
 		}
 	];
 
@@ -85,8 +88,11 @@
 			>
 				<div class="p-6">
 					<div class="mb-2 flex items-center justify-between gap-2">
-						<span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold font-mono {c.badgeClass}">{c.badge}</span>
-						<span class="text-xs font-semibold uppercase tracking-wider opacity-60"
+						<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold font-mono border shadow-2xs {c.badgeClass}">
+							<span class="w-2 h-2 rounded-full shrink-0 {c.dotClass}"></span>
+							<span>{c.badge}</span>
+						</span>
+						<span class="text-xs font-bold font-mono tracking-wider opacity-70"
 							>{c.id.toUpperCase()}</span
 						>
 					</div>
