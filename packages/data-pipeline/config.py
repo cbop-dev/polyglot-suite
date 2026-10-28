@@ -43,7 +43,8 @@ STATIC_DB_DIR.mkdir(parents=True, exist_ok=True)
 UPSTREAM_SOURCES = {
     # 1. Versification Crosswalk (STEPBible / Tyndale House)
     "tvtms": {
-        "url": "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/master/TVTMS.txt",
+        
+        "url": "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Versification/TVTMS%20-%20Translators%20Versification%20Traditions%20with%20Methodology%20for%20Standardisation%20for%20Eng%2BHeb%2BLat%2BGrk%2BOthers%20-%20STEPBible.org%20CC%20BY.txt",
         "filename": "TVTMS.txt",
         "description": "STEPBible Tyndale Versification System (28,000+ line crosswalk)",
     },
