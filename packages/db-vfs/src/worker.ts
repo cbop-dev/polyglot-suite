@@ -35,15 +35,24 @@ export async function createHttpVfsWorker(options: HttpVfsWorkerConfig): Promise
 	// Serialize all queries across callers to avoid overlapping Web Worker messages,
 	// read-head thrashing, and HTTP connection congestion.
 	let queryQueue: Promise<unknown> = Promise.resolve();
-	const originalQuery = worker.db.query.bind(worker.db);
+	const remoteDb = worker.db;
 
-	worker.db.query = ((sql: string, ...params: any[]) => {
-		const execute = () => originalQuery(sql, ...params);
+	const serializedQuery = (sql: string, ...params: any[]) => {
+		const execute = () => remoteDb.query(sql, ...params);
 		const result = queryQueue.then(execute, execute);
 		// Keep queue chain resilient against query failures
 		queryQueue = result.catch(() => {});
 		return result;
-	}) as any;
+	};
+
+	worker.db = new Proxy(remoteDb, {
+		get(target, prop, receiver) {
+			if (prop === 'query') {
+				return serializedQuery;
+			}
+			return Reflect.get(target, prop, receiver);
+		}
+	});
 
 	console.info(`${logPrefix} Worker initialized successfully with serialized query queue.`);
 	return worker;
