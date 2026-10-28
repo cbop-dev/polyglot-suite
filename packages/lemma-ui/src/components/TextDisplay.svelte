@@ -1,6 +1,6 @@
 <script>
     import { onMount } from "svelte";
-    import Button from "./ui/Button.svelte";
+    import { Button } from "@polyglot/ui";
     import { Utils } from "$lib/utils/utils.js";
     import { getVerseText } from "$lib/services/dbClient";
 

@@ -12,10 +12,6 @@
     "./SEDRAEntry.svelte": "./src/components/SEDRAEntry.svelte",
     "./TextsDisplay.svelte": "./src/components/TextsDisplay.svelte",
     "./LemmaInfo.svelte": "./src/components/LemmaInfo.svelte",
-    "./Modal2.svelte": "./src/components/ui/Modal2.svelte",
-    "./CopyText.svelte": "./src/components/ui/CopyText.svelte",
-    "./BarChart.svelte": "./src/components/ui/BarChart.svelte",
-    "./PieChart.svelte": "./src/components/ui/PieChart.svelte",
     "./components/*": "./src/components/*"
   },
   "peerDependencies": {
