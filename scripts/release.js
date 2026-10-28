@@ -15,13 +15,20 @@ const TARGETS = {
   bible: { name: 'polyglot-bible-reader', file: 'apps/polyglot-bible-reader/package.json', tagPrefix: 'bible' },
   philo: { name: 'philo-reader', file: 'apps/philo-reader/package.json', tagPrefix: 'philo' },
   lex: { name: 'biblical-lexeme-explorer', file: 'apps/biblical-lexeme-explorer/package.json', tagPrefix: 'lex' },
+  lexeme: { name: 'biblical-lexeme-explorer', file: 'apps/biblical-lexeme-explorer/package.json', tagPrefix: 'lex' },
   fathers: { name: 'apostolic-fathers-reader', file: 'apps/apostolic-fathers-reader/package.json', tagPrefix: 'af' },
   af: { name: 'apostolic-fathers-reader', file: 'apps/apostolic-fathers-reader/package.json', tagPrefix: 'af' },
   josephus: { name: 'josephus-reader', file: 'apps/josephus-reader/package.json', tagPrefix: 'josephus' },
+  ui: { name: '@polyglot/ui', file: 'packages/ui/package.json', tagPrefix: 'ui' },
   theme: { name: '@polyglot/theme', file: 'packages/theme/package.json', tagPrefix: 'theme' },
   'db-vfs': { name: '@polyglot/db-vfs', file: 'packages/db-vfs/package.json', tagPrefix: 'db-vfs' },
   languages: { name: '@polyglot/ancient-languages', file: 'packages/ancient-languages/package.json', tagPrefix: 'languages' },
+  morphology: { name: '@polyglot/greek-morphology', file: 'packages/greek-morphology/package.json', tagPrefix: 'morphology' },
+  'greek-morphology': { name: '@polyglot/greek-morphology', file: 'packages/greek-morphology/package.json', tagPrefix: 'morphology' },
+  'lemma-ui': { name: '@polyglot/lemma-ui', file: 'packages/lemma-ui/package.json', tagPrefix: 'lemma-ui' },
   pipeline: { name: '@polyglot/pipeline-core', file: 'packages/pipeline-core/package.json', tagPrefix: 'pipeline' },
+  'data-pipeline': { name: '@polyglot/data-pipeline', file: 'packages/data-pipeline/package.json', tagPrefix: 'data-pipeline' },
+  'biblical-data': { name: '@biblical-data/corpora', file: 'packages/biblical-data/package.json', tagPrefix: 'biblical-data' },
 };
 
 function formatTag(prefix, version) {
@@ -256,6 +263,51 @@ export function commitAndTag(message, { dryRun = false, push = false, stageAll =
     console.log('\n💡 To push to remote: git push && git push --follow-tags');
   }
 }
+function isBumpType(str) {
+  return (
+    ['major', 'minor', 'patch', 'premajor', 'preminor', 'prepatch', 'prerelease'].includes(str) ||
+    /^\d+\.\d+\.\d+$/.test(str)
+  );
+}
+
+function parseTargetSpecs(rawTargetArgs) {
+  if (!rawTargetArgs || rawTargetArgs.length === 0) {
+    return [];
+  }
+
+  const args = [...rawTargetArgs];
+  let defaultBump = 'patch';
+
+  // If the last argument is a bump type keyword, extract it as the default bump for all specified targets
+  if (args.length > 1 && isBumpType(args[args.length - 1])) {
+    defaultBump = args.pop();
+  } else if (args.length === 1 && isBumpType(args[0])) {
+    return [];
+  }
+
+  const rawSpecs = [];
+  for (const arg of args) {
+    // Handle comma-separated targets: e.g. "bible,lex" or "bible:minor,lex:patch"
+    const parts = arg.split(',').map(s => s.trim()).filter(Boolean);
+    for (const part of parts) {
+      if (part.includes(':')) {
+        const [target, type] = part.split(':').map(s => s.trim());
+        rawSpecs.push({ target, type: type || defaultBump });
+      } else {
+        rawSpecs.push({ target: part, type: defaultBump });
+      }
+    }
+  }
+
+  // Deduplicate by target name, preserving order
+  const targetMap = new Map();
+  for (const spec of rawSpecs) {
+    targetMap.set(spec.target, spec.type);
+  }
+
+  return Array.from(targetMap.entries()).map(([target, type]) => ({ target, type }));
+}
+
 function printUsage(errorMessage = null) {
   if (errorMessage) {
     console.error(`\n❌ Error: ${errorMessage}\n`);
@@ -269,21 +321,22 @@ function printUsage(errorMessage = null) {
     seenFiles.add(t.file);
     try {
       const { pkg } = readPkgWithIndent(t.file);
-      targetRows.push(`  ${key.padEnd(12)} ${pkg.name.padEnd(28)} (v${pkg.version})`);
+      targetRows.push(`  ${key.padEnd(16)} ${pkg.name.padEnd(30)} (v${pkg.version})`);
     } catch {
-      targetRows.push(`  ${key.padEnd(12)} ${t.name.padEnd(28)}`);
+      targetRows.push(`  ${key.padEnd(16)} ${t.name.padEnd(30)}`);
     }
   }
 
   console.log(`Polyglot Monorepo Release Tool
 
 Usage:
-  npm run release <app> [bump-type] [-m "message"] [-a] [--push] [--dry-run]
-  npm run version:bump <app|suite> [bump-type] [--dry-run]
+  npm run release <app1> [app2...] [bump-type] [-m "message"] [-a] [--push] [--dry-run]
+  npm run version:bump <app1> [app2...] [bump-type] [--dry-run]
   npm run version:tag [-m "message"] [-a] [--push] [--dry-run]
 
 Arguments:
-  <app>          Target to release (e.g. bible, philo, fathers, suite)
+  <app...>       One or more targets to release (space- or comma-separated)
+                 Can also specify individual bump types like "bible:minor lex:patch"
   [bump-type]    patch | minor | major | explicit (e.g. 1.2.3) [default: patch]
 
 Flags:
@@ -297,12 +350,13 @@ Available Targets & Current Versions:
 ${targetRows.join('\n')}
 
 Examples:
-  npm run release bible                          # Bumps bible (patch) & suite (patch)
-  npm run release -- bible minor -m "New UI"     # Bumps bible (minor) & suite (patch)
-  npm run release -- bible -a -m "Commit all"    # Stages all changes, bumps & commits
-  npm run release -- bible --push                # Bumps, commits, tags, and git pushes
-  npm run release bible --dry-run                # Preview release without making changes
-  npm run version:bump bible                     # Granular: bump bible version only
+  npm run release bible                          # Single app: bumps bible (patch) & suite (patch)
+  npm run release bible lex                      # Multiple apps: bumps bible, lex, and suite (patch) ONCE
+  npm run release bible lex minor                # Multiple apps: bumps bible (minor), lex (minor), suite (patch)
+  npm run release bible:minor lex:patch          # Individual bump types for each app
+  npm run release -- bible lex -m "Sync UI"      # Multiple apps with custom commit message
+  npm run release -- bible,lex --push            # Comma-separated targets and auto-push
+  npm run version:bump bible lex                 # Granular: bump bible and lex without committing
   npm run version:tag -m "Release notes"         # Granular: commit & tag changed packages
 `);
   process.exit(errorMessage ? 1 : 0);
@@ -357,48 +411,63 @@ if (!command) {
 }
 
 if (command === 'bump') {
-  // Usage: node scripts/release.js bump <target> [patch|minor|major]
-  const target = positionals[1];
-  const type = positionals[2] || 'patch'; // defaults to patch
-  if (!target) {
-    printUsage('Target app or package required for bump command.');
+  // Usage: node scripts/release.js bump <target1> [target2...] [patch|minor|major]
+  const specs = parseTargetSpecs(positionals.slice(1));
+  if (specs.length === 0) {
+    printUsage('Target app or package required for bump command (e.g. npm run version:bump bible lex).');
   }
-  if (!TARGETS[target]) {
-    printUsage(`Target "${target}" not found. Available targets: ${Object.keys(TARGETS).join(', ')}`);
+
+  for (const { target, type } of specs) {
+    if (!TARGETS[target]) {
+      printUsage(`Target "${target}" not found. Available targets: ${Object.keys(TARGETS).join(', ')}`);
+    }
+    if (!isBumpType(type)) {
+      printUsage(`Invalid bump type "${type}" for target "${target}". Expected major, minor, patch, or x.y.z.`);
+    }
   }
-  bumpTarget(target, type, { dryRun: flags.dryRun });
+
+  for (const { target, type } of specs) {
+    bumpTarget(target, type, { dryRun: flags.dryRun });
+  }
 } else if (command === 'tag' || command === 'commit') {
   // Usage: node scripts/release.js tag [-m "message"] [--push] [-a]
   commitAndTag(message, { dryRun: flags.dryRun, push: flags.push, stageAll: flags.stageAll });
 } else if (command === 'release') {
-  // Usage: node scripts/release.js release <app> [major|minor|patch] [-m "message"] [--push] [-a]
-  const target = positionals[1];
-  const type = positionals[2] || 'patch'; // defaults to patch
+  // Usage: node scripts/release.js release <app1> [app2...] [major|minor|patch] [-m "message"] [--push] [-a]
+  const specs = parseTargetSpecs(positionals.slice(1));
 
-  if (!target) {
-    printUsage('Please specify an app or package to release (e.g. npm run release bible).');
+  if (specs.length === 0) {
+    printUsage('Please specify at least one app or package to release (e.g. npm run release bible lex).');
   }
 
-  if (!TARGETS[target]) {
-    printUsage(`Target "${target}" not found. Available targets: ${Object.keys(TARGETS).join(', ')}`);
+  for (const { target, type } of specs) {
+    if (!TARGETS[target]) {
+      printUsage(`Target "${target}" not found. Available targets: ${Object.keys(TARGETS).join(', ')}`);
+    }
+    if (!isBumpType(type)) {
+      printUsage(`Invalid bump type "${type}" for target "${target}". Expected major, minor, patch, or x.y.z.`);
+    }
   }
 
-  // 1. Bump the app (defaults to patch)
-  const appChange = bumpTarget(target, type, { dryRun: flags.dryRun });
-
-  // 2. Bump suite (defaults to patch)
-  let suiteChange = null;
-  if (target !== 'suite') {
-    suiteChange = bumpTarget('suite', 'patch', { dryRun: flags.dryRun });
+  // If suite is not explicitly in the list of targets, include suite once (defaulting to patch)
+  const hasSuite = specs.some(s => s.target === 'suite');
+  if (!hasSuite) {
+    specs.push({ target: 'suite', type: 'patch' });
   }
 
-  // 3. Commit & Tag
-  const simulatedChanges = [appChange, suiteChange].filter(Boolean);
+  // 1. Bump all targets
+  const changes = [];
+  for (const { target, type } of specs) {
+    const change = bumpTarget(target, type, { dryRun: flags.dryRun });
+    changes.push(change);
+  }
+
+  // 2. Commit & Tag
   commitAndTag(message, {
     dryRun: flags.dryRun,
     push: flags.push,
     stageAll: flags.stageAll,
-    simulatedChanges,
+    simulatedChanges: changes,
   });
 } else {
   printUsage(`Unknown command "${command}".`);
