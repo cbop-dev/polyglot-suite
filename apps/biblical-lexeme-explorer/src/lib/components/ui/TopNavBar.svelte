@@ -2,6 +2,7 @@
 	import { base, resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import VersionButton from './VersionButton.svelte';
+	import ThemeSlider from '@polyglot/theme/ThemeSlider.svelte';
 
 	/**
 	 * @type {{ currentVersion?: string }}
@@ -73,8 +74,19 @@
 			</h1>
 		</div>
 
-		<!-- Right: Info Icon & Bible Version Selector -->
+		<!-- Right: Info Icon, Theme Slider & Bible Version Selector -->
 		<div class="flex items-center gap-1.5 sm:gap-2.5">
+			<!-- Reading Theme Slider -->
+			<div class="theme-control shrink-0">
+				<ThemeSlider
+					placement="bottom"
+					align="right"
+					storageKey="biblical_reading_theme"
+					warmthStorageKey="biblical_reading_warmth"
+					profile="all"
+				/>
+			</div>
+
 			<!-- Info Icon Linking to Sources & Licenses -->
 			<a
 				href="{base}/sources-and-licenses"

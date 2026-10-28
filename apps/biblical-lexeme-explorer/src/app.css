@@ -1,10 +1,32 @@
 @import "tailwindcss";
 
+@theme {
+    --color-page: var(--color-page);
+    --color-page-soft: var(--color-page-soft);
+    --color-ink: var(--color-ink);
+    --color-ink-soft: var(--color-ink-soft);
+    --color-rule: var(--color-rule);
+    --color-link: var(--color-link);
+    --color-accent: var(--color-accent);
+    --color-card-bg: var(--color-card-bg);
+    --color-card-border: var(--color-card-border);
+    /* Legacy base-* compatibility aliases mapped to theme tokens */
+    --color-base-100: var(--color-page);
+    --color-base-200: color-mix(in srgb, var(--color-rule, #888888) 15%, var(--color-page, #ffffff));
+    --color-base-300: color-mix(in srgb, var(--color-rule, #888888) 30%, var(--color-page, #ffffff));
+    --color-base-content: var(--color-ink);
+}
+
 :root {
     --color-page: #fdf6e3;
+    --color-page-soft: #f5eed8;
     --color-ink: #073642;
-    --color-rule: #d33682;
+    --color-ink-soft: #586e75;
+    --color-rule: #d4d8d3;
     --color-accent: #268bd2;
+    --color-link: #1f6f7a;
+    --color-card-bg: #ffffff;
+    --color-card-border: #d4d8d3;
     --color-lemma-btn-bg: #8c1828;
     --color-lemma-btn-hover: #701320;
     --color-lemma-btn-text: #ffffff;

@@ -100,7 +100,7 @@
 		/>
 	</div>
 	{#if selectedSections && Object.entries(selectedSections).filter(([id, bool]) => bool).length > 0}
-		<div class="m-auto max-w-sm overflow-hidden text-ellipsis border-2 border-black p-2 font-mono">
+		<div class="m-auto max-w-sm overflow-hidden text-ellipsis border border-rule/60 rounded-xl bg-page/70 text-ink shadow-xs p-2 font-mono">
 			<div class="text-md font-bold">Selected References:</div>
 			<div class="text-sm">
 				{dataset?.booksDict?.combineRefs(
@@ -133,7 +133,7 @@
 	{/if}
 	<hr />
 	{#if showChapsPanel}
-		<div class="border border-base-300 rounded-lg p-2 bg-base-200/50">
+		<div class="border border-rule/50 rounded-xl p-2 bg-page/60">
 			<Select2DbuttonsPanel
 				title="Select chapters:"
 				bind:selectedItems={selectedSections}

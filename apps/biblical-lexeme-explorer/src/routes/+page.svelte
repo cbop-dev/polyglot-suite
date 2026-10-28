@@ -12,7 +12,7 @@
 				'20,097 Greek lemmas from Henry Barclay Swete’s Septuaginta (1887–1912, reprint 1930, Public Domain) with neural and rule-based morphology, Abbott-Smith glosses, Strong’s numbers, and integrated LSJ lexicon.',
 			path: `${base}/bible/lxx`,
 			accentClass: 'border-emerald-500/40 hover:border-emerald-500',
-			badgeClass: 'badge-success text-emerald-950 font-bold'
+			badgeClass: 'bg-emerald-500/15 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-300 border border-emerald-500/30'
 		},
 		{
 			id: 'bhs',
@@ -23,7 +23,7 @@
 				'Complete Hebrew Bible vocabulary dataset from the ETCBC (Vrije Universiteit Amsterdam). Search lexemes and frequency distributions across all 39 books.',
 			path: `${base}/bible/bhs`,
 			accentClass: 'border-amber-500/40 hover:border-amber-500',
-			badgeClass: 'badge-warning text-amber-950 font-bold'
+			badgeClass: 'bg-amber-500/15 text-amber-800 dark:bg-amber-400/20 dark:text-amber-200 border border-amber-500/30'
 		},
 		{
 			id: 'sblgnt',
@@ -34,7 +34,7 @@
 				'Michael W. Holmes SBL Greek New Testament with MorphGNT linguistic annotations. Explore lemma occurrences across all 27 New Testament books.',
 			path: `${base}/bible/sblgnt`,
 			accentClass: 'border-sky-500/40 hover:border-sky-500',
-			badgeClass: 'badge-info text-sky-950 font-bold'
+			badgeClass: 'bg-sky-500/15 text-sky-800 dark:bg-sky-400/20 dark:text-sky-300 border border-sky-500/30'
 		}
 	];
 
@@ -62,7 +62,7 @@
 	<title>Biblical Lexeme Explorer</title>
 </svelte:head>
 
-<div class="mx-auto max-w-6xl px-4 py-8 text-base-content sm:py-12">
+<div class="mx-auto max-w-6xl px-4 py-8 text-ink sm:py-12">
 	<!-- Hero Section -->
 	<div class="mx-auto mb-12 max-w-3xl text-center sm:mb-16">
 		<h1
@@ -81,11 +81,11 @@
 	<div class="mb-16 grid gap-6 sm:gap-8 md:grid-cols-3">
 		{#each corpora as c}
 			<div
-				class="card flex flex-col justify-between border bg-base-100 shadow-md transition-all duration-200 hover:shadow-xl {c.accentClass}"
+				class="flex flex-col justify-between rounded-xl border border-rule/50 bg-page/80 shadow-md transition-all duration-200 hover:shadow-xl {c.accentClass}"
 			>
 				<div class="p-6">
 					<div class="mb-2 flex items-center justify-between gap-2">
-						<span class="badge badge-sm font-mono {c.badgeClass}">{c.badge}</span>
+						<span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold font-mono {c.badgeClass}">{c.badge}</span>
 						<span class="text-xs font-semibold uppercase tracking-wider opacity-60"
 							>{c.id.toUpperCase()}</span
 						>

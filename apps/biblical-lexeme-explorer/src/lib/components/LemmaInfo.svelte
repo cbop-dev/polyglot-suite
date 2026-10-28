@@ -297,7 +297,7 @@ That is, the <LemmaInfo> tag should be surrounded by tags such as : {#key lemma 
 			{#if !tabs[selectedStatsTab].includes("Large")}
 				<div class="block m-auto p-1.5 flex items-center justify-center gap-2">
 				
-				<select bind:value={bookIdSelectOption} class="select select-bordered select-sm bg-base-100 text-base-content">
+				<select bind:value={bookIdSelectOption} class="cursor-pointer bg-page text-ink border border-rule/60 rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none transition-colors">
 					{#if userSelectedSections.length && querySectionRef}
 						<option  value={0}>{querySectionRef}</option>
 					{/if}
@@ -418,7 +418,7 @@ That is, the <LemmaInfo> tag should be surrounded by tags such as : {#key lemma 
 						name="lemmaBookCountChartOption"
 						id="lemmaBookCountChartOption"
 						bind:value={lemmaBookCountChartOptionIndex}
-						class="select select-bordered select-sm bg-base-100 text-base-content inline-block self-center text-center align-top"
+						class="cursor-pointer bg-page text-ink border border-rule/60 rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none transition-colors inline-block self-center text-center align-top"
 					>
 						{#each lemmaBookCountChartOptions as name, index}
 							<option value={index}>{name}</option>

@@ -11,7 +11,7 @@
 </script>
 <input aria-label="Input"  type="search" size="15" name="inputfilter" bind:value={searchText} 
             placeholder="Type here" class="input input-bordered w-full max-w-xs" />
-            <Button buttonStyle="btn btn-ghost" buttonColors="text-base-content" style="font-light" 
+            <Button buttonStyle="btn btn-ghost" buttonColors="text-ink" style="font-light" 
             toggled={()=>{searchText=''}} buttonText="Clear" /><br/>
             <label class="label cursor-pointer inline">
                 <span class="label-text">Case sensitive</span>
