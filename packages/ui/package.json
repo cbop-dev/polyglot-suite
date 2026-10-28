@@ -15,6 +15,7 @@
     "./CopyText.svelte": "./src/components/controls/CopyText.svelte",
     "./Tabs2.svelte": "./src/components/controls/Tabs2.svelte",
     "./Loading.svelte": "./src/components/controls/Loading.svelte",
+    "./ModalButton.svelte": "./src/components/controls/ModalButton.svelte",
     "./BarChart.svelte": "./src/components/charts/BarChart.svelte",
     "./PieChart.svelte": "./src/components/charts/PieChart.svelte",
     "./BubbleChart.svelte": "./src/components/charts/BubbleChart.svelte"

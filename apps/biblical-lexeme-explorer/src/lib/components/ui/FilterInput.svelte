@@ -1,6 +1,5 @@
 <script>
-import Button from "./Button.svelte";
-import ModalButton from "./ModalButton.svelte";
+import { Button, ModalButton } from "@polyglot/ui";
 
 let {
         /**

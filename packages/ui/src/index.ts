@@ -7,6 +7,7 @@ export { default as CopyText } from './components/controls/CopyText.svelte';
 export { default as Tabs2 } from './components/controls/Tabs2.svelte';
 export { default as Tabs } from './components/controls/Tabs2.svelte';
 export { default as Loading } from './components/controls/Loading.svelte';
+export { default as ModalButton } from './components/controls/ModalButton.svelte';
 
 // Charts
 export { default as BarChart } from './components/charts/BarChart.svelte';
@@ -18,6 +19,7 @@ export * from './components/charts/chartUtils.js';
 export { default as Icon } from './components/icons/Icon.svelte';
 export { default as LinkIcon } from './components/icons/LinkIcon.svelte';
 export { default as ArrowUp } from './components/icons/arrow-up.svelte';
+export { default as ArrowDown } from './components/icons/arrow-down.svelte';
 export { default as ChevronDown } from './components/icons/chevron-down.svelte';
 export { default as ChevronUp } from './components/icons/chevron-up.svelte';
 export { default as ChevronsDown } from './components/icons/chevrons-down.svelte';

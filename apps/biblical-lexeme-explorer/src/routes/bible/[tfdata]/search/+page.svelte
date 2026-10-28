@@ -8,15 +8,9 @@
 	import { TfLxxDataset } from '$lib/lxx/tfLXX';
 	import { TfDataset } from '$lib/data/VocabDataset.js';
 	import { Lexeme } from '$lib/Lexeme';
-	import Button from '$lib/components/ui/Button.svelte';
-
-	import Modal from '$lib/components/ui/Modal.svelte';
+	import { Button, Modal, Modal2 } from '@polyglot/ui';
 	import { TF } from '$lib/TF';
-
-	//    import FilterInput from '$lib/components/ui/FilterInput.svelte';
-	// import { Utils } from '$lib/utils/utils';
 	import LexFilterInput from '$lib/components/LexFilterInput.svelte';
-	import Modal2 from '$lib/components/ui/Modal2.svelte';
 	//let { data } = $props();
 	//let userentry=$state('');
 

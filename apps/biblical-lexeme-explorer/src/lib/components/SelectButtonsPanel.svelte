@@ -1,5 +1,5 @@
 <script>
-    import OptionButton from "./ui/OptionButton.svelte";
+    import { OptionButton } from "@polyglot/ui";
     let {
         selectedItems = $bindable(), 
         title, 

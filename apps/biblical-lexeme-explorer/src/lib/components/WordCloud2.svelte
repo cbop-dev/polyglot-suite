@@ -2,7 +2,6 @@
 	import { onMount, tick } from 'svelte';
 	import WordCloudD32 from './WordCloudD3-2.svelte';
 	import TfSelectBooksChaps from './SelectBooksChaps.svelte';
-	import Button from './ui/Button.svelte';
 	import * as BibleUtils from '$lib/utils/bible-utils.js';
 	import { TfDataset } from '$lib/data/VocabDataset.js';
 	import { LexQuery, LexQueryFilter } from '$lib/components/LexQuery.svelte';
@@ -10,22 +9,11 @@
 	import { TF } from '$lib/TF';
 	import { mylog } from '$lib/env/env.js';
 	import { jumpToDiv } from '$lib/utils/ui-utils.js';
-	import DownArrow from './ui/icons/arrow-down.svelte';
+	import { Button, Modal2, CopyText, Loading, ArrowUp, ArrowDown as DownArrow } from '@polyglot/ui';
+	import LinkSvg from "@polyglot/ui/components/icons/link.svg";
 	import LemmaInfo from './LemmaInfo.svelte';
-	import Modal2 from './ui/Modal2.svelte';
 	import { LexAppOptions } from '$lib/options/urlOptions';
-	import CopyText from './ui/CopyText.svelte';
-	import LinkSvg from "$lib/components/ui/icons/link.svg";
-	import Loading from './ui/Loading.svelte';
 	import InputBibleReferences from './InputBibleReferences.svelte';
-	/*import ChevronDown from './ui/icons/chevron-down.svelte';
-	import ChevronUp from './ui/icons/chevron-up.svelte';
-	import TopArrow from './ui/icons/arrow-up.svelte';
-	import DownButton from './ui/ScrollButtons/DownButton.svelte';
-	import ToBottomButton from './ui/ScrollButtons/ToBottomButton.svelte';
-	import BackToTopButton from './ui/ScrollButtons/BackToTopButton.svelte';
-	*/
-	import ArrowUp from './ui/icons/arrow-up.svelte';
 	import { LexRefQueries } from '$lib/LexRefQueries.svelte';
 	
 	//import { query } from '$app/server';

@@ -9,19 +9,13 @@ That is, the <LemmaInfo> tag should be surrounded by tags such as : {#key lemma 
 	import { Lexeme } from '$lib/Lexeme.js';
 	import * as BibleUtils from '$lib/utils/bible-utils.js';
 	import * as StringUtils from '$lib/utils/string-utils.js';
-	import Icon from '$lib/components/ui/icons/Icon.svelte';
-	import BarsSvg from '$lib/components/ui/icons/colorful-bar-chart.svg';
-	import BookOpenSvg from '$lib/components/ui/icons/book-open.svg';
-	import BookSvg from '$lib/components/ui/icons/book.svg';
-	//import { getQueriesForElement, queryAllByAltText } from "@storybook/test";
-	import OptionButton from './ui/OptionButton.svelte';
+	import { Button, OptionButton, Tabs, BarChart, PieChart, Loading, Icon } from '@polyglot/ui';
+	import BarsSvg from '@polyglot/ui/components/icons/colorful-bar-chart.svg';
+	import BookOpenSvg from '@polyglot/ui/components/icons/book-open.svg';
+	import BookSvg from '@polyglot/ui/components/icons/book.svg';
 	import LemmaRefs from './LemmaRefs.svelte';
 	import { onMount } from 'svelte';
 	import { innerWidth } from 'svelte/reactivity/window';
-	import Button from '$lib/components/ui/Button.svelte';
-	import Tabs from '$lib/components/ui/Tabs2.svelte';
-	import BarChart from './ui/BarChart.svelte';
-	import PieChart from './ui/PieChart.svelte';
 	import { LexQuery } from './LexQuery.svelte';
 	import { untrack } from 'svelte';
 	import { VocabEngine, TF } from '$lib/engine/VocabEngine.js';
@@ -29,7 +23,6 @@ That is, the <LemmaInfo> tag should be surrounded by tags such as : {#key lemma 
 
 	import Grid from 'gridjs-svelte';
 	import { mylog } from "$lib/env/env.js"
-	import Loading from './ui/Loading.svelte';
 	import LSJEntry from './LSJEntry.svelte';
 	import BDBEntry from './BDBEntry.svelte';
 	import { getLanguageFontClass, getLanguageDirection } from '@polyglot/ancient-languages';

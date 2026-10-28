@@ -6,12 +6,10 @@
 	import { LxxVocabDataset } from '$lib/lxx/lxxDataset.js';
 	import { VocabDataset } from '$lib/data/VocabDataset.js';
 	import { Lexeme } from '$lib/Lexeme';
-	import Button from '$lib/components/ui/Button.svelte';
+	import { Button, Modal, Modal2 } from '@polyglot/ui';
 	import { VocabEngine } from '$lib/engine/VocabEngine.js';
 	import { TF } from '$lib/TF';
-	import Modal from '$lib/components/ui/Modal.svelte';
 	import LexFilterInput from '$lib/components/LexFilterInput.svelte';
-	import Modal2 from '$lib/components/ui/Modal2.svelte';
 	import * as StringUtils from '$lib/utils/string-utils.js';
 
 	const lxxData = new LxxVocabDataset();

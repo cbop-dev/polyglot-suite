@@ -1,7 +1,7 @@
 <script>
     import TextDisplay from "$lib/components/TextDisplay.svelte";
     import { LxxVocabDataset } from "$lib/lxx/lxxDataset.js";
-    import Button from "$lib/components/ui/Button.svelte";
+    import { Button } from "@polyglot/ui";
 
     /** @type {{ data: import('./$types').PageData }} */
     let { data } = $props();

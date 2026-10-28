@@ -1,8 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
-	//import { createEventDispatcher } from "svelte";
 	import cloud from 'd3-cloud';
-	import Button from './ui/Button.svelte';
+	import { Button } from '@polyglot/ui';
 	import { mylog } from '$lib/env/env.js';
 	import { text } from '@sveltejs/kit';
 

@@ -1,7 +1,7 @@
 <script>
     import { onMount } from "svelte";
     import { VocabDataset } from "$lib/data/VocabDataset.js";
-    import Button from "./ui/Button.svelte";
+    import { Button } from "@polyglot/ui";
     import { Utils } from "$lib/utils/utils";
     import { VocabEngine } from "$lib/engine/VocabEngine.js";
     import { getReaderVerseUrl } from "$lib/utils/navigation.js";

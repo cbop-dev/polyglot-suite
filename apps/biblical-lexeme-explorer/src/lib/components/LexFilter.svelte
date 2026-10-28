@@ -5,10 +5,7 @@
 	 */
 	import { LexQuery, LexQueryFilter } from './LexQuery.svelte';
 	import { mylog } from '$lib/env/env.js';
-
-	import OptionButton from './ui/OptionButton.svelte';
-	import Button from './ui/Button.svelte';
-	import ModalButton from './ui/ModalButton.svelte';
+	import { Button, OptionButton, ModalButton } from '@polyglot/ui';
 	import { VocabDataset, TfDataset } from '$lib/data/VocabDataset.js';
 	import RangeSlider from 'svelte-range-slider-pips';
 	import { Lexeme } from '$lib/Lexeme';

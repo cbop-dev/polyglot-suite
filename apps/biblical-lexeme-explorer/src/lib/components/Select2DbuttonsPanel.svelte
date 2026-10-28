@@ -3,9 +3,8 @@
    * Like SelectButtonsPanel, but allows each button to have its own modal popup of selections!
    * 
   */
-    import OptionButton from "./ui/OptionButton.svelte";
-    import SelectButtonsPanel from "./SelectButtonsPanel.svelte";
-	import Modal2 from "./ui/Modal2.svelte";
+  import { OptionButton, Modal2 } from '@polyglot/ui';
+  import SelectButtonsPanel from "./SelectButtonsPanel.svelte";
     //let selectedParents;
     
 /**

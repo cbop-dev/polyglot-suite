@@ -3,9 +3,12 @@
 		buttonText = 'Button',
 		buttonSubtext = '',
 		buttonStyle = '',
-		buttonSize='gap-1.5 px-3 py-1.5 ',
-		buttonColors = 'bg-link text-white bg-blue-500 hover:opacity-90',
+		buttonSize = '',
+		buttonColors = 'bg-link text-white hover:opacity-90',
+		buttonOutline = '',
+		buttonFocusHover = '',
 		style = '',
+		shapeStyle = 'rounded-lg shadow-xs',
 		textSize = 'text-sm',
 		toggled = () => {},
 		tooltip = '',
@@ -19,13 +22,7 @@
 	onclick={toggled}
 	disabled={!ready}
 	title={tooltip}
-	class="inline-flex items-center justify-center 
-		rounded-lg font-semibold text-sm transition-all duration-150 
-		cursor-pointer shadow-xs border border-transparent 
-		{textSize} {buttonColors} {buttonSize} {buttonStyle}  {style} 
-		{!ready ? 'opacity-50 cursor-not-allowed' : ''}
-		
-		"
+	class="btn inline-flex items-center justify-center font-semibold transition-all duration-150 cursor-pointer border border-transparent {shapeStyle} {textSize} {buttonColors} {buttonSize} {buttonStyle} {buttonOutline} {buttonFocusHover} {style} {!ready ? 'opacity-50 cursor-not-allowed' : ''}"
 >
 	{#if buttonText}
 		<span>{buttonText}</span>

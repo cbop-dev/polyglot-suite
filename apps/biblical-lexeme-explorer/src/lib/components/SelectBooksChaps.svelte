@@ -1,8 +1,5 @@
 <script>
-	import Button from './ui/Button.svelte';
-	import Modal from './ui/Modal.svelte';
-	import Modal2 from './ui/Modal2.svelte';
-	import OptionButton from './ui/OptionButton.svelte';
+	import { Button, Modal, Modal2, OptionButton } from '@polyglot/ui';
 	import SelectButtonsPanel from './SelectButtonsPanel.svelte';
 	import Select2DbuttonsPanel from './Select2DbuttonsPanel.svelte';
 	import LexFilter from './LexFilter.svelte';

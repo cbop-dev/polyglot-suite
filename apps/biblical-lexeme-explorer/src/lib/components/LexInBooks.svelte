@@ -5,7 +5,7 @@
 	import { VocabEngine, TF } from '$lib/engine/VocabEngine.js';
 	import LexemeResultsPanel from './LexemeResultsPanel.svelte';
 	import { VocabDataset, BookDict, TfDataset } from '$lib/data/VocabDataset.js';
-	import Button from './ui/Button.svelte';
+	import { Button } from '@polyglot/ui';
 	import InputBibleReferences from './InputBibleReferences.svelte';
 	import { LexQuery, LexQueryFilter } from './LexQuery.svelte.js';
 	import { mylog } from '$lib/env/env.js';

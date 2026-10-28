@@ -1,7 +1,6 @@
 <script>
-    /** @type {{ data: import('./$types').PageData }} */
     let { data } = $props();
-    import Button from '$lib/components/ui/Button.svelte';
+    import { Button } from '@polyglot/ui';
     import { LexQuery } from '$lib/components/LexQuery.svelte.js';
     function p(){
         alert('yes')

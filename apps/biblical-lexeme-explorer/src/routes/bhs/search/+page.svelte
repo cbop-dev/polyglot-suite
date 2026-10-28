@@ -5,13 +5,11 @@
 	import LemmaInfo from '$lib/components/LemmaInfo.svelte';
 	import { BhsVocabDataset, TfBhsDataset } from '$lib/bhs/bhsDataset.js';
 	import { Lexeme } from '$lib/Lexeme';
-	import Button from '$lib/components/ui/Button.svelte';
+	import { Button, Modal, Modal2 } from '@polyglot/ui';
 	import { VocabEngine } from '$lib/engine/VocabEngine.js';
 	import { TF } from '$lib/TF';
-	import Modal from '$lib/components/ui/Modal.svelte';
 	import { VocabDataset, TfDataset } from '$lib/data/VocabDataset.js';
 	import LexFilterInput from '$lib/components/LexFilterInput.svelte';
-	import Modal2 from '$lib/components/ui/Modal2.svelte';
 
 	const bhsData = new BhsVocabDataset();
 	/**

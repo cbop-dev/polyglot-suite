@@ -1,5 +1,5 @@
 <script>
-	import Button from './ui/Button.svelte';
+	import { Button } from '@polyglot/ui';
 	import * as BibleUtils  from '$lib/utils/bible-utils.js';
 	import { TfDataset } from '$lib/data/VocabDataset.js';
 	/**

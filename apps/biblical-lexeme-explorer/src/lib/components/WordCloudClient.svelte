@@ -1,5 +1,5 @@
 <script>
-    import Button from "./ui/Button.svelte";
+    import { Button } from "@polyglot/ui";
     import SelectBooksChaps from "./SelectBooksChaps.svelte";
     import { LexQuery, LexQueryFilter } from "./LexQuery.svelte.js";
     import { staticDatasetProvider } from "$lib/engine/StaticDatasetProvider.js";

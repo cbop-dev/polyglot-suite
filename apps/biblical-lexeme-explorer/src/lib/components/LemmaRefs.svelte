@@ -2,17 +2,12 @@
 	import { VocabDataset, TfDataset } from '$lib/data/VocabDataset.js';
 	import { onMount, tick } from 'svelte';
 	import { Utils } from '$lib/utils/utils';
-	import Button from './ui/Button.svelte';
-	import ModalButton from './ui/ModalButton.svelte';
+	import { Button, ModalButton, Modal2, OptionButton, CopyText, Icon } from '@polyglot/ui';
 	import { LexQuery, LexQueryFilter } from './LexQuery.svelte.js';
-	import Icon from '$lib/components/ui/icons/Icon.svelte';
 	import { TextsDisplay } from '@polyglot/lemma-ui';
 	import { VocabEngine, TF } from '$lib/engine/VocabEngine.js';
-	import BookOpenSvg from '$lib/components/ui/icons/book-open.svg';
-	import Modal2 from './ui/Modal2.svelte';
+	import BookOpenSvg from '@polyglot/ui/components/icons/book-open.svg';
 	import * as BibleUtils from '$lib/utils/bible-utils.js';
-	import OptionButton from './ui/OptionButton.svelte';
-	import CopyText from './ui/CopyText.svelte';
 	import { getReaderVerseUrl } from '$lib/utils/navigation.js';
 
 	/**

@@ -3,7 +3,8 @@
 
   let {
     buttonText = "Button",
-    buttonSize = "gap-1.5 px-3.5 py-1.5 rounded-lg b",
+    buttonSize = "gap-1.5 px-3.5 py-1.5 rounded-lg",
+    buttonStyle = "",
     buttonColors = "",
     textSize = "text-sm shadow-xs",
     selected = $bindable(),
@@ -42,9 +43,9 @@
   onclick={toggle}
   bind:this={theButton}
   title={tooltip}
-  class="inline-flex items-center justify-center border
+  class="btn inline-flex items-center justify-center border
    font-semibold transition-all duration-150 cursor-pointer 
-   {buttonSize} {textSize} {miscStyle} {isSelected 
+   {buttonSize} {textSize} {buttonStyle} {miscStyle} {isSelected 
     ? 'bg-link text-white border-link shadow-md ring-2 ring-link/30 font-bold' 
     : 'bg-page text-ink border-rule hover:bg-rule/50 hover:border-link/60'} {!ready ? 'opacity-50 cursor-not-allowed' : ''} {buttonColors}"
 >
