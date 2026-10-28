@@ -102,7 +102,8 @@
             {/if}
             {#if !readerState.meditationMode}
             {#if vData?.verseData?.text}
-              <span dir="ltr"><CopyText linkText="" copyText={formattedVerseText} /> </span>
+              <span dir="ltr"><CopyText linkText="" --strokecolor={theme.value=='dark'?'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'} 
+              copyText={formattedVerseText} /> </span>
             {/if}
             {/if}
           </div>
