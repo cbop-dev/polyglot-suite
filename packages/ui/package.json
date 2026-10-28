@@ -18,7 +18,11 @@
     "./ModalButton.svelte": "./src/components/controls/ModalButton.svelte",
     "./BarChart.svelte": "./src/components/charts/BarChart.svelte",
     "./PieChart.svelte": "./src/components/charts/PieChart.svelte",
-    "./BubbleChart.svelte": "./src/components/charts/BubbleChart.svelte"
+    "./BubbleChart.svelte": "./src/components/charts/BubbleChart.svelte",
+    "./SearchBox.svelte": "./src/components/controls/SearchBox.svelte",
+    "./SortOptions.svelte": "./src/components/controls/SortOptions.svelte",
+    "./FilterInput.svelte": "./src/components/controls/FilterInput.svelte",
+    "./FilterInputUnsorted.svelte": "./src/components/controls/FilterInputUnsorted.svelte"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"

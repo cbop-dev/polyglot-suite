@@ -1,5 +1,5 @@
 <script>
-    import FilterInput from "./ui/FilterInput.svelte";
+    import { FilterInput } from "@polyglot/ui";
     import {GreekUtils as GreekUtils} from "$lib/utils/greek-utils.js";
     import { HebrewUtils } from "$lib/utils/hebrew-utils.js";
     import * as StringUtils from "$lib/utils/string-utils.js";

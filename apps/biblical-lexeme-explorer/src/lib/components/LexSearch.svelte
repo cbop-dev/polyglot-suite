@@ -7,8 +7,7 @@
 	import { VocabDataset, TfDataset } from '$lib/data/VocabDataset.js';
 	import { VocabEngine, TF } from '$lib/engine/VocabEngine.js';
 	import { Lexeme } from '$lib/Lexeme.js';
-	import { Button, Modal, Modal2 } from '@polyglot/ui';
-	import SearchBox from './ui/SearchBox.svelte';
+	import { Button, Modal, Modal2, SearchBox } from '@polyglot/ui';
 	import LexFilterInput from '$lib/components/LexFilterInput.svelte';
 	import { LexRefQueries } from '$lib/LexRefQueries.svelte';
 	import { getLanguageFontClass } from '@polyglot/ancient-languages';

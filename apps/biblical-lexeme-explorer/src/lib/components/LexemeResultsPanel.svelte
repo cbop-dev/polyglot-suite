@@ -1,10 +1,8 @@
 <script>
 	import { LexQuery } from './LexQuery.svelte';
 	import { LexQueryFilter, Filter } from './LexQuery.svelte.js';
-	import SearchBox from './ui/SearchBox.svelte';
 	import { Lexeme } from '$lib/Lexeme.js';
-	//import SortOptions from './ui/SortOptions.svelte';
-	import { Button, OptionButton, Modal2, ModalButton, BubbleChart, Loading } from '@polyglot/ui';
+	import { Button, OptionButton, Modal2, ModalButton, BubbleChart, Loading, SearchBox } from '@polyglot/ui';
 	import LemmaInfo from './LemmaInfo.svelte';
 	import LexFilter from './LexFilter.svelte';
 	import { Utils } from '$lib/utils/utils';

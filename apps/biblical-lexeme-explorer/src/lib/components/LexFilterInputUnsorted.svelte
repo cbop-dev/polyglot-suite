@@ -1,5 +1,5 @@
 <script>
-    import FilterInputUnsorted from "./ui/FilterInputUnsorted.svelte";
+    import { FilterInputUnsorted } from '@polyglot/ui';
     import * as StringUtils from "$lib/utils/string-utils.js";
 
     let {
