@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -38,6 +39,7 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 
 export default defineConfig({
 	plugins: [
+		tailwindcss(),
 		sveltekit()
 	],
 	define: {

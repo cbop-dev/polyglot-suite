@@ -2,6 +2,7 @@
 	import { base, resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import VersionButton from './VersionButton.svelte';
+	import ThemeSlider from '@polyglot/theme/ThemeSlider.svelte';
 
 	/**
 	 * @type {{ currentVersion?: string }}
@@ -29,14 +30,14 @@
 </script>
 
 <header
-	class="top-navbar shadow-xs mb-3 border-b border-base-300 bg-base-100/95 px-3 py-2 sm:px-5 sm:py-2.5"
+	class="top-navbar relative z-30 shadow-xs mb-3 border-b border-rule/40 bg-page/95 px-3 py-2 sm:px-5 sm:py-2.5"
 >
 	<div class="mx-auto flex max-w-7xl items-center justify-between gap-2">
 		<!-- Left: Home link -->
 		<div class="flex items-center">
 			<a
 				href="{base}/"
-				class="btn btn-circle btn-ghost btn-xs text-base-content/80 sm:btn-sm hover:bg-base-200 hover:text-base-content"
+				class="inline-flex items-center justify-center rounded-full w-7 h-7 sm:w-8 sm:h-8 text-ink/80 hover:bg-rule/20 hover:text-ink transition-colors cursor-pointer"
 				title="Back to Home"
 				aria-label="Back to Home"
 			>
@@ -64,7 +65,7 @@
 			>
 				<a
 					href="{base}/"
-					class="whitespace-nowrap text-base-content !no-underline hover:opacity-85"
+					class="whitespace-nowrap text-ink !no-underline hover:opacity-85"
 				>
 					<span class="sm:hidden">Bible Lexemes</span>
 					<span class="hidden sm:inline">Biblical Lexeme Explorer</span>
@@ -73,12 +74,23 @@
 			</h1>
 		</div>
 
-		<!-- Right: Info Icon & Bible Version Selector -->
+		<!-- Right: Info Icon, Theme Slider & Bible Version Selector -->
 		<div class="flex items-center gap-1.5 sm:gap-2.5">
+			<!-- Reading Theme Slider -->
+			<div class="theme-control shrink-0">
+				<ThemeSlider
+					placement="bottom"
+					align="right"
+					storageKey="biblical_reading_theme"
+					warmthStorageKey="biblical_reading_warmth"
+					profile="all"
+				/>
+			</div>
+
 			<!-- Info Icon Linking to Sources & Licenses -->
 			<a
 				href="{base}/sources-and-licenses"
-				class="btn btn-circle btn-ghost btn-xs text-base-content/80 sm:btn-sm hover:bg-base-200 hover:text-base-content"
+				class="inline-flex items-center justify-center rounded-full w-7 h-7 sm:w-8 sm:h-8 text-ink/80 hover:bg-rule/20 hover:text-ink transition-colors cursor-pointer"
 				title="Sources &amp; Licenses"
 				aria-label="Sources &amp; Licenses"
 			>
@@ -101,7 +113,7 @@
 			<!-- Bible Version Dropdown Selector -->
 			<div class="version-select-wrapper">
 				<select
-					class="select select-bordered select-xs cursor-pointer bg-base-100 p-0 pl-1 pr-1 align-text-top text-xs font-semibold sm:select-sm sm:p-2 sm:text-xs"
+					class="cursor-pointer bg-page text-ink border border-rule/60 rounded-lg px-2 py-1 text-xs sm:text-sm font-semibold focus:outline-none transition-colors"
 					bind:value={selectedVersion}
 					aria-label="Select Biblical Corpus"
 				>
@@ -110,7 +122,7 @@
 					{/each}
 				</select>
 			</div>
-			<button class="btn btn-sm" onclick={onSelectVersion} aria-label="Go">Go!</button>
+			<button type="button" class="btn px-3 py-1 text-xs sm:text-sm font-semibold rounded-lg bg-accent text-white hover:opacity-90 transition-opacity cursor-pointer shadow-xs border border-accent" onclick={onSelectVersion} aria-label="Go">Go!</button>
 		</div>
 	</div>
 </header>

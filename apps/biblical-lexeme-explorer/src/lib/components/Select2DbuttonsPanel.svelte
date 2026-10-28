@@ -113,8 +113,7 @@
          bind:this={allButtons[item.id]} customClickHandler={()=>{selectedParentID=item.id; showModal = true}}/>
     {/each}
     
-    <button  class="btn" onclick={deselect}>Deselect All</button>
-    
+    <button type="button" class="btn px-3 py-1 text-xs font-semibold rounded-lg border border-rule/60 bg-page text-ink hover:bg-rule/20 cursor-pointer transition-colors shadow-xs" onclick={deselect}>Deselect All</button>
 </div>
        
 {#if selectedParent}

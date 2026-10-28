@@ -1,11 +1,35 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import "tailwindcss";
+@source "../../../packages/lemma-ui";
+@source "../../../packages/theme";
+@source "../../../packages/ancient-languages";
+
+@theme {
+    --color-page: var(--color-page);
+    --color-page-soft: var(--color-page-soft);
+    --color-ink: var(--color-ink);
+    --color-ink-soft: var(--color-ink-soft);
+    --color-rule: var(--color-rule);
+    --color-link: var(--color-link);
+    --color-accent: var(--color-accent);
+    --color-card-bg: var(--color-card-bg);
+    --color-card-border: var(--color-card-border);
+    /* Legacy base-* compatibility aliases mapped to theme tokens */
+    --color-base-100: var(--color-page);
+    --color-base-200: color-mix(in srgb, var(--color-rule, #888888) 15%, var(--color-page, #ffffff));
+    --color-base-300: color-mix(in srgb, var(--color-rule, #888888) 30%, var(--color-page, #ffffff));
+    --color-base-content: var(--color-ink);
+}
 
 :root {
     --color-page: #fdf6e3;
+    --color-page-soft: #f5eed8;
     --color-ink: #073642;
-    --color-rule: #d33682;
+    --color-ink-soft: #586e75;
+    --color-rule: #d4d8d3;
+    --color-accent: #268bd2;
+    --color-link: #1f6f7a;
+    --color-card-bg: #ffffff;
+    --color-card-border: #d4d8d3;
     --color-lemma-btn-bg: #8c1828;
     --color-lemma-btn-hover: #701320;
     --color-lemma-btn-text: #ffffff;
@@ -39,6 +63,105 @@ body {
     min-height: 100vh;
 }
 
+/* Base button styling with rounded corners & theme contrast */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    padding: 0.375rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid var(--color-rule, rgba(128, 128, 128, 0.35));
+    background-color: color-mix(in srgb, var(--color-rule, #888888) 15%, var(--color-page, #ffffff));
+    color: var(--color-ink, currentColor);
+    text-decoration: none !important;
+}
+
+.btn:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--color-rule, #888888) 30%, var(--color-page, #ffffff));
+}
+
+.btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+    border-radius: 0.5rem;
+}
+
+.btn-xs {
+    padding: 0.125rem 0.375rem;
+    font-size: 0.75rem;
+    border-radius: 0.375rem;
+}
+
+.btn-circle {
+    border-radius: 9999px;
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+}
+
+.btn-ghost {
+    border-color: transparent;
+    background-color: transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--color-rule, #888888) 20%, transparent);
+}
+
+.btn-outline {
+    background-color: transparent;
+}
+
+.btn-primary {
+    background-color: var(--color-accent, #2563eb);
+    color: #ffffff;
+    border-color: var(--color-accent, #2563eb);
+}
+
+.btn-primary:hover:not(:disabled) {
+    filter: brightness(0.92);
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: inline-block;
+    border-radius: 9999px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    animation: spin 0.75s linear infinite;
+    width: 1.25rem;
+    height: 1.25rem;
+    vertical-align: middle;
+}
+
+.loading-lg {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-width: 3px;
+}
+
+.loading-xl {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-width: 3px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 /* Dynamic theme-aware Lemma Button */
 .btn-lemma {
     background-color: var(--color-lemma-btn-bg, #8c1828) !important;
@@ -46,6 +169,7 @@ body {
     border: 1px solid var(--color-lemma-btn-border, rgba(0, 0, 0, 0.2)) !important;
     box-shadow: var(--color-lemma-btn-shadow, 0 1px 3px rgba(0, 0, 0, 0.25)) !important;
     transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    border-radius: 0.5rem !important;
 }
 
 .btn-lemma:hover {
@@ -74,6 +198,7 @@ body {
     padding-bottom: 0.25rem !important;
     min-height: 2.2rem !important;
     height: auto !important;
+    border-radius: 0.5rem !important;
 }
 
 /* Dynamic Contrast-Inverted Lookup Button ("Find All Lexemes", etc.) */
@@ -83,6 +208,7 @@ body {
     border: 1px solid var(--color-lookup-btn-border, rgba(0, 0, 0, 0.3)) !important;
     box-shadow: var(--color-lookup-btn-shadow, 0 1px 3px rgba(0, 0, 0, 0.2)) !important;
     font-weight: 700 !important;
+    border-radius: 0.5rem !important;
     transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
 }
 
@@ -103,10 +229,11 @@ body {
 
 /* Book anchor jump buttons in Lemma Details modal */
 .btn-book-jump {
-    background-color: var(--color-page, var(--fallback-b1, #ffffff)) !important;
-    color: var(--color-ink, var(--fallback-bc, #073642)) !important;
+    background-color: var(--color-page, #ffffff) !important;
+    color: var(--color-ink, #073642) !important;
     border: 1px solid var(--color-rule, rgba(0, 0, 0, 0.2)) !important;
     font-weight: 700 !important;
+    border-radius: 0.5rem !important;
     transition: all 0.15s ease;
 }
 
@@ -123,11 +250,9 @@ body {
 h1 {
     font-size: 150% !important;
     text-decoration: underline;
-    
- 
 }
 
-h1,h2{
+h1, h2 {
     font-weight: bold !important;
     padding-bottom: 0.3em !important;
 }
@@ -136,10 +261,9 @@ h1,h2{
     font-family: 'SBL BibLit';
     font-style: normal;
     font-weight: 500;
-    src: url('/fonts/SBL_BibLit_Regular.ttf'); /* IE9 Compat Modes */
+    src: url('/fonts/SBL_BibLit_Regular.ttf');
     src: local('SBL-BibLit'), local('SBL BibLit'), url('/fonts/SBL_BibLit_Regular.ttf?#iefix') format('truetype'),
-        /* Modern Browsers */ url('/fonts/SBL_BibLit_Regular.ttf') format('truetype');
-    
+        url('/fonts/SBL_BibLit_Regular.ttf') format('truetype');
 }
 
 .greek {

@@ -28,7 +28,7 @@
 	
 	<div bind:this={box} bind:clientHeight={scrollHeight} >
 		<form method="dialog">
-			<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick={()=>{showModal=false}}>✕</button>
+			<button type="button" class="inline-flex items-center justify-center rounded-full w-7 h-7 text-ink/80 hover:bg-rule/20 hover:text-ink absolute right-2 top-2 cursor-pointer transition-colors" onclick={()=>{showModal=false}}>✕</button>
 		</form>
 		{#if title || description}
 			{#if title}
@@ -45,9 +45,9 @@
 		{@render children?.()}
 		<hr />
 		<!-- svelte-ignore a11y_autofocus -->
-		<div class="items-center flex">
-			{#if scrollHeight > modalHeight+1} <button class="btn inline m-auto" autofocus onclick={() => box.scrollIntoView()}>Back to Top</button>{/if}
-			<button class="btn inline m-auto" autofocus onclick={() => dialog.close()}>Close</button>
+		<div class="items-center flex gap-2 justify-center">
+			{#if scrollHeight > modalHeight+1} <button type="button" class="btn px-4 py-1.5 text-sm font-semibold rounded-lg border border-rule/60 bg-page text-ink hover:bg-rule/20 cursor-pointer transition-colors shadow-xs" autofocus onclick={() => box.scrollIntoView()}>Back to Top</button>{/if}
+			<button type="button" class="btn px-4 py-1.5 text-sm font-semibold rounded-lg border border-rule/60 bg-page text-ink hover:bg-rule/20 cursor-pointer transition-colors shadow-xs" autofocus onclick={() => dialog.close()}>Close</button>
         </div>
 	</div>
 </dialog>

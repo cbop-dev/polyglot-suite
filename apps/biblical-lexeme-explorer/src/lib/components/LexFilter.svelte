@@ -309,7 +309,7 @@ let optionGroupsDisplay = $state({
 {/if}
 <Button
 	buttonText="Reset All"
-	buttonColors="btn btn-ghost text-base-content"
+	buttonColors="btn btn-ghost text-ink"
 	style="font-light"
 	toggled={resetFilter}
 />

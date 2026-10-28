@@ -1,6 +1,6 @@
 {
   "name": "polyglot-suite",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "private": true,
   "description": "Monorepo workspace for ancient language readers and linguistic toolkits",
   "workspaces": [
@@ -21,6 +21,8 @@
     "build:josephus": "npm --workspace=josephus-reader run build",
     "build:fathers": "npm --workspace=apostolic-fathers-reader run build",
     "build:philo": "npm --workspace=philo-reader run build",
+    "fetch:db": "python3 packages/data-pipeline/fetcher.py --all",
+    "fetch:bible": "npm run fetch:db",
     "build:db": "python3 packages/data-pipeline/build.py --build && python3 scripts/export_ble_manifests.py",
     "chunk:db": "python3 packages/data-pipeline/build.py --chunk",
     "chunk:bible": "npm run chunk:db",

@@ -183,9 +183,9 @@
 <svelte:window bind:innerHeight={componentHeight} bind:innerWidth={componentWidth} />
 <div id="wordcloud-controls" class="flex-row text-center inline-flex self-center m-auto">
 	<Button
-		buttonColors="btn-ghost text-base-content"
-		buttonOutline="ring-1 ring-base-300"
-		buttonFocusHover=" hover:bg-base-200 focus:ring-base-300 focus:ring-2"
+		buttonColors="btn-ghost text-ink"
+		buttonOutline="border border-rule/50"
+		buttonFocusHover=" hover:bg-rule/20 focus:ring-rule/40 focus:ring-2"
 		buttonStyle="btn btn-md"
 		style="p-1 m-2 tab-border-none"
 		buttonText="Redraw"
@@ -193,10 +193,10 @@
 		toggled={redrawSvelte}
 	/>
 	<Button
-		buttonColors="btn-ghost text-base-content"
+		buttonColors="btn-ghost text-ink"
 		buttonStyle="btn btn-md btn-circle"
 		buttonOutline=""
-		buttonFocusHover=" hover:bg-base-200 focus:ring-base-300 focus:ring-2"
+		buttonFocusHover=" hover:bg-rule/20 focus:ring-rule/40 focus:ring-2"
 		style="p-2 m-3 tab-border-none"
 		buttonText=""
 		tooltip="Toggle black/white background."
@@ -204,10 +204,10 @@
 	><img width="20" height="20" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwYAAACzklEQVR4nO2az0/UQBTHPyTEXY2RgK54lDPG+FcY8EdEbyie8YQEvS8XL8hFEhLP/gkaQtCTB2PQKOGiLrAnlYMRj+CGNTWTfJtMaru77XbbqeGbvKSbzs7rt983M2/eFI7w/2IImAAeAyvAF+AX0JCZ68+6Z9rcAAZxBGXgLvAS+AN4Ma0JrAFTQCkPAseBB8BugoePsu/AnF5OJrgK1FMkELQdYLyXBMybetJDAkF7BpxIm8Q54EOGJDzZe2A4LRIjktvLybb1DF2hAtRyJOHJ6oqKxGMij3DyLHsEvLXCLNGM9jRnEvN6jtNWVCwnmWJdIOHjIrCve2PEWOzqDpHwcd8a/B2F2EMHSRj0AxtqN0sblJQq5EGi2u7hgCtqu9tOlSkHlbDRZ82kt2mBV44qYWNa/1ulxX6i6agSNga1vzkEBgjBTceVsPFafVwnBIuOK2FjXv0sEIKVAigRjJ7nhGCrAEr4GFV/pi7wD/YKoISPM+rzByFoFISEv3Cbfn+TIZG0SbQlslcQEv6GLzK0thwd2LEH+0oBlPBxq9X0u1gAJTpaECcKoEQwRblGRDLWdFwJP7n1k8ZTRGDNcSUM7smnGdORuOOwEv7G6qP8TtJmofnmqBJoTBi/Xzs5hphzUAm/+LAp3zN0gHIHtd6sSdgvuBbnUGjcMRKXgAP5vxz3z8uOkKioKGf8LyXpoKzCsV1QzhongXX5X+/mnLGixMx09E6/yXDheyPfO2kc+IxY0tZUUM5iTGzLp8nKz6fV8bAVZvsqKJvpMG30a3Y6sMLpbNpOyoEJYCPF09c+HWVsWv0v9frsfcyS3VMtdjrhVwxDyp38tMNTKMWeYrtRZzaQzjSUXldVdxrVadMxmbm+oE1RVW3tOoFJO2by+gKipKr4asItwKGy2Mm8CIRhQLVYs2t7oQ9oflof1ZjrT9qeLqht5H7iCBQcfwH9k8Pdy5C2jAAAAABJRU5ErkJggg==" alt="black-and-white"></Button>
 
 	<Button
-		buttonColors="btn-ghost text-base-content"
+		buttonColors="btn-ghost text-ink"
 		buttonStyle="btn btn-md btn-circle"
 		buttonOutline=""
-		buttonFocusHover=" hover:bg-base-200 focus:ring-base-300 focus:ring-2"
+		buttonFocusHover=" hover:bg-rule/20 focus:ring-rule/40 focus:ring-2"
 		style="p-2 m-3 tab-border-none"
 		buttonText=""
 		tooltip="Toggle text shadow effect."
@@ -215,13 +215,11 @@
 	><img width="20" height="20" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAACAklEQVR4nO2XwUtUURTGf005bpJ0ghASNBTcZ9CywEVboVXpH5CSpQtbzULDldCuadeizdC0iRYugplN4NJxZlOkO1MhkJhwUSmmXDgPDs/35t773pvdfHB48M2c73wz995z7oMu3DEEfAKOgLOI+C2fj9EhzMYUDsc+UOiEgTwwKc8o3AQ2xUQx6+JlCRteiIFGlsVHRPSdwx6pq6UweZnguQg+VNyaw154lpWBGvAP6FPcNwcDJi81+oFj4LPiRh1PwwkwkNbAtIg9VdyiowETj9MaeB+xoWqqwFeLgUqa4nnpbk3FXZMlCQrcA/63MWC6Zm9SAw9EZFVxj5T4lnANy79gdBLhjQjcVVxZCS8Lt2IxUEpS/BLwA/gJ5IS7DBwq4dvCT1gM7ImeF+5I8lvF3Y8RNc9diwlj0gsvJXFKca+U4OvQ90sWA2aZvNAE/gJXFffd4/yHw2s4DUvSuuLGUxQP4pbv8HmiuKUMDDgPp5o0FzNeA3zJwEDVZ/jUFVeQwZLWwLHLcJoONRmDGY9fUU07nD5EnNuKEpi35M+nGU45GT4Hqsn0AC2Pa1ZwguKipTrrBQxG3GQmE5zlLYuJG3GJV4BfwB/pgObsb6hE16t2sU3xQ5kpsViMSdzzeNm4Li8nUToLLgJzwA5wKmv2Ue6BPhiVvJbobIcaWxcEOAfahVortHVzxwAAAABJRU5ErkJggg==" alt="a">
 	</Button>
 
-	<div id="enable-word-click-div" class="inline-block grid items-center">
-	<div class="form-control align-middle">
-	<label class="label cursor-pointer tooltip " for="enable-word-click" data-tip="Enable word click for lemma info.">
-		<span class="label-text">Lemma info </span>
-		<input type="checkbox" class="toggle" bind:checked={enableWordClick} />
-	</label>
-	</div>
+	<div id="enable-word-click-div" class="inline-flex items-center">
+		<label class="cursor-pointer inline-flex items-center gap-1.5 text-xs font-medium" for="enable-word-click" title="Enable word click for lemma info.">
+			<span>Lemma info</span>
+			<input id="enable-word-click" type="checkbox" class="w-4 h-4 rounded text-accent border-rule cursor-pointer" bind:checked={enableWordClick} />
+		</label>
 	</div>
 </div>
 <!-- <ColorPicker
@@ -272,6 +270,7 @@
 
 
 <style>
+	@reference "tailwindcss";
 	div#wordcloud2 {
 		display: block;
 		margin: auto;

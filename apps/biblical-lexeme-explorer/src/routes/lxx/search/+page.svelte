@@ -161,11 +161,12 @@
 	{#if queryReady == true && foundLemma?.id >= 0}
 		<LemmaInfo {tfData} lemma={foundLemma} />
 	{:else}
-		Retreiving Lemma information...<span class="loading loading-spinner loading-lg"></span>
+		<span class="inline-flex items-center gap-2">Retreiving Lemma information...<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-rule border-t-transparent align-middle" aria-label="Loading"></span></span>
 	{/if}
 </Modal>
 
 <style>
+	@reference "tailwindcss";
 	h1,
 	h2,
 	input,

@@ -58,7 +58,7 @@
 	{/if} verses with {lemma}
 	{#if sections && sections.length > 0}in section(s){:else}in {tfData.abbrev}{/if}:
 </h2>
-<div class="rounded-lg bg-base-200/80 border border-base-300 p-2 shadow text-base-content">
+<div class="rounded-lg bg-page/70 border border-rule/50 p-2 shadow-xs text-ink">
 	{#if lexRefQuery.sent == true && lexRefQuery.ready == false}
 		<i>Awaiting data...</i>
 	{:else if wereReady && lexRefQuery.ready == true}
@@ -67,7 +67,7 @@
 		{#if lexRefQuery.response && lexRefQuery.response['refs']}
 		<div class="float-right">
 			<CopyText tooltip="Copy references to clipboard." 
-			btnCssClass="bg-base-100 hover:bg-base-300 text-base-content"
+			btnCssClass="bg-page hover:bg-rule/20 text-ink border border-rule/50"
 			copyText={tfData.booksDict.combineRefs(lexRefQuery.response['refs'])} />
 		</div>
 		<TextsDisplay
@@ -81,7 +81,7 @@
 		<!--{tfData.booksDict.combineRefs(lexRefQuery.response['refs'])}--><br/>
 		<CopyText 
 			copyText={tfData.booksDict.combineRefs(lexRefQuery.response['refs'])} 
-			btnCssClass="bg-base-100 hover:bg-base-300 text-base-content" 
+			btnCssClass="bg-page hover:bg-rule/20 text-ink border border-rule/50" 
 		/>
 	{:else}
 		<i>Lemma info will show here.</i>

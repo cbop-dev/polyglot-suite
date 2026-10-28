@@ -133,18 +133,18 @@ let {
 
 {/if}
 {#if description}<h2>{description}</h2>{/if}
-<div class="mb-4 p-3 rounded-lg bg-base-100 border border-base-300 text-center shadow-xs">
-    <div class="italic text-sm font-semibold text-base-content/90 mb-2">
+<div class="mb-4 p-3 rounded-lg bg-page/70 border border-rule/50 text-center shadow-xs">
+    <div class="italic text-sm font-semibold text-ink/90 mb-2">
         💡 Click on a verse to see the text!
     </div>
-    <div class="text-xs font-bold uppercase tracking-wider text-base-content/75 mb-2">
+    <div class="text-xs font-bold uppercase tracking-wider text-ink/75 mb-2">
         Jump to book:
     </div>
     <div class="flex flex-wrap items-center justify-center gap-1.5">
         {#each books as book}
             <button
                 type="button"
-                class="btn btn-xs sm:btn-sm btn-book-jump rounded-md px-2.5 py-1"
+                class="btn-book-jump px-2.5 py-1 text-xs sm:text-sm font-semibold rounded-lg border border-rule/60 bg-page text-ink hover:bg-rule/20 cursor-pointer transition-colors shadow-xs"
                 onclick={() => jumpToDiv(book.replaceAll(" ", "_"))}
             >
                 {book}
@@ -161,13 +161,13 @@ let {
     <!--<b>{combinedRefs}</b>-->
     <!-- sum up total entries of all previous books from 0...i-1 -->
     {@const indexOffset = Object.values(refsGroupedByBook).map((bookRefs)=>bookRefs.length).slice(0,i).reduce((a,b)=>a+b,0)}
-    <div id={book.replaceAll(" ","_")} class="relative bg-base-300 text-base-content font-bold px-2 py-1 rounded my-1 flex items-center justify-center">
+    <div id={book.replaceAll(" ","_")} class="relative bg-rule/30 text-ink font-bold px-2 py-1 rounded-md my-1 flex items-center justify-center border border-rule/40">
             <span class="text-center font-bold tracking-wide">{book}</span>
             <div class="absolute right-2 flex items-center gap-1.5">
-                <a href="#refs-top" onclick={()=>jumpToDiv("refs-top")} class="text-base-content/80 hover:text-base-content" title="Jump to top"><ArrowUp width={15} height={15}/></a>
+                <a href="#refs-top" onclick={()=>jumpToDiv("refs-top")} class="text-ink/80 hover:text-ink" title="Jump to top"><ArrowUp width={15} height={15}/></a>
                 <CopyText copyText={combinedRefs}
                     btnSizeCssClass="btn-xs font-bold"
-                    btnCssClass="bg-base-100 hover:bg-base-200 text-base-content" 
+                    btnCssClass="bg-page hover:bg-rule/20 text-ink border border-rule/40" 
                     tooltip="Copy {book} references"
                     width={15}
                     height={15}
@@ -177,7 +177,7 @@ let {
     <div class="text-center py-1">
     {#each bookRefs as ref,j}
         <Button buttonText={bCvToString(ref,true)} 
-        buttonColors="btn-ghost" style="btn-sm p-0.5 m-0.5 hover:bg-base-300 text-base-content"
+        buttonColors="btn-ghost" style="btn-sm p-0.5 m-0.5 hover:bg-rule/20 text-ink"
             toggled={()=>{chosenRefIdx=indexOffset+j; fetchText(); showText=true;}}
 
         />
@@ -204,7 +204,7 @@ let {
                 href={getReaderVerseUrl(theRef, tfData?.dbAbbrev)}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="btn btn-sm btn-primary inline-flex items-center gap-1.5"
+                class="px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg bg-accent text-white hover:opacity-90 transition-opacity inline-flex items-center gap-1.5 shadow-xs"
                 title="Read {theRef} in Polyglot Bible Reader"
             >
                 <span>Read in Polyglot Bible Reader ↗</span>

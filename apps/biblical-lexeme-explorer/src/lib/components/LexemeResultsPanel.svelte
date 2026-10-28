@@ -569,7 +569,7 @@
 				colorString = ' ' + bgBlueGradient[index] + ' ';
 			} else {
 				// > 10
-				colorString = 'bg-base-100 text-base-content border border-base-300';
+				colorString = 'bg-page text-ink border border-rule/50';
 			}
 		}
 
@@ -652,7 +652,7 @@
 				<OptionButton
 					bind:selected={showResultFilters}
 					buttonSize="btn-large m-1"
-					buttonColors="bg-base-200 text-base-content border border-base-300"
+					buttonColors="bg-page/70 text-ink border border-rule/50"
 					miscStyle="italic  font-light"
 					buttonText="Hide Filters ✕"
 				/> <br />
@@ -734,6 +734,7 @@
 					</select>
 					<ModalButton buttonText="What is this?" title="Uniqueness">
 						<style>
+	@reference "tailwindcss";
 							p {
 								@apply mb-4 text-left;
 							}
@@ -802,7 +803,7 @@
 			<OptionButton
 				bind:selected={showResultFilters}
 				buttonSize="btn-large"
-				buttonColors="bg-base-200 text-base-content border border-base-300"
+				buttonColors="bg-page/70 text-ink border border-rule/50"
 				miscStyle="italic font-bold"
 				buttonText="Results Filters ☰"
 			/>
@@ -912,12 +913,12 @@
 
             -->
 						<!--<div class="block text-left  sm:grid sm:grid-cols-3 sm:gap-1 sm:px-0">-->
-						<div class="grid grid-cols-3 gap-0 px-0 text-left odd:bg-base-200/50 hover:bg-base-200 text-base-content transition-colors">
-							<dt class="greek pl-2 text-lg font-bold text-base-content" lang="el">
+						<div class="grid grid-cols-3 gap-0 px-0 text-left odd:bg-rule/10 hover:bg-rule/20 text-ink transition-colors">
+							<dt class="greek pl-2 text-lg font-bold text-ink" lang="el">
 								{lex.lemma}
 							</dt>
 
-							<dd class="mt-0 hyphens-auto text-wrap text-sm/6 text-base-content/85 sm:col-span-2 sm:mt-0">
+							<dd class="mt-0 hyphens-auto text-wrap text-sm/6 text-ink/85 sm:col-span-2 sm:mt-0">
 								<span class={showGlosses ? '' : 'hidden'}>{lex.gloss} </span>
 								<div class="float-right pr-1">
 									<button

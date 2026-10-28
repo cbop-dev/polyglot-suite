@@ -12,7 +12,8 @@
 				'20,097 Greek lemmas from Henry Barclay Swete’s Septuaginta (1887–1912, reprint 1930, Public Domain) with neural and rule-based morphology, Abbott-Smith glosses, Strong’s numbers, and integrated LSJ lexicon.',
 			path: `${base}/bible/lxx`,
 			accentClass: 'border-emerald-500/40 hover:border-emerald-500',
-			badgeClass: 'badge-success text-emerald-950 font-bold'
+			badgeClass: 'bg-emerald-500/10 dark:bg-emerald-400/15 border-emerald-600/30 dark:border-emerald-400/30 text-ink',
+			dotClass: 'bg-emerald-600 dark:bg-emerald-400'
 		},
 		{
 			id: 'bhs',
@@ -23,7 +24,8 @@
 				'Complete Hebrew Bible vocabulary dataset from the ETCBC (Vrije Universiteit Amsterdam). Search lexemes and frequency distributions across all 39 books.',
 			path: `${base}/bible/bhs`,
 			accentClass: 'border-amber-500/40 hover:border-amber-500',
-			badgeClass: 'badge-warning text-amber-950 font-bold'
+			badgeClass: 'bg-amber-500/10 dark:bg-amber-400/15 border-amber-600/30 dark:border-amber-400/30 text-ink',
+			dotClass: 'bg-amber-600 dark:bg-amber-400'
 		},
 		{
 			id: 'sblgnt',
@@ -34,7 +36,8 @@
 				'Michael W. Holmes SBL Greek New Testament with MorphGNT linguistic annotations. Explore lemma occurrences across all 27 New Testament books.',
 			path: `${base}/bible/sblgnt`,
 			accentClass: 'border-sky-500/40 hover:border-sky-500',
-			badgeClass: 'badge-info text-sky-950 font-bold'
+			badgeClass: 'bg-sky-500/10 dark:bg-sky-400/15 border-sky-600/30 dark:border-sky-400/30 text-ink',
+			dotClass: 'bg-sky-600 dark:bg-sky-400'
 		}
 	];
 
@@ -62,7 +65,7 @@
 	<title>Biblical Lexeme Explorer</title>
 </svelte:head>
 
-<div class="mx-auto max-w-6xl px-4 py-8 text-base-content sm:py-12">
+<div class="mx-auto max-w-6xl px-4 py-8 text-ink sm:py-12">
 	<!-- Hero Section -->
 	<div class="mx-auto mb-12 max-w-3xl text-center sm:mb-16">
 		<h1
@@ -81,12 +84,15 @@
 	<div class="mb-16 grid gap-6 sm:gap-8 md:grid-cols-3">
 		{#each corpora as c}
 			<div
-				class="card flex flex-col justify-between border bg-base-100 shadow-md transition-all duration-200 hover:shadow-xl {c.accentClass}"
+				class="flex flex-col justify-between rounded-xl border border-rule/50 bg-page/80 shadow-md transition-all duration-200 hover:shadow-xl {c.accentClass}"
 			>
 				<div class="p-6">
 					<div class="mb-2 flex items-center justify-between gap-2">
-						<span class="badge badge-sm font-mono {c.badgeClass}">{c.badge}</span>
-						<span class="text-xs font-semibold uppercase tracking-wider opacity-60"
+						<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold font-mono border shadow-2xs {c.badgeClass}">
+							<span class="w-2 h-2 rounded-full shrink-0 {c.dotClass}"></span>
+							<span>{c.badge}</span>
+						</span>
+						<span class="text-xs font-bold font-mono tracking-wider opacity-70"
 							>{c.id.toUpperCase()}</span
 						>
 					</div>
@@ -99,19 +105,19 @@
 					</p>
 				</div>
 
-				<div class="space-y-2 border-t border-base-200 p-6 pt-0">
-					<a href={c.path} class="shadow-xs btn btn-primary btn-sm w-full gap-2">
+				<div class="space-y-2 border-t border-rule/30 p-6 pt-0">
+					<a href={c.path} class="inline-flex items-center justify-center font-semibold rounded-lg bg-accent text-white hover:opacity-90 transition-opacity py-2 px-3 text-sm shadow-xs w-full gap-2 cursor-pointer">
 						<span>Explore {c.id.toUpperCase()}</span>
 						<span aria-hidden="true">&rarr;</span>
 					</a>
 					<div class="grid grid-cols-3 gap-1.5 pt-1 text-xs">
-						<a href="{c.path}?panel=book" class="btn btn-ghost btn-xs border border-base-300"
+						<a href="{c.path}?panel=book" class="inline-flex items-center justify-center font-medium rounded-lg border border-rule/50 bg-page/70 text-ink hover:bg-rule/20 transition-colors py-1 px-2 text-xs cursor-pointer"
 							>Books</a
 						>
-						<a href="{c.path}?panel=lex" class="btn btn-ghost btn-xs border border-base-300"
+						<a href="{c.path}?panel=lex" class="inline-flex items-center justify-center font-medium rounded-lg border border-rule/50 bg-page/70 text-ink hover:bg-rule/20 transition-colors py-1 px-2 text-xs cursor-pointer"
 							>Lexemes</a
 						>
-						<a href="{c.path}?panel=wc" class="btn btn-ghost btn-xs border border-base-300">Cloud</a
+						<a href="{c.path}?panel=wc" class="inline-flex items-center justify-center font-medium rounded-lg border border-rule/50 bg-page/70 text-ink hover:bg-rule/20 transition-colors py-1 px-2 text-xs cursor-pointer">Cloud</a
 						>
 					</div>
 				</div>
@@ -126,7 +132,7 @@
 		</h2>
 		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
 			{#each features as f}
-				<div class="shadow-xs card border border-base-300 bg-base-100/70 p-5">
+				<div class="shadow-xs rounded-xl border border-rule/40 bg-page/70 p-5">
 					<h3 class="mb-2 text-base font-bold">{f.title}</h3>
 					<p class="text-xs leading-relaxed opacity-80 sm:text-sm">{f.desc}</p>
 				</div>
@@ -136,7 +142,7 @@
 
 	<!-- Open Source & Licensing Banner -->
 	<div
-		class="shadow-xs card mx-auto max-w-3xl border border-base-300 bg-base-100 p-6 text-center sm:p-8"
+		class="shadow-xs rounded-xl mx-auto max-w-3xl border border-rule/40 bg-page p-6 text-center sm:p-8"
 	>
 		<h3 class="mb-2 text-lg font-bold">Open Source &amp; Open Data</h3>
 		<p class="mx-auto mb-4 max-w-2xl text-sm opacity-80">
@@ -153,7 +159,7 @@
 			> and <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0 (BHS)</a>).
 		</p>
 		<div>
-			<a href="{base}/sources-and-licenses" class="btn btn-outline btn-sm gap-2">
+			<a href="{base}/sources-and-licenses" class="inline-flex items-center justify-center font-semibold rounded-lg border border-rule bg-page text-ink hover:bg-rule/20 transition-colors px-4 py-2 text-sm shadow-xs gap-2 cursor-pointer">
 				<span>View Full Sources &amp; Licensing Framework</span>
 				<span aria-hidden="true">&rarr;</span>
 			</a>

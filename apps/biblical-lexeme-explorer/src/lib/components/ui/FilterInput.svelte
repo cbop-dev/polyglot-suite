@@ -126,7 +126,7 @@ let {
 <input  type="search" size="15" bind:value={inputText} placeholder="Type here" class="input input-bordered w-full max-w-xs" />
 
 <br/>
-<Button buttonStyle="btn btn-ghost" buttonColors="text-base-content" style="font-light" toggled={()=>{inputText=''}} buttonText="Clear" />
+<Button buttonStyle="btn btn-ghost" buttonColors="text-ink" style="font-light" toggled={()=>{inputText=''}} buttonText="Clear" />
     <label class="label cursor-pointer inline">
         <span class="label-text">Case&nbsp;sensitive</span>
         <input type="checkbox" bind:checked={casesensitive} class="checkbox" />

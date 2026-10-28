@@ -173,17 +173,17 @@
             ]
         </h1>
         {#if filterOptions.getExcluded().length > 0}
-            <p class="text-sm text-base-content/70">
+            <p class="text-sm text-ink/70">
                 Excluding: [{filterOptions.getExcluded().map((id) => dataset?.posDict[id]?.desc || id).join(', ')}]
             </p>
         {/if}
         {#if filterOptions.getRestricted().length > 0}
-            <p class="text-sm text-base-content/70">
+            <p class="text-sm text-ink/70">
                 Restricted to: [{filterOptions.getRestricted().map((id) => dataset?.posDict[id]?.desc || id).join(', ')}]
             </p>
         {/if}
 
-        <div class="block self-center m-auto max-w-4xl p-4 bg-base-100 rounded-box shadow-md">
+        <div class="block self-center m-auto max-w-4xl p-4 bg-page/70 rounded-xl border border-rule/50 shadow-md">
             {#if cloudWords.length === 0}
                 <p>No matching words found for the selected sections and filters.</p>
             {:else}

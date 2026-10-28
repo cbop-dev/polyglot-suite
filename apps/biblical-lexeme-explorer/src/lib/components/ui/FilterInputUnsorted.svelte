@@ -84,5 +84,5 @@ let {
 </ModalButton>
 <br/>
 <input aria-label="Input"  type="search" size="15" name="inputfilter" bind:value={inputText} placeholder="Type here" class="input input-bordered w-full max-w-xs" />
-<Button buttonStyle="btn btn-ghost" buttonColors="text-base-content" style="font-light" toggled={()=>{inputText=''}} buttonText="Clear" />
+<Button buttonStyle="btn btn-ghost" buttonColors="text-ink" style="font-light" toggled={()=>{inputText=''}} buttonText="Clear" />
 </div>

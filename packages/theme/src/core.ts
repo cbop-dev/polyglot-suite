@@ -54,6 +54,32 @@ export const LINK_DARK: RGB  = [122, 176, 232]; // sky
 export const ACC_LIGHT: RGB  = [107, 52, 16];  // brick
 export const ACC_DARK: RGB   = [212, 165, 116]; // ochre
 
+// Lemma button stops: deep burgundy on light backgrounds, refined slate/ocean blue on dark
+export const LEMMA_BTN_LIGHT_STOPS: [number, RGB][] = [
+	[0.00, [140, 24, 40]],   // deep wine / crimson (#8c1828)
+	[0.25, [160, 28, 42]],   // rich burgundy (#a01c2a)
+	[0.50, [185, 30, 45]]    // warm carmine (#b91e2d)
+];
+
+export const LEMMA_BTN_DARK_STOPS: [number, RGB][] = [
+	[0.50, [30, 88, 140]],   // deep slate blue (#1e588c)
+	[0.75, [36, 105, 162]],  // rich ocean sapphire (#2469a2)
+	[1.00, [42, 120, 182]]   // refined steel blue (#2a78b6)
+];
+
+// Lookup/Action button stops (inverted contrast: dark fill on light page, light fill on dark page)
+export const LOOKUP_BTN_LIGHT_STOPS: [number, RGB][] = [
+	[0.00, [15, 23, 42]],    // deep slate black (#0f172a)
+	[0.25, [24, 34, 52]],    // rich dark slate ink (#182234)
+	[0.50, [35, 48, 68]]     // slate-800 (#233044)
+];
+
+export const LOOKUP_BTN_DARK_STOPS: [number, RGB][] = [
+	[0.50, [238, 242, 246]],  // light slate / ivory (#eef2f6)
+	[0.75, [248, 250, 252]],  // clean light slate (#f8fafc)
+	[1.00, [255, 255, 255]]   // pure white (#ffffff)
+];
+
 export function lerp(a: number, b: number, t: number): number {
 	return Math.round(a + (b - a) * t);
 }
@@ -68,6 +94,47 @@ export function rgbCss(c: RGB): string {
 
 export function rgbaCss(c: RGB, alpha: number): string {
 	return `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha})`;
+}
+
+export function interpolateColorStops(stops: [number, RGB][], t: number): RGB {
+	for (let i = 0; i < stops.length - 1; i++) {
+		const [t0, c0] = stops[i];
+		const [t1, c1] = stops[i + 1];
+		if (t >= t0 && t <= t1) {
+			const seg = t1 === t0 ? 0 : (t - t0) / (t1 - t0);
+			return lerpRgb(c0, c1, seg);
+		}
+	}
+	const last = stops[stops.length - 1];
+	return last[1];
+}
+
+export function srgbToLinear(c: number): number {
+	c = c / 255;
+	return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+/**
+ * Convert RGB to DaisyUI OKLCH format string: "L% C H"
+ */
+export function rgbToDaisyOklch([r, g, b]: RGB): string {
+	const lr = srgbToLinear(r);
+	const lg = srgbToLinear(g);
+	const lb = srgbToLinear(b);
+
+	const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+	const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+	const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+
+	const L = 0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s;
+	const a = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s;
+	const bb = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s;
+
+	const C = Math.sqrt(a * a + bb * bb);
+	let h = Math.atan2(bb, a) * (180 / Math.PI);
+	if (h < 0) h += 360;
+
+	return `${(L * 100).toFixed(4)}% ${C.toFixed(6)} ${h.toFixed(6)}`;
 }
 
 export function interpolateStops(stops: ColorStop[], t: number): { bg: RGB; fg: RGB } {
@@ -125,6 +192,13 @@ export interface ResolvedThemeColors {
 	link: RGB;
 	accent: RGB;
 	accentLight: RGB;
+	lemmaBtnBg: RGB;
+	lemmaBtnHover: RGB;
+	lemmaBtnBorder: RGB;
+	lookupBtnBg: RGB;
+	lookupBtnHover: RGB;
+	lookupBtnBorder: string;
+	lookupBtnText: RGB;
 }
 
 /**
@@ -149,6 +223,36 @@ export function resolveThemeColors(themeValue: number, warmthValue: number = 50)
 	const accent = lerpRgb(ACC_LIGHT, ACC_DARK, t);
 	const accentLight = lerpRgb(accent, bg, 0.2);
 
+	// Dynamic Lemma Button colors
+	const lemmaBtnBg = t < 0.5
+		? interpolateColorStops(LEMMA_BTN_LIGHT_STOPS, t)
+		: interpolateColorStops(LEMMA_BTN_DARK_STOPS, t);
+
+	const lemmaBtnHover = isDark
+		? lerpRgb(lemmaBtnBg, [255, 255, 255], 0.14)
+		: lerpRgb(lemmaBtnBg, [0, 0, 0], 0.16);
+
+	const lemmaBtnBorder = isDark
+		? lerpRgb(lemmaBtnBg, [255, 255, 255], 0.28)
+		: lerpRgb(lemmaBtnBg, [0, 0, 0], 0.2);
+
+	// Dynamic Lookup Button colors
+	const lookupBtnBg = t < 0.5
+		? interpolateColorStops(LOOKUP_BTN_LIGHT_STOPS, t)
+		: interpolateColorStops(LOOKUP_BTN_DARK_STOPS, t);
+
+	const lookupBtnText: RGB = isDark
+		? [15, 23, 42]     // deep dark ink on light button
+		: [255, 255, 255]; // crisp white text on dark button
+
+	const lookupBtnHover = isDark
+		? lerpRgb(lookupBtnBg, [200, 210, 220], 0.15)
+		: lerpRgb(lookupBtnBg, [80, 100, 130], 0.25);
+
+	const lookupBtnBorder = isDark
+		? 'rgba(255, 255, 255, 0.35)'
+		: 'rgba(0, 0, 0, 0.3)';
+
 	return {
 		t,
 		w,
@@ -162,7 +266,14 @@ export function resolveThemeColors(themeValue: number, warmthValue: number = 50)
 		cardBorder,
 		link,
 		accent,
-		accentLight
+		accentLight,
+		lemmaBtnBg,
+		lemmaBtnHover,
+		lemmaBtnBorder,
+		lookupBtnBg,
+		lookupBtnHover,
+		lookupBtnBorder,
+		lookupBtnText
 	};
 }
 

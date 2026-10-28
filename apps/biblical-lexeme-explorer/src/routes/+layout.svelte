@@ -1,5 +1,4 @@
 <script>
-	import "tailwindcss/tailwind.css";
 	import '../app.css';
 	import Footer from '$lib/components/ui/Footer.svelte';
 

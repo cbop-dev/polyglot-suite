@@ -6,7 +6,7 @@
     buttonSize = "gap-1.5 px-3.5 py-1.5 rounded-lg b",
     buttonColors = "",
     textSize = "text-sm shadow-xs",
-    selected = $bindable(false),
+    selected = $bindable(),
     ready = true,
     customClickHandler = () => {},
     disableToggle = false,
@@ -15,6 +15,7 @@
     children = null
   } = $props();
 
+  let isSelected = $derived(Boolean(selected));
   let theButton;
 
   export function deselect() {
@@ -25,13 +26,13 @@
   }
   export function toggle() {
     if (!disableToggle) {
-      selected = !selected;
+      selected = !isSelected;
     }
     customClickHandler();
   }
 
   onMount(() => {
-    if (selected) select();
+    if (isSelected) select();
   });
 </script>
 
@@ -41,9 +42,9 @@
   onclick={toggle}
   bind:this={theButton}
   title={tooltip}
-  class="inline-flex items-center justify-center order
+  class="inline-flex items-center justify-center border
    font-semibold transition-all duration-150 cursor-pointer 
-   {buttonSize} {textSize} {miscStyle} {selected 
+   {buttonSize} {textSize} {miscStyle} {isSelected 
     ? 'bg-link text-white border-link shadow-md ring-2 ring-link/30 font-bold' 
     : 'bg-page text-ink border-rule hover:bg-rule/50 hover:border-link/60'} {!ready ? 'opacity-50 cursor-not-allowed' : ''} {buttonColors}"
 >

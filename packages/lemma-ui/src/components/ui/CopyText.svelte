@@ -17,7 +17,7 @@
 
     let copied = $state(false);
 
-    async function copyToClipboard(e) {
+    async function copyToClipboard(e?: Event | MouseEvent) {
         if (e) {
             e.stopPropagation();
             e.preventDefault();
@@ -27,7 +27,7 @@
 //            mylog(`gonna call getTextfun()_...`, true);
             try {
                 theText = typeof getTextFunc === 'function' ? getTextFunc() : getTextFunc;
-                mylog(`called getTextfun->'${theText}'`)
+                // console.debug(`called getTextfun->'${theText}'`);
             } catch (err) {
 //                mylog("HMMM. error!", true);
                 console.error("Error evaluating getTextFunc:", err);
