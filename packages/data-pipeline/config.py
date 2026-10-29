@@ -122,6 +122,12 @@ UPSTREAM_SOURCES = {
         "filename": "peshitta_nt_raw.jsonl",
         "description": "ETCBC SEDRA 3 Syriac New Testament (Text-Fabric exported JSONL)",
     },
+    # 11. Greek NT: SBLGNT & MorphGNT
+    "sblgnt": {
+        "url": "https://github.com/morphgnt/sblgnt/archive/refs/heads/master.zip",
+        "filename": "sblgnt-master.zip",
+        "description": "MorphGNT SBLGNT (Holmes 2010 text with Tauber 11-char morphology)",
+    },
 }
 
 # Exhaustive Canonical Books Specification (USFM 3-letter codes)

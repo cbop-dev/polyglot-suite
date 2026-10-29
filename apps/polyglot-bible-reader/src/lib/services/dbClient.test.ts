@@ -30,7 +30,7 @@ describe('dbClient service', () => {
 		expect(VERSION_MAP['LXX']).toBe('swete_lxx');
 		expect(VERSION_MAP['OpenGNT']).toBe('ognt');
 		expect(VERSION_MAP['OGNT']).toBe('ognt');
-		expect(VERSION_MAP['SBLGNT']).toBe('ognt');
+		expect(VERSION_MAP['SBLGNT']).toBe('sblgnt');
 		expect(VERSION_MAP['Vulgate']).toBe('vulgate');
 		expect(VERSION_MAP['KJV']).toBe('kjv');
 		expect(VERSION_MAP['WEB']).toBe('webbe');
@@ -40,7 +40,7 @@ describe('dbClient service', () => {
 		expect(SLUG_TO_VERSION['swete_lxx']).toBe('LXX');
 		expect(SLUG_TO_VERSION['swete-lxx']).toBe('LXX');
 		expect(SLUG_TO_VERSION['ognt']).toBe('OpenGNT');
-		expect(SLUG_TO_VERSION['sblgnt']).toBe('OpenGNT');
+		expect(SLUG_TO_VERSION['sblgnt']).toBe('SBLGNT');
 		expect(SLUG_TO_VERSION['vulgate']).toBe('Vulgate');
 		expect(SLUG_TO_VERSION['vulgate-clementine']).toBe('Vulgate');
 		expect(SLUG_TO_VERSION['kjv']).toBe('KJV');
@@ -897,12 +897,14 @@ describe('dbClient service', () => {
 			expect(resolveCorpusId('swete_lxx')).toBe('swete_lxx');
 			expect(resolveCorpusId('OpenGNT')).toBe('ognt');
 			expect(resolveCorpusId('opengnt')).toBe('ognt');
-			expect(resolveCorpusId('sblgnt')).toBe('ognt');
+			expect(resolveCorpusId('sblgnt')).toBe('sblgnt');
+			expect(resolveCorpusId('SBLGNT')).toBe('sblgnt');
 			expect(resolveCorpusId('Peshitta')).toBe('peshitta');
 			expect(resolveCorpusId('peshitta')).toBe('peshitta');
 			expect(resolveCorpusId(2)).toBe('wlc');
 			expect(resolveCorpusId(24)).toBe('swete_lxx');
 			expect(resolveCorpusId(40)).toBe('ognt');
+			expect(resolveCorpusId(41)).toBe('sblgnt');
 			expect(resolveCorpusId(8)).toBe('peshitta');
 		});
 

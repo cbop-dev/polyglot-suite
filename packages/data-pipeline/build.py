@@ -41,12 +41,13 @@ def main():
     parser.add_argument("--build", action="store_true", help="Build pre-aligned SQLite database")
     parser.add_argument("--validate", action="store_true", help="Run validation and integrity test suite")
     parser.add_argument("--chunk", action="store_true", help="Chunk database into static/db for sql.js-httpvfs")
+    parser.add_argument("--corpus", type=str, help="Ingest or update a single specific corpus (e.g. sblgnt)")
     parser.add_argument("--rebuild-lxx-morphology", action="store_true", help="Re-run 8-stage Swete LXX morphology resolution pipeline from raw CSVs")
     parser.add_argument("--force", action="store_true", help="Force re-fetching or rebuilding")
     args = parser.parse_args()
 
     # Default to --all if no specific stage requested
-    if not (args.all or args.fetch or args.build or args.validate or args.chunk or args.rebuild_lxx_morphology):
+    if not (args.all or args.fetch or args.build or args.validate or args.chunk or args.rebuild_lxx_morphology or args.corpus):
         args.all = True
 
     t0 = time.time()
@@ -75,7 +76,11 @@ def main():
             print(f"Notice: Fetch encountered an issue ({e}). Continuing with cached sources if available.")
 
     # Stage 2: Build Database
-    if args.all or args.build:
+    if args.corpus:
+        print(f"\n>>> STAGE 2: Targeted Ingestion of '{args.corpus}' <<<")
+        builder = DatabaseBuilder()
+        builder.ingest_corpus(args.corpus)
+    elif args.all or args.build:
         print("\n>>> STAGE 2: Building Pre-Aligned SQLite Database <<<")
         builder = DatabaseBuilder()
         builder.build_all()

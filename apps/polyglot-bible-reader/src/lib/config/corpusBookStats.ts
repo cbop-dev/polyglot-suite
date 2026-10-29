@@ -15,6 +15,7 @@ export const CORPUS_TOTAL_WORDS: Record<string, number> = {
   "kjv": 556037,
   "ognt": 138013,
   "peshitta": 525248,
+  "sblgnt": 137554,
   "swete_lxx": 605183,
   "wlc": 420141
 };
@@ -788,6 +789,116 @@ export const CORPUS_BOOK_STATS: Record<string, Record<string, BookWordStat>> = {
     "REV": {
       "words": 6320,
       "verses": 403
+    }
+  },
+  "sblgnt": {
+    "1CO": {
+      "words": 6812,
+      "verses": 437
+    },
+    "1JN": {
+      "words": 2137,
+      "verses": 105
+    },
+    "1PE": {
+      "words": 1678,
+      "verses": 105
+    },
+    "1TH": {
+      "words": 1473,
+      "verses": 89
+    },
+    "1TI": {
+      "words": 1591,
+      "verses": 113
+    },
+    "2CO": {
+      "words": 4473,
+      "verses": 256
+    },
+    "2JN": {
+      "words": 245,
+      "verses": 13
+    },
+    "2PE": {
+      "words": 1098,
+      "verses": 61
+    },
+    "2TH": {
+      "words": 820,
+      "verses": 47
+    },
+    "2TI": {
+      "words": 1235,
+      "verses": 83
+    },
+    "3JN": {
+      "words": 219,
+      "verses": 15
+    },
+    "ACT": {
+      "words": 18412,
+      "verses": 1002
+    },
+    "COL": {
+      "words": 1580,
+      "verses": 95
+    },
+    "EPH": {
+      "words": 2416,
+      "verses": 155
+    },
+    "GAL": {
+      "words": 2226,
+      "verses": 149
+    },
+    "HEB": {
+      "words": 4935,
+      "verses": 303
+    },
+    "JAS": {
+      "words": 1739,
+      "verses": 108
+    },
+    "JHN": {
+      "words": 15438,
+      "verses": 866
+    },
+    "JUD": {
+      "words": 459,
+      "verses": 25
+    },
+    "LUK": {
+      "words": 19446,
+      "verses": 1149
+    },
+    "MAT": {
+      "words": 18329,
+      "verses": 1068
+    },
+    "MRK": {
+      "words": 11286,
+      "verses": 673
+    },
+    "PHM": {
+      "words": 334,
+      "verses": 25
+    },
+    "PHP": {
+      "words": 1626,
+      "verses": 104
+    },
+    "REV": {
+      "words": 9833,
+      "verses": 405
+    },
+    "ROM": {
+      "words": 7055,
+      "verses": 430
+    },
+    "TIT": {
+      "words": 659,
+      "verses": 46
     }
   },
   "swete_lxx": {

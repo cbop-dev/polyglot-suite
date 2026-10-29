@@ -29,7 +29,7 @@ describe('findIncompatibleVersions', ()=>{
     });
 
 
-    it('check if finds only nt versions (SBLGNT alias -> OpenGNT) when given ot (LXX) version', ()=>{
+    it('check if finds only nt versions (SBLGNT) when given ot (LXX) version', ()=>{
         const rs = new ReaderState();
         ['SBLGNT', 'KJV'].forEach((v)=>rs.addColumn(v,false));
         
@@ -37,7 +37,7 @@ describe('findIncompatibleVersions', ()=>{
         expect(incomp.length).toEqual(1);
 
         const notToFind = ['BHS', 'LXX', 'KJV'];
-        const toFind=['OpenGNT'];
+        const toFind=['SBLGNT'];
         toFind.forEach((v)=>{
             expect(incomp.includes(v)).toBe(true);
         });
@@ -66,13 +66,13 @@ describe('findIncompatibleVersions', ()=>{
 
 
 describe('ensureVisibleCompatibleWithSelectedVersion', ()=>{
-    it('adjust versions (BHS, Brenton, LXX) when selecting nt (SBLGNT alias -> OpenGNT) version', async ()=>{
+    it('adjust versions (BHS, Brenton, LXX) when selecting nt (SBLGNT) version', async ()=>{
         const rs = new ReaderState();
         expect(rs.selectedBook).toBe('Gen');
         await rs.selectVersion('SBLGNT', false);
         rs.ensureVisibleCompatibleWithSelectedVersion(false);
     
-        const toFind = ['OpenGNT'];
+        const toFind = ['SBLGNT'];
         const notToFind=['BHS', 'Brenton', 'LXX'];
         toFind.forEach((v)=>{
             expect(rs.visibleVersions.includes(v)).toBe(true);

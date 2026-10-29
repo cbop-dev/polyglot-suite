@@ -26,6 +26,7 @@ export const CANONICAL_CORPORA = [
   "lsj",
   "ognt",
   "peshitta",
+  "sblgnt",
   "swete_lxx",
   "vulgate",
   "webbe",
@@ -107,6 +108,18 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
     "license": "MIT / CC BY-NC 4.0",
     "attribution": "Peshitta Institute Leiden / George A. Kiraz (SEDRA) / ETCBC"
   },
+  "sblgnt": {
+    "id": "sblgnt",
+    "title": "The Greek New Testament: SBL Edition",
+    "language": "grc",
+    "direction": "ltr",
+    "category": "bible",
+    "default_scheme": "ENG",
+    "has_tokens": true,
+    "has_audio": false,
+    "license": "CC BY 4.0",
+    "attribution": "Holmes (2010) / MorphGNT (Tauber)"
+  },
   "swete_lxx": {
     "id": "swete_lxx",
     "title": "The Old Testament in Greek according to the Septuagint (H.B. Swete, 1930)",
@@ -173,9 +186,9 @@ export const VERSION_TO_CORPUS_ID: Record<string, CorpusId> = {
   "OGNT": "ognt",
   "opengnt": "ognt",
   "OpenGNT": "ognt",
-  "sblgnt": "ognt",
-  "SBLGNT": "ognt",
-  "sbl": "ognt",
+  "sblgnt": "sblgnt",
+  "SBLGNT": "sblgnt",
+  "sbl": "sblgnt",
   "peshitta": "peshitta",
   "Peshitta": "peshitta",
   "syc": "peshitta",
@@ -203,6 +216,7 @@ export const CORPUS_ID_TO_VERSION: Record<CorpusId, string> = {
   "wlc": "BHS",
   "swete_lxx": "LXX",
   "ognt": "OpenGNT",
+  "sblgnt": "SBLGNT",
   "peshitta": "Peshitta",
   "kjv": "KJV",
   "vulgate": "Vulgate",
@@ -223,7 +237,8 @@ export const WORK_ID_TO_CORPUS_ID: Record<number, CorpusId> = {
   "7": "brenton-lxx",
   "8": "peshitta",
   "24": "swete_lxx",
-  "40": "ognt"
+  "40": "ognt",
+  "41": "sblgnt"
 };
 
 export const CORPUS_ID_TO_WORK_ID: Record<CorpusId, number> = {
@@ -235,6 +250,7 @@ export const CORPUS_ID_TO_WORK_ID: Record<CorpusId, number> = {
   "peshitta": 8,
   "swete_lxx": 24,
   "ognt": 40,
+  "sblgnt": 41,
   "bdb": 2,
   "lsj": 24
 };

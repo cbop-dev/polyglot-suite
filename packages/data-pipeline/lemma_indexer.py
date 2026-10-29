@@ -318,11 +318,12 @@ def resolve_token_keys(corpus_id: str, tok: Any) -> Tuple[List[str], str]:
     return keys, display_lemma
 
 
-def index_lemmas_and_concordance(conn: sqlite3.Connection):
+def index_lemmas_and_concordance(conn: sqlite3.Connection, corpus_filter: Optional[str] = None):
     """Generates lemma_stats, concordance_refs, and lemma_forms from populated text_units."""
     cur = conn.cursor()
     start_time = time.time()
-    print("\n=== Indexing Lemma Statistics, Concordance References & Attested Forms ===")
+    filter_msg = f" for '{corpus_filter}'" if corpus_filter else ""
+    print(f"\n=== Indexing Lemma Statistics, Concordance References & Attested Forms{filter_msg} ===")
 
     # 1. Load canonical books for titles and abbreviations
     cur.execute("SELECT code, order_index, name_english FROM canonical_books")
@@ -332,14 +333,25 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
     print(f"Loaded {len(books_meta)} canonical book definitions.")
 
     # 2. Iterate through all text_units with tokens
-    cur.execute(
-        """
-        SELECT id, corpus_id, std_book, native_citation, tokens_json
-        FROM text_units
-        WHERE tokens_json IS NOT NULL
-        ORDER BY id
-        """
-    )
+    if corpus_filter:
+        cur.execute(
+            """
+            SELECT id, corpus_id, std_book, native_citation, tokens_json
+            FROM text_units
+            WHERE tokens_json IS NOT NULL AND corpus_id = ?
+            ORDER BY id
+            """,
+            (corpus_filter,)
+        )
+    else:
+        cur.execute(
+            """
+            SELECT id, corpus_id, std_book, native_citation, tokens_json
+            FROM text_units
+            WHERE tokens_json IS NOT NULL
+            ORDER BY id
+            """
+        )
 
     # Book and corpus word & verse aggregations
     corpus_word_counts: Dict[str, int] = defaultdict(int)
@@ -451,7 +463,10 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
             PRIMARY KEY (corpus_id, book_code)
         )
     """)
-    cur.execute("DELETE FROM corpus_book_stats")
+    if corpus_filter:
+        cur.execute("DELETE FROM corpus_book_stats WHERE corpus_id = ?", (corpus_filter,))
+    else:
+        cur.execute("DELETE FROM corpus_book_stats")
     cbs_rows = [
         (c_id, b_code, w_cnt, book_verse_counts.get((c_id, b_code), 0))
         for (c_id, b_code), w_cnt in book_word_counts.items()
@@ -466,7 +481,10 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
     # 4. Populate lemma_stats table
     print("Populating lemma_stats table...")
     t_stats = time.time()
-    cur.execute("DELETE FROM lemma_stats")
+    if corpus_filter:
+        cur.execute("DELETE FROM lemma_stats WHERE corpus_id = ?", (corpus_filter,))
+    else:
+        cur.execute("DELETE FROM lemma_stats")
 
     lemma_rows = []
     for (corpus_id, lk), book_counts in lemma_book_counts.items():
@@ -502,7 +520,10 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
     # 5. Populate concordance_refs table
     print("Populating concordance_refs table...")
     t_conc = time.time()
-    cur.execute("DELETE FROM concordance_refs")
+    if corpus_filter:
+        cur.execute("DELETE FROM concordance_refs WHERE corpus_id = ?", (corpus_filter,))
+    else:
+        cur.execute("DELETE FROM concordance_refs")
 
     batch_size = 50000
     batch = []
@@ -550,7 +571,10 @@ def index_lemmas_and_concordance(conn: sqlite3.Connection):
             PRIMARY KEY (corpus_id, lemma_key)
         )
     """)
-    cur.execute("DELETE FROM lemma_forms")
+    if corpus_filter:
+        cur.execute("DELETE FROM lemma_forms WHERE corpus_id = ?", (corpus_filter,))
+    else:
+        cur.execute("DELETE FROM lemma_forms")
 
     lf_rows = []
     alias_candidates: List[Tuple[str, str, str, int, str]] = []

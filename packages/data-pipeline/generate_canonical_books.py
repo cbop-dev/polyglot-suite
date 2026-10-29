@@ -622,9 +622,9 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
         "OGNT": "ognt",
         "opengnt": "ognt",
         "OpenGNT": "ognt",
-        "sblgnt": "ognt",
-        "SBLGNT": "ognt",
-        "sbl": "ognt",
+        "sblgnt": "sblgnt",
+        "SBLGNT": "sblgnt",
+        "sbl": "sblgnt",
         "peshitta": "peshitta",
         "Peshitta": "peshitta",
         "syc": "peshitta",
@@ -649,6 +649,7 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
         "wlc": "BHS",
         "swete_lxx": "LXX",
         "ognt": "OpenGNT",
+        "sblgnt": "SBLGNT",
         "peshitta": "Peshitta",
         "kjv": "KJV",
         "vulgate": "Vulgate",
@@ -667,6 +668,7 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
         8: "peshitta",
         24: "swete_lxx",
         40: "ognt",
+        41: "sblgnt",
     }
 
     corpus_to_work_id = {
@@ -678,6 +680,7 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
         "peshitta": 8,
         "swete_lxx": 24,
         "ognt": 40,
+        "sblgnt": 41,
         "bdb": 2,
         "lsj": 24,
     }

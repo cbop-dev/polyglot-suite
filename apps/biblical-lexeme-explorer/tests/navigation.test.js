@@ -28,10 +28,10 @@ describe('BLE Reader Navigation & Cross-Tradition Alignment', () => {
 		expect(parsed.searchParams.get('verse')).toBe('1');
 	});
 
-	it('maps SBLGNT to OpenGNT version alias', () => {
+	it('maps SBLGNT to SBLGNT version', () => {
 		const url = getReaderVerseUrl('John 1:1', 'sblgnt');
 		const parsed = new URL(url, 'http://localhost');
-		expect(parsed.searchParams.get('version')).toBe('OpenGNT');
+		expect(parsed.searchParams.get('version')).toBe('SBLGNT');
 		expect(parsed.searchParams.get('book')).toBe('John');
 		expect(parsed.searchParams.get('chapter')).toBe('1');
 	});

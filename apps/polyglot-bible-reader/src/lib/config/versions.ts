@@ -2,7 +2,7 @@ import { CANONICAL_BOOK_DEFINITIONS,normalizeBookName } from "./canonicalBooks.g
 
 export const biblesByLanguage={
   english:['KJV', 'Brenton'],
-  greek:['LXX']
+  greek:['LXX', 'OpenGNT', 'SBLGNT']
 }
 
 export type TextDirection = 'ltr' | 'rtl';
@@ -34,6 +34,7 @@ export const datasetsDict: Record<string, { language: string; testament: string;
    'BHS':{language:'Hebrew', testament: 'ot', lemmas:true, direction: 'rtl'},
    'LXX':{language:'Greek', testament: 'ot', lemmas:true, direction: 'ltr'},
    'OpenGNT':{language:'Greek', testament: 'nt', lemmas:true, direction: 'ltr'},
+   'SBLGNT':{language:'Greek', testament: 'nt', lemmas:true, direction: 'ltr'},
    'Peshitta':{language:'Syriac', testament: 'both', lemmas:true, direction: 'rtl'}
 };
 
@@ -41,8 +42,8 @@ export const datasetsDict: Record<string, { language: string; testament: string;
  * Case-insensitive aliases for URL parameters, legacy links, and alternate acronyms.
  */
 export const VERSION_ALIASES: Record<string, string> = {
-  sblgnt: 'OpenGNT',
-  sbl: 'OpenGNT',
+  sblgnt: 'SBLGNT',
+  sbl: 'SBLGNT',
   ognt: 'OpenGNT',
   opengnt: 'OpenGNT',
   peshitta: 'Peshitta',

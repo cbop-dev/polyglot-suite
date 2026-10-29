@@ -21,7 +21,7 @@ export function getReaderVerseUrl(refString, dbAbbrev = 'lxx') {
 	if (abbrev === 'bhs') {
 		version = 'BHS';
 	} else if (abbrev === 'sblgnt') {
-		version = 'OpenGNT';
+		version = 'SBLGNT';
 	} else if (abbrev === 'lxx') {
 		version = 'LXX';
 	}

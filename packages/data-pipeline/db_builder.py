@@ -23,6 +23,7 @@ from .adapters import (
     WLCAdapter,
     SweteLXXAdapter,
     OGNTAdapter,
+    SBLGNTAdapter,
     KJVAdapter,
     WEBBEAdapter,
     BrentonAdapter,
@@ -311,6 +312,18 @@ class DatabaseBuilder:
                 "OpenGNT Project (Eliran Wong)",
             ),
             (
+                "sblgnt",
+                "The Greek New Testament: SBL Edition",
+                "grc",
+                "ltr",
+                "bible",
+                "ENG",
+                1,
+                0,
+                "CC BY 4.0",
+                "Holmes (2010) / MorphGNT (Tauber)",
+            ),
+            (
                 "kjv",
                 "King James Version (with Apocrypha)",
                 "eng",
@@ -534,6 +547,7 @@ class DatabaseBuilder:
                 WLCAdapter(tvtms=self.tvtms),
                 SweteLXXAdapter(tvtms=self.tvtms),
                 OGNTAdapter(tvtms=self.tvtms),
+                SBLGNTAdapter(tvtms=self.tvtms),
                 KJVAdapter(tvtms=self.tvtms),
                 WEBBEAdapter(tvtms=self.tvtms),
                 BrentonAdapter(tvtms=self.tvtms),
@@ -584,7 +598,88 @@ class DatabaseBuilder:
         print(f"Elapsed: {total_elapsed:.1f}s")
         print(f"==================================================")
 
+    def ingest_corpus(self, corpus_id: str):
+        """Incrementally ingests or updates a single text corpus in the working database."""
+        c_clean = corpus_id.lower().strip()
+        print(f"==================================================")
+        print(f"Targeted Ingestion for corpus: '{c_clean}'")
+        print(f"Target Database: {self.db_path}")
+        print(f"==================================================")
+
+        if not self.db_path.exists():
+            raise FileNotFoundError(f"Database not found at {self.db_path}. Run build_all first.")
+
+        conn = sqlite3.connect(self.db_path)
+        conn.execute("PRAGMA journal_mode = MEMORY")
+        conn.execute("PRAGMA synchronous = OFF")
+        conn.execute("PRAGMA cache_size = 100000")
+
+        try:
+            self.init_schema(conn)
+            self.populate_canonical_books(conn)
+            self.populate_corpora(conn)
+
+            if self.tvtms is None:
+                self.tvtms = load_tvtms()
+
+            adapter: Optional[BaseAdapter] = None
+            if c_clean == "sblgnt":
+                adapter = SBLGNTAdapter(tvtms=self.tvtms)
+            elif c_clean == "ognt":
+                adapter = OGNTAdapter(tvtms=self.tvtms)
+            elif c_clean in ("wlc", "bhs"):
+                adapter = WLCAdapter(tvtms=self.tvtms)
+            elif c_clean in ("swete_lxx", "lxx"):
+                adapter = SweteLXXAdapter(tvtms=self.tvtms)
+            elif c_clean == "kjv":
+                adapter = KJVAdapter(tvtms=self.tvtms)
+            elif c_clean == "vulgate":
+                adapter = VulgateAdapter(tvtms=self.tvtms)
+            elif c_clean == "webbe":
+                adapter = WEBBEAdapter(tvtms=self.tvtms)
+            elif c_clean in ("brenton", "brenton-lxx"):
+                adapter = BrentonAdapter(tvtms=self.tvtms)
+            elif c_clean == "peshitta":
+                adapter = PeshittaAdapter(tvtms=self.tvtms)
+            else:
+                raise ValueError(f"Unknown corpus: {corpus_id}")
+
+            print(f"Deleting existing text_units for '{adapter.corpus_id}'...")
+            conn.execute("DELETE FROM text_units WHERE corpus_id = ?", (adapter.corpus_id,))
+            conn.commit()
+
+            self.populate_text_corpus(conn, adapter)
+
+            print(f"Indexing lemma statistics for '{adapter.corpus_id}'...")
+            index_lemmas_and_concordance(conn, corpus_filter=adapter.corpus_id)
+
+            # Re-run Phase 4.2 migration to link lexemes
+            root_scripts = MONOREPO_ROOT / "scripts"
+            if str(root_scripts) not in sys.path:
+                sys.path.insert(0, str(root_scripts))
+            try:
+                from migrate_phase4_2_lexemes import migrate_connection
+                migrate_connection(conn)
+            except Exception as e:
+                print(f"Note on Phase 4.2 migration: {e}")
+
+            # Re-index
+            self.create_indexes(conn)
+            conn.execute("ANALYZE")
+            conn.commit()
+            print(f"\nSuccessfully ingested '{adapter.corpus_id}' into {self.db_path}!")
+        finally:
+            conn.close()
+
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--corpus", type=str, help="Ingest a single specific corpus")
+    args = parser.parse_args()
+
     builder = DatabaseBuilder()
-    builder.build_all()
+    if args.corpus:
+        builder.ingest_corpus(args.corpus)
+    else:
+        builder.build_all()

@@ -8,6 +8,7 @@ from .kjv import KJVAdapter
 from .webbe import WEBBEAdapter
 from .brenton import BrentonAdapter
 from .peshitta import PeshittaAdapter
+from .sblgnt import SBLGNTAdapter
 from .bdb import BDBAdapter
 from .lsj import LSJAdapter
 
@@ -19,6 +20,7 @@ __all__ = [
     "WLCAdapter",
     "SweteLXXAdapter",
     "OGNTAdapter",
+    "SBLGNTAdapter",
     "KJVAdapter",
     "WEBBEAdapter",
     "BrentonAdapter",
