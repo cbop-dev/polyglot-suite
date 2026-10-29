@@ -117,10 +117,11 @@ class GreekUtils {
 	static removeDiacritics (greek) {
 		if (!greek || typeof greek !== 'string') return '';
 		let norm = greek.normalize('NFD').replace(/[\u0300-\u036f\u0313\u0314\u0342\u0345\u0308']+/g, '').normalize('NFC');
-		return norm.replace(/[.,;·:!?᾽’”“«»\-—\(\)\[\]⟦⟧⟨⟩⟪⟫⸂⸃⸆⸇⸀⸁⸄⸅⸈⸉⸊⸋†‡*0-9\s]+/gu, '');
+//		return norm.replace(/[.,;·:!?᾽’”“«»\-—\(\)\[\]⟦⟧⟨⟩⟪⟫⸂⸃⸆⸇⸀⸁⸄⸅⸈⸉⸊⸋†‡*0-9\s]+/gu, '');
+		return norm.replace(/[.,;·:!?᾽’”“«»\-—\(\)\[\]⟦⟧⟨⟩⟪⟫⸂⸃⸆⸇⸀⸁⸄⸅⸈⸉⸊⸋†‡*0-9]+/gu, '');
 	}
 
-
+A
 	/**
 	 * 
 	 * @param {string} greek 
