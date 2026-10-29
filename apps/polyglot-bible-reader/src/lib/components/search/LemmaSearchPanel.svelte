@@ -18,10 +18,11 @@
 		type HighlightedLemma
 	} from '$lib/stores/highlightStore.svelte';
 
-	// The four supported original language texts
+	// The supported original language texts
 	const SEARCH_OPTIONS: { id: SupportedSearchCorpus; label: string; lang: 'hebrew' | 'greek' | 'syriac'; defaultVersion: string }[] = [
 		{ id: 'wlc', label: 'BHS (Hebrew)', lang: 'hebrew', defaultVersion: 'BHS' },
 		{ id: 'ognt', label: 'OpenGNT (Greek)', lang: 'greek', defaultVersion: 'OpenGNT' },
+		{ id: 'sblgnt', label: 'SBLGNT (Greek)', lang: 'greek', defaultVersion: 'SBLGNT' },
 		{ id: 'swete_lxx', label: 'LXX (Septuagint)', lang: 'greek', defaultVersion: 'LXX' },
 		{ id: 'peshitta', label: 'Peshitta (Syriac)', lang: 'syriac', defaultVersion: 'Peshitta' }
 	];

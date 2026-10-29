@@ -195,6 +195,20 @@
 				</p>
 			</div>
 
+			<!-- Society of Biblical Literature Greek New Testament (SBLGNT) -->
+			<div class="border border-rule bg-page p-5 rounded-lg shadow-sm space-y-2">
+				<div class="flex flex-wrap items-baseline justify-between gap-2">
+					<h3 class="text-lg font-bold">The Greek New Testament: SBL Edition (SBLGNT)</h3>
+					<span class="font-mono text-xs border border-rule px-2 py-0.5 rounded">CC BY 4.0</span>
+				</div>
+				<p class="text-sm opacity-90">
+					Edited by Michael W. Holmes, in collaboration with the Society of Biblical Literature and Logos Bible Software (<a href="https://sblgnt.com" target="_blank" rel="noopener noreferrer" class="text-link underline">sblgnt.com</a>). Morphological parsing and lemmatization provided by MorphGNT (<a href="https://github.com/morphgnt/sblgnt" target="_blank" rel="noopener noreferrer" class="text-link underline">morphgnt/sblgnt</a>, James Tauber), enriched with Strong's Concordance numbers and LSJ English glosses.
+				</p>
+				<p>
+					<a href="https://github.com/morphgnt/sblgnt/blob/master/LICENSE" target="_blank" rel="noopener noreferrer" class="text-link text-xs underline hover:opacity-80">View SBLGNT License Agreement</a>
+				</p>
+			</div>
+
 			<!-- STEPBible TVTMS -->
 			<div class="border border-rule bg-page p-5 rounded-lg shadow-sm space-y-2">
 				<div class="flex flex-wrap items-baseline justify-between gap-2">

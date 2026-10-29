@@ -14,10 +14,11 @@ describe('lemmaSearchService', () => {
 			expect(resolveSearchCorpus('wlc')).toBe('wlc');
 		});
 
-		it('resolves Greek NT variants to ognt', () => {
+		it('resolves Greek NT variants to ognt and sblgnt', () => {
 			expect(resolveSearchCorpus('OpenGNT')).toBe('ognt');
 			expect(resolveSearchCorpus('ognt')).toBe('ognt');
-			expect(resolveSearchCorpus('SBLGNT')).toBe('ognt');
+			expect(resolveSearchCorpus('SBLGNT')).toBe('sblgnt');
+			expect(resolveSearchCorpus('sblgnt')).toBe('sblgnt');
 		});
 
 		it('resolves Septuagint variants to swete_lxx', () => {
@@ -41,9 +42,10 @@ describe('lemmaSearchService', () => {
 	});
 
 	describe('getCorpusLanguage', () => {
-		it('returns hebrew for wlc, greek for ognt/swete_lxx, and syriac for peshitta', () => {
+		it('returns hebrew for wlc, greek for ognt/sblgnt/swete_lxx, and syriac for peshitta', () => {
 			expect(getCorpusLanguage('wlc')).toBe('hebrew');
 			expect(getCorpusLanguage('ognt')).toBe('greek');
+			expect(getCorpusLanguage('sblgnt')).toBe('greek');
 			expect(getCorpusLanguage('swete_lxx')).toBe('greek');
 			expect(getCorpusLanguage('peshitta')).toBe('syriac');
 		});

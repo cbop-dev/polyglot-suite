@@ -15,23 +15,25 @@ export interface LemmaFilterResult {
 	totalFound: number;
 }
 
-export type SupportedSearchCorpus = 'wlc' | 'ognt' | 'swete_lxx' | 'peshitta';
+export type SupportedSearchCorpus = 'wlc' | 'ognt' | 'sblgnt' | 'swete_lxx' | 'peshitta';
 
 const SUPPORTED_CORPUS_LANG: Record<SupportedSearchCorpus, 'hebrew' | 'greek' | 'syriac'> = {
 	wlc: 'hebrew',
 	ognt: 'greek',
+	sblgnt: 'greek',
 	swete_lxx: 'greek',
 	peshitta: 'syriac'
 };
 
 /**
- * Normalizes any version string/slug to one of the 4 supported search corpora.
+ * Normalizes any version string/slug to one of the 5 supported search corpora.
  */
 export function resolveSearchCorpus(versionOrCorpus: string): SupportedSearchCorpus | null {
 	if (!versionOrCorpus) return null;
 	const v = versionOrCorpus.toLowerCase().replace(/[-_]/g, '');
 	if (v === 'bhs' || v === 'wlc' || v === 'hebrew') return 'wlc';
-	if (v === 'opengnt' || v === 'ognt' || v === 'sblgnt') return 'ognt';
+	if (v === 'sblgnt') return 'sblgnt';
+	if (v === 'opengnt' || v === 'ognt') return 'ognt';
 	if (v === 'lxx' || v === 'swetelxx' || v === 'septuagint') return 'swete_lxx';
 	if (v === 'peshitta' || v === 'syc' || v === 'syriac') return 'peshitta';
 	return null;

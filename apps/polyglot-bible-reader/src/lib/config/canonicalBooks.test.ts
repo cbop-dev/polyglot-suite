@@ -70,6 +70,7 @@ describe('canonicalBooks Parity with SQLite Database', () => {
 		expect(VERSION_AVAILABLE_BOOKS['BHS']).toHaveLength(39);
 		expect(VERSION_AVAILABLE_BOOKS['LXX']).toHaveLength(57);
 		expect(VERSION_AVAILABLE_BOOKS['OpenGNT']).toHaveLength(27);
+		expect(VERSION_AVAILABLE_BOOKS['SBLGNT']).toHaveLength(27);
 		expect(VERSION_AVAILABLE_BOOKS['KJV']).toHaveLength(80);
 		expect(VERSION_AVAILABLE_BOOKS['Vulgate']).toHaveLength(80);
 		expect(VERSION_AVAILABLE_BOOKS['WEB']).toHaveLength(80);
@@ -84,10 +85,17 @@ describe('canonicalBooks Parity with SQLite Database', () => {
 		expect(VERSION_AVAILABLE_BOOKS['OpenGNT']).toContain('2_Pet');
 		expect(VERSION_AVAILABLE_BOOKS['OpenGNT']).toContain('Matt');
 
+		// SBLGNT uses standard abbreviations
+		expect(VERSION_AVAILABLE_BOOKS['SBLGNT']).toContain('2_Pet');
+		expect(VERSION_AVAILABLE_BOOKS['SBLGNT']).toContain('Matt');
+
 		// getVersionBooks and isBookInVersion helpers
 		expect(getVersionBooks('OpenGNT')).toEqual(VERSION_AVAILABLE_BOOKS['OpenGNT']);
 		expect(isBookInVersion('2_Pet', 'OpenGNT')).toBe(true);
 		expect(isBookInVersion('Gen', 'OpenGNT')).toBe(false);
+		expect(getVersionBooks('SBLGNT')).toEqual(VERSION_AVAILABLE_BOOKS['SBLGNT']);
+		expect(isBookInVersion('2_Pet', 'SBLGNT')).toBe(true);
+		expect(isBookInVersion('Gen', 'SBLGNT')).toBe(false);
 	});
 
 	it('should format book abbreviations with spaces after numbers and underscores replaced', async () => {

@@ -447,6 +447,13 @@ VERSION_CANONICAL_ORDERS = {
         "MIC", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL",
         "TOB", "JDT", "ESG", "WIS", "SIR", "BAR", "SUS", "BEL",
         "1MA", "2MA", "1ES", "MAN", "3MA", "4MA", "DAG"
+    ],
+
+    # 9. SBLGNT: Society of Biblical Literature Greek New Testament (MorphGNT)
+    "SBLGNT": [
+        "MAT", "MRK", "LUK", "JHN", "ACT", "ROM", "1CO", "2CO", "GAL", "EPH",
+        "PHP", "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAS",
+        "1PE", "2PE", "1JN", "2JN", "3JN", "JUD", "REV"
     ]
 }
 

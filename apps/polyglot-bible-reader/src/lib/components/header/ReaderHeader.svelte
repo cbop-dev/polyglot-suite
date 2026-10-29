@@ -62,7 +62,8 @@
   const VERSION_FULL_NAMES: Record<string, string[]> = {
     BHS: ['Biblia Hebraica Stuttgartensia', 'Hebrew Bible', 'Tanakh', 'Old Testament'],
     LXX: ['Septuagint', 'Greek Old Testament', 'Swete Septuagint'],
-    OpenGNT: ['Open Greek New Testament', 'SBLGNT', 'Greek New Testament'],
+    OpenGNT: ['Open Greek New Testament', 'Greek New Testament'],
+    SBLGNT: ['Society of Biblical Literature Greek New Testament', 'SBL Greek New Testament', 'MorphGNT', 'Greek New Testament'],
     Vulgate: ['Latin Vulgate', 'Clementine Vulgate', 'Biblia Sacra Vulgata'],
     KJV: ['King James Version', 'Authorized Version', 'AV'],
     WEB: ['World English Bible'],

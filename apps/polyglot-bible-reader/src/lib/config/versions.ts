@@ -118,7 +118,7 @@ export const versionGroups: VersionGroup[] = [
   },
   {
     language: 'Greek',
-    versions: ['LXX', 'OpenGNT']
+    versions: ['LXX', 'OpenGNT', 'SBLGNT']
   },
   {
     language: 'Latin',
@@ -160,6 +160,7 @@ import { VERSION_AVAILABLE_BOOKS, getCanonicalBookChapters } from './canonicalBo
 export const bhsBooks = VERSION_AVAILABLE_BOOKS['BHS'] || [];
 export const lxxBooks = VERSION_AVAILABLE_BOOKS['LXX'] || [];
 export const ntBooks = VERSION_AVAILABLE_BOOKS['OpenGNT'] || [];
+export const sblgntBooks = VERSION_AVAILABLE_BOOKS['SBLGNT'] || [];
 export const kjvBooks = VERSION_AVAILABLE_BOOKS['KJV'] || [];
 export const vulgateBooks = VERSION_AVAILABLE_BOOKS['Vulgate'] || [];
 export const webBooks = VERSION_AVAILABLE_BOOKS['WEB'] || [];

@@ -44,7 +44,7 @@
       {#each row as colVersion, cIdx}
         {@const theVersion=myDataSets.lookup(getCorrectVersionName(colVersion) ?? '')}
         {@const lang=theVersion?.language}
-        {@const targetLang = (colVersion === 'Peshitta' || lang === 'Syriac') ? 'syriac' : (colVersion === 'BHS' || lang === 'Hebrew') ? 'hebrew' : (colVersion === 'OpenGNT' || colVersion === 'LXX' || lang === 'Greek') ? 'greek' : null}
+        {@const targetLang = (colVersion === 'Peshitta' || lang === 'Syriac') ? 'syriac' : (colVersion === 'BHS' || lang === 'Hebrew') ? 'hebrew' : (colVersion === 'OpenGNT' || colVersion === 'SBLGNT' || colVersion === 'LXX' || lang === 'Greek') ? 'greek' : null}
         {@const langClass=getLangFontClass(lang)}
         {@const align = readerState.getCellAlign(rIdx, cIdx)}
         {@const vData = readerState.getVerseData(verseKey, colVersion)}

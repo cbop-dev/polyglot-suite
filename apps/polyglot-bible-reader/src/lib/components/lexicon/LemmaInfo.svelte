@@ -107,7 +107,7 @@
 	);
 	const lang = $derived(isSyriac ? 'syriac' : (isHebrew ? 'hebrew' : 'greek'));
 	const corpusLabel = $derived(
-		lemma?.colVersion || (isSyriac ? 'Peshitta' : (isHebrew ? 'BHS' : (lemma?.corpus === 'ognt' || lemma?.corpus === 'sblgnt' || lemma?.corpus === 'opengnt') ? 'OpenGNT' : 'LXX'))
+		lemma?.colVersion || (isSyriac ? 'Peshitta' : (isHebrew ? 'BHS' : (lemma?.corpus === 'sblgnt') ? 'SBLGNT' : (lemma?.corpus === 'ognt' || lemma?.corpus === 'opengnt') ? 'OpenGNT' : 'LXX'))
 	);
 
 	const targetLemma = $derived(

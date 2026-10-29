@@ -236,6 +236,7 @@ def generate_typescript():
         "wlc": "BHS",
         "swete_lxx": "LXX",
         "ognt": "OpenGNT",
+        "sblgnt": "SBLGNT",
         "kjv": "KJV",
         "vulgate": "Vulgate",
         "webbe": "WEB",
