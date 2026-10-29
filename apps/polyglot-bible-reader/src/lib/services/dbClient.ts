@@ -5,10 +5,13 @@ import { getStaticCorpusTotalWords, getStaticBookWordStats } from '$lib/config/c
 import {
 	type CorpusId,
 	resolveCorpusId,
+	resolveCorpus,
+	CORPORA_METADATA,
 	CORPUS_ID_TO_VERSION,
-	VERSION_TO_CORPUS_ID
-} from '$lib/config/corpora.generated';
-export { type CorpusId, resolveCorpusId };
+	VERSION_TO_CORPUS_ID,
+	CORPUS_ID_TO_WORK_ID
+} from '@polyglot/ancient-languages';
+export { type CorpusId, resolveCorpusId, resolveCorpus, CORPUS_ID_TO_WORK_ID };
 import { myDataSets } from '$lib/config/versions';
 import {
 	stripGreekAccents,
@@ -168,60 +171,28 @@ export interface LexiconEntryRow {
 	definition: string;
 }
 
-// Mapping from UI version acronyms to database corpus IDs
-export const VERSION_MAP: Record<string, string> = {
-	BHS: 'wlc',
-	bhs: 'wlc',
-	wlc: 'wlc',
-	LXX: 'swete_lxx',
-	lxx: 'swete_lxx',
-	'swete-lxx': 'swete_lxx',
-	swete_lxx: 'swete_lxx',
-	OpenGNT: 'ognt',
-	opengnt: 'ognt',
-	OGNT: 'ognt',
-	ognt: 'ognt',
-	SBLGNT: 'sblgnt',
-	sblgnt: 'sblgnt',
-	Vulgate: 'vulgate',
-	vulgate: 'vulgate',
-	'vulgate-clementine': 'vulgate',
-	KJV: 'kjv',
-	kjv: 'kjv',
-	WEB: 'webbe',
-	web: 'webbe',
-	webbe: 'webbe',
-	Brenton: 'brenton-lxx',
-	brenton: 'brenton-lxx',
-	'brenton-lxx': 'brenton-lxx',
-	Peshitta: 'peshitta',
-	peshitta: 'peshitta'
-};
+// Mapping from UI version acronyms to database corpus IDs (Proxying to resolveCorpus)
+export const VERSION_MAP: Record<string, string> = new Proxy(VERSION_TO_CORPUS_ID as Record<string, string>, {
+	get(target, prop: string) {
+		if (typeof prop !== 'string') return undefined;
+		return resolveCorpus(prop)?.id || target[prop] || target[prop.toLowerCase()];
+	}
+});
 
-// Reverse mapping from corpus IDs to UI version acronyms
-export const SLUG_TO_VERSION: Record<string, string> = {
-	wlc: 'BHS',
-	swete_lxx: 'LXX',
-	'swete-lxx': 'LXX',
-	ognt: 'OpenGNT',
-	sblgnt: 'SBLGNT',
-	vulgate: 'Vulgate',
-	'vulgate-clementine': 'Vulgate',
-	kjv: 'KJV',
-	webbe: 'WEB',
-	'brenton-lxx': 'Brenton',
-	peshitta: 'Peshitta'
-};
+// Reverse mapping from corpus IDs to UI version acronyms (Proxying to resolveCorpus)
+export const SLUG_TO_VERSION: Record<string, string> = new Proxy(CORPUS_ID_TO_VERSION as Record<string, string>, {
+	get(target, prop: string) {
+		if (typeof prop !== 'string') return undefined;
+		return resolveCorpus(prop)?.version || target[prop as CorpusId];
+	}
+});
 
-// Versions that have word-level tokens in tokens_json
-export const VERSIONS_WITH_WORDS = new Set<string>([
-	'BHS', 'bhs', 'wlc',
-	'LXX', 'lxx', 'swete_lxx', 'swete-lxx',
-	'OpenGNT', 'opengnt', 'OGNT', 'ognt',
-	'SBLGNT', 'sblgnt',
-	'KJV', 'kjv',
-	'Peshitta', 'peshitta'
-]);
+// Versions that have word-level tokens in tokens_json (Derived from CORPORA_METADATA)
+export const VERSIONS_WITH_WORDS = new Set<string>(
+	Object.values(CORPORA_METADATA)
+		.filter((m) => m.hasTokens)
+		.flatMap((m) => [m.id, m.id.toLowerCase(), m.version, m.version.toLowerCase(), ...m.aliases])
+);
 
 // USFM 3-letter codes by alias
 export const USFM_ALIASES: Record<string, string> = {
@@ -341,26 +312,19 @@ export function resolveBookCode(input?: string | null, version?: string): string
 	return '';
 }
 
-const CORPUS_WORK_IDS: Record<string, number> = {
-	vulgate: 1,
-	'vulgate-clementine': 1,
-	wlc: 2,
-	bhs: 2,
-	swete_lxx: 24,
-	'swete-lxx': 24,
-	lxx: 24,
-	ognt: 40,
-	opengnt: 40,
-	sblgnt: 40,
-	kjv: 5,
-	webbe: 6,
-	'brenton-lxx': 7,
-	peshitta: 8
-};
+export const CORPUS_WORK_IDS: Record<string, number> = new Proxy(
+	{},
+	{
+		get: (_target, prop: string) => {
+			const cid = resolveCorpusId(prop);
+			return CORPUS_ID_TO_WORK_ID[cid] ?? 1;
+		}
+	}
+);
 
 export function getCorpusWorkId(corpusId: string): number {
-	const c = corpusId.toLowerCase();
-	return CORPUS_WORK_IDS[c] || 1;
+	const cid = resolveCorpusId(corpusId);
+	return CORPUS_ID_TO_WORK_ID[cid] ?? 1;
 }
 
 

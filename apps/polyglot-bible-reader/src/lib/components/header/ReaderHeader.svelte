@@ -9,6 +9,7 @@
   import VersionButton from '$lib/components/ui/VersionButton.svelte';
   import { versionGroups, formatVersionLabel, getVersionLanguage, dataSets } from '$lib/config/versions';
   import { formatBookAbbreviation, normalizeBookName } from '$lib/config/bookMapping.js';
+  import { resolveCorpus } from '@polyglot/ancient-languages';
   import { readerState } from '$lib/stores/readerState.svelte';
   import { getLexemeExplorerUrl } from '$lib/utils/navigation';
   //import gridIcon from '$env/static/public'
@@ -59,17 +60,6 @@
     return false;
   }
 
-  const VERSION_FULL_NAMES: Record<string, string[]> = {
-    BHS: ['Biblia Hebraica Stuttgartensia', 'Hebrew Bible', 'Tanakh', 'Old Testament'],
-    LXX: ['Septuagint', 'Greek Old Testament', 'Swete Septuagint'],
-    OpenGNT: ['Open Greek New Testament', 'Greek New Testament'],
-    SBLGNT: ['Society of Biblical Literature Greek New Testament', 'SBL Greek New Testament', 'MorphGNT', 'Greek New Testament'],
-    Vulgate: ['Latin Vulgate', 'Clementine Vulgate', 'Biblia Sacra Vulgata'],
-    KJV: ['King James Version', 'Authorized Version', 'AV'],
-    WEB: ['World English Bible'],
-    Brenton: ['Brenton Septuagint Translation', 'Brenton English Septuagint']
-  };
-
   function matchesVersion(ver: string, lang: string, query: string): boolean {
     const q = query.trim().toLowerCase();
     if (!q) return true;
@@ -78,9 +68,11 @@
     const label = formatVersionLabel(ver).toLowerCase();
     if (label.includes(q)) return true;
 
-    const aliases = VERSION_FULL_NAMES[ver];
-    if (aliases && aliases.some((a) => a.toLowerCase().includes(q))) {
-      return true;
+    const meta = resolveCorpus(ver);
+    if (meta) {
+      if (meta.title.toLowerCase().includes(q)) return true;
+      if (meta.searchNames && meta.searchNames.some((a) => a.toLowerCase().includes(q))) return true;
+      if (meta.aliases && meta.aliases.some((a) => a.toLowerCase().includes(q))) return true;
     }
 
     const ds = dataSets.find((d) => d.abbrev.toLowerCase() === ver.toLowerCase());

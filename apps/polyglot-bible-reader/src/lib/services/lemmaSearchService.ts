@@ -15,6 +15,8 @@ export interface LemmaFilterResult {
 	totalFound: number;
 }
 
+import { resolveCorpus, CORPORA_METADATA } from '@polyglot/ancient-languages';
+
 export type SupportedSearchCorpus = 'wlc' | 'ognt' | 'sblgnt' | 'swete_lxx' | 'peshitta';
 
 const SUPPORTED_CORPUS_LANG: Record<SupportedSearchCorpus, 'hebrew' | 'greek' | 'syriac'> = {
@@ -26,10 +28,14 @@ const SUPPORTED_CORPUS_LANG: Record<SupportedSearchCorpus, 'hebrew' | 'greek' | 
 };
 
 /**
- * Normalizes any version string/slug to one of the 5 supported search corpora.
+ * Normalizes any version string/slug to one of the supported search corpora.
  */
 export function resolveSearchCorpus(versionOrCorpus: string): SupportedSearchCorpus | null {
 	if (!versionOrCorpus) return null;
+	const meta = resolveCorpus(versionOrCorpus);
+	if (meta && meta.hasTokens && meta.id in SUPPORTED_CORPUS_LANG) {
+		return meta.id as SupportedSearchCorpus;
+	}
 	const v = versionOrCorpus.toLowerCase().replace(/[-_]/g, '');
 	if (v === 'bhs' || v === 'wlc' || v === 'hebrew') return 'wlc';
 	if (v === 'sblgnt') return 'sblgnt';
@@ -40,6 +46,11 @@ export function resolveSearchCorpus(versionOrCorpus: string): SupportedSearchCor
 }
 
 export function getCorpusLanguage(corpusId: SupportedSearchCorpus): 'hebrew' | 'greek' | 'syriac' {
+	const meta = CORPORA_METADATA[corpusId];
+	if (meta) {
+		const l = meta.languageName.toLowerCase();
+		if (l === 'hebrew' || l === 'greek' || l === 'syriac') return l;
+	}
 	return SUPPORTED_CORPUS_LANG[corpusId] || 'greek';
 }
 

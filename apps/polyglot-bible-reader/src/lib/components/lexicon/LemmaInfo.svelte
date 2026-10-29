@@ -12,6 +12,7 @@
 		isCriteriaActive,
 		isFormFilterMatch,
 		extractAvailableInflections,
+		resolveCorpus,
 		type InflectionFilterCriteria
 	} from '@polyglot/ancient-languages';
 	import { formatMorphBadges, parseHebrewMorphSegments } from '$lib/utils/morph-utils.js';
@@ -99,15 +100,23 @@
 		}
 		return lemma;
 	});
+	const corpusMeta = $derived(
+		resolveCorpus(lemma?.corpus || lemma?.colVersion || lemma?.version)
+	);
 	const isHebrew = $derived(
-		lemma?.corpus === 'bhs' || lemma?.colVersion === 'BHS' || lemma?.dictionary === 'bdb'
+		corpusMeta?.language === 'hbo' || lemma?.corpus === 'bhs' || lemma?.colVersion === 'BHS' || lemma?.dictionary === 'bdb'
 	);
 	const isSyriac = $derived(
-		lemma?.corpus === 'peshitta' || lemma?.colVersion === 'Peshitta' || lemma?.language === 'syc' || lemma?.language === 'Syriac'
+		corpusMeta?.language === 'syc' || lemma?.corpus === 'peshitta' || lemma?.colVersion === 'Peshitta' || lemma?.language === 'syc' || lemma?.language === 'Syriac'
 	);
-	const lang = $derived(isSyriac ? 'syriac' : (isHebrew ? 'hebrew' : 'greek'));
+	const lang = $derived(
+		corpusMeta?.languageName?.toLowerCase() || (isSyriac ? 'syriac' : (isHebrew ? 'hebrew' : 'greek'))
+	);
 	const corpusLabel = $derived(
-		lemma?.colVersion || (isSyriac ? 'Peshitta' : (isHebrew ? 'BHS' : (lemma?.corpus === 'sblgnt') ? 'SBLGNT' : (lemma?.corpus === 'ognt' || lemma?.corpus === 'opengnt') ? 'OpenGNT' : 'LXX'))
+		lemma?.colVersion || corpusMeta?.version || (isSyriac ? 'Peshitta' : (isHebrew ? 'BHS' : 'LXX'))
+	);
+	const primaryDict = $derived(
+		corpusMeta?.primaryDictionary || (isSyriac ? 'sedra' : (isHebrew ? 'bdb' : 'lsj'))
 	);
 
 	const targetLemma = $derived(
@@ -940,7 +949,7 @@
 				<TextsDisplay
 					occurrences={filteredConcordanceOccurrences}
 					lang={lang}
-					dbAbbrev={isSyriac ? 'peshitta' : (isHebrew ? 'bhs' : 'lxx')}
+					dbAbbrev={corpusMeta?.id || (isSyriac ? 'peshitta' : (isHebrew ? 'bhs' : 'lxx'))}
 					lemma={targetLemma}
 					strongs={currentLemmaData?.strongs || lemma?.strongs}
 					lookupKey={lookupKey}

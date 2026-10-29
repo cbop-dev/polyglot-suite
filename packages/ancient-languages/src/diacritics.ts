@@ -1,5 +1,6 @@
 export type HebrewDiacriticMode = 'all' | 'vowels' | 'none';
 import {HebrewUtils} from './hebrew-utils.js';
+import { GreekUtils } from './greek-utils.js';
 /**
  * Transforms Hebrew text according to the selected diacritic mode:
  * - 'all': full vowels + cantillation / accents
@@ -35,5 +36,6 @@ export function formatGreek(text: string, enabled: boolean): string {
 
 	// Decompose precomposed characters into base + combining diacritics,
 	// strip combining diacritics, then re-normalize into NFC
-	return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').normalize('NFC');
+	return GreekUtils.removeDiacritics(text);
+	//return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').normalize('NFC');
 }

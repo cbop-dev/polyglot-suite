@@ -113,4 +113,40 @@ describe('Ancient Languages: Bible Books & References', () => {
 			expect(filterOutInvalidBooks('isa 58:1-2')).toBe('isa 58:1-2');
 		});
 	});
+
+	describe('Corpora & Version Metadata (Single Source of Truth)', () => {
+		it('resolves corpus metadata by version, id, and alias', async () => {
+			const { resolveCorpus, resolveCorpusId, CORPORA_METADATA } = await import('../src/index.js');
+
+			// Check canonical metadata map
+			expect(CORPORA_METADATA['sblgnt']).toBeDefined();
+			expect(CORPORA_METADATA['sblgnt'].version).toBe('SBLGNT');
+			expect(CORPORA_METADATA['sblgnt'].languageName).toBe('Greek');
+			expect(CORPORA_METADATA['sblgnt'].primaryDictionary).toBe('lsj');
+			expect(CORPORA_METADATA['sblgnt'].hasTokens).toBe(true);
+
+			expect(CORPORA_METADATA['wlc'].version).toBe('BHS');
+			expect(CORPORA_METADATA['wlc'].direction).toBe('rtl');
+			expect(CORPORA_METADATA['wlc'].primaryDictionary).toBe('bdb');
+
+			// resolveCorpusId
+			expect(resolveCorpusId('SBLGNT')).toBe('sblgnt');
+			expect(resolveCorpusId('sbl')).toBe('sblgnt');
+			expect(resolveCorpusId('BHS')).toBe('wlc');
+			expect(resolveCorpusId('wlc')).toBe('wlc');
+			expect(resolveCorpusId(41)).toBe('sblgnt');
+			expect(resolveCorpusId(2)).toBe('wlc');
+
+			// resolveCorpus polymorphic metadata
+			const sbl = resolveCorpus('SBLGNT');
+			expect(sbl?.id).toBe('sblgnt');
+			expect(sbl?.languageName).toBe('Greek');
+			expect(sbl?.testament).toBe('nt');
+
+			const peshitta = resolveCorpus('Peshitta');
+			expect(peshitta?.id).toBe('peshitta');
+			expect(peshitta?.direction).toBe('rtl');
+			expect(peshitta?.primaryDictionary).toBe('sedra');
+		});
+	});
 });

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getLanguageFontClass } from '@polyglot/ancient-languages';
+  import { getLanguageFontClass, resolveCorpus } from '@polyglot/ancient-languages';
   import { CopyText, LinkIcon } from '@polyglot/lemma-ui';
   import { readerState } from '$lib/stores/readerState.svelte';
   import { formatVerseText } from '$lib/services/bibleDataLoader';
@@ -42,10 +42,10 @@
     style="grid-template-columns: repeat({row.length > 0  ? (size.current != 'base' ? row.length: Math.min(row.length,2)) : 1}, minmax(0, 1fr))"
     >
       {#each row as colVersion, cIdx}
-        {@const theVersion=myDataSets.lookup(getCorrectVersionName(colVersion) ?? '')}
-        {@const lang=theVersion?.language}
-        {@const targetLang = (colVersion === 'Peshitta' || lang === 'Syriac') ? 'syriac' : (colVersion === 'BHS' || lang === 'Hebrew') ? 'hebrew' : (colVersion === 'OpenGNT' || colVersion === 'SBLGNT' || colVersion === 'LXX' || lang === 'Greek') ? 'greek' : null}
-        {@const langClass=getLangFontClass(lang)}
+        {@const corpusMeta = resolveCorpus(colVersion)}
+        {@const lang = corpusMeta?.languageName ?? myDataSets.lookup(getCorrectVersionName(colVersion) ?? '')?.language}
+        {@const targetLang = corpusMeta ? (corpusMeta.languageName.toLowerCase() === 'syriac' ? 'syriac' : corpusMeta.languageName.toLowerCase() === 'hebrew' ? 'hebrew' : corpusMeta.languageName.toLowerCase() === 'greek' ? 'greek' : null) : null}
+        {@const langClass = getLangFontClass(lang)}
         {@const align = readerState.getCellAlign(rIdx, cIdx)}
         {@const vData = readerState.getVerseData(verseKey, colVersion)}
         {@const unformattedVerseText = vData?.omitted
@@ -59,7 +59,7 @@
           readerState.hebrewMode,
           readerState.greekDiacritics
         )}
-        {@const isRtl = theVersion?.direction === 'rtl'}
+        {@const isRtl = (corpusMeta?.direction ?? myDataSets.lookup(colVersion)?.direction) === 'rtl'}
         {#if true || !readerState.meditationMode}
         <div class="flex flex-col px-1.5 pt-1  {align === 'right' ? 'items-end text-right' : 'items-start text-left'} 
         {row.length > 1 && size.current !='base' ? (align=='right' && cIdx==0)  ?'pr-0': cIdx==row.length-1 ? 'pl-0': '': ''} ">

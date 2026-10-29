@@ -7,8 +7,16 @@ const RESOLVED_TOKENS_PATH = path.join(ROOT_DIR, 'pipeline', 'build', 'swete_res
 const LEXEMES_PATH = path.join(ROOT_DIR, 'static', 'data', 'lxx', 'lexemes.json');
 const CONCORDANCE_PATH = path.join(ROOT_DIR, 'static', 'data', 'lxx', 'concordance.json');
 
+let parsedTokens = null;
+function getResolvedTokens() {
+	if (!parsedTokens) {
+		parsedTokens = JSON.parse(fs.readFileSync(RESOLVED_TOKENS_PATH, 'utf-8'));
+	}
+	return parsedTokens;
+}
+
 test('ἀνελῶ in Exod 15:9 is recognized as future 1st person singular active indicative of ἀναιρέω', () => {
-	const resolvedTokens = JSON.parse(fs.readFileSync(RESOLVED_TOKENS_PATH, 'utf-8'));
+	const resolvedTokens = getResolvedTokens();
 	const token = resolvedTokens.find((t) => t.ref === 'Exod 15:9' && t.surface === 'ἀνελῶ');
 
 	expect(token).toBeDefined();
@@ -18,7 +26,7 @@ test('ἀνελῶ in Exod 15:9 is recognized as future 1st person singular acti
 });
 
 test('ἀνελῶ in Od 1:9 is recognized as future 1st person singular active indicative of ἀναιρέω', () => {
-	const resolvedTokens = JSON.parse(fs.readFileSync(RESOLVED_TOKENS_PATH, 'utf-8'));
+	const resolvedTokens = getResolvedTokens();
 	const token = resolvedTokens.find((t) => t.ref === 'Od 1:9' && t.surface === 'ἀνελῶ');
 
 	expect(token).toBeDefined();

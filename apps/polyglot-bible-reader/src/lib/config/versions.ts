@@ -1,42 +1,79 @@
-import { CANONICAL_BOOK_DEFINITIONS,normalizeBookName } from "./canonicalBooks.generated";
+import { CANONICAL_BOOK_DEFINITIONS, normalizeBookName } from "./canonicalBooks.generated";
+import {
+  type CorpusMetadata,
+  type CorpusId,
+  CORPORA_METADATA,
+  VERSION_TO_CORPUS_ID,
+  CORPUS_ID_TO_VERSION,
+  VERSION_GROUPS,
+  ALL_BIBLE_VERSIONS,
+  resolveCorpusId,
+  resolveCorpus
+} from "@polyglot/ancient-languages";
 
-export const biblesByLanguage={
-  english:['KJV', 'Brenton'],
-  greek:['LXX', 'OpenGNT', 'SBLGNT']
-}
+export {
+  type CorpusMetadata,
+  type CorpusId,
+  CORPORA_METADATA,
+  VERSION_TO_CORPUS_ID,
+  CORPUS_ID_TO_VERSION,
+  VERSION_GROUPS,
+  ALL_BIBLE_VERSIONS,
+  resolveCorpusId,
+  resolveCorpus
+};
+
+export const biblesByLanguage = {
+  english: ['KJV', 'Brenton'],
+  greek: ['LXX', 'OpenGNT', 'SBLGNT']
+};
 
 export type TextDirection = 'ltr' | 'rtl';
 
-export class Dataset{
-  abbrev= '';
-  language='';
-  description='';
-  lemmaInfoEnabled=false;
-  testament=''; //ot, nt, or both
+export class Dataset {
+  abbrev = '';
+  language = '';
+  description = '';
+  lemmaInfoEnabled = false;
+  testament = ''; // ot, nt, or both
   direction: TextDirection = 'ltr';
 
-  constructor(abbrev: string, language: string, testament: string, description='', lemmaInfoEnabled=false, direction: TextDirection = 'ltr'){
-    this.abbrev=abbrev;
-    this.language=language;
-    this.testament=testament;
-    this.description=description;
-    this.lemmaInfoEnabled=lemmaInfoEnabled;
-    this.direction=direction;
+  constructor(abbrev: string, language: string, testament: string, description = '', lemmaInfoEnabled = false, direction: TextDirection = 'ltr') {
+    this.abbrev = abbrev;
+    this.language = language;
+    this.testament = testament;
+    this.description = description;
+    this.lemmaInfoEnabled = lemmaInfoEnabled;
+    this.direction = direction;
   }
 }
 
-export const datasetsDict: Record<string, { language: string; testament: string; lemmas: boolean; direction: TextDirection }> =
-{
-  'KJV': {language:'English',testament: 'both', lemmas:false, direction: 'ltr'},
-  'Vulgate':{language:'Latin', testament: 'both', lemmas:false, direction: 'ltr'},
-  'WEB':{language:'English',testament: 'both', lemmas:false, direction: 'ltr'},
-   'Brenton':{language: 'English', testament: 'ot', lemmas:false, direction: 'ltr'},
-   'BHS':{language:'Hebrew', testament: 'ot', lemmas:true, direction: 'rtl'},
-   'LXX':{language:'Greek', testament: 'ot', lemmas:true, direction: 'ltr'},
-   'OpenGNT':{language:'Greek', testament: 'nt', lemmas:true, direction: 'ltr'},
-   'SBLGNT':{language:'Greek', testament: 'nt', lemmas:true, direction: 'ltr'},
-   'Peshitta':{language:'Syriac', testament: 'both', lemmas:true, direction: 'rtl'}
+/**
+ * Static dictionary maintained for backwards compatibility, populated from CORPORA_METADATA.
+ */
+export const datasetsDict: Record<string, { language: string; testament: string; lemmas: boolean; direction: TextDirection }> = {
+  'KJV': { language: 'English', testament: 'both', lemmas: false, direction: 'ltr' },
+  'Vulgate': { language: 'Latin', testament: 'both', lemmas: false, direction: 'ltr' },
+  'WEB': { language: 'English', testament: 'both', lemmas: false, direction: 'ltr' },
+  'Brenton': { language: 'English', testament: 'ot', lemmas: false, direction: 'ltr' },
+  'BHS': { language: 'Hebrew', testament: 'ot', lemmas: true, direction: 'rtl' },
+  'LXX': { language: 'Greek', testament: 'ot', lemmas: true, direction: 'ltr' },
+  'OpenGNT': { language: 'Greek', testament: 'nt', lemmas: true, direction: 'ltr' },
+  'SBLGNT': { language: 'Greek', testament: 'nt', lemmas: true, direction: 'ltr' },
+  'Peshitta': { language: 'Syriac', testament: 'both', lemmas: true, direction: 'rtl' }
 };
+
+// Also enrich with any new corpora defined dynamically
+for (const meta of Object.values(CORPORA_METADATA)) {
+  if (meta.category === 'bible' && !datasetsDict[meta.version]) {
+    datasetsDict[meta.version] = {
+      language: meta.languageName,
+      testament: meta.testament,
+      lemmas: meta.hasTokens,
+      direction: meta.direction
+    };
+  }
+}
 
 /**
  * Case-insensitive aliases for URL parameters, legacy links, and alternate acronyms.
@@ -50,98 +87,66 @@ export const VERSION_ALIASES: Record<string, string> = {
   syc: 'Peshitta'
 };
 
-export const dataSets = Object.entries(datasetsDict).map(([k,v])=>new Dataset(k, v.language, v.testament, '', v.lemmas, v.direction));
-//mylog(`datasets abbrevs: [${dataSets.map((ds)=>ds.abbrev).join(',')}]`, true);
+export const dataSets: Dataset[] = Object.values(CORPORA_METADATA)
+  .filter((m) => m.category === 'bible')
+  .map((m) => new Dataset(m.version, m.languageName, m.testament, m.title, m.hasTokens, m.direction));
 
-
-export const myDataSets={
+export const myDataSets = {
   dataSets: dataSets,
-  lookup(abbrev:string){
+  lookup(abbrev: string): Dataset | undefined {
     if (!abbrev) return undefined;
-    const clean = abbrev.trim().toLowerCase();
-    const resolved = VERSION_ALIASES[clean] || abbrev;
-    return dataSets.find((ds)=>ds.abbrev.toLocaleLowerCase()==resolved.toLocaleLowerCase());
+    const meta = resolveCorpus(abbrev);
+    if (!meta) return undefined;
+    return dataSets.find((ds) => ds.abbrev.toLowerCase() === meta.version.toLowerCase())
+      ?? new Dataset(meta.version, meta.languageName, meta.testament, meta.title, meta.hasTokens, meta.direction);
   },
   
   /**
-   * 
    * @param {string} language The language to check for.
    * @returns {Dataset[]} an array of the versions which are in this language group 
    */
-  getByLang(language: string): Dataset[]{
-    return dataSets.filter((ds)=>ds.language.toLocaleLowerCase()==language.toLocaleLowerCase());
+  getByLang(language: string): Dataset[] {
+    return dataSets.filter((ds) => ds.language.toLowerCase() === language.toLowerCase());
   },
 
   getDirection(version: string): TextDirection {
-    return this.lookup(version)?.direction ?? 'ltr';
+    return resolveCorpus(version)?.direction ?? 'ltr';
   },
 
   isRtl(version: string): boolean {
     return this.getDirection(version) === 'rtl';
   }
+};
 
+export const availableBibles: string[] = Object.keys(datasetsDict);
+
+export function getCorrectVersionName(fuzzyName: string): string | undefined {
+  if (!fuzzyName) return undefined;
+  const meta = resolveCorpus(fuzzyName);
+  return meta?.version ?? undefined;
 }
 
-export const availableBibles=Object.keys(datasetsDict);
-
-export function getCorrectVersionName(fuzzyName: string){
-	if (!fuzzyName) return undefined;
-	const clean = fuzzyName.trim().toLowerCase();
-	if (VERSION_ALIASES[clean]) {
-		return VERSION_ALIASES[clean];
-	}
-	return availableBibles.find((ver)=>ver.toLocaleLowerCase() == clean);
+export function isValidVersion(versionName: string, caseSensitive = false): boolean {
+  if (!versionName) return false;
+  if (caseSensitive) {
+    return ALL_BIBLE_VERSIONS.includes(versionName);
+  }
+  return !!resolveCorpus(versionName);
 }
-
-export function isValidVersion(versionName: string, caseSensitive=false): boolean{
-	if (!versionName) return false;
-	const clean = versionName.trim().toLowerCase();
-	if (VERSION_ALIASES[clean]) return true;
-	return availableBibles.some((ver)=>{
-		if (caseSensitive){
-			return ver === versionName;
-		}
-		return ver.toLowerCase() === clean;
-	});
-}
-
 
 export interface VersionGroup {
   language: string;
   versions: string[];
 }
 
-export const versionGroups: VersionGroup[] = [
-  {
-    language: 'Hebrew',
-    versions: ['BHS']
-  },
-  {
-    language: 'Greek',
-    versions: ['LXX', 'OpenGNT', 'SBLGNT']
-  },
-  {
-    language: 'Latin',
-    versions: ['Vulgate']
-  },
-  {
-    language: 'Syriac',
-    versions: ['Peshitta']
-  },
-  {
-    language: 'English',
-    versions: ['KJV', 'WEB', 'Brenton']
-  }
-];
+export const versionGroups: VersionGroup[] = VERSION_GROUPS;
 
-export function getVersionLanguage(version:string){
+export function getVersionLanguage(version: string): string {
   if (!version) return '';
-  const clean = version.trim().toLowerCase();
-  const resolved = VERSION_ALIASES[clean] || version;
-  return versionGroups.find((vg)=>vg.versions.map((v)=>v.toLocaleLowerCase()).includes (resolved.toLocaleLowerCase()))?.language ?? '';
+  return resolveCorpus(version)?.languageName ?? '';
 }
 
-export const allVersions: string[] = versionGroups.flatMap((g) => g.versions);
+export const allVersions: string[] = ALL_BIBLE_VERSIONS;
 
 export function formatVersionLabel(opt: string, short=false): string {
   if (short){

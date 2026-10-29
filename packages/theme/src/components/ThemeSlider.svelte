@@ -19,7 +19,7 @@
 		warmthStorageKey?: string;
 		legacyKey?: string;
 		profile?: 'standard' | 'josephus' | 'all';
-		align?: 'left' | 'right';
+		align?: 'left' | 'right' | 'center';
 		placement?: 'bottom' | 'top';
 		variant?: 'popover' | 'inline';
 	}
@@ -38,6 +38,7 @@
 	let containerEl = $state<HTMLElement | null>(null);
 	let sliderValue = $state<number>(25);
 	let warmthValue = $state<number>(50);
+	let panelStyle = $state<string>('');
 	let rafPending = false;
 
 	const options: ThemeDomOptions = {
@@ -46,6 +47,41 @@
 		legacyKey,
 		profile
 	};
+
+	function updatePosition() {
+		if (!containerEl || typeof window === 'undefined') return;
+		if (window.innerWidth <= 768) {
+			const rect = containerEl.getBoundingClientRect();
+			const spaceAbove = rect.top;
+			const spaceBelow = window.innerHeight - rect.bottom;
+			const preferTop =
+				placement === 'top'
+					? spaceAbove >= 200 || spaceAbove > spaceBelow
+					: spaceBelow < 200 && spaceAbove > spaceBelow;
+			if (preferTop) {
+				const bottom = Math.max(8, window.innerHeight - rect.top + 8);
+				panelStyle = `bottom: ${bottom}px; top: auto;`;
+			} else {
+				const top = Math.max(8, rect.bottom + 8);
+				panelStyle = `top: ${top}px; bottom: auto;`;
+			}
+		} else {
+			panelStyle = '';
+		}
+	}
+
+	function toggleOpen() {
+		isOpen = !isOpen;
+		if (isOpen) {
+			updatePosition();
+		}
+	}
+
+	$effect(() => {
+		if (isOpen) {
+			updatePosition();
+		}
+	});
 
 	onMount(() => {
 		sliderValue = initReadingTheme(options);
@@ -68,14 +104,30 @@
 			}
 		}
 
+		function handleResize() {
+			if (isOpen) {
+				updatePosition();
+			}
+		}
+
+		function handleScroll() {
+			if (isOpen) {
+				updatePosition();
+			}
+		}
+
 		window.addEventListener('cycle-theme', handleCycleTheme);
 		window.addEventListener('keydown', handleKeyDown);
 		document.addEventListener('pointerdown', handlePointerDown);
+		window.addEventListener('resize', handleResize);
+		window.addEventListener('scroll', handleScroll, { passive: true });
 
 		return () => {
 			window.removeEventListener('cycle-theme', handleCycleTheme);
 			window.removeEventListener('keydown', handleKeyDown);
 			document.removeEventListener('pointerdown', handlePointerDown);
+			window.removeEventListener('resize', handleResize);
+			window.removeEventListener('scroll', handleScroll);
 		};
 	});
 
@@ -185,7 +237,7 @@
 		<!-- Trigger Button -->
 		<button
 			type="button"
-			onclick={() => (isOpen = !isOpen)}
+			onclick={toggleOpen}
 			class="theme-slider-btn"
 			title="Adjust reading theme and warmth ({getThemeLabel(sliderValue)})"
 			aria-label="Adjust reading theme and warmth"
@@ -206,7 +258,10 @@
 
 		{#if isOpen}
 			<!-- Popover Panel -->
-			<div class="theme-slider-panel {align === 'left' ? 'align-left' : 'align-right'} {placement === 'top' ? 'placement-top' : ''}">
+			<div
+				class="theme-slider-panel {align === 'left' ? 'align-left' : align === 'center' ? 'align-center' : 'align-right'} {placement === 'top' ? 'placement-top' : ''}"
+				style={panelStyle}
+			>
 				<div class="panel-header">
 					<span class="panel-title">Reading Comfort</span>
 					<span class="panel-label">{getThemeLabel(sliderValue)}</span>
@@ -350,7 +405,9 @@
 		z-index: 1060;
 		pointer-events: auto;
 		width: 280px;
-		max-width: 90vw;
+		max-width: calc(100vw - 1.5rem);
+		max-height: calc(100vh - 2rem);
+		overflow-y: auto;
 		background: var(--col-bg, var(--color-card-bg, #ffffff));
 		color: var(--text, var(--color-ink, #171a1c));
 		border: 1px solid var(--border, var(--color-card-border, #d4d8d3));
@@ -369,9 +426,40 @@
 		left: 0;
 	}
 
+	.theme-slider-panel.align-center {
+		left: 50%;
+		right: auto;
+		transform: translateX(-50%);
+	}
+
 	.theme-slider-panel.placement-top {
 		top: auto;
 		bottom: calc(100% + 0.5rem);
+	}
+
+	@media (max-width: 768px) {
+		.theme-slider-panel,
+		.theme-slider-panel.align-right,
+		.theme-slider-panel.align-left,
+		.theme-slider-panel.align-center {
+			position: fixed;
+			left: 50% !important;
+			right: auto !important;
+			transform: translateX(-50%) !important;
+			width: min(280px, calc(100vw - 1.5rem)) !important;
+			max-width: calc(100vw - 1.5rem) !important;
+			box-sizing: border-box;
+		}
+
+		.theme-slider-panel {
+			top: calc(env(safe-area-inset-top, 0px) + 3.75rem);
+			bottom: auto;
+		}
+
+		.theme-slider-panel.placement-top {
+			top: auto;
+			bottom: calc(env(safe-area-inset-bottom, 0px) + 3.75rem);
+		}
 	}
 
 	.theme-slider-wrapper input[type='range'] {

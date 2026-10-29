@@ -25,6 +25,8 @@ if not DB_PATH.exists():
     DB_PATH = APP_ROOT / "pipeline" / "build" / "polyglot-working.sqlite3"
 TARGET_TS = APP_ROOT / "src" / "lib" / "config" / "canonicalBooks.generated.ts"
 TARGET_PKG_TS = MONOREPO_ROOT / "packages" / "ancient-languages" / "src" / "bible" / "canonicalBooks.generated.ts"
+TARGET_CORP_TS = APP_ROOT / "src" / "lib" / "config" / "corpora.generated.ts"
+TARGET_PKG_CORP_TS = MONOREPO_ROOT / "packages" / "ancient-languages" / "src" / "bible" / "corpora.generated.ts"
 
 # Standard UI Abbreviations for all 90 canonical books
 STANDARD_ABBREVS = {
@@ -232,17 +234,25 @@ def generate_typescript():
     """)
     rows = cur.fetchall()
 
-    corpus_to_version = {
-        "wlc": "BHS",
-        "swete_lxx": "LXX",
-        "ognt": "OpenGNT",
-        "sblgnt": "SBLGNT",
-        "kjv": "KJV",
-        "vulgate": "Vulgate",
-        "webbe": "WEB",
-        "brenton-lxx": "Brenton",
-        "peshitta": "Peshitta",
-    }
+    cur.execute("""
+        SELECT id, version
+        FROM corpora
+        WHERE category = 'bible'
+        ORDER BY id
+    """)
+    corpus_to_version = dict(cur.fetchall())
+    if not corpus_to_version:
+        corpus_to_version = {
+            "wlc": "BHS",
+            "swete_lxx": "LXX",
+            "ognt": "OpenGNT",
+            "sblgnt": "SBLGNT",
+            "kjv": "KJV",
+            "vulgate": "Vulgate",
+            "webbe": "WEB",
+            "brenton-lxx": "Brenton",
+            "peshitta": "Peshitta",
+        }
 
     try:
         from .config import VERSION_CANONICAL_ORDERS
@@ -568,6 +578,9 @@ def generate_typescript():
     TARGET_TS.parent.mkdir(parents=True, exist_ok=True)
     TARGET_TS.write_text("\n".join(ts_lines), encoding="utf-8")
     print(f"Successfully generated: {TARGET_TS}")
+    if TARGET_PKG_TS.parent.exists():
+        TARGET_PKG_TS.write_text("\n".join(ts_lines), encoding="utf-8")
+        print(f"Successfully synced: {TARGET_PKG_TS}")
 
     # Generate corpora.generated.ts directly from the SQLite corpora table
     generate_corpora_definitions(conn)
@@ -584,81 +597,107 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
         print("Notice: corpora table not found, skipping corpora.generated.ts generation.")
         return
 
-    cur.execute("""
-        SELECT id, title, language, direction, category, default_scheme, has_tokens, has_audio, license, attribution
-        FROM corpora
-        ORDER BY id
-    """)
-    rows = cur.fetchall()
+    cols = [r[1] for r in cur.execute("PRAGMA table_info(corpora)").fetchall()]
+    has_enriched_cols = "version" in cols and "language_name" in cols
+
+    if has_enriched_cols:
+        cur.execute("""
+            SELECT id, version, title, language, language_name, direction, category, testament, default_scheme,
+                   has_tokens, has_audio, primary_dictionary, aliases, search_names, license, attribution
+            FROM corpora
+            ORDER BY id
+        """)
+        rows = cur.fetchall()
+    else:
+        cur.execute("""
+            SELECT id, title, language, direction, category, default_scheme, has_tokens, has_audio, license, attribution
+            FROM corpora
+            ORDER BY id
+        """)
+        rows = cur.fetchall()
+
     if not rows:
         return
 
     canonical_ids = [r[0] for r in rows]
     corpora_metadata = {}
+    version_to_corpus = {}
+    corpus_to_version = {}
+
     for r in rows:
-        cid, title, lang, direction, cat, scheme, has_tok, has_aud, lic, attr = r
-        corpora_metadata[cid] = {
-            "id": cid,
-            "title": title,
-            "language": lang,
-            "direction": direction,
-            "category": cat,
-            "default_scheme": scheme,
-            "has_tokens": bool(has_tok),
-            "has_audio": bool(has_aud),
-            "license": lic,
-            "attribution": attr,
-        }
+        if has_enriched_cols:
+            (cid, ver, title, lang, lang_name, direction, cat, testament,
+             scheme, has_tok, has_aud, prim_dict, aliases_str, search_names_json, lic, attr) = r
+            
+            aliases_list = [a.strip() for a in (aliases_str or "").split(",") if a.strip()]
+            try:
+                search_names_list = json.loads(search_names_json) if search_names_json else []
+            except Exception:
+                search_names_list = []
 
-    version_to_corpus = {
-        "bhs": "wlc",
-        "BHS": "wlc",
-        "wlc": "wlc",
-        "WLC": "wlc",
-        "lxx": "swete_lxx",
-        "LXX": "swete_lxx",
-        "swete_lxx": "swete_lxx",
-        "swete-lxx": "swete_lxx",
-        "ognt": "ognt",
-        "OGNT": "ognt",
-        "opengnt": "ognt",
-        "OpenGNT": "ognt",
-        "sblgnt": "sblgnt",
-        "SBLGNT": "sblgnt",
-        "sbl": "sblgnt",
-        "peshitta": "peshitta",
-        "Peshitta": "peshitta",
-        "syc": "peshitta",
-        "kjv": "kjv",
-        "KJV": "kjv",
-        "vulgate": "vulgate",
-        "Vulgate": "vulgate",
-        "vulgate-clementine": "vulgate",
-        "webbe": "webbe",
-        "web": "webbe",
-        "WEB": "webbe",
-        "brenton-lxx": "brenton-lxx",
-        "brenton": "brenton-lxx",
-        "Brenton": "brenton-lxx",
-        "bdb": "bdb",
-        "BDB": "bdb",
-        "lsj": "lsj",
-        "LSJ": "lsj",
-    }
+            corpora_metadata[cid] = {
+                "id": cid,
+                "version": ver,
+                "title": title,
+                "language": lang,
+                "languageName": lang_name,
+                "direction": direction,
+                "category": cat,
+                "testament": testament,
+                "defaultScheme": scheme,
+                "hasTokens": bool(has_tok),
+                "hasAudio": bool(has_aud),
+                "primaryDictionary": prim_dict,
+                "aliases": aliases_list,
+                "searchNames": search_names_list,
+                "license": lic,
+                "attribution": attr,
+            }
+            corpus_to_version[cid] = ver
+            version_to_corpus[ver] = cid
+            version_to_corpus[ver.lower()] = cid
+            version_to_corpus[cid] = cid
+            version_to_corpus[cid.lower()] = cid
+            for a in aliases_list:
+                version_to_corpus[a] = cid
+                version_to_corpus[a.lower()] = cid
+        else:
+            cid, title, lang, direction, cat, scheme, has_tok, has_aud, lic, attr = r
+            corpora_metadata[cid] = {
+                "id": cid,
+                "version": cid.upper(),
+                "title": title,
+                "language": lang,
+                "languageName": lang,
+                "direction": direction,
+                "category": cat,
+                "testament": "both",
+                "defaultScheme": scheme,
+                "hasTokens": bool(has_tok),
+                "hasAudio": bool(has_aud),
+                "primaryDictionary": None,
+                "aliases": [],
+                "searchNames": [],
+                "license": lic,
+                "attribution": attr,
+            }
 
-    corpus_to_version = {
-        "wlc": "BHS",
-        "swete_lxx": "LXX",
-        "ognt": "OpenGNT",
-        "sblgnt": "SBLGNT",
-        "peshitta": "Peshitta",
-        "kjv": "KJV",
-        "vulgate": "Vulgate",
-        "webbe": "WEB",
-        "brenton-lxx": "Brenton",
-        "bdb": "BDB",
-        "lsj": "LSJ",
+    # Static fallback aliases if table didn't supply them
+    fallback_aliases = {
+        "bhs": "wlc", "BHS": "wlc", "wlc": "wlc", "WLC": "wlc",
+        "lxx": "swete_lxx", "LXX": "swete_lxx", "swete_lxx": "swete_lxx", "swete-lxx": "swete_lxx",
+        "ognt": "ognt", "OGNT": "ognt", "opengnt": "ognt", "OpenGNT": "ognt",
+        "sblgnt": "sblgnt", "SBLGNT": "sblgnt", "sbl": "sblgnt",
+        "peshitta": "peshitta", "Peshitta": "peshitta", "syc": "peshitta",
+        "kjv": "kjv", "KJV": "kjv", "av": "kjv", "AV": "kjv",
+        "vulgate": "vulgate", "Vulgate": "vulgate", "vulgate-clementine": "vulgate",
+        "webbe": "webbe", "web": "webbe", "WEB": "webbe",
+        "brenton-lxx": "brenton-lxx", "brenton": "brenton-lxx", "Brenton": "brenton-lxx",
+        "bdb": "bdb", "BDB": "bdb", "lsj": "lsj", "LSJ": "lsj",
     }
+    for k, v in fallback_aliases.items():
+        if k not in version_to_corpus:
+            version_to_corpus[k] = v
 
     work_id_to_corpus = {
         1: "vulgate",
@@ -670,23 +709,27 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
         24: "swete_lxx",
         40: "ognt",
         41: "sblgnt",
+        100: "bdb",
+        101: "lsj",
     }
 
-    corpus_to_work_id = {
-        "vulgate": 1,
-        "wlc": 2,
-        "kjv": 5,
-        "webbe": 6,
-        "brenton-lxx": 7,
-        "peshitta": 8,
-        "swete_lxx": 24,
-        "ognt": 40,
-        "sblgnt": 41,
-        "bdb": 2,
-        "lsj": 24,
-    }
+    corpus_to_work_id = {v: k for k, v in work_id_to_corpus.items()}
 
-    target_ts = REPO_ROOT / "src" / "lib" / "config" / "corpora.generated.ts"
+    # Compute VERSION_GROUPS dynamically by languageName for Bibles
+    lang_order = ["Hebrew", "Greek", "Latin", "Syriac", "English"]
+    groups_dict = {}
+    for cid, meta in corpora_metadata.items():
+        if meta.get("category") == "bible":
+            lname = meta.get("languageName") or "Other"
+            groups_dict.setdefault(lname, []).append(meta.get("version"))
+
+    version_groups = []
+    for l in lang_order:
+        if l in groups_dict:
+            version_groups.append({"language": l, "versions": sorted(groups_dict.pop(l))})
+    for l in sorted(groups_dict.keys()):
+        version_groups.append({"language": l, "versions": sorted(groups_dict[l])})
+
     lines = [
         "/**",
         " * Canonical Corpus Definitions and Mappings.",
@@ -697,14 +740,20 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
         "export type TextDirection = 'ltr' | 'rtl';",
         "",
         "export interface CorpusMetadata {",
-        "	id: string;",
+        "	id: CorpusId;",
+        "	version: string;",
         "	title: string;",
         "	language: string;",
+        "	languageName: string;",
         "	direction: TextDirection;",
         "	category: 'bible' | 'lexicon' | string;",
-        "	default_scheme: string;",
-        "	has_tokens: boolean;",
-        "	has_audio: boolean;",
+        "	testament: 'ot' | 'nt' | 'both';",
+        "	defaultScheme: string;",
+        "	hasTokens: boolean;",
+        "	hasAudio: boolean;",
+        "	primaryDictionary: 'lsj' | 'bdb' | 'sedra' | string | null;",
+        "	aliases: string[];",
+        "	searchNames: string[];",
         "	license: string | null;",
         "	attribution: string | null;",
         "}",
@@ -733,6 +782,16 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
         f"export const CORPUS_ID_TO_WORK_ID: Record<CorpusId, number> = {json.dumps(corpus_to_work_id, indent=2)};",
         "",
         "/**",
+        " * Dynamic version groups arranged by language for UI menus.",
+        " */",
+        f"export const VERSION_GROUPS: {{ language: string; versions: string[] }}[] = {json.dumps(version_groups, indent=2)};",
+        "",
+        "/**",
+        " * List of all active Bible versions.",
+        " */",
+        "export const ALL_BIBLE_VERSIONS: string[] = VERSION_GROUPS.flatMap((g) => g.versions);",
+        "",
+        "/**",
         " * Resolves any version abbreviation, alias, corpus ID, or legacy work_id into a canonical CorpusId.",
         " */",
         "export function resolveCorpusId(input: string | number | null | undefined, fallback: CorpusId = 'wlc'): CorpusId {",
@@ -749,13 +808,34 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
         "	if (match) return match;",
         "	return fallback;",
         "}",
+        "",
+        "/**",
+        " * Universal resolver returning full CorpusMetadata for any acronym, slug, alias, or legacy workId.",
+        " */",
+        "export function resolveCorpus(input: string | number | null | undefined): CorpusMetadata | undefined {",
+        "	if (input === null || input === undefined) return undefined;",
+        "	if (typeof input === 'number') {",
+        "		const cid = WORK_ID_TO_CORPUS_ID[input];",
+        "		return cid ? CORPORA_METADATA[cid] : undefined;",
+        "	}",
+        "	const clean = String(input).trim();",
+        "	if (!clean) return undefined;",
+        "	const cid = VERSION_TO_CORPUS_ID[clean] || VERSION_TO_CORPUS_ID[clean.toLowerCase()];",
+        "	if (cid && CORPORA_METADATA[cid]) return CORPORA_METADATA[cid];",
+        "	const lower = clean.toLowerCase();",
+        "	const match = CANONICAL_CORPORA.find((c) => c.toLowerCase() === lower);",
+        "	if (match && CORPORA_METADATA[match]) return CORPORA_METADATA[match];",
+        "	return undefined;",
+        "}",
         ""
     ]
-    target_ts.write_text("\n".join(lines), encoding="utf-8")
-    print(f"Successfully generated: {target_ts}")
-    if target_ts == TARGET_TS and TARGET_PKG_TS.parent.exists():
-        TARGET_PKG_TS.write_text("\n".join(lines), encoding="utf-8")
-        print(f"Successfully synced: {TARGET_PKG_TS}")
+
+    TARGET_CORP_TS.parent.mkdir(parents=True, exist_ok=True)
+    TARGET_CORP_TS.write_text("\n".join(lines), encoding="utf-8")
+    print(f"Successfully generated: {TARGET_CORP_TS}")
+    if TARGET_PKG_CORP_TS.parent.exists():
+        TARGET_PKG_CORP_TS.write_text("\n".join(lines), encoding="utf-8")
+        print(f"Successfully synced: {TARGET_PKG_CORP_TS}")
 
 
 def generate_corpus_book_stats(conn: sqlite3.Connection, version_canonical_codes: dict, corpus_to_version: dict):
