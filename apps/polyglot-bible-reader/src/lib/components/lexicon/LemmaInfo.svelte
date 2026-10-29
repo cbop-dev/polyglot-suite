@@ -20,6 +20,7 @@
 		getWordFrequencyByBook,
 		getConcordance,
 		getLemmaTotalCount,
+		getLexiconEntry,
 		getCorpusTotalWords,
 		getCorpusBookWords,
 		cleanSyriac,
@@ -463,10 +464,13 @@
 		}
 	}
 
-	/*$effect(()=>{
-		const _ = selectedSegment;
-		
-	})*/
+	async function fetchLsjEntry(target: string, strongs?: string) {
+		return await getLexiconEntry('lsj', target, strongs);
+	}
+
+	async function fetchBdbEntry(target: string, strongs?: string) {
+		return await getLexiconEntry('bdb', target, strongs);
+	}
 
 	onMount(()=>{
 		resetLemma();
@@ -601,9 +605,9 @@
 				calLemma={currentLemmaData?.cal_lex || ''}
 			/>
 		{:else if isHebrew}
-			<BDBEntry lemma={currentLemmaData} lang="hebrew" dbAbbrev="bhs" autoOpen={false} />
+			<BDBEntry lemma={currentLemmaData} lang="hebrew" dbAbbrev="bhs" autoOpen={false} fetchEntry={fetchBdbEntry} />
 		{:else}
-			<LSJEntry lemma={currentLemmaData} lang="greek" dbAbbrev={currentLemmaData?.corpus || 'lxx'} autoOpen={false} />
+			<LSJEntry lemma={currentLemmaData} lang="greek" dbAbbrev={currentLemmaData?.corpus || 'lxx'} autoOpen={false} fetchEntry={fetchLsjEntry} />
 		{/if}
 	</div>
 

@@ -53,9 +53,14 @@
 			} else {
 				loading = true;
 				try {
+					const fallbackEntry =
+						(typeof lemma?.entry === 'object' && lemma?.entry) ||
+						(typeof lemma?.dictionary === 'object' && lemma?.dictionary) ||
+						null;
+
 					let lexEntry = typeof fetchEntry === 'function'
 						? await fetchEntry(target, targetStrongs, lang)
-						: (lemma?.dictionary || lemma?.entry || null);
+						: fallbackEntry;
 
 					fetchedEntry = lexEntry
 						? {

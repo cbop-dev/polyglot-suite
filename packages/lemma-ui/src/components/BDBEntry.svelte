@@ -49,9 +49,14 @@
 
 		loading = true;
 		try {
+			const fallbackEntry =
+				(typeof lemma?.entry === 'object' && lemma?.entry) ||
+				(typeof lemma?.dictionary === 'object' && lemma?.dictionary) ||
+				null;
+
 			const res = typeof fetchEntry === 'function'
 				? await fetchEntry(target, targetStrongs, 'hebrew')
-				: (lemma?.dictionary || lemma?.entry || null);
+				: fallbackEntry;
 			entry = res
 				? {
 						headword: res.headword || target,
