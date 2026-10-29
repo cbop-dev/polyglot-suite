@@ -234,7 +234,13 @@ class SBLGNTAdapter(BaseAdapter):
 
                         current_words_meta.append(surface_with_punc)
 
-                        trailer = surface_with_punc[len(surface_plain):] if len(surface_with_punc) > len(surface_plain) else " "
+                        # this trailer assignment and WordToken parameter caused 2 bugs: 
+                        #   1. punctuation, etc., was stored/displayed twice
+                        #   2. the trailer wrongly assumed only suffixes (and not prefixes like apparatus marks) caused the
+                        #      differences in length. 
+                        # Simplest solution for now: remove trailer logic entirely, and handle punctuation in the UI
+                        #
+                        #trailer = surface_with_punc[len(surface_plain):] if len(surface_with_punc) > len(surface_plain) else " "
 
                         token = WordToken(
                             word=surface_with_punc,
@@ -243,7 +249,7 @@ class SBLGNTAdapter(BaseAdapter):
                             morph=morph_code,
                             strongs=strongs,
                             gloss=gloss,
-                            trailer=trailer
+                            #trailer=trailer
                         )
                         current_tokens.append(token)
 
