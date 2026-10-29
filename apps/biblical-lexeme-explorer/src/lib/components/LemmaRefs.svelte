@@ -9,6 +9,7 @@
 	import BookOpenSvg from '@polyglot/ui/components/icons/book-open.svg';
 	import * as BibleUtils from '$lib/utils/bible-utils.js';
 	import { getReaderVerseUrl } from '$lib/utils/navigation.js';
+	import { getBookCanonicalIndex } from '@polyglot/ancient-languages';
 
 	/**
 	 * @type {{
@@ -89,6 +90,7 @@
 			}}
 			getReaderVerseUrl={(ref) => getReaderVerseUrl(ref, tfData?.dbAbbrev)}
 			formatBookAbbrev={(book) => tfData?.booksDict?.lookupBookAbbrev?.(book) || book}
+			getBookCanonicalIndex={(book) => getBookCanonicalIndex(book, tfData?.dbAbbrev)}
 		/>
 		{/if}
 		<!--{tfData.booksDict.combineRefs(lexRefQuery.response['refs'])}--><br/>

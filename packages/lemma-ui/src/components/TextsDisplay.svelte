@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Modal2, CopyText, ArrowUp } from "@polyglot/ui";
     import KwicSnippet from "@polyglot/ancient-languages/KwicSnippet.svelte";
-    import { findAllMatchesInText, getLanguageFontClass, getLanguageDirection, isRtlLanguage } from "@polyglot/ancient-languages";
+    import { findAllMatchesInText, getLanguageFontClass, getLanguageDirection, isRtlLanguage, getBookCanonicalIndex as getCanonicalIndexPkg } from "@polyglot/ancient-languages";
     import type { BatchVerseItem, FetchBatchTextsFn, FetchVerseDetailFn } from "../types.js";
 
     let {
@@ -128,12 +128,11 @@
         }
 
         // Sort books by authentic version canonical index or alphabetical
+        const resolveBookIndex = getBookCanonicalIndex || ((b: string) => getCanonicalIndexPkg(b, dbAbbrev));
         const sortedBookKeys = Array.from(bookMap.keys()).sort((a, b) => {
-            if (getBookCanonicalIndex) {
-                const ordA = getBookCanonicalIndex(a);
-                const ordB = getBookCanonicalIndex(b);
-                if (ordA !== ordB) return ordA - ordB;
-            }
+            const ordA = resolveBookIndex(a);
+            const ordB = resolveBookIndex(b);
+            if (ordA !== ordB) return ordA - ordB;
             return a.localeCompare(b);
         });
 
