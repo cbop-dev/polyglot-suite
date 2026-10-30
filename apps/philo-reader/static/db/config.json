@@ -1,10 +1,10 @@
 {
-  "databaseVersion": "philo-db-v0.0.5",
+  "databaseVersion": "philo-db-v0.0.6",
   "serverMode": "chunked",
   "requestChunkSize": 4096,
   "urlPrefix": "philo.db.",
   "serverChunkSize": 5242880,
-  "databaseLengthBytes": 219627520,
+  "databaseLengthBytes": 219615232,
   "suffixLength": 2,
-  "cacheBust": "v1792858416"
+  "cacheBust": "v1793325743"
 }
