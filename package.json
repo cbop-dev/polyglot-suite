@@ -1,6 +1,6 @@
 {
   "name": "polyglot-suite",
-  "version": "0.2.25",
+  "version": "0.2.26",
   "private": true,
   "description": "Monorepo workspace for ancient language readers and linguistic toolkits",
   "workspaces": [

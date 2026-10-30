@@ -36,7 +36,9 @@ import {
 	extractAvailableInflections,
 	filterAttestedForms,
 	isCriteriaActive,
-	countActiveFilters
+	countActiveFilters,
+	stripPunctuation,
+	trimPunctuation
 } from '../src/index.js';
 
 describe('@polyglot/ancient-languages', () => {
@@ -482,6 +484,70 @@ describe('@polyglot/ancient-languages', () => {
 			expect(openScr.person).toBe('3rd');
 			expect(openScr.gender).toBe('Masculine');
 			expect(openScr.number).toBe('Singular');
+		});
+	});
+
+	describe('stripPunctuation & trimPunctuation', () => {
+		it('strips all standard and ancient punctuation while preserving letters and diacritics', () => {
+			// Greek with Ano Teleia (U+0387) and Middle Dot (U+00B7)
+			expect(stripPunctuation('λέγων·')).toBe('λέγων');
+			expect(stripPunctuation('λέγων·')).toBe('λέγων');
+			expect(stripPunctuation('ἔλεγον·')).toBe('ἔλεγον');
+			expect(stripPunctuation('ἔλεγον·')).toBe('ἔλεγον');
+
+			// Greek with Question Mark (U+037E) and Semicolon (U+003B)
+			expect(stripPunctuation('λέγει;')).toBe('λέγει');
+			expect(stripPunctuation('λέγει;')).toBe('λέγει');
+
+			// Greek Polytonic accents, breathings, and iota subscripts fully preserved
+			expect(stripPunctuation('«[ἐποίησεν]»—')).toBe('ἐποίησεν');
+			expect(stripPunctuation('ᾠδῇ,')).toBe('ᾠδῇ');
+			expect(stripPunctuation('πνεῦμα.')).toBe('πνεῦμα');
+			expect(stripPunctuation('Ἰησοῦς!')).toBe('Ἰησοῦς');
+			expect(stripPunctuation('ῥῆμα·')).toBe('ῥῆμα');
+
+			// Apparatus symbols
+			expect(stripPunctuation('⸂λόγος⸃†‡*')).toBe('λόγος');
+			expect(stripPunctuation('⟦ἀρχῇ⟧')).toBe('ἀρχῇ');
+
+			// Hebrew text with vowels, cantillation, and punctuation
+			expect(stripPunctuation('בְּרֵאשִׁ֖ית׃')).toBe('בְּרֵאשִׁ֖ית');
+			expect(stripPunctuation('וַיֹּ֥אמֶר־')).toBe('וַיֹּ֥אמֶר');
+
+			// Edge cases
+			expect(stripPunctuation('')).toBe('');
+			expect(stripPunctuation('   ')).toBe('');
+			expect(stripPunctuation('.,;·:!?')).toBe('');
+		});
+
+		it('trimPunctuation strips only leading and trailing punctuation', () => {
+			expect(trimPunctuation('«λόγος»')).toBe('λόγος');
+			expect(trimPunctuation('·λέγων·')).toBe('λέγων');
+			expect(trimPunctuation('·λέγων·')).toBe('λέγων');
+			expect(trimPunctuation('λόγος-συν')).toBe('λόγος-συν');
+		});
+
+		it('ensures getCanonicalForm and buildAttestedForms unify forms differing only by punctuation', () => {
+			const canon1 = getCanonicalForm('λέγων');
+			const canon2 = getCanonicalForm('λέγων·'); // with U+0387 ano teleia
+			const canon3 = getCanonicalForm('λέγων·'); // with U+00B7 middle dot
+			expect(canon1).toBe('λέγων');
+			expect(canon2).toBe('λέγων');
+			expect(canon3).toBe('λέγων');
+			expect(canon2).toBe(canon1);
+			expect(canon3).toBe(canon1);
+
+			const tokens = [
+				{ word: 'λέγων', pos: 'V-', morph: 'PP-NSM' },
+				{ word: 'λέγων·', pos: 'V-', morph: 'PP-NSM' },
+				{ word: 'λέγων·', pos: 'V-', morph: 'PP-NSM' }
+			];
+			const attested = buildAttestedForms(tokens, { canonicalize: true, lang: 'greek' });
+			expect(attested).toHaveLength(1);
+			expect(attested[0].count).toBe(3);
+			expect(attested[0].form).toBe('λέγων');
+			expect(attested[0].form).not.toContain('·');
+			expect(attested[0].form).not.toContain('·');
 		});
 	});
 });

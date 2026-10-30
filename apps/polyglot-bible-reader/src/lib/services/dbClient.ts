@@ -15,6 +15,7 @@ export { type CorpusId, resolveCorpusId, resolveCorpus, CORPUS_ID_TO_WORK_ID };
 import { myDataSets } from '$lib/config/versions';
 import {
 	stripGreekAccents,
+	stripPunctuation,
 	toPlainHebrew,
 	normalizeStrongsId,
 	buildAttestedForms,
@@ -1298,7 +1299,51 @@ export async function fetchAttestedForms(
 		}
 
 		const parsed = typeof row.forms_json === 'string' ? JSON.parse(row.forms_json) : row.forms_json;
-		const forms: AttestedForm[] = parsed.forms || [];
+		const rawForms: AttestedForm[] = parsed.forms || [];
+		const formsMap = new Map<string, AttestedForm>();
+
+		for (const rf of rawForms) {
+			const cleanForm = stripPunctuation(rf.form);
+			if (!cleanForm) continue;
+			const existing = formsMap.get(cleanForm);
+			if (!existing) {
+				formsMap.set(cleanForm, {
+					...rf,
+					form: cleanForm,
+					canonicalForm: cleanForm,
+					rawForms: rf.rawForms ? Array.from(new Set(rf.rawForms.map(stripPunctuation).filter(Boolean))) : [cleanForm]
+				});
+			} else {
+				existing.count += rf.count;
+				if (rf.rawForms && existing.rawForms) {
+					for (const raw of rf.rawForms) {
+						const cRaw = stripPunctuation(raw);
+						if (cRaw && !existing.rawForms.includes(cRaw)) existing.rawForms.push(cRaw);
+					}
+				}
+				if (rf.analyses && existing.analyses) {
+					const seen = new Set(existing.analyses.map((a: any) => a.rawCode || a.summary || JSON.stringify(a)));
+					for (const an of rf.analyses) {
+						const k = (an as any).rawCode || (an as any).summary || JSON.stringify(an);
+						if (!seen.has(k)) {
+							seen.add(k);
+							existing.analyses.push(an);
+						}
+					}
+				}
+				const existingWids = (existing as any).work_unit_ids;
+				const rfWids = (rf as any).work_unit_ids;
+				if (Array.isArray(existingWids) && Array.isArray(rfWids)) {
+					for (const id of rfWids) {
+						if (!existingWids.includes(id)) existingWids.push(id);
+					}
+				}
+			}
+		}
+
+		const forms: AttestedForm[] = Array.from(formsMap.values()).sort(
+			(a, b) => b.count - a.count || a.form.localeCompare(b.form, 'el')
+		);
 		const workUnitForms = new Map<number, string[]>();
 
 		// 1. If legacy workUnitForms is present, load it

@@ -1,4 +1,5 @@
 import hebrewDictData from './data/hebrew_morph_dict.json';
+import { stripPunctuation } from './punctuation.js';
 
 const hebrewDict = hebrewDictData as Record<string, string>;
 
@@ -1101,7 +1102,7 @@ export function normalizeLemmaAccents(str: string): string {
 export function getCanonicalForm(rawWord: string): string {
 	if (!rawWord) return '';
 
-	let w = rawWord.replace(/[.,·;:!?"'»«()\[\]⟦⟧⟨⟩⸂⸃⸆⸇⸀⸁⸄⸅†‡*\s]/gu, '').trim();
+	let w = stripPunctuation(rawWord);
 	if (!w) return '';
 
 	w = w.toLowerCase();
@@ -1210,7 +1211,7 @@ export function buildAttestedForms(
 
 	for (const item of items) {
 		if (!item || !item.word) continue;
-		const rawWord = item.word.replace(/[.,·;:!?"'»«()\[\]⟦⟧⟨⟩⸂⸃⸆⸇⸀⸁⸄⸅†‡*\s]/gu, '').trim();
+		const rawWord = stripPunctuation(item.word);
 		if (!rawWord) continue;
 
 		const key = canonicalize && isGreek ? getCanonicalForm(rawWord) : rawWord;

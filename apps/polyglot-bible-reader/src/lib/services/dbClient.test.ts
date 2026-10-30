@@ -20,6 +20,7 @@ import {
 	resolveCorpusId,
 	getCorpusTotalWords,
 	getCorpusBookWords,
+	fetchAttestedForms,
 	_clearDbClientCache
 } from './dbClient';
 import * as dbWorker from './dbWorker';
@@ -936,6 +937,44 @@ describe('dbClient service', () => {
 			mockQuery.mockResolvedValueOnce([]);
 			const genWords = await getCorpusBookWords('bhs', 'GEN');
 			expect(genWords).toBeGreaterThan(0);
+		});
+
+		it('fetchAttestedForms strips punctuation and unifies duplicate forms', async () => {
+			// Mock row where database contained both unpunctuated and punctuated forms (e.g. λέγων and λέγων·)
+			mockQuery.mockResolvedValueOnce([
+				{
+					forms_json: JSON.stringify({
+						forms: [
+							{
+								form: 'λέγων',
+								count: 50,
+								rawForms: ['λέγων'],
+								work_unit_ids: [100, 101]
+							},
+							{
+								form: 'λέγων·', // with U+0387 ano teleia
+								count: 25,
+								rawForms: ['λέγων·'],
+								work_unit_ids: [102]
+							},
+							{
+								form: 'λέγων·', // with U+00B7 middle dot
+								count: 10,
+								rawForms: ['λέγων·'],
+								work_unit_ids: [103]
+							}
+						]
+					})
+				}
+			]);
+
+			const res = await fetchAttestedForms('ognt', 'λέγω', 'G3004', 'greek');
+			expect(res.forms).toHaveLength(1);
+			expect(res.forms[0].form).toBe('λέγων');
+			expect(res.forms[0].count).toBe(85);
+			expect(res.forms[0].form).not.toContain('·');
+			expect(res.forms[0].form).not.toContain('·');
+			expect(res.workUnitForms.get(102)).toContain('λέγων');
 		});
 	});
 });

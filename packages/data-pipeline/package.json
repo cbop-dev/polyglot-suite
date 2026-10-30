@@ -1,6 +1,6 @@
 {
   "name": "@polyglot/data-pipeline",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Unified data pipeline and SQLite compiler for Polyglot Suite ancient text readers",
   "type": "module",

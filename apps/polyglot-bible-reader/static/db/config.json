@@ -4,7 +4,7 @@
   "requestChunkSize": 4096,
   "urlPrefix": "polyglot.db.",
   "serverChunkSize": 5242880,
-  "databaseLengthBytes": 712560640,
+  "databaseLengthBytes": 712474624,
   "suffixLength": 2,
-  "cacheBust": "v1793298038"
+  "cacheBust": "v1793324615"
 }

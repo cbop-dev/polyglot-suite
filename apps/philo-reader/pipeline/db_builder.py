@@ -33,7 +33,13 @@ from .parser import PhiloParser, ParsedSection
 def clean_surface_word(raw_word: str) -> str:
     if not raw_word:
         return ""
-    return re.sub(r'[.,·;:!?"\'»«()\[\]⟦⟧⟨⟩—\s]', '', raw_word).strip()
+    apparatus_symbols = {"†", "‡", "*", "⸈", "⸉", "⸊", "⸋", "⸂", "⸃", "⸆", "⸇", "⸀", "⸁", "⸄", "⸅"}
+    return "".join(
+        c for c in raw_word
+        if not unicodedata.category(c).startswith("P")
+        and not unicodedata.category(c).startswith("Z")
+        and c not in apparatus_symbols
+    ).strip()
 
 
 def get_canonical_greek_form(raw_word: str) -> str:
@@ -48,6 +54,7 @@ def get_canonical_greek_form(raw_word: str) -> str:
         last_idx = accents[-1]
         w = w[:last_idx] + w[last_idx + 1:]
     w = unicodedata.normalize('NFC', w)
+    w = clean_surface_word(w)
 
     if w.endswith('ν'):
         stem = w[:-1]

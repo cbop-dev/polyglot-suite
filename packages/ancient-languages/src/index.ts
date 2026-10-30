@@ -1,5 +1,6 @@
 export * from './transliteration.js';
 export * from './diacritics.js';
+export * from './punctuation.js';
 export * from './morphology.js';
 export * from './highlights.js';
 export * from './hebrew-utils.js';

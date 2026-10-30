@@ -72,7 +72,13 @@ if hebrew_dict_file.exists():
 def clean_surface_word(surface: str) -> str:
     if not surface:
         return ""
-    return re.sub(r'[.,·;:!?\"\'»«()\[\]⟦⟧⟨⟩⸂⸃⸆⸇⸀⸁⸄⸅†‡*\s׃־׀]', '', surface).strip()
+    apparatus_symbols = {"†", "‡", "*", "⸈", "⸉", "⸊", "⸋", "⸂", "⸃", "⸆", "⸇", "⸀", "⸁", "⸄", "⸅"}
+    return "".join(
+        c for c in surface
+        if not unicodedata.category(c).startswith("P")
+        and not unicodedata.category(c).startswith("Z")
+        and c not in apparatus_symbols
+    ).strip()
 
 
 def get_canonical_greek_form(raw_word: str) -> str:
@@ -87,6 +93,7 @@ def get_canonical_greek_form(raw_word: str) -> str:
         last_idx = accents[-1]
         w = w[:last_idx] + w[last_idx + 1:]
     w = unicodedata.normalize('NFC', w)
+    w = clean_surface_word(w)
 
     if w.endswith('ν'):
         stem = w[:-1]
