@@ -1,10 +1,10 @@
 {
-  "databaseVersion": "bible-data-v0.3.3",
+  "databaseVersion": "bible-data-v0.3.4",
   "serverMode": "chunked",
   "requestChunkSize": 4096,
   "urlPrefix": "polyglot.db.",
   "serverChunkSize": 5242880,
-  "databaseLengthBytes": 712474624,
+  "databaseLengthBytes": 709099520,
   "suffixLength": 2,
-  "cacheBust": "v1793324615"
+  "cacheBust": "v1793363155"
 }
