@@ -123,7 +123,7 @@ pb-2.5 border-b border-rule z-20 shadow-xs">
   :root[data-theme='dark'] {
       --bgblend: white;
   }
-   #grid-headers{ 
+   #grid-header{ 
     background-color: color-mix(in srgb, var(--bg-content, white) 90%, 
           color-mix(in srgb, var(--bgblend) 75%, transparent 20%) 10%); 
     box-shadow: 2px 2px 10px color-mix(in srgb, var(--bgblend) 30%, transparent 80%);
