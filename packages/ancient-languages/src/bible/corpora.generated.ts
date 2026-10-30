@@ -99,7 +99,7 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
     "category": "bible",
     "testament": "both",
     "defaultScheme": "ENG",
-    "hasTokens": true,
+    "hasTokens": false,
     "hasAudio": false,
     "primaryDictionary": null,
     "aliases": [

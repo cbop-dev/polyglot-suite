@@ -369,7 +369,7 @@ class DatabaseBuilder:
                 "bible",
                 "both",
                 "ENG",
-                1,
+                0,
                 0,
                 None,
                 "kjv,av",
