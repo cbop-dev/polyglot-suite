@@ -119,7 +119,7 @@ Updated `.github/workflows/deploy.yml` with intelligent caching and automated re
 ```yaml
       - name: Cache Database Chunks
         id: db-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             apps/polyglot-bible-reader/static/db/polyglot.db.*
