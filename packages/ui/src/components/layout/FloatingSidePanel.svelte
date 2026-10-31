@@ -1,8 +1,37 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  let { children, isOpen, onClose, isMobile = false } = $props();
+
+  interface Props {
+    children?: any;
+    isOpen?: boolean;
+    onClose?: () => void;
+    isMobile?: boolean;
+    showDefaultCloseButton?: boolean;
+    noPadding?: boolean;
+    class?: string;
+    width?: number;
+    minWidth?: number;
+    maxWidth?: number;
+    top?: string;
+    ariaLabel?: string;
+  }
+
+  let {
+    children,
+    isOpen = false,
+    onClose = () => {},
+    isMobile = false,
+    showDefaultCloseButton = true,
+    noPadding = false,
+    class: className = '',
+    width = 440,
+    minWidth = 300,
+    maxWidth = 100,
+    top,
+    ariaLabel = 'Side Panel'
+  }: Props = $props();
   
-  let panelWidth = $state(400); // initial width
+  let panelWidth = $state(width);
   let isDragging = false;
 
   function startDrag(e: MouseEvent) {
@@ -14,74 +43,72 @@
   function doDrag(e: MouseEvent) {
     if (!isDragging) return;
     const newWidth = window.innerWidth - e.clientX;
-    if (newWidth > 300 && newWidth < window.innerWidth - 100) {
+    if (newWidth > minWidth && newWidth < window.innerWidth - maxWidth) {
       panelWidth = newWidth;
     }
   }
 
   function stopDrag() {
-    isDragging = false;
-    document.body.style.cursor = 'default';
-    document.body.style.userSelect = 'auto';
-  }
-/*
-  function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && isOpen) {
-      // If a modal dialog is open above the panel, let the modal handle Escape first
-      const openDialog = typeof document !== 'undefined' ? document.querySelector('dialog[open]') : null;
-      if (openDialog) return;
-
-      e.stopPropagation();
-      e.preventDefault();
-      onClose();
+    if (isDragging) {
+      isDragging = false;
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
     }
   }
-*/
+
   onMount(() => {
     window.addEventListener('mousemove', doDrag);
     window.addEventListener('mouseup', stopDrag);
-    //window.addEventListener('keydown', handleKeyDown);
   });
 
   onDestroy(() => {
     window.removeEventListener('mousemove', doDrag);
     window.removeEventListener('mouseup', stopDrag);
-    //window.removeEventListener('keydown', handleKeyDown);
   });
 </script>
 
 {#if isOpen}
-  <!-- Overlay (optional, currently invisible but could block clicks if wanted, for now just allow background interaction) -->
-  
   <!-- Panel -->
-  <div 
-    class="fixed top-0 right-0 h-full bg-page shadow-2xl border-l border-rule z-60 flex  animate-slide-in"
-    style="{isMobile ? '' : 'width: ' + panelWidth + 'px;'}"
+  <aside 
+    class="fixed right-0 bg-page shadow-2xl border-l border-rule z-40 flex animate-slide-in text-ink {className}"
+    style="{top !== undefined ? `top: ${top}; height: calc(100vh - ${top});` : 'top: 0; height: 100%;'} {isMobile ? '' : 'width: min(100vw, ' + panelWidth + 'px);'}"
+    aria-label={ariaLabel}
   >
     <!-- Resize Handle -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <div 
-      class="w-2 cursor-ew-resize hover:bg-blue-500/50 bg-rule transition-colors h-full flex items-center justify-center"
+      role="separator"
+      aria-orientation="vertical"
+      tabindex="0"
+      class="w-2 cursor-ew-resize hover:bg-blue-500/50 bg-rule transition-colors h-full flex items-center justify-center shrink-0 z-50"
       onmousedown={startDrag}
+      title="Drag to resize panel"
     >
       <div class="w-1 h-8 bg-ink/20 rounded"></div>
     </div>
     
     <!-- Content Area -->
-    <div class="sm:flex-1 h-full overflow-y-auto relative">
-      <button 
-        class="absolute top-4 right-4 text-ink-soft hover:text-ink z-10 p-2 bg-page/80 backdrop-blur rounded-full shadow-sm border border-rule" 
-        onclick={onClose}
-        aria-label="Close Panel"
-      >
-        ✕
-      </button>
+    <div class="flex-1 h-full min-w-0 flex flex-col relative {noPadding ? 'overflow-hidden' : 'overflow-y-auto'}">
+      {#if showDefaultCloseButton}
+        <button 
+          class="absolute top-4 right-4 text-ink-soft hover:text-ink z-10 p-2 bg-page/80 backdrop-blur rounded-full shadow-sm border border-rule cursor-pointer" 
+          onclick={onClose}
+          aria-label="Close Panel"
+        >
+          ✕
+        </button>
+      {/if}
       
-      <div class="p-6">
-        {@render children()}
-      </div>
+      {#if noPadding}
+        {@render children?.()}
+      {:else}
+        <div class="p-6">
+          {@render children?.()}
+        </div>
+      {/if}
     </div>
-  </div>
+  </aside>
 {/if}
 
 <style>

@@ -30,6 +30,8 @@
 			readerState.setWork(workCode, chapter ?? readerState.currentChapter, section ?? null);
 		} else if (chapter !== undefined && chapter !== readerState.currentChapter) {
 			readerState.setChapter(chapter, section ?? null);
+		} else if (section !== undefined && section !== readerState.currentSection) {
+			readerState.currentSection = section;
 		}
 	});
 
@@ -38,6 +40,17 @@
 		const w = readerState.currentWorkCode;
 		const ch = readerState.currentChapter;
 		loadSections(w, ch);
+	});
+
+	// Scroll to target section when section or loading finishes
+	$effect(() => {
+		const targetSec = readerState.currentSection;
+		if (targetSec && !loading) {
+			setTimeout(() => {
+				const el = document.getElementById(`section-${targetSec}`);
+				el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}, 100);
+		}
 	});
 
 	async function loadSections(workCode: string, chapter: number) {

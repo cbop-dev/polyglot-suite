@@ -4,13 +4,16 @@ let {
     title='',
     onclose=()=>{}, 
     children,
-    max = $bindable(false)
+    max = $bindable(false),
+    showFooter = true,
+    showMaximize = true,
+    showClose = true,
+    maxWidth = ''
 } = $props();
 
 // 1. Create a reference to the dialog element
 let dialog;
 let isMaximized = $derived(Boolean(max));
-
 
 function toggleMaximize() {
     isMaximized = !isMaximized;
@@ -32,79 +35,85 @@ $effect(() => {
 <dialog 
     bind:this={dialog}
     onclose={() => { showModal = false; onclose(); }}
-    oncancel={() => (showModal = false)}
-    onclick={(e) => { if (e.target === dialog) showModal = false; }}
+    oncancel={() => { showModal = false; onclose(); }}
+    onclick={(e) => { if (e.target === dialog) { showModal = false; onclose(); } }}
     class="custom-modal" 
 >
     {#if showModal}
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
         <div 
-            class="modal-box {isMaximized ? 'is-maximized' : ''}"
+            class="modal-box relative z-10 {isMaximized ? 'is-maximized' : ''} {maxWidth}"
             onclick={(e) => e.stopPropagation()}
         >
             <div class="modal-header-actions absolute top-4 right-4 flex items-center gap-2 z-20">
-                <!-- Maximize / Minimize Button -->
-                <button
-                    type="button"
-                    class="modal-icon-btn w-8 h-8 rounded-full border border-rule text-ink shadow-xs transition-all flex items-center justify-center cursor-pointer"
-                    onclick={(e) => { e.stopPropagation(); toggleMaximize(); }}
-                    title={isMaximized ? "Restore window size" : "Maximize window"}
-                    aria-label={isMaximized ? "Restore window size" : "Maximize window"}
-                >
-                    {#if isMaximized}
-                        <!-- Minimize / Restore icon: inward arrows -->
-                        <svg width="16" height="16" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <polyline points="4 14 10 14 10 20" />
-                            <polyline points="20 10 14 10 14 4" />
-                            <line x1="14" y1="10" x2="21" y2="3" />
-                            <line x1="10" y1="14" x2="3" y2="21" />
-                        </svg>
-                    {:else}
-                        <!-- Maximize icon: outward arrows -->
-                        <svg width="16" height="16" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <polyline points="15 3 21 3 21 9" />
-                            <polyline points="9 21 3 21 3 15" />
-                            <line x1="21" y1="3" x2="14" y2="10" />
-                            <line x1="3" y1="21" x2="10" y2="14" />
-                        </svg>
-                    {/if}
-                </button>
+                {#if showMaximize}
+                    <!-- Maximize / Minimize Button -->
+                    <button
+                        type="button"
+                        class="modal-icon-btn w-8 h-8 rounded-full border border-rule text-ink shadow-xs transition-all flex items-center justify-center cursor-pointer"
+                        onclick={(e) => { e.stopPropagation(); toggleMaximize(); }}
+                        title={isMaximized ? "Restore window size" : "Maximize window"}
+                        aria-label={isMaximized ? "Restore window size" : "Maximize window"}
+                    >
+                        {#if isMaximized}
+                            <!-- Minimize / Restore icon: inward arrows -->
+                            <svg width="16" height="16" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="4 14 10 14 10 20" />
+                                <polyline points="20 10 14 10 14 4" />
+                                <line x1="14" y1="10" x2="21" y2="3" />
+                                <line x1="10" y1="14" x2="3" y2="21" />
+                            </svg>
+                        {:else}
+                            <!-- Maximize icon: outward arrows -->
+                            <svg width="16" height="16" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="15 3 21 3 21 9" />
+                                <polyline points="9 21 3 21 3 15" />
+                                <line x1="21" y1="3" x2="14" y2="10" />
+                                <line x1="3" y1="21" x2="10" y2="14" />
+                            </svg>
+                        {/if}
+                    </button>
+                {/if}
 
-                <!-- Close Button -->
-                <button
-                    type="button"
-                    class="modal-icon-btn w-8 h-8 rounded-full border border-rule text-ink shadow-xs transition-all flex items-center justify-center cursor-pointer"
-                    onclick={() => { showModal = false; }}
-                    title="Close"
-                    aria-label="Close"
-                >
-                    <svg width="16" height="16" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                </button>
-            </div>
-
-            <div class="block items-center text-center px-10">
-                {#if title}
-                    <h1 class="text-xl font-bold mb-2">{title}</h1>
-                    <hr class="border-rule my-2 opacity-50" />
+                {#if showClose}
+                    <!-- Close Button -->
+                    <button
+                        type="button"
+                        class="modal-icon-btn w-8 h-8 rounded-full border border-rule text-ink shadow-xs transition-all flex items-center justify-center cursor-pointer"
+                        onclick={() => { showModal = false; onclose(); }}
+                        title="Close"
+                        aria-label="Close"
+                    >
+                        <svg width="16" height="16" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
                 {/if}
             </div>
+
+            {#if title}
+                <div class="block items-center text-center px-10">
+                    <h1 class="text-xl font-bold mb-2">{title}</h1>
+                    <hr class="border-rule my-2 opacity-50" />
+                </div>
+            {/if}
 
             <div class="modal-body">
                 {@render children()}
             </div>
             
-            <div class="modal-footer border-t border-rule/50 mt-0.5 pt-0.5 sm:mt-2 sm:pt-2 text-center shrink-0">
-                <button 
-                    type="button" 
-                    class="px-6 py-1.5 text-sm font-semibold rounded-lg bg-rule/40 hover:bg-rule border border-rule text-ink transition-colors cursor-pointer" 
-                    onclick={() => { showModal = false; }}
-                >
-                    Close
-                </button>
-            </div>
+            {#if showFooter}
+                <div class="modal-footer border-t border-rule/50 mt-0.5 pt-0.5 sm:mt-2 sm:pt-2 text-center shrink-0">
+                    <button 
+                        type="button" 
+                        class="px-6 py-1.5 text-sm font-semibold rounded-lg bg-rule/40 hover:bg-rule border border-rule text-ink transition-colors cursor-pointer" 
+                        onclick={() => { showModal = false; onclose(); }}
+                    >
+                        Close
+                    </button>
+                </div>
+            {/if}
         </div>
     {/if}
 </dialog>

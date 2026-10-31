@@ -1,7 +1,8 @@
 <script lang="ts">
+	import { FloatingSidePanel, Loading } from '@polyglot/ui';
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { highlightStore } from '$lib/stores/highlightStore.svelte';
-	import HighlightColorPicker from '$lib/components/HighlightColorPicker.svelte';
+	import HighlightColorPicker from '@polyglot/ancient-languages/HighlightColorPicker.svelte';
 	import { WORKS_BY_CODE } from '$lib/config/canonicalWorks.generated';
 	import {
 		decodeMorph,
@@ -33,32 +34,6 @@
 		type BiblicalCitation,
 		type BiblicalBookSummary
 	} from '$lib/services/dbClient';
-
-	// Panel resize / width state
-	let panelWidth = $state<number>(440);
-	let isDragging = false;
-
-	function startDrag(e: MouseEvent) {
-		isDragging = true;
-		document.body.style.cursor = 'ew-resize';
-		document.body.style.userSelect = 'none';
-	}
-
-	function doDrag(e: MouseEvent) {
-		if (!isDragging) return;
-		const newWidth = window.innerWidth - e.clientX;
-		if (newWidth > 320 && newWidth < window.innerWidth - 120) {
-			panelWidth = newWidth;
-		}
-	}
-
-	function stopDrag() {
-		if (isDragging) {
-			isDragging = false;
-			document.body.style.cursor = 'default';
-			document.body.style.userSelect = 'auto';
-		}
-	}
 
 	// Tab 1: Lexeme Data
 	let currentLemma = $derived(readerState.selectedToken?.l || '');
@@ -178,9 +153,10 @@
 		}
 	}
 
-	function toggleAttestedForms() {
-		isAttestedFormsOpen = !isAttestedFormsOpen;
-		if (isAttestedFormsOpen && !attestedFormsLoaded && !isAttestedFormsLoading && currentLemma) {
+	function toggleAttestedForms(open?: boolean) {
+		const willBeOpen = typeof open === 'boolean' ? open : !isAttestedFormsOpen;
+		isAttestedFormsOpen = willBeOpen;
+		if (willBeOpen && !attestedFormsLoaded && !isAttestedFormsLoading && currentLemma) {
 			loadAttestedForms(currentLemma);
 		}
 	}
@@ -457,25 +433,16 @@
 	}
 </script>
 
-<svelte:window onmousemove={doDrag} onmouseup={stopDrag} />
-
-{#if readerState.isSidePanelOpen}
-	<!-- Side Panel Container -->
-	<aside
-		class="fixed top-[53px] bottom-0 right-0 z-40 flex flex-col border-l border-[var(--color-rule)] bg-[var(--color-page)] shadow-2xl transition-all"
-		style="width: {panelWidth}px; max-width: 95vw;"
-		aria-label="Philo Reference and Lexicon Panel"
-	>
-		<!-- Left Drag Handle for resizing -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div
-			onmousedown={startDrag}
-			class="absolute top-0 bottom-0 left-0 w-1.5 cursor-ew-resize hover:bg-blue-500/50 active:bg-blue-600 transition-colors z-50"
-			title="Drag to resize panel"
-		></div>
-
-		<!-- Panel Top Navigation / Tabs Bar -->
-		<div class="flex items-center justify-between border-b border-[var(--color-rule)] bg-[var(--color-card-bg)] px-3 py-2 shrink-0">
+<FloatingSidePanel
+	isOpen={readerState.isSidePanelOpen}
+	onClose={() => (readerState.isSidePanelOpen = false)}
+	top="53px"
+	noPadding={true}
+	showDefaultCloseButton={false}
+	ariaLabel="Philo Reference and Lexicon Panel"
+>
+	<!-- Panel Top Navigation / Tabs Bar -->
+	<div class="flex items-center justify-between border-b border-[var(--color-rule)] bg-[var(--color-card-bg)] px-3 py-2 shrink-0">
 			<!-- Tab Buttons -->
 			<div class="flex items-center gap-1 text-xs font-semibold">
 				<button
@@ -690,9 +657,7 @@
 						{#if isLexArticleOpen}
 							<div class="border-t border-[var(--color-rule)] p-3.5 space-y-3">
 								{#if isLexArticleLoading}
-									<div class="py-6 text-center text-xs text-[var(--color-ink-soft)]">
-										Loading dictionary entry...
-									</div>
+									<Loading size="sm" title="Loading dictionary entry..." />
 								{:else if lexArticleError}
 									<div class="p-3 text-center text-xs text-red-500">
 										{lexArticleError}
@@ -744,9 +709,7 @@
 						{#if isConcordanceOpen}
 							<div class="border-t border-[var(--color-rule)] p-3.5 space-y-3">
 								{#if isConcordanceLoading}
-									<div class="py-6 text-center text-xs text-[var(--color-ink-soft)]">
-										Loading concordance occurrences...
-									</div>
+									<Loading size="sm" title="Loading concordance occurrences..." />
 								{:else if concordanceError}
 									<div class="p-3 text-center text-xs text-red-500">
 										{concordanceError}
@@ -1100,13 +1063,7 @@
 							</div>
 
 							{#if isCitationsLoading}
-								<div class="py-12 text-center text-xs text-[var(--color-ink-soft)] flex items-center justify-center gap-2">
-									<svg class="animate-spin h-4 w-4 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-										<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-									</svg>
-									<span>Loading citations...</span>
-								</div>
+								<Loading size="sm" title="Loading citations..." />
 							{:else if citationResults.length === 0}
 								<div class="py-12 text-center text-xs text-[var(--color-ink-soft)] space-y-1">
 									<p class="font-semibold text-sm">No citations found</p>
@@ -1220,5 +1177,4 @@
 				</div>
 			{/if}
 		</div>
-	</aside>
-{/if}
+</FloatingSidePanel>

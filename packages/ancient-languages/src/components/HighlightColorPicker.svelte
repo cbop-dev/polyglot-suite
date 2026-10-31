@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { HIGHLIGHT_PALETTE, type PaletteColor } from '@polyglot/ancient-languages';
+	import { HIGHLIGHT_PALETTE, type PaletteColor } from '../highlights.js';
 
 	interface Props {
 		selectedColorIndex: number;

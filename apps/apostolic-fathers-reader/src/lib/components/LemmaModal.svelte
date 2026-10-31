@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { highlightStore } from '$lib/stores/highlightStore.svelte';
-	import HighlightColorPicker from '$lib/components/HighlightColorPicker.svelte';
+	import HighlightColorPicker from '@polyglot/ancient-languages/HighlightColorPicker.svelte';
 	import { WORKS_BY_CODE } from '$lib/config/canonicalWorks.generated';
 	import { decodeMorph } from '@polyglot/ancient-languages';
 	import KwicSnippet from '@polyglot/ancient-languages/KwicSnippet.svelte';

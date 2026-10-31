@@ -12,6 +12,8 @@
     "build:github": "npm run build:gh",
     "preview": "vite preview",
     "preview:www": "ADAPTER=static vite preview",
+    "test": "vitest run src/lib/services/hotkeyManager.test.ts",
+    "test:e2e": "playwright test",
     "pipeline:fetch": "python3 -m pipeline.fetcher",
     "pipeline:build": "python3 -m pipeline.build",
     "pipeline:all": "python3 -m pipeline.build --all",
@@ -44,6 +46,7 @@
     "@polyglot/ancient-languages": "*",
     "@polyglot/db-vfs": "*",
     "@polyglot/theme": "*",
+    "@polyglot/ui": "*",
     "chart.js": "^4.5.1",
     "sql.js-httpvfs": "^0.8.12",
     "svelte-chartjs": "^4.0.1"

@@ -1,7 +1,8 @@
 <script lang="ts">
+	import { FloatingSidePanel, Loading } from '@polyglot/ui';
 	import { readerState } from '$lib/stores/readerState.svelte';
 	import { highlightStore } from '$lib/stores/highlightStore.svelte';
-	import HighlightColorPicker from '$lib/components/HighlightColorPicker.svelte';
+	import HighlightColorPicker from '@polyglot/ancient-languages/HighlightColorPicker.svelte';
 	import { WORKS_BY_CODE } from '$lib/config/canonicalWorks.generated';
 	import {
 		decodeMorph,
@@ -27,32 +28,6 @@
 		type AttestedForm,
 		type LemmaSearchResult
 	} from '$lib/services/dbClient';
-
-	// Panel resize / width state
-	let panelWidth = $state<number>(440);
-	let isDragging = false;
-
-	function startDrag(e: MouseEvent) {
-		isDragging = true;
-		document.body.style.cursor = 'ew-resize';
-		document.body.style.userSelect = 'none';
-	}
-
-	function doDrag(e: MouseEvent) {
-		if (!isDragging) return;
-		const newWidth = window.innerWidth - e.clientX;
-		if (newWidth > 320 && newWidth < window.innerWidth - 120) {
-			panelWidth = newWidth;
-		}
-	}
-
-	function stopDrag() {
-		if (isDragging) {
-			isDragging = false;
-			document.body.style.cursor = 'default';
-			document.body.style.userSelect = 'auto';
-		}
-	}
 
 	// Tab 1: Lexeme Data
 	let currentLemma = $derived(readerState.selectedToken?.l || '');
@@ -184,9 +159,10 @@
 		}
 	}
 
-	function toggleAttestedForms() {
-		isAttestedFormsOpen = !isAttestedFormsOpen;
-		if (isAttestedFormsOpen && !attestedFormsLoaded && !isAttestedFormsLoading && currentLemma) {
+	function toggleAttestedForms(open?: boolean) {
+		const willBeOpen = typeof open === 'boolean' ? open : !isAttestedFormsOpen;
+		isAttestedFormsOpen = willBeOpen;
+		if (willBeOpen && !attestedFormsLoaded && !isAttestedFormsLoading && currentLemma) {
 			loadAttestedForms(currentLemma);
 		}
 	}
@@ -338,29 +314,15 @@
 	}
 </script>
 
-<svelte:window onmousemove={doDrag} onmouseup={stopDrag} />
-
-{#if readerState.isSidePanelOpen}
-	<!-- Side Panel Container -->
-	<aside
-		class="fixed top-0 right-0 h-full bg-[var(--color-page)] shadow-2xl border-l border-[var(--color-rule)] z-40 flex flex-col text-[var(--color-ink)] transition-transform duration-200"
-		style="width: min(100vw, {panelWidth}px);"
-		aria-label="Lexicon & Study Panel"
-	>
-		<!-- Drag handle on desktop left edge -->
-		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<div
-			role="separator"
-			aria-orientation="vertical"
-			tabindex="0"
-			onmousedown={startDrag}
-			class="hidden md:block absolute -left-1.5 top-0 bottom-0 w-3 cursor-ew-resize hover:bg-blue-500/30 transition-colors z-50"
-			title="Drag to resize panel"
-		></div>
-
-		<!-- Panel Top Navigation: Tabs and Close -->
-		<div class="flex items-center justify-between border-b border-[var(--color-rule)] bg-[var(--color-card-bg)] px-3 pt-2">
+<FloatingSidePanel
+	isOpen={readerState.isSidePanelOpen}
+	onClose={() => (readerState.isSidePanelOpen = false)}
+	noPadding={true}
+	showDefaultCloseButton={false}
+	ariaLabel="Lexicon & Study Panel"
+>
+	<!-- Panel Top Navigation: Tabs and Close -->
+	<div class="flex items-center justify-between border-b border-[var(--color-rule)] bg-[var(--color-card-bg)] px-3 pt-2">
 			<!-- 3 Tabs: Search, Lexeme, Highlights -->
 			<div class="flex items-center gap-1">
 				<button
@@ -562,7 +524,7 @@
 									Full Lexicon Article
 								</span>
 								{#if isLexArticleLoading}
-									<span class="inline-block animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full" title="Loading..."></span>
+									<Loading inline size="xs" />
 								{/if}
 							</div>
 							<svg
@@ -578,10 +540,7 @@
 						{#if isLexArticleOpen}
 							<div class="border-t border-[var(--color-rule)] bg-[var(--color-page)]/50 p-4">
 								{#if isLexArticleLoading}
-									<div class="py-4 text-center text-xs text-[var(--color-ink-soft)] space-y-1.5">
-										<div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-										<p>Loading LSJ lexicon article from database worker...</p>
-									</div>
+									<Loading size="sm" title="Loading LSJ lexicon article from database worker..." />
 								{:else if lexArticleError}
 									<div class="p-3 text-center text-xs text-red-600 dark:text-red-400 space-y-1">
 										<p>{lexArticleError}</p>
@@ -627,7 +586,7 @@
 									Concordance
 								</span>
 								{#if isConcordanceLoading}
-									<span class="inline-block animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full" title="Loading..."></span>
+									<Loading inline size="xs" />
 								{:else if concordanceLoaded}
 									<span class="rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-1.5 py-0.2 text-[10px] font-mono font-bold">
 										{filteredConcordance.length}{selectedFormFilter ? ` for "${selectedFormFilter}"` : (isCriteriaActive(inflectionCriteria) ? ' (filtered)' : '')}
@@ -654,10 +613,7 @@
 						{#if isConcordanceOpen}
 							<div class="p-3 border-t border-[var(--color-rule)] bg-[var(--color-page)]/30">
 								{#if isConcordanceLoading}
-									<div class="py-4 text-center text-xs text-[var(--color-ink-soft)] space-y-1.5">
-										<div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-										<p>Querying concordance references from database worker...</p>
-									</div>
+									<Loading size="sm" title="Querying concordance references from database worker..." />
 								{:else if concordanceError}
 									<div class="p-3 text-center text-xs text-red-600 dark:text-red-400 space-y-1">
 										<p>{concordanceError}</p>
@@ -764,9 +720,7 @@
 
 					<!-- Search Results -->
 					{#if isSearchLoading}
-						<div class="py-12 text-center text-xs text-[var(--color-ink-soft)]">
-							Searching lemmas in Apostolic Fathers...
-						</div>
+						<Loading size="sm" title="Searching lemmas in Apostolic Fathers..." />
 					{:else if searchResults.length > 0}
 						<div class="space-y-1">
 							{#each searchResults as res}
@@ -865,5 +819,4 @@
 				</div>
 			{/if}
 		</div>
-	</aside>
-{/if}
+</FloatingSidePanel>
