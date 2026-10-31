@@ -18,7 +18,11 @@ test.describe('Philo Reader - Text & LSJ Lexicon', () => {
 		await expect(poieoToken).toBeVisible({ timeout: 10000 });
 		await poieoToken.click();
 
-		// 4. Verify Dockable Side Panel slides open and displays the lemma headword
+		// 4. Verify Dockable Side Panel slides open, is fixed on the side, and displays the lemma headword
+		const sidePanel = page.locator('aside[aria-label="Philo Reference and Lexicon Panel"]');
+		await expect(sidePanel).toBeVisible({ timeout: 10000 });
+		await expect(sidePanel).toHaveCSS('position', 'fixed');
+
 		const lemmaHeading = page.locator('h2.greek-font', { hasText: /ποι[έέ]ω/ });
 		await expect(lemmaHeading).toBeVisible({ timeout: 10000 });
 
