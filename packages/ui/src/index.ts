@@ -33,6 +33,9 @@ export { default as ChevronUp } from './components/icons/chevron-up.svelte';
 export { default as ChevronsDown } from './components/icons/chevrons-down.svelte';
 export { default as ChevronsUp } from './components/icons/chevrons-up.svelte';
 
+// Types
+export * from './types.js';
+
 // Layout
 export { default as FloatingSidePanel } from './components/layout/FloatingSidePanel.svelte';
 export { default as BackToTopButton } from './components/layout/ScrollButtons/BackToTopButton.svelte';

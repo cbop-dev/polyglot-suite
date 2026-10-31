@@ -1,0 +1,9 @@
+{
+  "serverMode": "chunked",
+  "requestChunkSize": 4096,
+  "urlPrefix": "josephus.db.",
+  "serverChunkSize": 5242880,
+  "databaseLengthBytes": 123125760,
+  "suffixLength": 2,
+  "cacheBust": "v1793475388"
+}

@@ -1,27 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { JOSEPHUS_HOTKEYS, hotkeyManager } from '../shared/lib/hotkeys';
-
-if (typeof globalThis.window === 'undefined') {
-	globalThis.window = {
-		dispatchEvent: vi.fn(),
-		addEventListener: vi.fn(),
-		removeEventListener: vi.fn()
-	} as any;
-}
-if (typeof globalThis.CustomEvent === 'undefined') {
-	globalThis.CustomEvent = class CustomEvent {
-		type: string;
-		detail: any;
-		constructor(type: string, params?: { detail?: any }) {
-			this.type = type;
-			this.detail = params?.detail;
-		}
-	} as any;
-}
+import { JOSEPHUS_HOTKEYS } from '../src/lib/config/hotkeys';
+import { hotkeyManager } from '../src/lib/services/hotkeyManager';
+import type { ReaderState } from '../src/lib/stores/readerState.svelte';
 
 describe('Josephus Reader Hotkeys', () => {
+	let mockState: Partial<ReaderState>;
+
 	beforeEach(() => {
 		vi.restoreAllMocks();
+		mockState = {
+			prevBook: vi.fn(),
+			nextBook: vi.fn(),
+			viewMode: 'parallel',
+			isCommandPaletteOpen: false,
+			showHotkeyHelp: false,
+			openCommandPalette: vi.fn(),
+			openHotkeyHelp: vi.fn(),
+			closeAllModals: vi.fn()
+		};
 	});
 
 	function createKeyEvent(key: string, options: Partial<KeyboardEvent> = {}): KeyboardEvent {
@@ -42,91 +38,62 @@ describe('Josephus Reader Hotkeys', () => {
 	it('defines all required reader actions', () => {
 		const actionIds = JOSEPHUS_HOTKEYS.map((a) => a.id);
 		expect(actionIds).toContain('jump-niese');
-		expect(actionIds).toContain('nav-next');
-		expect(actionIds).toContain('nav-prev');
-		expect(actionIds).toContain('view-theme');
+		expect(actionIds).toContain('nav-next-book');
+		expect(actionIds).toContain('nav-prev-book');
 		expect(actionIds).toContain('view-greek');
 		expect(actionIds).toContain('view-english');
 		expect(actionIds).toContain('view-dual');
-		expect(actionIds).toContain('view-zen');
-		expect(actionIds).toContain('font-increase');
-		expect(actionIds).toContain('font-decrease');
-		expect(actionIds).toContain('tools-morph');
-		expect(actionIds).toContain('tools-search');
-		expect(actionIds).toContain('tools-highlights');
-		expect(actionIds).toContain('tools-bookmarks');
-		expect(actionIds).toContain('cmd-palette');
-		expect(actionIds).toContain('help-shortcuts');
+		expect(actionIds).toContain('open-bookmarks');
+		expect(actionIds).toContain('open-command-palette');
+		expect(actionIds).toContain('help-modal');
 		expect(actionIds).toContain('close-modals');
 	});
 
-	it('dispatches open-niese-jump on "j" key', () => {
-		const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+	it('handles "j" key for Niese jump', () => {
 		const event = createKeyEvent('j');
-
-		const handled = hotkeyManager.handleKeyDown(event);
+		const handled = hotkeyManager.handleKeyDown(event, mockState as ReaderState);
 		expect(handled).toBe(true);
 		expect(event.preventDefault).toHaveBeenCalled();
-
-		const dispatchedEvent = dispatchSpy.mock.calls[0]?.[0] as CustomEvent;
-		expect(dispatchedEvent?.type).toBe('open-niese-jump');
 	});
 
-	it('dispatches reader-nav-next on "n" and "ArrowRight"', () => {
-		const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+	it('navigates next book on "]" and "ArrowRight"', () => {
+		hotkeyManager.handleKeyDown(createKeyEvent(']'), mockState as ReaderState);
+		expect(mockState.nextBook).toHaveBeenCalledTimes(1);
 
-		hotkeyManager.handleKeyDown(createKeyEvent('n'));
-		expect(dispatchSpy.mock.calls[0]?.[0]?.type).toBe('reader-nav-next');
-
-		hotkeyManager.handleKeyDown(createKeyEvent('ArrowRight'));
-		expect(dispatchSpy.mock.calls[1]?.[0]?.type).toBe('reader-nav-next');
+		hotkeyManager.handleKeyDown(createKeyEvent('ArrowRight'), mockState as ReaderState);
+		expect(mockState.nextBook).toHaveBeenCalledTimes(2);
 	});
 
-	it('dispatches reader-nav-prev on "p" and "ArrowLeft"', () => {
-		const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+	it('navigates prev book on "[" and "ArrowLeft"', () => {
+		hotkeyManager.handleKeyDown(createKeyEvent('['), mockState as ReaderState);
+		expect(mockState.prevBook).toHaveBeenCalledTimes(1);
 
-		hotkeyManager.handleKeyDown(createKeyEvent('p'));
-		expect(dispatchSpy.mock.calls[0]?.[0]?.type).toBe('reader-nav-prev');
-
-		hotkeyManager.handleKeyDown(createKeyEvent('ArrowLeft'));
-		expect(dispatchSpy.mock.calls[1]?.[0]?.type).toBe('reader-nav-prev');
+		hotkeyManager.handleKeyDown(createKeyEvent('ArrowLeft'), mockState as ReaderState);
+		expect(mockState.prevBook).toHaveBeenCalledTimes(2);
 	});
 
-	it('dispatches toggle-command-palette on mod+k', () => {
-		const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+	it('triggers command palette on mod+k', () => {
 		const event = createKeyEvent('k', { ctrlKey: true });
-
-		const handled = hotkeyManager.handleKeyDown(event);
+		const handled = hotkeyManager.handleKeyDown(event, mockState as ReaderState);
 		expect(handled).toBe(true);
-
-		const dispatchedEvent = dispatchSpy.mock.calls[0]?.[0] as CustomEvent;
-		expect(dispatchedEvent?.type).toBe('toggle-command-palette');
+		expect(mockState.openCommandPalette).toHaveBeenCalledTimes(1);
 	});
 
-	it('dispatches toggle-help-modal on "?"', () => {
-		const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+	it('triggers help modal on "?"', () => {
 		const event = createKeyEvent('?');
-
-		const handled = hotkeyManager.handleKeyDown(event);
+		const handled = hotkeyManager.handleKeyDown(event, mockState as ReaderState);
 		expect(handled).toBe(true);
-
-		const dispatchedEvent = dispatchSpy.mock.calls[0]?.[0] as CustomEvent;
-		expect(dispatchedEvent?.type).toBe('toggle-help-modal');
+		expect(mockState.openHotkeyHelp).toHaveBeenCalledTimes(1);
 	});
 
-	it('dispatches close-all-modals on Escape', () => {
-		const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+	it('closes all modals on Escape', () => {
 		const event = createKeyEvent('Escape');
-
-		const handled = hotkeyManager.handleKeyDown(event);
+		const handled = hotkeyManager.handleKeyDown(event, mockState as ReaderState);
 		expect(handled).toBe(true);
-
-		const dispatchedEvent = dispatchSpy.mock.calls[0]?.[0] as CustomEvent;
-		expect(dispatchedEvent?.type).toBe('close-all-modals');
+		expect(mockState.closeAllModals).toHaveBeenCalledTimes(1);
 	});
 
 	it('does not trigger hotkeys when typing in input elements', () => {
-		const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
 		const mockInput = {
 			matches: (sel: string) => sel.includes('input'),
 			closest: () => true,
@@ -134,9 +101,8 @@ describe('Josephus Reader Hotkeys', () => {
 		};
 
 		const event = createKeyEvent('j', { target: mockInput as any });
-		const handled = hotkeyManager.handleKeyDown(event);
+		const handled = hotkeyManager.handleKeyDown(event, mockState as ReaderState);
 
 		expect(handled).toBe(false);
-		expect(dispatchSpy).not.toHaveBeenCalled();
 	});
 });

@@ -34,8 +34,9 @@
 </script>
 
 <Modal2 bind:showModal={open} onclose={onClose} showFooter={false} showMaximize={false} maxWidth="max-w-xl">
-	<!-- Header -->
-	<div class="border-b border-rule/50 p-4 pr-12">
+	<div class="cite-card" role="dialog" aria-label="Citation Generator">
+		<!-- Header -->
+		<div class="border-b border-rule/50 p-4 pr-12">
 		<h2 class="text-lg font-bold text-ink flex items-center gap-2 flex-wrap">
 			<span>{title}</span>
 			{#if locus}
@@ -87,5 +88,6 @@
 				{/if}
 			</div>
 		{/each}
+	</div>
 	</div>
 </Modal2>

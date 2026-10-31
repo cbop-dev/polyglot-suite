@@ -1,20 +1,6 @@
 <script lang="ts">
 	import Modal2 from '../controls/Modal2.svelte';
-
-	export interface SubBookItem {
-		book: number;
-		label: string;
-		sections?: number;
-		isSelected?: boolean;
-	}
-
-	export interface SectionListItem {
-		value: number;
-		label: string;
-		badge?: string;
-		isLatin?: boolean;
-		isSelected?: boolean;
-	}
+	import type { SubBookItem, SectionListItem } from '../../types.js';
 
 	interface Props {
 		open: boolean;

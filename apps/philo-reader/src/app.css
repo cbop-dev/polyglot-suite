@@ -3,6 +3,18 @@
 @source "../../../packages/theme";
 @source "../../../packages/ancient-languages";
 
+@theme {
+  --color-page: var(--color-page);
+  --color-page-soft: var(--color-page-soft);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-rule: var(--color-rule);
+  --color-card-bg: var(--color-card-bg);
+  --color-card-border: var(--color-card-border);
+  --color-link: var(--color-link);
+  --color-accent: var(--color-accent);
+}
+
 @layer base {
   :root {
     --color-page: #f8fafc;

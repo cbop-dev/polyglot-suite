@@ -70,8 +70,8 @@
 {#if isOpen}
   <!-- Panel -->
   <aside 
-    class="fixed right-0 bg-page shadow-2xl border-l border-rule z-40 flex animate-slide-in text-ink {className}"
-    style="{top !== undefined ? `top: ${top}; height: calc(100vh - ${top});` : 'top: 0; height: 100%;'} {isMobile ? '' : 'width: min(100vw, ' + panelWidth + 'px);'}"
+    class="floating-side-panel fixed right-0 bg-page shadow-2xl border-l border-rule z-30 flex animate-slide-in text-ink {className}"
+    style="background-color: var(--color-page, #ffffff); color: var(--color-ink, #0f172a); border-color: var(--color-rule, #e2e8f0); {top !== undefined ? `top: ${top}; height: calc(100vh - ${top});` : 'top: 0; height: 100%;'} {isMobile ? '' : 'width: min(100vw, ' + panelWidth + 'px);'}"
     aria-label={ariaLabel}
   >
     <!-- Resize Handle -->
@@ -81,7 +81,7 @@
       role="separator"
       aria-orientation="vertical"
       tabindex="0"
-      class="w-2 cursor-ew-resize hover:bg-blue-500/50 bg-rule transition-colors h-full flex items-center justify-center shrink-0 z-50"
+      class="w-2 cursor-ew-resize hover:bg-blue-500/50 bg-rule transition-colors h-full flex items-center justify-center shrink-0 z-10"
       onmousedown={startDrag}
       title="Drag to resize panel"
     >
@@ -89,7 +89,7 @@
     </div>
     
     <!-- Content Area -->
-    <div class="flex-1 h-full min-w-0 flex flex-col relative {noPadding ? 'overflow-hidden' : 'overflow-y-auto'}">
+    <div class="flex-1 h-full min-w-0 flex flex-col relative {noPadding ? 'overflow-hidden' : 'overflow-y-auto'}" style="background-color: var(--color-page, #ffffff);">
       {#if showDefaultCloseButton}
         <button 
           class="absolute top-4 right-4 text-ink-soft hover:text-ink z-10 p-2 bg-page/80 backdrop-blur rounded-full shadow-sm border border-rule cursor-pointer" 
@@ -118,5 +118,10 @@
   }
   .animate-slide-in {
     animation: slideIn 0.2s ease-out forwards;
+  }
+  aside {
+    background-color: var(--color-page, #ffffff);
+    color: var(--color-ink, #0f172a);
+    border-color: var(--color-rule, #e2e8f0);
   }
 </style>

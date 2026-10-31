@@ -1,25 +1,7 @@
 <script lang="ts" generics="T extends WorkPickerItem">
 	import Modal2 from '../controls/Modal2.svelte';
 	import type { Snippet } from 'svelte';
-
-	export interface WorkPickerItem {
-		code: string;
-		titleEnglish: string;
-		titleGreek?: string;
-		titleLatin?: string;
-		abbrev?: string;
-		category?: string;
-		totalChapters?: number;
-		totalSections?: number;
-		totalBooks?: number;
-		tlgId?: string;
-		[key: string]: any;
-	}
-
-	export interface WorkCategory {
-		id: string;
-		label: string;
-	}
+	import type { WorkPickerItem, WorkCategory } from '../../types.js';
 
 	interface Props {
 		open: boolean;

@@ -30,7 +30,7 @@
 	let hasLatinInCurrentChapter = $derived(readerState.hasLatinInChapter());
 </script>
 
-<header class="sticky top-0 z-30 border-b border-[var(--color-rule)] bg-[var(--color-page)]/95 backdrop-blur shadow-xs">
+<header class="sticky top-0 z-40 border-b border-[var(--color-rule)] bg-[var(--color-page)]/95 backdrop-blur shadow-xs">
 	<div class="mx-auto flex max-w-7xl items-center justify-between px-2.5 py-1.5 sm:px-4 sm:py-2">
 		<!-- Left: Suite link, Work Selector, Chapter Navigator, Jump Button -->
 		<div class="flex items-center gap-1.5 sm:gap-2.5 min-w-0">

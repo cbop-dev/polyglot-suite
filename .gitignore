@@ -8,6 +8,10 @@ build/
 .svelte-kit/
 .astro/
 test-results/
+playwright-report/
+blob-report/
+coverage/
+.nyc_output/
 
 # Environment files
 .env
@@ -20,15 +24,27 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+**/pipeline/raw_data/
+**/pipeline/cache/
+**/pipeline/build/
+**/pipeline/sources/
 
 # Local databases & artifacts
 *.sqlite3
 *.sqlite3-journal
 *.sqlite3-wal
+*.db-journal
+*.db-wal
+*.db-shm
 **/static/db/*.db.*
 *.db.*
 .scratch/
 scratch/
+
+# Bundler / Editor
+vite.config.*.timestamp-*
+*.bak
+*.tmp
 
 # Operating System
 .DS_Store

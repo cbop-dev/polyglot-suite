@@ -1,11 +1,5 @@
 <script lang="ts" generics="T extends CommandPaletteItem">
-	export interface CommandPaletteItem {
-		id?: string | number;
-		label: string;
-		subLabel?: string;
-		badge?: string;
-		[key: string]: any;
-	}
+	import type { CommandPaletteItem } from '../../types.js';
 
 	interface Props {
 		open: boolean;
@@ -82,7 +76,11 @@
 		></button>
 
 		<!-- Card -->
-		<div class="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--color-rule,theme(colors.slate.200))] bg-[var(--color-page,theme(colors.white))] shadow-2xl dark:border-[var(--color-rule,theme(colors.slate.800))] dark:bg-[var(--color-page,theme(colors.slate.900))] flex flex-col text-[var(--color-ink,theme(colors.slate.900))] dark:text-[var(--color-ink,theme(colors.slate.100))]">
+		<div
+			class="cp-card relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--color-rule,theme(colors.slate.200))] bg-[var(--color-page,theme(colors.white))] shadow-2xl dark:border-[var(--color-rule,theme(colors.slate.800))] dark:bg-[var(--color-page,theme(colors.slate.900))] flex flex-col text-[var(--color-ink,theme(colors.slate.900))] dark:text-[var(--color-ink,theme(colors.slate.100))]"
+			role="dialog"
+			aria-label="Command Palette"
+		>
 			<!-- Input Header -->
 			<div class="flex items-center gap-3 border-b border-[var(--color-rule,theme(colors.slate.200))] px-4 py-3 bg-[var(--color-card-bg,transparent)] dark:border-[var(--color-rule,theme(colors.slate.800))]">
 				<svg class="h-5 w-5 text-[var(--color-ink-soft,theme(colors.slate.400))] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

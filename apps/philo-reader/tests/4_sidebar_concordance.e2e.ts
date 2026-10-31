@@ -50,4 +50,30 @@ test.describe('Philo Reader - Sidebar, Concordance & Highlights', () => {
 		await closePanelBtn.click();
 		await expect(lemmaHeading).not.toBeVisible({ timeout: 5000 });
 	});
+
+	test('side panel has opaque background and does not obscure theme slider popup', async ({ page }) => {
+		// Open sidebar by clicking word in § 2
+		const token = page.locator('button', { hasText: /^ἐποιήσατο$/ }).first();
+		await token.click();
+
+		const sidePanel = page.locator('aside.floating-side-panel');
+		await expect(sidePanel).toBeVisible({ timeout: 10000 });
+
+		// Verify side panel has a solid opaque background (not transparent)
+		const bgCol = await sidePanel.evaluate((el) => window.getComputedStyle(el).backgroundColor);
+		expect(bgCol).not.toBe('rgba(0, 0, 0, 0)');
+		expect(bgCol).not.toBe('transparent');
+
+		// Open theme slider while side panel is open
+		const themeBtn = page.locator('.theme-slider-btn').first();
+		await themeBtn.click();
+
+		const themePanel = page.locator('.theme-slider-panel');
+		await expect(themePanel).toBeVisible();
+
+		// Verify theme panel is clickable and above side panel
+		const lightBtn = themePanel.locator('button:has-text("Light")').first();
+		await expect(lightBtn).toBeVisible();
+		await lightBtn.click();
+	});
 });

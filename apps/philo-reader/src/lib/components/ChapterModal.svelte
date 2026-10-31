@@ -68,7 +68,7 @@
 	subBooks={allBooks}
 	onSelectSubBook={selectBook}
 	{quickJumpSections}
-	currentValue={readerState.currentSection}
+	currentValue={readerState.currentSection ?? undefined}
 	onSelect={jumpToSection}
 	{onClose}
 />
