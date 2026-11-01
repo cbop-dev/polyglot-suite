@@ -22,6 +22,7 @@
     "./Loading.svelte": "./src/components/controls/Loading.svelte",
     "./ModalButton.svelte": "./src/components/controls/ModalButton.svelte",
     "./FloatingSidePanel.svelte": "./src/components/layout/FloatingSidePanel.svelte",
+    "./ReaderHeader.svelte": "./src/components/layout/ReaderHeader.svelte",
     "./BarChart.svelte": "./src/components/charts/BarChart.svelte",
     "./PieChart.svelte": "./src/components/charts/PieChart.svelte",
     "./BubbleChart.svelte": "./src/components/charts/BubbleChart.svelte",

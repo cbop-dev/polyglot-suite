@@ -3,12 +3,31 @@ import { JOSEPHUS_HOTKEYS } from '../src/lib/config/hotkeys';
 import { hotkeyManager } from '../src/lib/services/hotkeyManager';
 import type { ReaderState } from '../src/lib/stores/readerState.svelte';
 
+vi.mock('$app/navigation', () => ({
+	goto: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('$app/paths', () => ({
+	base: ''
+}));
+
 describe('Josephus Reader Hotkeys', () => {
 	let mockState: Partial<ReaderState>;
 
 	beforeEach(() => {
 		vi.restoreAllMocks();
 		mockState = {
+			currentBook: 2,
+			currentWorkCode: 'Antiquities',
+			currentWork: {
+				id: 'antiquities',
+				code: 'Antiquities',
+				titleEnglish: 'Antiquities of the Jews',
+				titleGreek: 'Ἰουδαϊκὴ ἀρχαιολογία',
+				abbrev: 'Ant. Iud.',
+				totalBooks: 20,
+				totalSections: 6682
+			} as any,
 			prevBook: vi.fn(),
 			nextBook: vi.fn(),
 			viewMode: 'parallel',
@@ -16,6 +35,8 @@ describe('Josephus Reader Hotkeys', () => {
 			showHotkeyHelp: false,
 			openCommandPalette: vi.fn(),
 			openHotkeyHelp: vi.fn(),
+			openChapterModal: vi.fn(),
+			openBookModal: vi.fn(),
 			closeAllModals: vi.fn()
 		};
 	});

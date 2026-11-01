@@ -317,6 +317,7 @@
 <FloatingSidePanel
 	isOpen={readerState.isSidePanelOpen}
 	onClose={() => (readerState.isSidePanelOpen = false)}
+	top="53px"
 	noPadding={true}
 	showDefaultCloseButton={false}
 	ariaLabel="Lexicon & Study Panel"

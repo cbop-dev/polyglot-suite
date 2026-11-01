@@ -39,6 +39,8 @@ export { default as ChevronsUp } from './components/icons/chevrons-up.svelte';
 export * from './types.js';
 
 // Layout
+export { default as ReaderHeader } from './components/layout/ReaderHeader.svelte';
+export type { Props as ReaderHeaderProps } from './components/layout/ReaderHeader.svelte';
 export { default as FloatingSidePanel } from './components/layout/FloatingSidePanel.svelte';
 export { default as BackToTopButton } from './components/layout/ScrollButtons/BackToTopButton.svelte';
 export { default as ToBottomButton } from './components/layout/ScrollButtons/ToBottomButton.svelte';
