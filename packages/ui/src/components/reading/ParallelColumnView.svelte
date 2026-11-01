@@ -42,6 +42,7 @@
 		getSectionKey?: (u: TextUnitData) => number | string;
 		getNieseSection?: (u: TextUnitData) => string | undefined;
 		getCitation?: (secKey: number | string, gUnit?: TextUnitData, eUnit?: TextUnitData, lUnit?: TextUnitData) => string;
+		rowId?: (secKey: number | string, nieseSec?: string) => string;
 
 		// Header labels
 		greekHeaderTitle?: string;
@@ -81,6 +82,7 @@
 		getSectionKey = (u) => (u.section_num !== undefined ? u.section_num : (u.section ?? 0)),
 		getNieseSection = (u) => (u.niese_section !== undefined ? String(u.niese_section) : undefined),
 		getCitation,
+		rowId,
 
 		greekHeaderTitle,
 		greekHeaderSubtitle,
@@ -145,9 +147,13 @@
 
 	let gridColsClass = $derived.by(() => {
 		if (isStacked) return 'grid-cols-1';
-		const bp = gridBreakpoint;
-		if (visibleColCount === 3) return `grid-cols-1 ${bp}:grid-cols-3`;
-		if (visibleColCount === 2) return `grid-cols-1 ${bp}:grid-cols-2`;
+		if (gridBreakpoint === 'md') {
+			if (visibleColCount === 3) return 'grid-cols-1 md:grid-cols-3';
+			if (visibleColCount === 2) return 'grid-cols-1 md:grid-cols-2';
+		} else {
+			if (visibleColCount === 3) return 'grid-cols-1 lg:grid-cols-3';
+			if (visibleColCount === 2) return 'grid-cols-1 lg:grid-cols-2';
+		}
 		return 'grid-cols-1';
 	});
 
@@ -161,8 +167,9 @@
 
 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
 	<!-- Column Headers (desktop) -->
+	<!-- Tailwind scan anchor: md:grid lg:grid md:grid-cols-2 lg:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 -->
 	{#if !isStacked}
-		<div class="hidden {gridBreakpoint}:grid {gridColsClass} gap-6 sm:gap-8 border-b border-[var(--color-rule)] pb-2 text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)]">
+		<div class="column-headers hidden {gridBreakpoint === 'md' ? 'md:grid' : 'lg:grid'} {gridColsClass} gap-6 sm:gap-8 border-b border-[var(--color-rule)] pb-2 text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)]">
 			{#if hasGreek}
 				<div class="flex items-center justify-between">
 					<span>{greekHeaderTitle || 'Greek Critical Text'}</span>
@@ -199,17 +206,26 @@
 			{@const nieseSec = (gUnit && getNieseSection(gUnit)) || (eUnit && getNieseSection(eUnit)) || (lUnit && getNieseSection(lUnit)) || String(secKey)}
 			{@const citation = resolveCitation(secKey, gUnit, eUnit, lUnit)}
 
+			{@const primaryId = rowId ? rowId(secKey, nieseSec) : `section-${secKey}`}
+
 			<div
-				id="section-{secKey}"
+				id={primaryId}
 				class="section-row group/sec {isStacked ? 'flex flex-col gap-4' : `grid ${gridColsClass} gap-6 sm:gap-8`} py-5 hover:bg-[var(--color-card-bg)]/60 rounded-xl transition-colors scroll-mt-20"
 				data-section={secKey}
 				data-niese={nieseSec}
 			>
-				<span id="niese-{secKey}" class="sr-only"></span>
-				{#if nieseSec && nieseSec !== String(secKey)}
+				{#if primaryId !== `niese-${secKey}`}
+					<span id="niese-{secKey}" class="sr-only"></span>
+				{/if}
+				{#if primaryId !== `section-${secKey}`}
+					<span id="section-{secKey}" class="sr-only"></span>
+				{/if}
+				{#if nieseSec && nieseSec !== String(secKey) && primaryId !== `niese-${nieseSec}`}
 					<span id="niese-{nieseSec}" class="sr-only"></span>
 				{/if}
-				<span id="sec-{secKey}" class="sr-only"></span>
+				{#if primaryId !== `sec-${secKey}`}
+					<span id="sec-{secKey}" class="sr-only"></span>
+				{/if}
 
 				<!-- Greek Column -->
 				{#if hasGreek}
@@ -289,7 +305,7 @@
 										<button
 											type="button"
 											class="greek-word inline cursor-pointer transition-colors hover:text-blue-600 dark:hover:text-blue-400 hover:underline focus:outline-hidden {hl ? 'hl-token' : ''}"
-											style={hl && tok.l && highlightStore?.getStyle ? highlightStore.getStyle(tok.l) : (hl ? `--hl-bg: ${hl.bgLight}; --hl-text: ${hl.textLight}; --hl-border: ${hl.borderLight}; --hl-bg-dark: ${hl.bgDark}; --hl-text-dark: ${hl.textDark}; --hl-border-dark: ${hl.borderDark};` : '')}
+											style={hl ? `--hl-bg: ${hl.bgLight}; --hl-text: ${hl.textLight}; --hl-border: ${hl.borderLight}; --hl-bg-dark: ${hl.bgDark}; --hl-text-dark: ${hl.textDark}; --hl-border-dark: ${hl.borderDark};` : undefined}
 											onclick={() => onWordClick?.(tok, citation, 'greek')}
 											title={tok.l ? `${tok.l}${tok.p || tok.m ? ` (${tok.p ?? ''} ${tok.m ?? ''})` : ''}` : undefined}
 										>{tok.w}</button>{#if !nextIsPunct}{' '}{/if}
@@ -334,7 +350,7 @@
 									<button
 										type="button"
 										class="latin-word inline cursor-pointer hover:underline hover:text-blue-600 dark:hover:text-blue-400 focus:outline-hidden transition-colors {hl ? 'hl-token' : ''}"
-										style={hl && tok.l && highlightStore?.getStyle ? highlightStore.getStyle(tok.l) : (hl ? `--hl-bg: ${hl.bgLight}; --hl-text: ${hl.textLight}; --hl-border: ${hl.borderLight}; --hl-bg-dark: ${hl.bgDark}; --hl-text-dark: ${hl.textDark}; --hl-border-dark: ${hl.borderDark};` : '')}
+										style={hl ? `--hl-bg: ${hl.bgLight}; --hl-text: ${hl.textLight}; --hl-border: ${hl.borderLight}; --hl-bg-dark: ${hl.bgDark}; --hl-text-dark: ${hl.textDark}; --hl-border-dark: ${hl.borderDark};` : undefined}
 										onclick={() => onWordClick?.(tok, citation, 'latin')}
 										title={tok.l ? `${tok.l}${tok.p || tok.m ? ` (${tok.p ?? ''} ${tok.m ?? ''})` : ''}` : undefined}
 									>{tok.w}</button>{' '}
