@@ -2,6 +2,7 @@
 @source "../../../packages/ui";
 @source "../../../packages/theme";
 @source "../../../packages/ancient-languages";
+@source "../../../packages/lemma-ui";
 
 @theme {
   --color-page: var(--color-page);

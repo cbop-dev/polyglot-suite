@@ -95,6 +95,7 @@
 		// Custom Tabs
 		extraTabs?: ExtraTab[];
 		extraTabPanels?: Snippet<[string]>;
+		lexiconArticleTitle?: string;
 	}
 
 	let {
@@ -121,8 +122,13 @@
 		onSelectToken,
 
 		extraTabs = [],
-		extraTabPanels
+		extraTabPanels,
+		lexiconArticleTitle
 	}: Props = $props();
+
+	let effectiveLexiconTitle = $derived(
+		lexiconArticleTitle || (corpusTitle === 'Josephus' ? 'LSJ Lexicon Article' : 'Full Lexicon Article')
+	);
 
 	// Internal state
 	let currentTab = $state<string>('lexeme');
@@ -476,7 +482,7 @@
 	</div>
 
 	<!-- Panel Body Area -->
-	<div class="lemma-card flex-1 overflow-y-auto p-4 space-y-4" role="dialog" aria-label="Lemma & Lexicon Inspection">
+	<div class="lemma-card flex-1 overflow-y-auto p-4 flex flex-col gap-4 space-y-4" role="dialog" aria-label="Lemma & Lexicon Inspection">
 		{#if currentTab === 'lexeme'}
 			{#if !currentLemma}
 				<div class="py-16 text-center text-xs text-[var(--color-ink-soft)]">
@@ -611,10 +617,16 @@
 					<button
 						type="button"
 						onclick={toggleLexArticle}
-						class="w-full flex items-center justify-between p-3.5 text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 cursor-pointer text-left select-none"
+						class="w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 cursor-pointer text-left select-none transition-colors"
 						aria-expanded={isLexArticleOpen}
 					>
-						<span>LSJ Lexicon Article</span>
+						<div class="flex items-center gap-2">
+							<span class="rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 text-[10px] font-bold">LSJ</span>
+							<span>{effectiveLexiconTitle}</span>
+							{#if isLexArticleLoading}
+								<Loading inline size="xs" />
+							{/if}
+						</div>
 						<svg
 							class="h-4 w-4 text-[var(--color-ink-soft)] transition-transform duration-200 {isLexArticleOpen ? 'rotate-180' : ''}"
 							fill="none"
@@ -631,10 +643,20 @@
 								<Loading title="Loading LSJ dictionary article..." />
 							{:else if lexArticleError}
 								<div class="text-xs text-red-600 dark:text-red-400">{lexArticleError}</div>
-							{:else if lexEntry?.definition}
-								<div class="dict-def whitespace-pre-wrap">{lexEntry.definition}</div>
-							{:else}
+							{:else if !lexEntry || (!lexEntry.definition && !lexEntry.gloss)}
 								<div class="text-xs text-[var(--color-ink-soft)]">No dictionary entry found for "{currentLemma}".</div>
+							{:else}
+								{#if lexEntry.gloss}
+									<div class="mb-3 p-2.5 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900/50">
+										<div class="text-[10px] uppercase font-bold text-[var(--color-ink-soft)] tracking-wider">Gloss</div>
+										<div class="text-sm font-semibold text-blue-700 dark:text-blue-300 italic">{lexEntry.gloss}</div>
+									</div>
+								{/if}
+								{#if lexEntry.definition}
+									<div class="dict-def prose dark:prose-invert max-w-none text-xs leading-relaxed text-[var(--color-ink)]">
+										{@html lexEntry.definition}
+									</div>
+								{/if}
 							{/if}
 						</div>
 					{/if}
@@ -645,25 +667,28 @@
 					<button
 						type="button"
 						onclick={toggleConcordance}
-						class="w-full flex items-center justify-between p-3.5 text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 cursor-pointer text-left select-none"
+						class="w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 cursor-pointer text-left select-none transition-colors"
 						aria-expanded={isConcordanceOpen}
 					>
-						<span>Concordance</span>
 						<div class="flex items-center gap-2">
+							<span>Concordance</span>
 							{#if stats}
 								<span class="rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-2 py-0.5 text-[10px] font-mono font-bold">
 									{stats.total_count} in {corpusTitle}
 								</span>
 							{/if}
-							<svg
-								class="h-4 w-4 text-[var(--color-ink-soft)] transition-transform duration-200 {isConcordanceOpen ? 'rotate-180' : ''}"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-							</svg>
+							{#if isConcordanceLoading}
+								<Loading inline size="xs" />
+							{/if}
 						</div>
+						<svg
+							class="h-4 w-4 text-[var(--color-ink-soft)] transition-transform duration-200 {isConcordanceOpen ? 'rotate-180' : ''}"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+						</svg>
 					</button>
 
 					{#if isConcordanceOpen}
@@ -768,6 +793,12 @@
 						type="text"
 						placeholder="Search Greek lemma (Greek or transliteration, e.g. logos, agape)..."
 						class="w-full rounded-xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] px-3 py-2 text-sm font-medium text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)] focus:border-blue-500 focus:outline-hidden"
+						onkeydown={(e) => {
+							if (e.key === 'Escape') {
+								e.preventDefault();
+								onClose();
+							}
+						}}
 					/>
 					{#if convertedSearchQuery && convertedSearchQuery !== searchQuery}
 						<div class="mt-1 text-[11px] text-[var(--color-ink-soft)]">

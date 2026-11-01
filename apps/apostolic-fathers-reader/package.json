@@ -45,6 +45,7 @@
   "dependencies": {
     "@polyglot/ancient-languages": "*",
     "@polyglot/db-vfs": "*",
+    "@polyglot/lemma-ui": "*",
     "@polyglot/theme": "*",
     "@polyglot/ui": "*",
     "chart.js": "^4.5.1",

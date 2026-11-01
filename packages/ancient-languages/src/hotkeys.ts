@@ -132,6 +132,8 @@ export class HotkeyManager<TState = unknown> {
 				}
 				if (state && typeof (state as any).closeAllPopups === 'function') {
 					(state as any).closeAllPopups();
+				} else if (state && typeof (state as any).closeAllModals === 'function') {
+					(state as any).closeAllModals();
 				} else if (typeof window !== 'undefined') {
 					window.dispatchEvent(new CustomEvent('close-all-modals'));
 				}
