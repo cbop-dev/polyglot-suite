@@ -113,4 +113,45 @@ test.describe('Josephus Reader - View Modes & Themes', () => {
 		await expect(lightBtn).toBeVisible();
 		await lightBtn.click();
 	});
+
+	test('layout options modal is centered and on-screen on mobile devices', async ({ page }) => {
+		// Set small screen viewport (iPhone SE width)
+		await page.setViewportSize({ width: 375, height: 667 });
+		await page.goto('/Antiquities/book/1/');
+
+		// Open mobile hamburger menu
+		const hamburgerBtn = page.locator('button[aria-label="Toggle navigation menu"]');
+		await expect(hamburgerBtn).toBeVisible();
+		await hamburgerBtn.click();
+
+		// Find layout button inside the mobile drawer
+		const layoutBtn = page.locator('.layout-options-btn').last();
+		await expect(layoutBtn).toBeVisible();
+		await layoutBtn.click();
+
+		// Verify dropdown/modal is visible
+		const dropdown = page.locator('.layout-dropdown-menu');
+		await expect(dropdown).toBeVisible();
+
+		// Check bounding box: should not be off-screen and should be centered
+		const box = await dropdown.boundingBox();
+		expect(box).not.toBeNull();
+		if (box) {
+			// Must be completely within the 375px viewport
+			expect(box.x).toBeGreaterThanOrEqual(8);
+			expect(box.x + box.width).toBeLessThanOrEqual(375);
+
+			// Center of dropdown should be close to screen center (375 / 2 = 187.5)
+			const dropdownCenter = box.x + box.width / 2;
+			expect(Math.abs(dropdownCenter - 187.5)).toBeLessThanOrEqual(15);
+		}
+
+		// Can select an option from centered modal
+		const greekOption = dropdown.locator('button', { hasText: /Greek Only/ }).first();
+		await expect(greekOption).toBeVisible();
+		await greekOption.click();
+
+		// Modal closes
+		await expect(dropdown).toBeHidden();
+	});
 });

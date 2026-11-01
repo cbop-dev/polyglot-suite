@@ -82,14 +82,14 @@
 	<!-- Backdrop for closing dropdown on outside click -->
 	{#if isOpen}
 		<div
-			class="fixed inset-0 z-40 bg-transparent"
+			class="fixed inset-0 z-40 bg-black/40 sm:bg-transparent"
 			onclick={() => (isOpen = false)}
 			role="presentation"
 		></div>
 
-		<!-- Dropdown Menu -->
+		<!-- Dropdown Menu / Centered Modal on Mobile -->
 		<div
-			class="layout-dropdown-menu absolute right-0 mt-1.5 w-56 rounded-xl border border-[var(--color-rule)] bg-[var(--color-page)] p-1.5 shadow-xl z-50 text-[var(--color-ink)] animate-in fade-in zoom-in-95 duration-100"
+			class="layout-dropdown-menu fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 max-w-[calc(100vw-2rem)] sm:absolute sm:top-full sm:left-auto sm:right-0 sm:translate-x-0 sm:translate-y-0 sm:mt-1.5 sm:w-56 rounded-xl border border-[var(--color-rule)] bg-[var(--color-page)] p-1.5 shadow-xl z-50 text-[var(--color-ink)] animate-in fade-in zoom-in-95 duration-100"
 			role="menu"
 			aria-orientation="vertical"
 			style="background-color: var(--color-page, #ffffff); color: var(--color-ink, #0f172a); border-color: var(--color-rule, #e2e8f0);"
