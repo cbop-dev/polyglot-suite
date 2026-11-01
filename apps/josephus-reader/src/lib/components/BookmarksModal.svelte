@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { base } from '$app/paths';
+	import { goto } from '$app/navigation';
 	import { readerState } from '$lib/stores/readerState.svelte';
 
 	interface Props {
@@ -33,6 +35,10 @@
 	function jumpTo(bm: Bookmark) {
 		readerState.setWork(bm.work, bm.book, bm.section);
 		onClose();
+		const targetUrl = `${base}/${bm.work}/book/${bm.book}/#niese-${bm.section}`;
+		goto(targetUrl).catch(() => {
+			window.location.href = targetUrl;
+		});
 		setTimeout(() => {
 			const el = document.getElementById(`niese-${bm.section}`) || document.getElementById(`section-${bm.section}`);
 			el?.scrollIntoView({ behavior: 'smooth', block: 'start' });

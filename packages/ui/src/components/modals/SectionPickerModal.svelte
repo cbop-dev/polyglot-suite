@@ -12,7 +12,7 @@
 		items?: SectionListItem[];
 		totalCount?: number;
 		currentValue?: number;
-		onSelect: (value: number) => void;
+		onSelect: (value: number, book?: number) => void;
 		onClose: () => void;
 	}
 
@@ -32,6 +32,7 @@
 
 	let selectedIndex = $state<number>(0);
 	let inputEl = $state<HTMLInputElement | null>(null);
+	let isBooksOpen = $state<boolean>(false);
 
 	$effect(() => {
 		if (open) {
@@ -62,7 +63,21 @@
 			}
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
-			const val = parseInt(searchQuery.trim(), 10);
+			const raw = searchQuery.trim();
+			if (!raw) return;
+
+			// Compound reference format: e.g. "2.110", "2:110", "2 110" (book 2, section 110)
+			const compoundMatch = raw.match(/^(\d+)[.:\s](\d+)$/);
+			if (compoundMatch) {
+				const b = parseInt(compoundMatch[1], 10);
+				const s = parseInt(compoundMatch[2], 10);
+				if (!isNaN(b) && !isNaN(s) && b > 0 && s > 0) {
+					onSelect(s, b);
+					return;
+				}
+			}
+
+			const val = parseInt(raw, 10);
 			if (!isNaN(val) && val > 0) {
 				onSelect(val);
 			} else if (items.length > 0 && items[selectedIndex]) {
@@ -93,7 +108,7 @@
 				bind:value={searchQuery}
 				type="text"
 				{placeholder}
-				class="w-full bg-transparent text-sm font-medium placeholder:text-[var(--color-ink-soft)] focus:outline-hidden"
+				class="nj-input w-full bg-transparent text-sm font-medium placeholder:text-[var(--color-ink-soft)] focus:outline-hidden"
 			/>
 			<button type="button" onclick={onClose} aria-label="Close" class="cursor-pointer">
 				<kbd class="rounded border border-[var(--color-rule)] px-1.5 py-0.5 text-[10px] font-mono text-[var(--color-ink-soft)]">
@@ -104,24 +119,36 @@
 
 		<!-- Sub-book selector (if provided, e.g. multi-book treatises) -->
 		{#if subBooks.length > 0}
+			{@const currentSelectedBook = subBooks.find((b) => b.isSelected)?.book}
 			<div class="p-3 border-b border-[var(--color-rule)] bg-[var(--color-page)]">
-				<span class="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)] mb-2 block">
-					Select Book
-				</span>
-				<div class="grid grid-cols-2 gap-2">
-					{#each subBooks as item}
-						<button
-							type="button"
-							onclick={() => onSelectSubBook(item.book)}
-							class="flex items-center justify-between rounded-xl p-2.5 text-left border transition-all cursor-pointer {item.isSelected ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100 font-bold shadow-2xs' : 'border-[var(--color-rule)] bg-[var(--color-card-bg)] text-[var(--color-ink)] hover:bg-[var(--color-rule)]'}"
-						>
-							<span>{item.label}</span>
-							{#if item.sections}
-								<span class="text-xs text-[var(--color-ink-soft)] font-normal">{item.sections} §</span>
-							{/if}
-						</button>
-					{/each}
-				</div>
+				<button
+					type="button"
+					onclick={() => (isBooksOpen = !isBooksOpen)}
+					class="select-book-toggle w-full flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] cursor-pointer select-none py-0.5"
+					aria-expanded={isBooksOpen}
+				>
+					<span class="flex items-center gap-1.5">
+						<span>Select Book</span>
+						{#if currentSelectedBook}
+							<span class="text-[11px] font-normal normal-case text-blue-600 dark:text-blue-400">(Bk. {currentSelectedBook})</span>
+						{/if}
+					</span>
+					<span class="text-[10px] transform transition-transform duration-150 {isBooksOpen ? 'rotate-180' : ''}">▾</span>
+				</button>
+				{#if isBooksOpen}
+					<div class="flex flex-wrap gap-1.5 pt-2">
+						{#each subBooks as item}
+							<button
+								type="button"
+								onclick={() => onSelectSubBook(item.book)}
+								class="rounded-lg px-2.5 py-1 text-xs font-semibold border transition-all cursor-pointer {item.isSelected ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100 font-bold shadow-2xs' : 'border-[var(--color-rule)] bg-[var(--color-card-bg)] text-[var(--color-ink)] hover:bg-[var(--color-rule)]'}"
+								title="{item.label}{item.sections ? ` (${item.sections} sections)` : ''}"
+							>
+								Bk. {item.book}
+							</button>
+						{/each}
+					</div>
+				{/if}
 			</div>
 		{/if}
 

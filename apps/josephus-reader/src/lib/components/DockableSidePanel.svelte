@@ -195,6 +195,15 @@
 	let searchQuery = $state<string>('');
 	let searchResults = $state<LemmaSearchResult[]>([]);
 	let isSearching = $state<boolean>(false);
+	let searchInputEl = $state<HTMLInputElement | null>(null);
+
+	$effect(() => {
+		if (readerState.isSidePanelOpen && readerState.activeSidePanelTab === 'search') {
+			setTimeout(() => {
+				searchInputEl?.focus();
+			}, 50);
+		}
+	});
 
 	async function handleSearch(q: string) {
 		searchQuery = q;
@@ -411,11 +420,19 @@
 			<!-- Search Tab -->
 			<div class="space-y-3">
 				<input
+					bind:this={searchInputEl}
+					id="side-search-input"
 					type="text"
 					class="w-full rounded-xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] px-3 py-2 text-xs text-[var(--color-ink)] placeholder-[var(--color-ink-soft)] focus:outline-none focus:ring-2 focus:ring-blue-500"
 					placeholder="Search Greek dictionary (e.g. 'poieo', 'ἱστορία')..."
 					bind:value={searchQuery}
 					oninput={(e) => handleSearch((e.target as HTMLInputElement).value)}
+					onkeydown={(e) => {
+						if (e.key === 'Escape') {
+							e.preventDefault();
+							readerState.closeAllModals();
+						}
+					}}
 				/>
 
 				{#if isSearching}

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { base } from '$app/paths';
+	import { goto } from '$app/navigation';
 	import { WorkPickerModal, type WorkCategory } from '@polyglot/ui';
 	import { CANONICAL_WORKS, type CanonicalWork } from '$lib/config/canonicalWorks.generated';
 	import { readerState } from '$lib/stores/readerState.svelte';
@@ -40,6 +42,10 @@
 	function selectWork(work: CanonicalWork) {
 		readerState.setWork(work.code, 1);
 		onClose();
+		const targetUrl = `${base}/${work.code}/book/1/`;
+		goto(targetUrl).catch(() => {
+			window.location.href = targetUrl;
+		});
 	}
 </script>
 

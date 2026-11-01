@@ -46,16 +46,17 @@
 		onClose();
 	}
 
-	function jumpToSection(secNum: number) {
-		if (isMultiBook && secNum <= currentWork.totalBooks && searchQuery.trim().length === 1) {
-			selectBook(secNum);
-			return;
+	function jumpToSection(secNum: number, bookNum?: number) {
+		if (bookNum !== undefined && isMultiBook) {
+			const clampedBook = Math.max(1, Math.min(bookNum, currentWork.totalBooks));
+			readerState.setChapter(clampedBook, secNum);
+		} else {
+			const clamped = Math.max(1, Math.min(secNum, maxSectionInBook));
+			readerState.currentSection = clamped;
 		}
-		const clamped = Math.max(1, Math.min(secNum, maxSectionInBook));
-		readerState.currentSection = clamped;
 		onClose();
 		setTimeout(() => {
-			const el = document.getElementById(`section-${clamped}`);
+			const el = document.getElementById(`section-${secNum}`);
 			el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}, 100);
 	}
@@ -63,7 +64,7 @@
 
 <SectionPickerModal
 	bind:open
-	placeholder="Jump to section (1..{maxSectionInBook})..."
+	placeholder={isMultiBook ? `Jump to section (e.g. '15' or '2.110')...` : `Jump to section (1..${maxSectionInBook})...`}
 	bind:searchQuery
 	subBooks={allBooks}
 	onSelectSubBook={selectBook}

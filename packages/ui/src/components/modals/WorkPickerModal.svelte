@@ -78,7 +78,7 @@
 	showClose={false}
 	maxWidth="max-w-xl"
 >
-	<div class="flex flex-col text-[var(--color-ink)]">
+	<div class="work-picker-modal flex flex-col text-[var(--color-ink)]">
 		<!-- Header / Filter Input -->
 		<div class="flex items-center gap-3 border-b border-[var(--color-rule)] px-4 py-3 bg-[var(--color-card-bg)]">
 			<svg class="h-4 w-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

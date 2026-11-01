@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { base } from '$app/paths';
+	import { goto } from '$app/navigation';
 	import { CommandPaletteModal, type CommandPaletteItem } from '@polyglot/ui';
 	import { CANONICAL_WORKS, type CanonicalWork } from '$lib/config/canonicalWorks.generated';
 	import { readerState } from '$lib/stores/readerState.svelte';
@@ -112,6 +114,10 @@
 	function handleSelect(item: JumpTarget) {
 		readerState.setWork(item.work.code, item.targetBook, item.targetSection ?? 1);
 		onClose();
+		const targetUrl = `${base}/${item.work.code}/book/${item.targetBook}/${item.targetSection ? `#niese-${item.targetSection}` : ''}`;
+		goto(targetUrl).catch(() => {
+			window.location.href = targetUrl;
+		});
 		if (item.targetSection) {
 			setTimeout(() => {
 				const el = document.getElementById(`niese-${item.targetSection}`) || document.getElementById(`section-${item.targetSection}`);

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { base } from '$app/paths';
+	import { goto } from '$app/navigation';
 	import { SectionPickerModal, type SubBookItem } from '@polyglot/ui';
 	import { readerState } from '$lib/stores/readerState.svelte';
 
@@ -44,21 +46,37 @@
 	function selectBook(b: number) {
 		readerState.setBook(b);
 		onClose();
+		const targetUrl = `${base}/${currentWork.code}/book/${b}/`;
+		goto(targetUrl).catch(() => {
+			window.location.href = targetUrl;
+		});
 	}
 
-	function jumpToSection(secNum: number) {
-		readerState.currentSection = secNum;
+	function jumpToSection(secNum: number, bookNum?: number) {
+		const targetBook = bookNum !== undefined ? Math.min(Math.max(1, bookNum), currentWork.totalBooks) : readerState.currentBook;
+		const isDifferentBook = targetBook !== readerState.currentBook;
+
+		readerState.setBook(targetBook, secNum);
+		window.location.hash = `niese-${secNum}`;
 		onClose();
-		setTimeout(() => {
-			const el = document.getElementById(`niese-${secNum}`) || document.getElementById(`section-${secNum}`);
-			el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-		}, 100);
+
+		if (isDifferentBook) {
+			const targetUrl = `${base}/${currentWork.code}/book/${targetBook}/#niese-${secNum}`;
+			goto(targetUrl).catch(() => {
+				window.location.href = targetUrl;
+			});
+		} else {
+			setTimeout(() => {
+				const el = document.getElementById(`niese-${secNum}`) || document.getElementById(`section-${secNum}`);
+				el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}, 100);
+		}
 	}
 </script>
 
 <SectionPickerModal
 	bind:open
-	placeholder="Jump to section (1..{maxSectionInBook})..."
+	placeholder={isMultiBook ? `Jump to section (e.g. '15' or '2.110')...` : `Jump to section (1..${maxSectionInBook})...`}
 	bind:searchQuery
 	subBooks={allBooks}
 	onSelectSubBook={selectBook}

@@ -23,8 +23,10 @@
 
 	let hasGreek = $derived(readerState.showGreek);
 	let hasEng = $derived(readerState.showEnglish);
+	let isStacked = $derived(readerState.viewMode === 'stacked');
 
 	let gridColsClass = $derived.by(() => {
+		if (isStacked) return 'grid-cols-1';
 		if (hasGreek && hasEng) return 'grid-cols-1 lg:grid-cols-2';
 		return 'grid-cols-1';
 	});
@@ -32,20 +34,22 @@
 
 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
 	<!-- Column Headers (desktop) -->
-	<div class="hidden lg:grid {gridColsClass} gap-8 border-b border-[var(--color-rule)] pb-2 text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)]">
-		{#if hasGreek}
-			<div class="flex items-center justify-between">
-				<span>Cohn-Wendland Greek Critical Text</span>
-				<span class="text-[10px] font-normal normal-case text-[var(--color-ink-soft)]">Click word for LSJ & morphology</span>
-			</div>
-		{/if}
-		{#if hasEng}
-			<div class="flex items-center justify-between">
-				<span>English Translation (C. D. Yonge / Supplements)</span>
-				<span class="text-[10px] font-normal normal-case text-[var(--color-ink-soft)]">Aligned to Cohn-Wendland</span>
-			</div>
-		{/if}
-	</div>
+	{#if !isStacked}
+		<div class="hidden lg:grid {gridColsClass} gap-8 border-b border-[var(--color-rule)] pb-2 text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)]">
+			{#if hasGreek}
+				<div class="flex items-center justify-between">
+					<span>Cohn-Wendland Greek Critical Text</span>
+					<span class="text-[10px] font-normal normal-case text-[var(--color-ink-soft)]">Click word for LSJ & morphology</span>
+				</div>
+			{/if}
+			{#if hasEng}
+				<div class="flex items-center justify-between">
+					<span>English Translation (C. D. Yonge / Supplements)</span>
+					<span class="text-[10px] font-normal normal-case text-[var(--color-ink-soft)]">Aligned to Cohn-Wendland</span>
+				</div>
+			{/if}
+		</div>
+	{/if}
 
 	<!-- Section Rows -->
 	<div class="divide-y divide-[var(--color-rule)]">
@@ -58,7 +62,7 @@
 
 			<div
 				id="section-{sec}"
-				class="group/sec grid {gridColsClass} gap-8 py-5 hover:bg-[var(--color-card-bg)]/60 rounded-xl transition-colors scroll-mt-20"
+				class="group/sec {isStacked ? 'flex flex-col gap-4' : `grid ${gridColsClass} gap-8`} py-5 hover:bg-[var(--color-card-bg)]/60 rounded-xl transition-colors scroll-mt-20"
 			>
 				<!-- Greek Column -->
 				{#if hasGreek}

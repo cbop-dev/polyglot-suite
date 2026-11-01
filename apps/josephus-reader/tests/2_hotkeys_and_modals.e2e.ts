@@ -24,13 +24,8 @@ test.describe('Josephus Reader - Modals & Hotkeys', () => {
 		const cpCard = page.locator('.cp-card, [role="dialog"][aria-label="Command Palette"]').first();
 		await expect(cpCard).toBeHidden();
 
-		// Trigger command palette via search button or keyboard
-		const searchBtn = page.locator('.search-trigger-btn').first();
-		if (await searchBtn.isVisible()) {
-			await searchBtn.click();
-		} else {
-			await page.keyboard.press('Control+k');
-		}
+		// Trigger command palette via keyboard shortcut
+		await page.keyboard.press('Control+k');
 
 		await expect(cpCard).toBeVisible();
 
@@ -73,5 +68,25 @@ test.describe('Josephus Reader - Modals & Hotkeys', () => {
 
 		await page.keyboard.press('Escape');
 		await expect(citeCard).toBeHidden();
+	});
+
+	test('toggles lemma/search side panel with "/" and closes with Escape', async ({ page }) => {
+		await page.goto('/Antiquities/book/1/');
+
+		const sidePanel = page.locator('aside.floating-side-panel').first();
+		await expect(sidePanel).toBeHidden();
+
+		// Press '/' to toggle search panel
+		await page.keyboard.press('/');
+		await expect(sidePanel).toBeVisible({ timeout: 10000 });
+
+		// Verify search input is focused
+		const searchInput = sidePanel.locator('#side-search-input');
+		await expect(searchInput).toBeVisible();
+		await expect(searchInput).toBeFocused();
+
+		// Close with Escape
+		await page.keyboard.press('Escape');
+		await expect(sidePanel).toBeHidden();
 	});
 });

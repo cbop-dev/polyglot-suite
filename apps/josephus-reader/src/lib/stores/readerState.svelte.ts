@@ -77,6 +77,16 @@ export class ReaderState {
 		this.isSidePanelOpen = true;
 	}
 
+	toggleSearch(tab: 'lexeme' | 'search' | 'highlights' = 'search') {
+		if (this.isSidePanelOpen && this.activeSidePanelTab === tab) {
+			this.isSidePanelOpen = false;
+		} else {
+			this.closeAllModals();
+			this.activeSidePanelTab = tab;
+			this.isSidePanelOpen = true;
+		}
+	}
+
 	openBookModal() {
 		this.closeAllModals();
 		this.isBookModalOpen = true;

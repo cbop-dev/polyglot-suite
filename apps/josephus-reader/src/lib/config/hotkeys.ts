@@ -1,5 +1,7 @@
 import type { ReaderState } from '../stores/readerState.svelte';
 import type { HotkeyCategory, HotkeyAction as GenericHotkeyAction } from '@polyglot/ancient-languages/hotkeys';
+import { base } from '$app/paths';
+import { goto } from '$app/navigation';
 
 export type { HotkeyCategory };
 export type HotkeyAction = GenericHotkeyAction<ReaderState>;
@@ -8,16 +10,12 @@ export const JOSEPHUS_HOTKEYS: HotkeyAction[] = [
 	{
 		id: 'jump-niese',
 		name: 'Jump to Section',
-		description: 'Focus section jump input (j)',
+		description: 'Open section jump modal (j)',
 		category: 'Navigation',
 		keys: ['j'],
 		preventDefault: true,
-		action: () => {
-			if (typeof document !== 'undefined') {
-				const input = document.getElementById('niese-input') as HTMLInputElement | null;
-				input?.focus();
-				input?.select();
-			}
+		action: (state) => {
+			state.openChapterModal();
 		}
 	},
 	{
@@ -28,7 +26,13 @@ export const JOSEPHUS_HOTKEYS: HotkeyAction[] = [
 		keys: ['ArrowLeft', '['],
 		preventDefault: true,
 		action: (state) => {
-			state.prevBook();
+			if (state.currentBook > 1) {
+				state.prevBook();
+				const targetUrl = `${base}/${state.currentWorkCode}/book/${state.currentBook}/`;
+				goto(targetUrl).catch(() => {
+					window.location.href = targetUrl;
+				});
+			}
 		}
 	},
 	{
@@ -39,7 +43,13 @@ export const JOSEPHUS_HOTKEYS: HotkeyAction[] = [
 		keys: ['ArrowRight', ']'],
 		preventDefault: true,
 		action: (state) => {
-			state.nextBook();
+			if (state.currentBook < state.currentWork.totalBooks) {
+				state.nextBook();
+				const targetUrl = `${base}/${state.currentWorkCode}/book/${state.currentBook}/`;
+				goto(targetUrl).catch(() => {
+					window.location.href = targetUrl;
+				});
+			}
 		}
 	},
 	{
@@ -95,6 +105,17 @@ export const JOSEPHUS_HOTKEYS: HotkeyAction[] = [
 		preventDefault: true,
 		action: (state) => {
 			state.openCommandPalette();
+		}
+	},
+	{
+		id: 'search-lemma',
+		name: 'Search Lexicon & Text',
+		description: 'Open Lemma & Search panel (/)',
+		category: 'General',
+		keys: ['/', 'mod+f'],
+		preventDefault: true,
+		action: (state) => {
+			state.toggleSearch('search');
 		}
 	},
 	{

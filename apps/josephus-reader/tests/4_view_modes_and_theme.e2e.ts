@@ -27,14 +27,55 @@ test.describe('Josephus Reader - View Modes & Themes', () => {
 		await expect(englishCol).toBeVisible();
 	});
 
-	test('switches work treatises via the work switcher select', async ({ page }) => {
+	test('switches layout modes via LayoutOptions dropdown', async ({ page }) => {
 		await page.goto('/Antiquities/book/1/');
 
-		const workSwitcher = page.locator('select.work-switcher');
-		await expect(workSwitcher).toBeVisible();
+		const greekCol = page.locator('.section-row .greek-col').first();
+		const englishCol = page.locator('.section-row .english-col').first();
 
-		// Switch to War (BJ)
-		await workSwitcher.selectOption('War');
+		// Initially both are visible in parallel view
+		await expect(greekCol).toBeVisible();
+		await expect(englishCol).toBeVisible();
+
+		// Open layout dropdown
+		const layoutBtn = page.locator('.layout-options-btn').first();
+		await expect(layoutBtn).toBeVisible();
+		await layoutBtn.click();
+
+		const dropdown = page.locator('.layout-dropdown-menu');
+		await expect(dropdown).toBeVisible();
+
+		// Select Greek Only
+		const greekOption = dropdown.locator('button', { hasText: /Greek Only/ }).first();
+		await greekOption.click();
+
+		await expect(greekCol).toBeVisible();
+		await expect(englishCol).toBeHidden();
+
+		// Re-open and select Parallel
+		await layoutBtn.click();
+		await expect(dropdown).toBeVisible();
+		const parallelOption = dropdown.locator('button', { hasText: /Parallel/ }).first();
+		await parallelOption.click();
+
+		await expect(greekCol).toBeVisible();
+		await expect(englishCol).toBeVisible();
+	});
+
+	test('switches work treatises via the work picker modal', async ({ page }) => {
+		await page.goto('/Antiquities/book/1/');
+
+		const workBtn = page.locator('.work-picker-trigger').first();
+		await expect(workBtn).toBeVisible();
+		await workBtn.click();
+
+		const searchInput = page.locator('input[placeholder*="Filter Josephus"]');
+		await expect(searchInput).toBeVisible({ timeout: 5000 });
+
+		// Click War in the list
+		const warOption = page.locator('button', { hasText: /The Jewish War|War/ }).first();
+		await expect(warOption).toBeVisible();
+		await warOption.click();
 
 		// URL updates to War
 		await expect(page).toHaveURL(/.*\/War\/book\/1\/?/);

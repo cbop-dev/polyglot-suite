@@ -14,6 +14,8 @@ export { default as Loading } from './components/controls/Loading.svelte';
 export { default as ModalButton } from './components/controls/ModalButton.svelte';
 export { default as SearchBox } from './components/controls/SearchBox.svelte';
 export { default as SortOptions } from './components/controls/SortOptions.svelte';
+export { default as LayoutOptions } from './components/controls/LayoutOptions.svelte';
+export type { ViewMode } from './components/controls/LayoutOptions.svelte';
 export { default as FilterInput } from './components/controls/FilterInput.svelte';
 export { default as FilterInputUnsorted } from './components/controls/FilterInputUnsorted.svelte';
 

@@ -13,8 +13,25 @@ export class ReaderState {
 	currentWorkCode = $state<string>('OPIF');
 	currentChapter = $state<number>(1);
 	currentSection = $state<number | null>(null);
-	showGreek = $state<boolean>(true);
-	showEnglish = $state<boolean>(true);
+	viewMode = $state<'parallel' | 'stacked' | 'greek' | 'english'>('parallel');
+
+	get showGreek(): boolean {
+		return this.viewMode === 'parallel' || this.viewMode === 'greek' || this.viewMode === 'stacked';
+	}
+	set showGreek(val: boolean) {
+		if (val && this.showEnglish) this.viewMode = 'parallel';
+		else if (val) this.viewMode = 'greek';
+		else if (this.showEnglish) this.viewMode = 'english';
+	}
+
+	get showEnglish(): boolean {
+		return this.viewMode === 'parallel' || this.viewMode === 'english' || this.viewMode === 'stacked';
+	}
+	set showEnglish(val: boolean) {
+		if (val && this.showGreek) this.viewMode = 'parallel';
+		else if (val) this.viewMode = 'english';
+		else if (this.showGreek) this.viewMode = 'greek';
+	}
 
 	// Interactive lemma inspection modal
 	selectedToken = $state<Token | null>(null);
