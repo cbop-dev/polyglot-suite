@@ -23,6 +23,7 @@
     "./ModalButton.svelte": "./src/components/controls/ModalButton.svelte",
     "./FloatingSidePanel.svelte": "./src/components/layout/FloatingSidePanel.svelte",
     "./ReaderHeader.svelte": "./src/components/layout/ReaderHeader.svelte",
+    "./ParallelColumnView.svelte": "./src/components/reading/ParallelColumnView.svelte",
     "./BarChart.svelte": "./src/components/charts/BarChart.svelte",
     "./PieChart.svelte": "./src/components/charts/PieChart.svelte",
     "./BubbleChart.svelte": "./src/components/charts/BubbleChart.svelte",
