@@ -173,6 +173,7 @@ server.listen(PORT, () => {
   console.log(`     ➜ Lexemes:  http://localhost:${PORT}/polyglot-suite/lexemes/`);
   console.log(`     ➜ Josephus: http://localhost:${PORT}/polyglot-suite/josephus/`);
   console.log(`     ➜ Fathers:  http://localhost:${PORT}/polyglot-suite/fathers/`);
-  console.log(`     ➜ Philo:    http://localhost:${PORT}/polyglot-suite/philo/\n`);
+  console.log(`     ➜ Philo:    http://localhost:${PORT}/polyglot-suite/philo/`);
+  console.log(`     ➜ Corpora:  http://localhost:${PORT}/polyglot-suite/corpora/\n`);
   console.log('  Press Ctrl+C to stop.\n');
 });

@@ -47,6 +47,7 @@ const replacements = isGithubTarget
       '{{JOSEPHUS_URL}}': './josephus/',
       '{{FATHERS_URL}}': './fathers/',
       '{{PHILO_URL}}': './philo/',
+      '{{CORPORA_URL}}': './corpora/',
       '{{PORTAL_URL}}': './'
     }
   : {
@@ -55,6 +56,7 @@ const replacements = isGithubTarget
       '{{JOSEPHUS_URL}}': process.env.PUBLIC_JOSEPHUS_APP_URL || './josephus/',
       '{{FATHERS_URL}}': process.env.PUBLIC_FATHERS_APP_URL || './fathers/',
       '{{PHILO_URL}}': process.env.PUBLIC_PHILO_APP_URL || './philo/',
+      '{{CORPORA_URL}}': process.env.PUBLIC_CORPORA_APP_URL || './corpora/',
       '{{PORTAL_URL}}': process.env.PUBLIC_PORTAL_URL || './'
     };
 
