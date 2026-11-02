@@ -1,7 +1,7 @@
 {
   "name": "josephus-reader",
   "private": true,
-  "version": "0.1.30",
+  "version": "0.2.0",
   "repository": "https://github.com/cbop-dev/polyglot-suite/tree/main/apps/josephus-reader",
   "type": "module",
   "scripts": {
