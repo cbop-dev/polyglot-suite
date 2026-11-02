@@ -1,4 +1,5 @@
 {
+  "databaseVersion": "josephus-db-v0.1.0",
   "serverMode": "chunked",
   "requestChunkSize": 4096,
   "urlPrefix": "josephus.db.",
