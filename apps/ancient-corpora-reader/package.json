@@ -13,6 +13,7 @@
     "build:github": "npm run build:gh",
     "preview": "npm run preview:www",
     "preview:www": "ADAPTER=static vite preview",
+    "test": "vitest run tests/*.test.ts",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },

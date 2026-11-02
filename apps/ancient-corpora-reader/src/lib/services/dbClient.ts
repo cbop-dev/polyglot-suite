@@ -1,0 +1,576 @@
+import { getDbWorker } from './dbWorker.js';
+import { stripGreekAccents, buildAttestedForms, type AttestedForm, type AncientCorpusId } from '@polyglot/ancient-languages';
+import { getRowVal, parseJsonField } from '@polyglot/db-vfs';
+import type { PaginatedConcordance, ConcordanceRef as UiConcordanceRef } from '@polyglot/lemma-ui';
+
+export { stripGreekAccents, type AttestedForm, type AncientCorpusId, type PaginatedConcordance };
+
+export interface Token {
+	w: string;
+	l?: string;
+	m?: string;
+	p?: string;
+	lang?: string;
+	type?: string;
+	book_code?: string;
+	book_name?: string;
+	bible_chapter?: number;
+	bible_verse?: number;
+	display?: string;
+	raw?: string;
+}
+
+export interface TextUnit {
+	id: number;
+	corpus_id: string;
+	work_code: string;
+	chapter?: number;
+	book?: number;
+	section?: number;
+	section_num?: number;
+	niese_section?: string;
+	display_citation: string;
+	mangey_ref?: string;
+	is_supplement?: number;
+	text_content: string;
+	tokens?: Token[];
+}
+
+export interface LexiconEntry {
+	dictionary: string;
+	strongs_id?: string;
+	lemma: string;
+	normalized_lemma: string;
+	transliteration?: string;
+	gloss: string;
+	definition: string;
+}
+
+export interface LemmaStat {
+	corpus_id: string;
+	lemma: string;
+	normalized_lemma: string;
+	total_count: number;
+	work_counts: Record<string, number>;
+}
+
+export interface ConcordanceRef extends UiConcordanceRef {
+	display_citation: string;
+	work_unit_id: number;
+	work_code: string;
+	corpus_id?: string;
+	chapter?: number;
+	book?: number;
+	section?: number;
+	section_num?: number;
+	niese_section?: string;
+	text_content: string;
+	matched_word?: string;
+	matched_words?: string[];
+}
+
+export interface LemmaSearchResult {
+	lemma: string;
+	normalized_lemma: string;
+	total_count: number;
+	work_counts: Record<string, number>;
+	corpusId?: AncientCorpusId;
+}
+
+export interface BiblicalCitation {
+	id: number;
+	work_code: string;
+	work_abbrev?: string;
+	work_title?: string;
+	chapter: number;
+	section: number;
+	work_unit_id: number;
+	book_code: string;
+	book_name: string;
+	bible_chapter?: number;
+	bible_verse?: number;
+	display_citation: string;
+	raw_citation: string;
+	text_snippet?: string;
+}
+
+export interface BiblicalBookSummary {
+	book_code: string;
+	book_name: string;
+	total_count: number;
+}
+
+export const PRIMARY_GREEK_CORPUS_IDS: Record<AncientCorpusId, string> = {
+	af: 'lake_grc',
+	philo: 'grc',
+	josephus: 'josephus_grc'
+};
+
+/**
+ * Fetch parallel text units for a specific division (chapter for AF & Philo, book for Josephus)
+ */
+export async function fetchDivisionSections(
+	corpusId: AncientCorpusId,
+	workCode: string,
+	division: number
+): Promise<{ greek: TextUnit[]; english: TextUnit[]; latin: TextUnit[] }> {
+	const worker = await getDbWorker(corpusId);
+	const greek: TextUnit[] = [];
+	const english: TextUnit[] = [];
+	const latin: TextUnit[] = [];
+
+	if (corpusId === 'af') {
+		const sql = `
+			SELECT id, corpus_id, work_code, chapter, section, display_citation, text_content, tokens_json
+			FROM text_units
+			WHERE work_code = ? AND chapter = ?
+			ORDER BY section ASC, corpus_id ASC
+		`;
+		const rows = await worker.db.query(sql, [workCode, division]);
+		for (const row of rows as any[]) {
+			const rawTokens = getRowVal(row, 'tokens_json', 7);
+			const unit: TextUnit = {
+				id: getRowVal<number>(row, 'id', 0),
+				corpus_id: getRowVal<string>(row, 'corpus_id', 1),
+				work_code: getRowVal<string>(row, 'work_code', 2),
+				chapter: getRowVal<number>(row, 'chapter', 3),
+				section: getRowVal<number>(row, 'section', 4),
+				display_citation: getRowVal<string>(row, 'display_citation', 5),
+				text_content: getRowVal<string>(row, 'text_content', 6),
+				tokens: parseJsonField<Token[] | undefined>(rawTokens)
+			};
+			if (unit.corpus_id === 'lake_grc') greek.push(unit);
+			else if (unit.corpus_id === 'lake_eng') english.push(unit);
+			else if (unit.corpus_id === 'lake_lat') latin.push(unit);
+		}
+	} else if (corpusId === 'philo') {
+		const sql = `
+			SELECT id, corpus_id, work_code, chapter, section, display_citation, mangey_ref, is_supplement, text_content, tokens_json
+			FROM text_units
+			WHERE work_code = ? AND chapter = ?
+			ORDER BY section ASC, corpus_id ASC
+		`;
+		const rows = await worker.db.query(sql, [workCode, division]);
+		for (const row of rows as any[]) {
+			const rawTokens = getRowVal(row, 'tokens_json', 9);
+			const unit: TextUnit = {
+				id: getRowVal<number>(row, 'id', 0),
+				corpus_id: getRowVal<string>(row, 'corpus_id', 1),
+				work_code: getRowVal<string>(row, 'work_code', 2),
+				chapter: getRowVal<number>(row, 'chapter', 3),
+				section: getRowVal<number>(row, 'section', 4),
+				display_citation: getRowVal<string>(row, 'display_citation', 5),
+				mangey_ref: getRowVal<string | undefined>(row, 'mangey_ref', 6),
+				is_supplement: getRowVal<number | undefined>(row, 'is_supplement', 7),
+				text_content: getRowVal<string>(row, 'text_content', 8),
+				tokens: parseJsonField<Token[] | undefined>(rawTokens)
+			};
+			if (unit.corpus_id === 'grc') greek.push(unit);
+			else if (unit.corpus_id === 'eng') english.push(unit);
+		}
+	} else if (corpusId === 'josephus') {
+		const sql = `
+			SELECT id, corpus_id, work_code, book, section_num, niese_section, display_citation, text_content, tokens_json
+			FROM text_units
+			WHERE work_code = ? AND book = ?
+			ORDER BY id ASC
+		`;
+		const rows = await worker.db.query(sql, [workCode, division]);
+		for (const row of rows as any[]) {
+			const rawTokens = getRowVal(row, 'tokens_json', 8);
+			const unit: TextUnit = {
+				id: getRowVal<number>(row, 'id', 0),
+				corpus_id: getRowVal<string>(row, 'corpus_id', 1),
+				work_code: getRowVal<string>(row, 'work_code', 2),
+				book: getRowVal<number>(row, 'book', 3),
+				section_num: getRowVal<number>(row, 'section_num', 4),
+				niese_section: getRowVal<string>(row, 'niese_section', 5),
+				display_citation: getRowVal<string>(row, 'display_citation', 6),
+				text_content: getRowVal<string>(row, 'text_content', 7),
+				tokens: parseJsonField<Token[] | undefined>(rawTokens)
+			};
+			if (unit.corpus_id === 'josephus_grc') greek.push(unit);
+			else if (unit.corpus_id === 'josephus_eng') english.push(unit);
+		}
+	}
+
+	return { greek, english, latin };
+}
+
+/**
+ * Fetch available division indices (chapters or books) for a work
+ */
+export async function fetchAvailableDivisions(corpusId: AncientCorpusId, workCode: string): Promise<number[]> {
+	const worker = await getDbWorker(corpusId);
+	const column = corpusId === 'josephus' ? 'book' : 'chapter';
+	const sql = `
+		SELECT DISTINCT ${column} AS div_num
+		FROM text_units
+		WHERE work_code = ?
+		ORDER BY div_num ASC
+	`;
+	const rows = await worker.db.query(sql, [workCode]);
+	return (rows as any[]).map((r) => getRowVal<number>(r, 'div_num', 0)).filter((n) => typeof n === 'number' && !isNaN(n));
+}
+
+/**
+ * Fetch LSJ lexicon entry for a lemma
+ */
+export async function fetchLexiconEntry(corpusId: AncientCorpusId, lemma: string): Promise<LexiconEntry | null> {
+	if (!lemma) return null;
+	const worker = await getDbWorker(corpusId);
+	const clean = lemma.trim().replace(/[.,;:·]/g, '');
+	const norm = stripGreekAccents(clean);
+
+	const sql = `
+		SELECT dictionary, strongs_id, lemma, normalized_lemma, transliteration, gloss, definition
+		FROM lexicon_entries
+		WHERE normalized_lemma = ? OR lemma = ?
+		LIMIT 1
+	`;
+	const rows = await worker.db.query(sql, [norm, clean]);
+	if (!rows || (rows as any[]).length === 0) return null;
+
+	const r = (rows as any[])[0];
+	return {
+		dictionary: getRowVal<string>(r, 'dictionary', 0),
+		strongs_id: getRowVal<string | undefined>(r, 'strongs_id', 1),
+		lemma: getRowVal<string>(r, 'lemma', 2),
+		normalized_lemma: getRowVal<string>(r, 'normalized_lemma', 3),
+		transliteration: getRowVal<string | undefined>(r, 'transliteration', 4),
+		gloss: getRowVal<string>(r, 'gloss', 5),
+		definition: getRowVal<string>(r, 'definition', 6)
+	};
+}
+
+/**
+ * Fetch lemma statistics from lemma_stats
+ */
+export async function fetchLemmaStats(corpusId: AncientCorpusId, lemma: string): Promise<LemmaStat | null> {
+	if (!lemma) return null;
+	const worker = await getDbWorker(corpusId);
+	const clean = lemma.trim().replace(/[.,;:·]/g, '');
+	const norm = stripGreekAccents(clean);
+	const targetCorpus = PRIMARY_GREEK_CORPUS_IDS[corpusId];
+
+	const sql = `
+		SELECT corpus_id, lemma, normalized_lemma, total_count, work_counts_json
+		FROM lemma_stats
+		WHERE corpus_id = ? AND (lemma = ? OR normalized_lemma = ?)
+		LIMIT 1
+	`;
+	const rows = await worker.db.query(sql, [targetCorpus, clean, norm]);
+	if (!rows || (rows as any[]).length === 0) return null;
+
+	const r = (rows as any[])[0];
+	const rawCounts = getRowVal(r, 'work_counts_json', 4);
+	return {
+		corpus_id: getRowVal<string>(r, 'corpus_id', 0),
+		lemma: getRowVal<string>(r, 'lemma', 1),
+		normalized_lemma: getRowVal<string>(r, 'normalized_lemma', 2),
+		total_count: getRowVal<number>(r, 'total_count', 3),
+		work_counts: parseJsonField<Record<string, number>>(rawCounts, {})
+	};
+}
+
+/**
+ * Fetch paginated concordance occurrences using CTE pushdown
+ */
+export async function fetchConcordancePage(
+	corpusId: AncientCorpusId,
+	lemma: string,
+	offset: number = 0,
+	pageSize: number = 50
+): Promise<PaginatedConcordance> {
+	if (!lemma) {
+		return { refs: [], totalCount: 0, hasMore: false, nextOffset: 0 };
+	}
+
+	const worker = await getDbWorker(corpusId);
+	const clean = lemma.trim().replace(/[.,;:·]/g, '');
+	const norm = stripGreekAccents(clean);
+	const targetCorpus = PRIMARY_GREEK_CORPUS_IDS[corpusId];
+
+	// Step 1: Count total occurrences using index
+	const countSql = `
+		SELECT COUNT(*) AS total
+		FROM concordance_refs
+		WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
+	`;
+	const countRows = await worker.db.query(countSql, [targetCorpus, clean, norm]);
+	const totalCount = countRows && (countRows as any[]).length > 0 ? getRowVal<number>((countRows as any[])[0], 'total', 0) : 0;
+
+	if (totalCount === 0 || offset >= totalCount) {
+		return { refs: [], totalCount, hasMore: false, nextOffset: offset };
+	}
+
+	// Step 2: Query page rows using CTE pushdown
+	let pagedRefs: ConcordanceRef[] = [];
+
+	if (corpusId === 'josephus') {
+		const sql = `
+			WITH top_refs AS (
+				SELECT display_citation, work_unit_id
+				FROM concordance_refs
+				WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
+				ORDER BY work_unit_id ASC
+				LIMIT ? OFFSET ?
+			)
+			SELECT r.display_citation, r.work_unit_id, t.work_code, t.book, t.section_num, t.niese_section, t.text_content
+			FROM top_refs r
+			JOIN text_units t ON t.id = r.work_unit_id
+		`;
+		const rows = await worker.db.query(sql, [targetCorpus, clean, norm, pageSize, offset]);
+		pagedRefs = (rows as any[]).map((r) => ({
+			display_citation: getRowVal<string>(r, 'display_citation', 0),
+			work_unit_id: getRowVal<number>(r, 'work_unit_id', 1),
+			work_code: getRowVal<string>(r, 'work_code', 2),
+			book: getRowVal<number>(r, 'book', 3),
+			section_num: getRowVal<number>(r, 'section_num', 4),
+			niese_section: getRowVal<string>(r, 'niese_section', 5),
+			text_content: getRowVal<string>(r, 'text_content', 6),
+			matched_word: clean,
+			matched_words: [clean]
+		}));
+	} else {
+		// AF and Philo schema
+		const sql = `
+			WITH top_refs AS (
+				SELECT display_citation, work_unit_id
+				FROM concordance_refs
+				WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
+				ORDER BY work_unit_id ASC
+				LIMIT ? OFFSET ?
+			)
+			SELECT r.display_citation, r.work_unit_id, t.work_code, t.chapter, t.section, t.text_content
+			FROM top_refs r
+			JOIN text_units t ON t.id = r.work_unit_id
+		`;
+		const rows = await worker.db.query(sql, [targetCorpus, clean, norm, pageSize, offset]);
+		pagedRefs = (rows as any[]).map((r) => ({
+			display_citation: getRowVal<string>(r, 'display_citation', 0),
+			work_unit_id: getRowVal<number>(r, 'work_unit_id', 1),
+			work_code: getRowVal<string>(r, 'work_code', 2),
+			chapter: getRowVal<number>(r, 'chapter', 3),
+			section: getRowVal<number>(r, 'section', 4),
+			text_content: getRowVal<string>(r, 'text_content', 5),
+			matched_word: clean,
+			matched_words: [clean]
+		}));
+	}
+
+	const nextOffset = offset + pagedRefs.length;
+	const hasMore = nextOffset < totalCount;
+
+	return {
+		refs: pagedRefs,
+		totalCount,
+		hasMore,
+		nextOffset
+	};
+}
+
+/**
+ * Legacy single-request concordance fetcher (defaults to initial page of results)
+ */
+export async function fetchConcordance(corpusId: AncientCorpusId, lemma: string): Promise<ConcordanceRef[]> {
+	const result = await fetchConcordancePage(corpusId, lemma, 0, 100);
+	return result.refs as ConcordanceRef[];
+}
+
+/**
+ * Fetch attested grammatical forms for a lemma
+ */
+export async function fetchAttestedForms(corpusId: AncientCorpusId, lemma: string): Promise<AttestedForm[]> {
+	if (!lemma) return [];
+	const worker = await getDbWorker(corpusId);
+	const clean = lemma.trim().replace(/[.,;:·]/g, '');
+	const norm = stripGreekAccents(clean);
+
+	if (corpusId === 'josephus') {
+		const sql = `
+			SELECT lemma, form, pos, parse_code, description
+			FROM attested_forms
+			WHERE lemma = ?
+			ORDER BY form ASC
+		`;
+		const rows = await worker.db.query(sql, [clean]);
+		const rawItems = (rows as any[]).map((r) => {
+			const form = getRowVal<string>(r, 'form', 1);
+			return {
+				lemma: getRowVal<string>(r, 'lemma', 0),
+				form,
+				word: form,
+				pos: getRowVal<string>(r, 'pos', 2),
+				parse: getRowVal<string>(r, 'parse_code', 3),
+				description: getRowVal<string>(r, 'description', 4)
+			};
+		});
+		return buildAttestedForms(rawItems);
+	} else if (corpusId === 'philo') {
+		let rows = await worker.db.query(
+			`SELECT forms_json FROM lemma_forms WHERE corpus_id = 'grc' AND lemma_key = ? LIMIT 1`,
+			[clean]
+		);
+		if ((!rows || (rows as any[]).length === 0) && norm !== clean) {
+			rows = await worker.db.query(
+				`SELECT forms_json FROM lemma_forms WHERE corpus_id = 'grc' AND lemma_key = ? LIMIT 1`,
+				[norm]
+			);
+		}
+		if (!rows || (rows as any[]).length === 0) return [];
+		const rawJson = getRowVal<string | undefined>((rows as any[])[0], 'forms_json', 0);
+		if (!rawJson) return [];
+		const parsed = parseJsonField<{ forms?: AttestedForm[] }>(rawJson);
+		return parsed?.forms || [];
+	} else {
+		// AF: extract from tokens_json
+		const sql = `
+			SELECT t.tokens_json
+			FROM concordance_refs c
+			JOIN text_units t ON t.id = c.work_unit_id
+			WHERE c.lemma = ?
+		`;
+		const rows = await worker.db.query(sql, [clean]);
+		const rawItems: { word: string; pos?: string; morph?: string }[] = [];
+		for (const row of rows as any[]) {
+			const raw = getRowVal<string | undefined>(row, 'tokens_json', 0);
+			const tokens = parseJsonField<Token[] | undefined>(raw);
+			if (!tokens) continue;
+			for (const tok of tokens) {
+				if (tok.l === clean || tok.l === lemma) {
+					rawItems.push({
+						word: tok.w,
+						pos: tok.p,
+						morph: tok.m
+					});
+				}
+			}
+		}
+		return buildAttestedForms(rawItems);
+	}
+}
+
+/**
+ * Search lemmata within a single corpus
+ */
+export async function searchLemmas(
+	corpusId: AncientCorpusId,
+	query: string,
+	limit: number = 30
+): Promise<LemmaSearchResult[]> {
+	if (!query.trim()) return [];
+	const worker = await getDbWorker(corpusId);
+	const clean = query.trim().replace(/[.,;:·]/g, '');
+	const norm = stripGreekAccents(clean);
+	const targetCorpus = PRIMARY_GREEK_CORPUS_IDS[corpusId];
+
+	const sql = `
+		SELECT lemma, normalized_lemma, total_count, work_counts_json
+		FROM lemma_stats
+		WHERE corpus_id = ? AND (normalized_lemma LIKE ? OR lemma LIKE ?)
+		ORDER BY total_count DESC
+		LIMIT ?
+	`;
+	const rows = await worker.db.query(sql, [targetCorpus, `%${norm}%`, `%${clean}%`, limit]);
+	return (rows as any[]).map((r) => ({
+		lemma: getRowVal<string>(r, 'lemma', 0),
+		normalized_lemma: getRowVal<string>(r, 'normalized_lemma', 1),
+		total_count: getRowVal<number>(r, 'total_count', 2),
+		work_counts: parseJsonField<Record<string, number>>(getRowVal(r, 'work_counts_json', 3), {}),
+		corpusId
+	}));
+}
+
+/**
+ * Search lemmata across all three corpora in parallel
+ */
+export async function searchLemmasAcrossCorpora(
+	query: string,
+	limitPerCorpus: number = 10
+): Promise<Record<AncientCorpusId, LemmaSearchResult[]>> {
+	const corpora: AncientCorpusId[] = ['af', 'philo', 'josephus'];
+	const results: Record<AncientCorpusId, LemmaSearchResult[]> = {
+		af: [],
+		philo: [],
+		josephus: []
+	};
+
+	const responses = await Promise.allSettled(
+		corpora.map((cid) => searchLemmas(cid, query, limitPerCorpus))
+	);
+
+	responses.forEach((resp, idx) => {
+		const cid = corpora[idx];
+		if (resp.status === 'fulfilled') {
+			results[cid] = resp.value;
+		}
+	});
+
+	return results;
+}
+
+/**
+ * Philo apparatus: Fetch biblical citation counts grouped by biblical book
+ */
+export async function fetchPhiloBiblicalSummaries(): Promise<BiblicalBookSummary[]> {
+	const worker = await getDbWorker('philo');
+	const sql = `
+		SELECT book_code, book_name, COUNT(*) as cnt
+		FROM biblical_citations
+		GROUP BY book_code, book_name
+		ORDER BY cnt DESC
+	`;
+	const rows = await worker.db.query(sql);
+	return (rows as any[]).map((r) => ({
+		book_code: getRowVal<string>(r, 'book_code', 0),
+		book_name: getRowVal<string>(r, 'book_name', 1),
+		total_count: getRowVal<number>(r, 'cnt', 2)
+	}));
+}
+
+/**
+ * Philo apparatus: Search biblical citations in Philo's treatises
+ */
+export async function searchPhiloBiblicalCitations(
+	bookCode?: string,
+	workCode?: string,
+	limit: number = 100
+): Promise<BiblicalCitation[]> {
+	const worker = await getDbWorker('philo');
+	let sql = `
+		SELECT c.id, c.work_code, c.chapter, c.section, c.work_unit_id,
+		       c.book_code, c.book_name, c.bible_chapter, c.bible_verse,
+		       c.display_citation, c.raw_citation, t.text_content
+		FROM biblical_citations c
+		LEFT JOIN text_units t ON t.id = c.work_unit_id
+		WHERE 1=1
+	`;
+	const params: any[] = [];
+	if (bookCode) {
+		sql += ` AND c.book_code = ?`;
+		params.push(bookCode);
+	}
+	if (workCode) {
+		sql += ` AND c.work_code = ?`;
+		params.push(workCode);
+	}
+	sql += ` ORDER BY c.id ASC LIMIT ?`;
+	params.push(limit);
+
+	const rows = await worker.db.query(sql, params);
+	return (rows as any[]).map((r) => ({
+		id: getRowVal<number>(r, 'id', 0),
+		work_code: getRowVal<string>(r, 'work_code', 1),
+		chapter: getRowVal<number>(r, 'chapter', 2),
+		section: getRowVal<number>(r, 'section', 3),
+		work_unit_id: getRowVal<number>(r, 'work_unit_id', 4),
+		book_code: getRowVal<string>(r, 'book_code', 5),
+		book_name: getRowVal<string>(r, 'book_name', 6),
+		bible_chapter: getRowVal<number | undefined>(r, 'bible_chapter', 7),
+		bible_verse: getRowVal<number | undefined>(r, 'bible_verse', 8),
+		display_citation: getRowVal<string>(r, 'display_citation', 9),
+		raw_citation: getRowVal<string>(r, 'raw_citation', 10),
+		text_snippet: getRowVal<string | undefined>(r, 'text_content', 11)
+	}));
+}
