@@ -9,6 +9,7 @@ export type {
   LexiconEntry,
   LemmaStat,
   ConcordanceRef,
+  PaginatedConcordance,
   LemmaSearchResult,
   ExtraTab
 } from './components/LexemeSidePanel.svelte';

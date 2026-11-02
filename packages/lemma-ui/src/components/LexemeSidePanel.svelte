@@ -53,6 +53,13 @@
 		[key: string]: any;
 	}
 
+	export interface PaginatedConcordance {
+		refs: ConcordanceRef[];
+		totalCount: number;
+		hasMore: boolean;
+		nextOffset: number;
+	}
+
 	export interface LemmaSearchResult {
 		lemma: string;
 		total_count?: number;
@@ -83,6 +90,8 @@
 		fetchLexiconEntry?: (lemma: string) => Promise<LexiconEntry | null>;
 		fetchLemmaStats?: (lemma: string) => Promise<LemmaStat | null>;
 		fetchConcordance?: (lemma: string) => Promise<ConcordanceRef[]>;
+		fetchConcordancePage?: (lemma: string, offset: number, pageSize: number) => Promise<PaginatedConcordance>;
+		concordancePageSize?: number;
 		fetchAttestedForms?: (lemma: string) => Promise<AttestedForm[]>;
 		fetchWordMorph?: ((word: string, lemma?: string) => Promise<any>) | null;
 		searchLemmas?: (query: string) => Promise<LemmaSearchResult[]>;
@@ -113,6 +122,8 @@
 		fetchLexiconEntry,
 		fetchLemmaStats,
 		fetchConcordance,
+		fetchConcordancePage,
+		concordancePageSize = 50,
 		fetchAttestedForms,
 		fetchWordMorph,
 		searchLemmas,
@@ -197,10 +208,16 @@
 	let isConcordanceOpen = $state<boolean>(false);
 	let isKwic = $state<boolean>(true);
 	let concordance = $state<ConcordanceRef[]>([]);
+	let concordanceTotalCount = $state<number>(0);
+	let concordanceNextOffset = $state<number>(0);
+	let concordanceHasMore = $state<boolean>(false);
+	let isLoadingMoreConcordance = $state<boolean>(false);
+	let loadMoreError = $state<string | null>(null);
 	let stats = $state<LemmaStat | null>(null);
 	let isConcordanceLoading = $state<boolean>(false);
 	let concordanceLoaded = $state<boolean>(false);
 	let concordanceError = $state<string | null>(null);
+	let concordanceQueryId = 0;
 
 	let filteredConcordance = $derived.by(() => {
 		const filter = selectedFormFilter;
@@ -239,9 +256,15 @@
 		isLexArticleLoading = false;
 
 		concordance = [];
+		concordanceTotalCount = 0;
+		concordanceNextOffset = 0;
+		concordanceHasMore = false;
+		isLoadingMoreConcordance = false;
+		loadMoreError = null;
 		concordanceLoaded = false;
 		concordanceError = null;
 		isConcordanceLoading = false;
+		concordanceQueryId++;
 		stats = null;
 		wordMorph = null;
 	}
@@ -306,25 +329,70 @@
 	}
 
 	async function loadConcordance(lemma: string) {
-		if (!lemma || !fetchConcordance) return;
+		if (!lemma || (!fetchConcordance && !fetchConcordancePage)) return;
+		const queryId = ++concordanceQueryId;
 		isConcordanceLoading = true;
 		concordanceError = null;
+		loadMoreError = null;
+
 		try {
-			const [c, s] = await Promise.all([
-				fetchConcordance(lemma),
-				stats ? Promise.resolve(stats) : (fetchLemmaStats ? fetchLemmaStats(lemma) : Promise.resolve(null))
-			]);
-			if (currentLemma !== lemma) return;
-			concordance = c;
-			if (!stats) stats = s;
-			concordanceLoaded = true;
+			if (fetchConcordancePage) {
+				const [pageData, s] = await Promise.all([
+					fetchConcordancePage(lemma, 0, concordancePageSize),
+					stats ? Promise.resolve(stats) : (fetchLemmaStats ? fetchLemmaStats(lemma) : Promise.resolve(null))
+				]);
+				if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
+				concordance = pageData.refs || [];
+				concordanceTotalCount = pageData.totalCount ?? (pageData.refs?.length || 0);
+				concordanceNextOffset = pageData.nextOffset ?? (pageData.refs?.length || 0);
+				concordanceHasMore = pageData.hasMore ?? false;
+				if (!stats) stats = s;
+				concordanceLoaded = true;
+			} else if (fetchConcordance) {
+				const [c, s] = await Promise.all([
+					fetchConcordance(lemma),
+					stats ? Promise.resolve(stats) : (fetchLemmaStats ? fetchLemmaStats(lemma) : Promise.resolve(null))
+				]);
+				if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
+				concordance = c || [];
+				concordanceTotalCount = c?.length || 0;
+				concordanceNextOffset = c?.length || 0;
+				concordanceHasMore = false;
+				if (!stats) stats = s;
+				concordanceLoaded = true;
+			}
 		} catch (err: any) {
-			if (currentLemma !== lemma) return;
+			if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
 			console.error('Error loading concordance:', err);
 			concordanceError = err?.message || 'Failed to load concordance';
 		} finally {
-			if (currentLemma === lemma) {
+			if (queryId === concordanceQueryId && currentLemma === lemma) {
 				isConcordanceLoading = false;
+			}
+		}
+	}
+
+	async function loadMoreConcordance() {
+		if (!currentLemma || !fetchConcordancePage || isLoadingMoreConcordance || !concordanceHasMore) return;
+		const queryId = concordanceQueryId;
+		isLoadingMoreConcordance = true;
+		loadMoreError = null;
+
+		try {
+			const pageData = await fetchConcordancePage(currentLemma, concordanceNextOffset, concordancePageSize);
+			if (queryId !== concordanceQueryId || currentLemma !== currentLemma) return;
+			const newRefs = pageData.refs || [];
+			concordance = [...concordance, ...newRefs];
+			concordanceTotalCount = pageData.totalCount ?? concordanceTotalCount;
+			concordanceNextOffset = pageData.nextOffset ?? (concordance.length);
+			concordanceHasMore = pageData.hasMore ?? false;
+		} catch (err: any) {
+			if (queryId !== concordanceQueryId) return;
+			console.error('Error loading more concordance occurrences:', err);
+			loadMoreError = err?.message || 'Failed to load more results';
+		} finally {
+			if (queryId === concordanceQueryId) {
+				isLoadingMoreConcordance = false;
 			}
 		}
 	}
@@ -717,7 +785,11 @@
 							{:else}
 								<div class="flex items-center justify-between pb-2 mb-2 border-b border-[var(--color-rule)]">
 									<span class="text-[11px] text-[var(--color-ink-soft)] font-medium">
-										{filteredConcordance.length} {filteredConcordance.length === 1 ? 'occurrence' : 'occurrences'}
+										{#if fetchConcordancePage && concordanceTotalCount > 0}
+											Showing {filteredConcordance.length} of {concordanceTotalCount} {concordanceTotalCount === 1 ? 'occurrence' : 'occurrences'}
+										{:else}
+											{filteredConcordance.length} {filteredConcordance.length === 1 ? 'occurrence' : 'occurrences'}
+										{/if}
 									</span>
 									<div class="inline-flex rounded-lg bg-[var(--color-rule)] p-0.5 text-[11px] font-semibold">
 										<button
@@ -774,6 +846,27 @@
 											{/if}
 										</button>
 									{/each}
+
+									{#if concordanceHasMore && !selectedFormFilter}
+										<div class="pt-2 text-center">
+											<button
+												type="button"
+												onclick={loadMoreConcordance}
+												disabled={isLoadingMoreConcordance}
+												class="w-full py-1.5 px-3 rounded-lg border border-[var(--color-rule)] bg-[var(--color-card-bg)] hover:bg-[var(--color-rule)]/30 text-xs font-semibold text-blue-600 dark:text-blue-400 cursor-pointer transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+											>
+												{#if isLoadingMoreConcordance}
+													<Loading inline size="xs" />
+													<span>Loading more occurrences...</span>
+												{:else}
+													<span>Load more ({Math.max(0, concordanceTotalCount - concordance.length)} remaining)</span>
+												{/if}
+											</button>
+											{#if loadMoreError}
+												<p class="text-[11px] text-red-500 mt-1">{loadMoreError}</p>
+											{/if}
+										</div>
+									{/if}
 								</div>
 							{/if}
 						</div>
