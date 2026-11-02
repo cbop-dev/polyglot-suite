@@ -95,11 +95,15 @@ export interface BiblicalCitation {
 	text_snippet?: string;
 }
 
+export type ScriptureCitation = BiblicalCitation;
+
 export interface BiblicalBookSummary {
 	book_code: string;
 	book_name: string;
 	total_count: number;
 }
+
+export type ScriptureBookSummary = BiblicalBookSummary;
 
 export const PRIMARY_GREEK_CORPUS_IDS: Record<AncientCorpusId, string> = {
 	af: 'lake_grc',
@@ -254,7 +258,7 @@ export async function fetchLemmaStats(corpusId: AncientCorpusId, lemma: string):
 }
 
 /**
- * Fetch paginated concordance occurrences using CTE pushdown
+ * Fetch paginated concordance occurrences using single-lemma index pushdown
  */
 export async function fetchConcordancePage(
 	corpusId: AncientCorpusId,
@@ -268,46 +272,49 @@ export async function fetchConcordancePage(
 
 	const worker = await getDbWorker(corpusId);
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
-	const norm = stripGreekAccents(clean);
 	const targetCorpus = PRIMARY_GREEK_CORPUS_IDS[corpusId];
 
-	// Step 1: Find all lemma variations from lemma_stats (to capture all occurrences in corpus)
-	const lemmaRows = (await worker.db.query(
-		`SELECT DISTINCT lemma FROM lemma_stats WHERE corpus_id = ? AND (lemma = ? OR normalized_lemma = ?)`,
-		[targetCorpus, clean, norm]
+	// Step 1: Resolve exact target lemma from lemma_stats (or normalized fallback)
+	let targetLemma = clean;
+	let totalCount = 0;
+
+	const statRows = (await worker.db.query(
+		`SELECT lemma, total_count FROM lemma_stats 
+		 WHERE corpus_id = ? AND (lemma = ? OR normalized_lemma = ?)
+		 ORDER BY (lemma = ?) DESC, total_count DESC LIMIT 1`,
+		[targetCorpus, clean, stripGreekAccents(clean), clean]
 	)) as any[];
 
-	const matchingLemmas = lemmaRows && lemmaRows.length > 0
-		? Array.from(new Set(lemmaRows.map((r) => getRowVal<string>(r, 'lemma', 0)).concat([clean])))
-		: [clean];
-
-	const placeholders = matchingLemmas.map(() => '?').join(',');
-
-	// Step 2: Count total occurrences using index
-	const countSql = `
-		SELECT COUNT(*) AS total
-		FROM concordance_refs
-		WHERE corpus_id = ? AND lemma IN (${placeholders})
-	`;
-	const countRows = await worker.db.query(countSql, [targetCorpus, ...matchingLemmas]);
-	const totalCount = countRows && (countRows as any[]).length > 0 ? getRowVal<number>((countRows as any[])[0], 'total', 0) : 0;
+	if (statRows && statRows.length > 0) {
+		targetLemma = getRowVal<string>(statRows[0], 'lemma', 0) || clean;
+		totalCount = getRowVal<number>(statRows[0], 'total_count', 1) || 0;
+	} else {
+		// Fast fallback count directly from covering table
+		const countRows = await worker.db.query(
+			`SELECT COUNT(*) AS total FROM concordance_refs WHERE corpus_id = ? AND lemma = ?`,
+			[targetCorpus, targetLemma]
+		);
+		totalCount = countRows && (countRows as any[]).length > 0 ? getRowVal<number>((countRows as any[])[0], 'total', 0) : 0;
+	}
 
 	if (totalCount === 0 || offset >= totalCount) {
 		return { refs: [], totalCount, hasMore: false, nextOffset: offset };
 	}
 
-	// Step 3: Direct Covering Query from concordance_refs (ZERO JOINS)
+	// Step 2: Direct Covering Query from concordance_refs (ZERO JOINS, ZERO TEMP B-TREE SORT)
+	// Because PRIMARY KEY starts with (corpus_id, lemma, work_unit_id), rows for a fixed lemma
+	// are ALREADY physically ordered by work_unit_id ASC in SQLite's B-Tree.
 	const sql = `
 		SELECT 
 			display_citation, work_unit_id, work_code, 
 			book, chapter, section, niese_section, 
 			matched_form, kwic_snippet
 		FROM concordance_refs
-		WHERE corpus_id = ? AND lemma IN (${placeholders})
+		WHERE corpus_id = ? AND lemma = ?
 		ORDER BY work_unit_id ASC
 		LIMIT ? OFFSET ?
 	`;
-	const rows = await worker.db.query(sql, [targetCorpus, ...matchingLemmas, pageSize, offset]);
+	const rows = await worker.db.query(sql, [targetCorpus, targetLemma, pageSize, offset]);
 	const pagedRefs: ConcordanceRef[] = (rows as any[]).map((r) => {
 		const matchedWord = getRowVal<string>(r, 'matched_form', 7) || clean;
 		const sec = getRowVal<number>(r, 'section', 5);
@@ -327,11 +334,11 @@ export async function fetchConcordancePage(
 	});
 
 	const nextOffset = offset + pagedRefs.length;
-	const hasMore = nextOffset < totalCount;
+	const hasMore = pagedRefs.length === pageSize && nextOffset < totalCount;
 
 	return {
 		refs: pagedRefs,
-		totalCount,
+		totalCount: Math.max(totalCount, pagedRefs.length),
 		hasMore,
 		nextOffset
 	};
@@ -349,12 +356,41 @@ export async function fetchConcordance(corpusId: AncientCorpusId, lemma: string)
  * Fetch full text for a section on demand (e.g. when user expands KWIC preview)
  */
 export async function fetchSectionText(corpusId: AncientCorpusId, workUnitId: number): Promise<string> {
+	if (!workUnitId) return '';
 	const worker = await getDbWorker(corpusId);
 	const rows = (await worker.db.query(
 		`SELECT text_content FROM text_units WHERE id = ? LIMIT 1`,
 		[workUnitId]
 	)) as any[];
 	return rows && rows.length > 0 ? getRowVal<string>(rows[0], 'text_content', 0) : '';
+}
+
+/**
+ * Batch fetch full text for multiple sections on demand (1 single SQL query)
+ */
+export async function fetchSectionsTextBatch(corpusId: AncientCorpusId, workUnitIds: number[]): Promise<Record<number, string>> {
+	if (!workUnitIds || workUnitIds.length === 0) return {};
+	const uniqueIds = Array.from(new Set(workUnitIds.filter(Boolean)));
+	if (uniqueIds.length === 0) return {};
+
+	const worker = await getDbWorker(corpusId);
+	const placeholders = uniqueIds.map(() => '?').join(',');
+	const rows = (await worker.db.query(
+		`SELECT id, text_content FROM text_units WHERE id IN (${placeholders})`,
+		uniqueIds
+	)) as any[];
+
+	const result: Record<number, string> = {};
+	if (rows && rows.length > 0) {
+		for (const r of rows) {
+			const id = getRowVal<number>(r, 'id', 0);
+			const text = getRowVal<string>(r, 'text_content', 1);
+			if (id !== undefined) {
+				result[id] = text;
+			}
+		}
+	}
+	return result;
 }
 
 /**
@@ -491,66 +527,109 @@ export async function searchLemmasAcrossCorpora(
 }
 
 /**
- * Philo apparatus: Fetch biblical citation counts grouped by biblical book
+ * Generic scripture citation apparatus: Fetch citation counts grouped by biblical book.
+ * Works for any corpus that contains a biblical_citations table (e.g. Philo).
  */
-export async function fetchPhiloBiblicalSummaries(): Promise<BiblicalBookSummary[]> {
-	const worker = await getDbWorker('philo');
-	const sql = `
-		SELECT book_code, book_name, COUNT(*) as cnt
-		FROM biblical_citations
-		GROUP BY book_code, book_name
-		ORDER BY cnt DESC
-	`;
-	const rows = await worker.db.query(sql);
-	return (rows as any[]).map((r) => ({
-		book_code: getRowVal<string>(r, 'book_code', 0),
-		book_name: getRowVal<string>(r, 'book_name', 1),
-		total_count: getRowVal<number>(r, 'cnt', 2)
-	}));
+export async function fetchScriptureSummaries(corpusId: AncientCorpusId): Promise<ScriptureBookSummary[]> {
+	try {
+		const worker = await getDbWorker(corpusId);
+		const sql = `
+			SELECT book_code, book_name, COUNT(*) as cnt
+			FROM biblical_citations
+			GROUP BY book_code, book_name
+			ORDER BY cnt DESC
+		`;
+		const rows = await worker.db.query(sql);
+		return (rows as any[]).map((r) => ({
+			book_code: getRowVal<string>(r, 'book_code', 0),
+			book_name: getRowVal<string>(r, 'book_name', 1),
+			total_count: getRowVal<number>(r, 'cnt', 2)
+		}));
+	} catch (err) {
+		// Corpora without biblical_citations table (e.g. AF, Josephus) return empty list
+		return [];
+	}
 }
 
 /**
- * Philo apparatus: Search biblical citations in Philo's treatises
+ * Generic scripture citation apparatus: Search biblical citations in corpus treatises.
+ * Supports filtering by bookCode, chapter, verse, and workCode.
+ */
+export async function searchScriptureCitations(
+	corpusId: AncientCorpusId,
+	options: {
+		bookCode?: string;
+		chapter?: number;
+		verse?: number;
+		workCode?: string;
+		limit?: number;
+	} = {}
+): Promise<ScriptureCitation[]> {
+	const { bookCode, chapter, verse, workCode, limit = 200 } = options;
+	try {
+		const worker = await getDbWorker(corpusId);
+		let sql = `
+			SELECT c.id, c.work_code, c.chapter, c.section, c.work_unit_id,
+			       c.book_code, c.book_name, c.bible_chapter, c.bible_verse,
+			       c.display_citation, c.raw_citation, t.text_content
+			FROM biblical_citations c
+			LEFT JOIN text_units t ON t.id = c.work_unit_id
+			WHERE 1=1
+		`;
+		const params: any[] = [];
+		if (bookCode) {
+			sql += ` AND c.book_code = ?`;
+			params.push(bookCode);
+		}
+		if (chapter !== undefined && chapter > 0) {
+			sql += ` AND c.bible_chapter = ?`;
+			params.push(chapter);
+		}
+		if (verse !== undefined && verse > 0) {
+			sql += ` AND c.bible_verse = ?`;
+			params.push(verse);
+		}
+		if (workCode) {
+			sql += ` AND c.work_code = ?`;
+			params.push(workCode);
+		}
+		sql += ` ORDER BY c.id ASC LIMIT ?`;
+		params.push(limit);
+
+		const rows = await worker.db.query(sql, params);
+		return (rows as any[]).map((r) => ({
+			id: getRowVal<number>(r, 'id', 0),
+			work_code: getRowVal<string>(r, 'work_code', 1),
+			chapter: getRowVal<number>(r, 'chapter', 2),
+			section: getRowVal<number>(r, 'section', 3),
+			work_unit_id: getRowVal<number>(r, 'work_unit_id', 4),
+			book_code: getRowVal<string>(r, 'book_code', 5),
+			book_name: getRowVal<string>(r, 'book_name', 6),
+			bible_chapter: getRowVal<number | undefined>(r, 'bible_chapter', 7),
+			bible_verse: getRowVal<number | undefined>(r, 'bible_verse', 8),
+			display_citation: getRowVal<string>(r, 'display_citation', 9),
+			raw_citation: getRowVal<string>(r, 'raw_citation', 10),
+			text_snippet: getRowVal<string | undefined>(r, 'text_content', 11)
+		}));
+	} catch (err) {
+		return [];
+	}
+}
+
+/**
+ * Backwards compatibility wrapper for Philo biblical summaries
+ */
+export async function fetchPhiloBiblicalSummaries(): Promise<BiblicalBookSummary[]> {
+	return fetchScriptureSummaries('philo');
+}
+
+/**
+ * Backwards compatibility wrapper for Philo biblical citations search
  */
 export async function searchPhiloBiblicalCitations(
 	bookCode?: string,
 	workCode?: string,
 	limit: number = 100
 ): Promise<BiblicalCitation[]> {
-	const worker = await getDbWorker('philo');
-	let sql = `
-		SELECT c.id, c.work_code, c.chapter, c.section, c.work_unit_id,
-		       c.book_code, c.book_name, c.bible_chapter, c.bible_verse,
-		       c.display_citation, c.raw_citation, t.text_content
-		FROM biblical_citations c
-		LEFT JOIN text_units t ON t.id = c.work_unit_id
-		WHERE 1=1
-	`;
-	const params: any[] = [];
-	if (bookCode) {
-		sql += ` AND c.book_code = ?`;
-		params.push(bookCode);
-	}
-	if (workCode) {
-		sql += ` AND c.work_code = ?`;
-		params.push(workCode);
-	}
-	sql += ` ORDER BY c.id ASC LIMIT ?`;
-	params.push(limit);
-
-	const rows = await worker.db.query(sql, params);
-	return (rows as any[]).map((r) => ({
-		id: getRowVal<number>(r, 'id', 0),
-		work_code: getRowVal<string>(r, 'work_code', 1),
-		chapter: getRowVal<number>(r, 'chapter', 2),
-		section: getRowVal<number>(r, 'section', 3),
-		work_unit_id: getRowVal<number>(r, 'work_unit_id', 4),
-		book_code: getRowVal<string>(r, 'book_code', 5),
-		book_name: getRowVal<string>(r, 'book_name', 6),
-		bible_chapter: getRowVal<number | undefined>(r, 'bible_chapter', 7),
-		bible_verse: getRowVal<number | undefined>(r, 'bible_verse', 8),
-		display_citation: getRowVal<string>(r, 'display_citation', 9),
-		raw_citation: getRowVal<string>(r, 'raw_citation', 10),
-		text_snippet: getRowVal<string | undefined>(r, 'text_content', 11)
-	}));
+	return searchScriptureCitations('philo', { bookCode, workCode, limit });
 }

@@ -50,6 +50,8 @@
 		display_citation?: string;
 		text_content?: string;
 		matched_word?: string;
+		work_unit_id?: number;
+		full_text?: string;
 		[key: string]: any;
 	}
 
@@ -94,6 +96,8 @@
 		fetchConcordance?: (lemma: string) => Promise<ConcordanceRef[]>;
 		fetchConcordancePage?: (lemma: string, offset: number, pageSize: number) => Promise<PaginatedConcordance>;
 		concordancePageSize?: number;
+		fetchSectionText?: (ref: ConcordanceRef) => Promise<string>;
+		fetchSectionsTextBatch?: (workUnitIds: number[]) => Promise<Record<number, string>>;
 		fetchAttestedForms?: (lemma: string) => Promise<AttestedForm[]>;
 		fetchWordMorph?: ((word: string, lemma?: string) => Promise<any>) | null;
 		searchLemmas?: (query: string) => Promise<LemmaSearchResult[]>;
@@ -128,6 +132,8 @@
 		fetchConcordance,
 		fetchConcordancePage,
 		concordancePageSize = 50,
+		fetchSectionText,
+		fetchSectionsTextBatch,
 		fetchAttestedForms,
 		fetchWordMorph,
 		searchLemmas,
@@ -253,6 +259,15 @@
 	let concordance = $state<ConcordanceRef[]>([]);
 	let concordanceTotalCount = $state<number>(0);
 	let concordancePage = $state<number>(1);
+	// svelte-ignore state_referenced_locally
+	let currentPageSize = $state<number>(concordancePageSize || 50);
+
+	$effect(() => {
+		if (concordancePageSize && concordancePageSize !== currentPageSize) {
+			currentPageSize = concordancePageSize;
+		}
+	});
+
 	let isPageNavigating = $state<boolean>(false);
 	let concordancePageCache = new Map<number, ConcordanceRef[]>();
 	let concordanceScrollContainer = $state<HTMLElement | null>(null);
@@ -262,14 +277,18 @@
 	let concordanceError = $state<string | null>(null);
 	let concordanceQueryId = 0;
 
+	// On-demand full-text loading & expandable cards
+	let isFullTextLoading = $state<boolean>(false);
+	let expandedCardIds = $state<Set<number | string>>(new Set());
+
 	let concordanceTotalPages = $derived(
-		Math.max(1, Math.ceil(concordanceTotalCount / concordancePageSize))
+		Math.max(1, Math.ceil(concordanceTotalCount / currentPageSize))
 	);
 	let concordanceStartIdx = $derived(
-		concordanceTotalCount === 0 ? 0 : (concordancePage - 1) * concordancePageSize + 1
+		concordanceTotalCount === 0 ? 0 : (concordancePage - 1) * currentPageSize + 1
 	);
 	let concordanceEndIdx = $derived(
-		Math.min(concordancePage * concordancePageSize, concordanceTotalCount)
+		Math.min(concordancePage * currentPageSize, concordanceTotalCount)
 	);
 
 	let paginationPills = $derived.by(() => {
@@ -350,6 +369,7 @@
 		concordanceError = null;
 		isConcordanceLoading = false;
 		concordanceQueryId++;
+		expandedCardIds = new Set();
 		stats = null;
 		wordMorph = null;
 	}
@@ -413,14 +433,103 @@
 		}
 	}
 
+	async function ensureFullTextLoaded(refsToLoad: ConcordanceRef[]) {
+		if ((!fetchSectionText && !fetchSectionsTextBatch) || refsToLoad.length === 0) return;
+		const needed = refsToLoad.filter(
+			(r) => !r.full_text && (r.work_unit_id !== undefined || r.id !== undefined)
+		);
+		if (needed.length === 0) return;
+
+		isFullTextLoading = true;
+		try {
+			if (fetchSectionsTextBatch) {
+				const ids = needed.map((r) => r.work_unit_id ?? r.id).filter(Boolean) as number[];
+				const textMap = await fetchSectionsTextBatch(ids);
+				for (const ref of needed) {
+					const id = ref.work_unit_id ?? ref.id;
+					if (id !== undefined && textMap[id]) {
+						ref.full_text = textMap[id];
+					}
+				}
+			} else if (fetchSectionText) {
+				const uniqueRefs = new Map<number, ConcordanceRef>();
+				for (const ref of needed) {
+					const id = ref.work_unit_id ?? ref.id;
+					if (id !== undefined && !uniqueRefs.has(id)) {
+						uniqueRefs.set(id, ref);
+					}
+				}
+				await Promise.all(
+					Array.from(uniqueRefs.values()).map(async (ref) => {
+						try {
+							const text = await fetchSectionText!(ref);
+							if (text) {
+								const id = ref.work_unit_id ?? ref.id;
+								for (const r of needed) {
+									if ((r.work_unit_id ?? r.id) === id) {
+										r.full_text = text;
+									}
+								}
+							}
+						} catch (e) {
+							console.warn('Failed to fetch full text for ref', ref, e);
+						}
+					})
+				);
+			}
+			concordance = [...concordance];
+		} finally {
+			isFullTextLoading = false;
+		}
+	}
+
+	function handleSwitchToFullText() {
+		isKwic = false;
+		if (fetchSectionText || fetchSectionsTextBatch) {
+			ensureFullTextLoaded(concordance);
+		}
+	}
+
+	async function toggleExpandCard(ref: ConcordanceRef, cardKey: number | string) {
+		const next = new Set(expandedCardIds);
+		if (next.has(cardKey)) {
+			next.delete(cardKey);
+			expandedCardIds = next;
+		} else {
+			next.add(cardKey);
+			expandedCardIds = next;
+			if (!ref.full_text && fetchSectionText) {
+				try {
+					const text = await fetchSectionText(ref);
+					if (text) {
+						ref.full_text = text;
+						concordance = [...concordance];
+					}
+				} catch (err) {
+					console.warn('Failed to load full text for card', ref, err);
+				}
+			}
+		}
+	}
+
+	function handlePageSizeChange(newSize: number) {
+		if (newSize === currentPageSize) return;
+		currentPageSize = newSize;
+		concordancePageCache.clear();
+		concordancePage = 1;
+		if (currentLemma) {
+			loadConcordance(currentLemma);
+		}
+	}
+
 	function prefetchNextPage(page: number, lemma: string, queryId: number) {
 		if (!fetchConcordancePage || !lemma) return;
 		const nextPage = page + 1;
 		if (concordanceTotalCount > 0 && nextPage > concordanceTotalPages) return;
 		if (concordancePageCache.has(nextPage)) return;
 
-		const offset = (nextPage - 1) * concordancePageSize;
-		fetchConcordancePage(lemma, offset, concordancePageSize)
+		const offset = (nextPage - 1) * currentPageSize;
+		fetchConcordancePage(lemma, offset, currentPageSize)
 			.then((pageData) => {
 				if (queryId === concordanceQueryId && currentLemma === lemma && pageData?.refs) {
 					concordancePageCache.set(nextPage, pageData.refs);
@@ -445,6 +554,9 @@
 			concordancePage = page;
 			concordanceScrollContainer?.scrollTo({ top: 0, behavior: 'smooth' });
 			prefetchNextPage(page, lemma, queryId);
+			if (!isKwic && fetchSectionText) {
+				ensureFullTextLoaded(concordance);
+			}
 			return;
 		}
 
@@ -454,8 +566,8 @@
 		concordanceError = null;
 
 		try {
-			const offset = (page - 1) * concordancePageSize;
-			const pageData = await fetchConcordancePage(lemma, offset, concordancePageSize);
+			const offset = (page - 1) * currentPageSize;
+			const pageData = await fetchConcordancePage(lemma, offset, currentPageSize);
 			if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
 
 			const refs = pageData.refs || [];
@@ -465,6 +577,9 @@
 			concordancePage = page;
 			concordanceScrollContainer?.scrollTo({ top: 0, behavior: 'smooth' });
 			prefetchNextPage(page, lemma, queryId);
+			if (!isKwic && fetchSectionText) {
+				ensureFullTextLoaded(refs);
+			}
 		} catch (err: any) {
 			if (queryId !== concordanceQueryId) return;
 			console.error(`Error loading concordance page ${page}:`, err);
@@ -487,7 +602,7 @@
 		try {
 			if (fetchConcordancePage) {
 				const [pageData, s] = await Promise.all([
-					fetchConcordancePage(lemma, 0, concordancePageSize),
+					fetchConcordancePage(lemma, 0, currentPageSize),
 					stats ? Promise.resolve(stats) : (fetchLemmaStats ? fetchLemmaStats(lemma) : Promise.resolve(null))
 				]);
 				if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
@@ -499,6 +614,9 @@
 				if (!stats) stats = s;
 				concordanceLoaded = true;
 				prefetchNextPage(1, lemma, queryId);
+				if (!isKwic && fetchSectionText) {
+					ensureFullTextLoaded(refs);
+				}
 			} else if (fetchConcordance) {
 				const [c, s] = await Promise.all([
 					fetchConcordance(lemma),
@@ -507,14 +625,17 @@
 				if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
 				const allRefs = c || [];
 				concordanceTotalCount = allRefs.length;
-				for (let i = 0; i < allRefs.length; i += concordancePageSize) {
-					const p = Math.floor(i / concordancePageSize) + 1;
-					concordancePageCache.set(p, allRefs.slice(i, i + concordancePageSize));
+				for (let i = 0; i < allRefs.length; i += currentPageSize) {
+					const p = Math.floor(i / currentPageSize) + 1;
+					concordancePageCache.set(p, allRefs.slice(i, i + currentPageSize));
 				}
 				concordance = concordancePageCache.get(1) || [];
 				concordancePage = 1;
 				if (!stats) stats = s;
 				concordanceLoaded = true;
+				if (!isKwic && fetchSectionText) {
+					ensureFullTextLoaded(concordance);
+				}
 			}
 		} catch (err: any) {
 			if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
@@ -1009,7 +1130,7 @@
 									{/if}
 								{/snippet}
 
-								<div class="flex items-center justify-between pb-2 mb-2 border-b border-[var(--color-rule)]">
+								<div class="flex items-center justify-between pb-2 mb-2 border-b border-[var(--color-rule)] gap-2 flex-wrap">
 									<span class="text-[11px] text-[var(--color-ink-soft)] font-medium">
 										{#if fetchConcordancePage && concordanceTotalCount > 0}
 											Showing {concordanceStartIdx}–{concordanceEndIdx} of {concordanceTotalCount} {concordanceTotalCount === 1 ? 'occurrence' : 'occurrences'}
@@ -1017,25 +1138,46 @@
 											{filteredConcordance.length} {filteredConcordance.length === 1 ? 'occurrence' : 'occurrences'}
 										{/if}
 									</span>
-									<div class="inline-flex rounded-lg bg-[var(--color-rule)] p-0.5 text-[11px] font-semibold">
-										<button
-											type="button"
-											onclick={() => (isKwic = true)}
-											class="px-2 py-0.5 rounded-md transition-colors cursor-pointer {isKwic
-												? 'bg-[var(--color-card-bg)] shadow-2xs text-blue-600 dark:text-blue-400 font-bold'
-												: 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'}"
-										>
-											KWIC
-										</button>
-										<button
-											type="button"
-											onclick={() => (isKwic = false)}
-											class="px-2 py-0.5 rounded-md transition-colors cursor-pointer {!isKwic
-												? 'bg-[var(--color-card-bg)] shadow-2xs text-blue-600 dark:text-blue-400 font-bold'
-												: 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'}"
-										>
-											Full Text
-										</button>
+
+									<div class="flex items-center gap-2">
+										{#if fetchConcordancePage}
+											<div class="flex items-center gap-1">
+												<label for="concordance-page-size-select" class="sr-only">Results per page</label>
+												<select
+													id="concordance-page-size-select"
+													value={currentPageSize}
+													onchange={(e) => handlePageSizeChange(Number((e.currentTarget as HTMLSelectElement).value))}
+													class="text-[11px] font-semibold bg-[var(--color-card-bg)] text-[var(--color-ink)] border border-[var(--color-rule)] rounded px-1.5 py-0.5 cursor-pointer focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+													aria-label="Results per page"
+												>
+													<option value={50}>50 / page</option>
+													<option value={100}>100 / page</option>
+													<option value={250}>250 / page</option>
+													<option value={500}>500 / page</option>
+												</select>
+											</div>
+										{/if}
+
+										<div class="inline-flex rounded-lg bg-[var(--color-rule)] p-0.5 text-[11px] font-semibold">
+											<button
+												type="button"
+												onclick={() => (isKwic = true)}
+												class="px-2 py-0.5 rounded-md transition-colors cursor-pointer {isKwic
+													? 'bg-[var(--color-card-bg)] shadow-2xs text-blue-600 dark:text-blue-400 font-bold'
+													: 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'}"
+											>
+												KWIC
+											</button>
+											<button
+												type="button"
+												onclick={handleSwitchToFullText}
+												class="px-2 py-0.5 rounded-md transition-colors cursor-pointer {!isKwic
+													? 'bg-[var(--color-card-bg)] shadow-2xs text-blue-600 dark:text-blue-400 font-bold'
+													: 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'}"
+											>
+												Full Text
+											</button>
+										</div>
 									</div>
 								</div>
 
@@ -1051,37 +1193,76 @@
 										</div>
 									{/if}
 
-									{#each filteredConcordance as ref}
+									{#each filteredConcordance as ref, idx (`${ref.work_unit_id ?? ''}_${ref.matched_word ?? ''}_${idx}`)}
 										{@const citation = formatRefLabel ? formatRefLabel(ref) : (ref.display_citation || `${ref.work || ''} ${ref.book ? `${ref.book}.` : ''}${ref.section || ref.chapter || ''}`)}
-										<button
-											type="button"
-											onclick={() => onNavigateToRef?.(ref)}
-											class="w-full text-left rounded-lg p-2 hover:bg-[var(--color-page)] border border-transparent hover:border-[var(--color-rule)] transition-colors cursor-pointer group"
+										{@const cardKey = `${ref.work_unit_id ?? ''}_${ref.matched_word ?? ''}_${idx}`}
+										{@const isExpanded = expandedCardIds.has(cardKey)}
+
+										<div
+											class="w-full text-left rounded-lg p-2 hover:bg-[var(--color-page)] border border-transparent hover:border-[var(--color-rule)] transition-colors group"
 										>
 											<div class="flex items-center justify-between">
-												<span class="font-bold text-blue-600 dark:text-blue-400 text-xs">
+												<button
+													type="button"
+													onclick={() => onNavigateToRef?.(ref)}
+													class="font-bold text-blue-600 dark:text-blue-400 text-xs hover:underline cursor-pointer text-left"
+												>
 													{citation}
-												</span>
-												<span class="text-[10px] text-[var(--color-ink-soft)] opacity-0 group-hover:opacity-100 transition-opacity">
-													Jump &rarr;
-												</span>
+												</button>
+												<div class="flex items-center gap-2">
+													{#if fetchSectionText && isKwic}
+														<button
+															type="button"
+															onclick={() => toggleExpandCard(ref, cardKey)}
+															class="text-[10px] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] px-1.5 py-0.5 rounded border border-[var(--color-rule)] bg-[var(--color-card-bg)] hover:bg-[var(--color-rule)]/40 cursor-pointer transition-colors"
+															title={isExpanded ? 'Collapse snippet' : 'Expand full text'}
+														>
+															{isExpanded ? 'Less' : 'More'}
+														</button>
+													{/if}
+													<button
+														type="button"
+														onclick={() => onNavigateToRef?.(ref)}
+														class="text-[10px] text-[var(--color-ink-soft)] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+													>
+														Jump &rarr;
+													</button>
+												</div>
 											</div>
-											{#if isKwic}
-												<div class="mt-1 text-xs text-[var(--color-ink)]">
-													<KwicSnippet
-														text={ref.text_content || ''}
-														matchWord={selectedFormFilter || ref.matched_word || currentLemma}
-														lang="greek"
-														radius={48}
-														class="w-full"
-													/>
-												</div>
-											{:else}
-												<div class="text-[11px] text-[var(--color-ink-soft)] mt-1 leading-relaxed greek-font">
-													{ref.text_content || ''}
-												</div>
-											{/if}
-										</button>
+
+											<div
+												role="button"
+												tabindex="0"
+												onclick={() => onNavigateToRef?.(ref)}
+												onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigateToRef?.(ref); }}
+												class="cursor-pointer"
+											>
+												{#if isKwic && !isExpanded}
+													<div class="mt-1 text-xs text-[var(--color-ink)]">
+														<KwicSnippet
+															text={ref.text_content || ''}
+															matchWord={selectedFormFilter || ref.matched_word || currentLemma}
+															lang="greek"
+															radius={48}
+															class="w-full"
+														/>
+													</div>
+												{:else}
+													<div class="text-[11px] text-[var(--color-ink-soft)] mt-1 leading-relaxed greek-font">
+														{#if ref.full_text}
+															{ref.full_text}
+														{:else if isFullTextLoading}
+															<div class="flex items-center gap-1.5 py-1 text-xs text-[var(--color-ink-soft)] italic">
+																<Loading inline size="xs" />
+																<span>Loading full section text...</span>
+															</div>
+														{:else}
+															{ref.text_content || ''}
+														{/if}
+													</div>
+												{/if}
+											</div>
+										</div>
 									{/each}
 								</div>
 

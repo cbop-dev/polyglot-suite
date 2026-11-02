@@ -40,6 +40,8 @@
 	englishHeaderTitle={englishHeader}
 	latinHeaderTitle={latinHeader}
 	onWordClick={(tok, citation) => readerState.openToken(tok as Token, citation)}
+	onBiblicalCitationClick={(bookCode, ch, v, disp, name) =>
+		readerState.openScriptureCitation(bookCode, ch, v, disp, name)}
 >
 	{#snippet sectionBadge({ secKey, gUnit, nieseSec })}
 		<div class="inline-flex items-center gap-1.5 mr-2 mb-1 select-none">

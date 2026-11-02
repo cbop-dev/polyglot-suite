@@ -31,6 +31,13 @@ export class ReaderState {
 	// Lexeme side panel inspection
 	selectedToken = $state<Token | null>(null);
 	selectedCitation = $state<string | null>(null);
+	selectedScriptureCitation = $state<{
+		bookCode?: string;
+		chapter?: number;
+		verse?: number;
+		display?: string;
+		bookName?: string;
+	} | null>(null);
 	isSidePanelOpen = $state<boolean>(false);
 	activeSidePanelTab = $state<string>('lexeme');
 
@@ -49,6 +56,10 @@ export class ReaderState {
 	}
 
 	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: number, section?: string | number | null) {
+		this.isSidePanelOpen = false;
+		this.selectedToken = null;
+		this.selectedCitation = null;
+		this.selectedScriptureCitation = null;
 		this.currentCorpus = corpusId;
 		const works = getCorpusWorks(corpusId);
 		const targetWork = workCode ? (findWork(corpusId, workCode) || works[0]) : works[0];
@@ -96,6 +107,18 @@ export class ReaderState {
 		this.selectedToken = token;
 		this.selectedCitation = citation;
 		this.activeSidePanelTab = 'lexeme';
+		this.isSidePanelOpen = true;
+	}
+
+	openScriptureCitation(
+		bookCode?: string,
+		chapter?: number,
+		verse?: number,
+		display?: string,
+		bookName?: string
+	) {
+		this.selectedScriptureCitation = { bookCode, chapter, verse, display, bookName };
+		this.activeSidePanelTab = 'scripture';
 		this.isSidePanelOpen = true;
 	}
 

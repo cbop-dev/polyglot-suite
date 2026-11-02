@@ -19,6 +19,9 @@
 
 	function handleGo() {
 		if (selectedCorpus !== readerState.currentCorpus) {
+			readerState.isSidePanelOpen = false;
+			readerState.selectedToken = null;
+			readerState.selectedCitation = null;
 			readerState.setCorpus(selectedCorpus);
 		}
 	}

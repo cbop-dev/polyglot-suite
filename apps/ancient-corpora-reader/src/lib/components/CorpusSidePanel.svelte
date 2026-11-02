@@ -8,11 +8,13 @@
 		fetchLemmaStats,
 		fetchConcordancePage,
 		fetchConcordance,
+		fetchSectionText,
+		fetchSectionsTextBatch,
 		fetchAttestedForms,
 		searchLemmas,
 		type ConcordanceRef
 	} from '../services/dbClient.js';
-	import PhiloLxxTab from './PhiloLxxTab.svelte';
+	import ScriptureCitationsTab from './ScriptureCitationsTab.svelte';
 
 	let corpusTitle = $derived(CORPUS_TITLES[readerState.currentCorpus]?.name || 'Corpus');
 
@@ -37,16 +39,18 @@
 	fetchLemmaStats={(lemma) => fetchLemmaStats(readerState.currentCorpus, lemma)}
 	fetchConcordancePage={(lemma, offset, size) => fetchConcordancePage(readerState.currentCorpus, lemma, offset, size)}
 	fetchConcordance={(lemma) => fetchConcordance(readerState.currentCorpus, lemma)}
+	fetchSectionText={(ref) => fetchSectionText(readerState.currentCorpus, ref.work_unit_id ?? ref.id)}
+	fetchSectionsTextBatch={(ids) => fetchSectionsTextBatch(readerState.currentCorpus, ids)}
 	fetchAttestedForms={(lemma) => fetchAttestedForms(readerState.currentCorpus, lemma)}
 	searchLemmas={(query) => searchLemmas(readerState.currentCorpus, query)}
 	onSelectToken={(t) =>
 		readerState.openToken({ w: t.w || '', l: t.l || '', m: t.m, p: t.p, lang: 'grc' }, '')}
 	onNavigateToRef={handleNavigateToRef}
-	extraTabs={readerState.currentCorpus === 'philo' ? [{ id: 'lxx', label: 'LXX Citations' }] : []}
+	extraTabs={readerState.currentCorpus === 'philo' ? [{ id: 'scripture', label: 'Scripture' }] : []}
 >
 	{#snippet extraTabPanels(tabId)}
-		{#if tabId === 'lxx'}
-			<PhiloLxxTab onNavigateToRef={handleNavigateToRef} />
+		{#if tabId === 'scripture'}
+			<ScriptureCitationsTab onNavigateToRef={handleNavigateToRef} />
 		{/if}
 	{/snippet}
 </LexemeSidePanel>

@@ -8,6 +8,7 @@
 	import HotkeyHelpModal from './HotkeyHelpModal.svelte';
 
 	import { readerState } from '../stores/readerState.svelte.js';
+	import { CORPUS_TITLES } from '../config/canonicalWorks.js';
 	import {
 		fetchDivisionSections,
 		type TextUnit
@@ -53,6 +54,11 @@
 	async function loadData(corpus: AncientCorpusId, work: string, division: number) {
 		loading = true;
 		error = null;
+		// Clear previous sections immediately so previous corpus texts/headings are not displayed
+		greekSections = [];
+		englishSections = [];
+		latinSections = [];
+
 		try {
 			const res = await fetchDivisionSections(corpus, work, division);
 			greekSections = res.greek;
@@ -144,9 +150,13 @@
 	<CorpusHeader />
 
 	<main class="flex-1">
-		{#if loading && greekSections.length === 0}
+		{#if loading}
 			<div class="py-24 text-center">
-				<Loading size="lg" title="Loading {readerState.currentWork.titleEnglish}..." />
+				<Loading
+					size="lg"
+					title="Loading {CORPUS_TITLES[readerState.currentCorpus]?.name || 'Corpus'}..."
+					message={[`Opening ${readerState.currentWork.titleEnglish} (${readerState.currentWork.divisionLabel} ${readerState.currentDivision})`]}
+				/>
 			</div>
 		{:else if error}
 			<div class="mx-auto max-w-xl p-8 text-center text-red-600 bg-red-50 dark:bg-red-950/50 rounded-2xl border border-red-200 dark:border-red-900 mt-12">
