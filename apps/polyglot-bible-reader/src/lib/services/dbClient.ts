@@ -996,10 +996,36 @@ export async function getLemmaTotalCount(
 			}
 		}
 
-		// 3. Fallback: count from indexed concordance_refs
+		// 3. Fallback: count from indexed concordance_refs using fast SQL count
 		if (lemma || strongs) {
-			const occs = await getConcordance(corpusId, lemma, 0, strongs);
-			return occs ? occs.length : 0;
+			const keys: string[] = [];
+			if (strongs && strongs.trim()) {
+				const sNorm = strongs.trim().toUpperCase();
+				const sCode = sNorm.startsWith('H') || sNorm.startsWith('G')
+					? sNorm
+					: (corpusId === 'wlc' ? `H${sNorm}` : `G${sNorm}`);
+				keys.push(sCode);
+				if (sNorm !== sCode) keys.push(sNorm);
+			}
+			if (lemma && lemma.trim()) {
+				const lTrim = lemma.trim();
+				const targetKey = corpusId === 'peshitta' ? cleanSyriac(lTrim) : lTrim;
+				const lNFC = targetKey.normalize('NFC');
+				keys.push(targetKey);
+				if (lNFC !== targetKey) keys.push(lNFC);
+			}
+			const uniqueKeys = Array.from(new Set(keys));
+			if (uniqueKeys.length > 0) {
+				const placeholders = uniqueKeys.map(() => '?').join(',');
+				const countRow = await queryOne<{ cnt: number }>(`
+					SELECT count(*) as cnt
+					FROM concordance_refs
+					WHERE corpus_id = ? AND lemma_key IN (${placeholders})
+				`, [corpusId, ...uniqueKeys]);
+				if (countRow && typeof countRow.cnt === 'number') {
+					return countRow.cnt;
+				}
+			}
 		}
 	} catch (e) {
 		// In non-browser / mock environment, gracefully return 0
@@ -1091,31 +1117,45 @@ export async function getWordFrequencyByBook(
 		}
 	}
 
-	// 3. Fallback: aggregate from indexed concordance_refs (fast indexed lookup)
+	// 3. Fallback: aggregate from indexed concordance_refs using fast SQL GROUP BY
 	if (lemma || strongs) {
 		try {
-			const occs = await getConcordance(corpusId, lemma, 0, strongs);
-			if (occs && occs.length > 0) {
-				const bookMap = new Map<string, { title: string; count: number }>();
-				for (const occ of occs) {
-					const ref = occ.ref_label || occ.display_label || '';
-					const parts = ref.split(' ');
-					const bAbbrev = parts[0] || 'Unknown';
-					const existing = bookMap.get(bAbbrev);
-					if (existing) {
-						existing.count++;
-					} else {
-						bookMap.set(bAbbrev, { title: bAbbrev, count: 1 });
-					}
+			const keys: string[] = [];
+			if (strongs && strongs.trim()) {
+				const sNorm = strongs.trim().toUpperCase();
+				const sCode = sNorm.startsWith('H') || sNorm.startsWith('G')
+					? sNorm
+					: (corpusId === 'wlc' ? `H${sNorm}` : `G${sNorm}`);
+				keys.push(sCode);
+				if (sNorm !== sCode) keys.push(sNorm);
+			}
+			if (lemma && lemma.trim()) {
+				const lTrim = lemma.trim();
+				const targetKey = corpusId === 'peshitta' ? cleanSyriac(lTrim) : lTrim;
+				const lNFC = targetKey.normalize('NFC');
+				keys.push(targetKey);
+				if (lNFC !== targetKey) keys.push(lNFC);
+			}
+			const uniqueKeys = Array.from(new Set(keys));
+			if (uniqueKeys.length > 0) {
+				const placeholders = uniqueKeys.map(() => '?').join(',');
+				const rows = await query<{ book: string; cnt: number }>(`
+					SELECT substr(ref_label, 1, instr(ref_label, ' ') - 1) as book, count(*) as cnt
+					FROM concordance_refs
+					WHERE corpus_id = ? AND lemma_key IN (${placeholders})
+					GROUP BY book
+					ORDER BY cnt DESC
+				`, [corpusId, ...uniqueKeys]);
+				if (rows && rows.length > 0) {
+					const items = rows
+						.filter((r) => r.book)
+						.map((r) => ({
+							title: r.book,
+							sbl_abbreviation: r.book,
+							count: r.cnt
+						}));
+					return formatItems(items);
 				}
-				const items = Array.from(bookMap.entries())
-					.map(([bCode, val]) => ({
-						title: val.title,
-						sbl_abbreviation: bCode,
-						count: val.count
-					}))
-					.sort((a, b) => b.count - a.count);
-				return formatItems(items);
 			}
 		} catch (e) {
 			console.warn('[dbClient] Fallback concordance aggregation error:', e);
