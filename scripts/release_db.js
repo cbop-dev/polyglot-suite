@@ -90,6 +90,7 @@ Apps:
   bible (or data)     Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
   philo               Philo Reader database (tag: philo-db-vX.Y.Z)
   fathers (or af)     Apostolic Fathers Reader database (tag: af-db-vX.Y.Z)
+  josephus (or jr)    Josephus Reader database (tag: josephus-db-vX.Y.Z)
 
 Bump Types:
   patch               Increment patch version (e.g. 1.0.0 -> 1.0.1) [default]

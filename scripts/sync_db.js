@@ -33,11 +33,20 @@ export const APPS = {
     title: 'Apostolic Fathers Reader SQLite Database',
     notes: 'Pre-computed 5MB SQLite database chunks for Apostolic Fathers Reader.',
   },
+  josephus: {
+    name: 'Josephus Reader',
+    dir: path.join(REPO_ROOT, 'apps/josephus-reader/static/db'),
+    pattern: 'josephus.db.*',
+    defaultPrefix: 'josephus-db-v',
+    title: 'Josephus Reader SQLite Database',
+    notes: 'Pre-computed 5MB SQLite database chunks for Josephus Reader.',
+  },
 };
 APPS.data = APPS.bible;
 APPS['bible-data'] = APPS.bible;
 APPS.lex = APPS.bible;
 APPS.af = APPS.fathers;
+APPS.jr = APPS.josephus;
 
 export function getGhEnv() {
   const env = { ...process.env };
@@ -134,10 +143,11 @@ Actions:
   --publish, publish   Upload local database chunks to GitHub Releases
 
 Apps:
-  all                  Sync all reader databases (bible, philo, fathers) [default for pull]
+  all                  Sync all reader databases (bible, philo, fathers, josephus) [default for pull]
   bible (or data)      Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
   philo                Philo Reader database (tag: philo-db-vX.Y.Z)
   fathers (or af)      Apostolic Fathers Reader database (tag: af-db-vX.Y.Z)
+  josephus (or jr)     Josephus Reader database (tag: josephus-db-vX.Y.Z)
 
 Options:
   --help, -h, help     Show this help message
@@ -164,7 +174,7 @@ if (isMain) {
     process.exit(0);
   }
 
-  const targets = targetApp === 'all' ? ['bible', 'philo', 'fathers'] : [targetApp];
+  const targets = targetApp === 'all' ? ['bible', 'philo', 'fathers', 'josephus'] : [targetApp];
 
   if (!['--pull', 'pull', '--publish', 'publish'].includes(action)) {
     printUsage();

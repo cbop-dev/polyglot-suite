@@ -192,10 +192,11 @@ Usage:
   npm run status:db [app]
 
 Apps:
-  all                  Check all reader databases (bible, philo, fathers) [default]
+  all                  Check all reader databases (bible, philo, fathers, josephus) [default]
   bible (or lex, data) Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
   philo                Philo Reader database (tag: philo-db-vX.Y.Z)
   fathers (or af)      Apostolic Fathers Reader database (tag: af-db-vX.Y.Z)
+  josephus (or jr)     Josephus Reader database (tag: josephus-db-vX.Y.Z)
 
 Options:
   --help, -h           Show this help message
@@ -220,7 +221,7 @@ function main() {
   const targetArg = positional[0] || 'all';
   const targetKeys =
     targetArg === 'all'
-      ? ['bible', 'philo', 'fathers']
+      ? ['bible', 'philo', 'fathers', 'josephus']
       : [targetArg];
 
   for (const key of targetKeys) {
