@@ -49,3 +49,5 @@ vite.config.*.timestamp-*
 # Operating System
 .DS_Store
 Thumbs.db
+
+.discard/
