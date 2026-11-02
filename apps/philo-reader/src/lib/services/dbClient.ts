@@ -207,11 +207,11 @@ export async function fetchConcordance(lemma: string): Promise<ConcordanceRef[]>
 		SELECT c.display_citation, c.work_unit_id, t.work_code, t.chapter, t.section, t.text_content, t.tokens_json
 		FROM concordance_refs c
 		JOIN text_units t ON t.id = c.work_unit_id
-		WHERE c.lemma = ?
-		ORDER BY t.work_code, t.chapter, t.section
+		WHERE c.corpus_id = 'grc' AND (c.lemma = ? OR c.lemma = ?)
+		ORDER BY c.work_unit_id
 		LIMIT 200
 	`;
-	const rows = await worker.db.query(sql, [clean]);
+	const rows = await worker.db.query(sql, [clean, stripGreekAccents(clean)]);
 	return (rows as any[]).map((r) => {
 		const rawTokens = getRowVal<string | undefined>(r, 'tokens_json', 6);
 		const tokens = parseJsonField<Token[] | undefined>(rawTokens);
@@ -308,14 +308,17 @@ export async function fetchAttestedForms(lemma: string): Promise<AttestedForm[]>
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
 	const normalized = stripGreekAccents(clean);
 
-	const sql = `
-		SELECT forms_json
-		FROM lemma_forms
-		WHERE corpus_id = 'grc' AND (lemma_key = ? OR lemma_key = ?)
-		ORDER BY CASE WHEN lemma_key = ? THEN 0 ELSE 1 END, total_occurrences DESC
-		LIMIT 1
-	`;
-	const rows = await worker.db.query(sql, [clean, normalized, clean]);
+	const directRows = await worker.db.query(
+		`SELECT forms_json FROM lemma_forms WHERE corpus_id = 'grc' AND lemma_key = ? LIMIT 1`,
+		[clean]
+	);
+	let rows = directRows;
+	if ((!rows || (rows as any[]).length === 0) && normalized !== clean) {
+		rows = await worker.db.query(
+			`SELECT forms_json FROM lemma_forms WHERE corpus_id = 'grc' AND lemma_key = ? LIMIT 1`,
+			[normalized]
+		);
+	}
 	if (!rows || (rows as any[]).length === 0) {
 		return [];
 	}

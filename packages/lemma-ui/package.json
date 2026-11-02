@@ -12,6 +12,7 @@
     "./SEDRAEntry.svelte": "./src/components/SEDRAEntry.svelte",
     "./TextsDisplay.svelte": "./src/components/TextsDisplay.svelte",
     "./LemmaInfo.svelte": "./src/components/LemmaInfo.svelte",
+    "./LexemeSidePanel.svelte": "./src/components/LexemeSidePanel.svelte",
     "./components/*": "./src/components/*"
   },
   "peerDependencies": {

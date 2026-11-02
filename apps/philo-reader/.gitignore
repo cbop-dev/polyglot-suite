@@ -14,4 +14,8 @@ Thumbs.db
 pipeline/__pycache__/
 pipeline/cache/
 pipeline/build/
+playwright-report/
+blob-report/
+coverage/
+.nyc_output/
 *.sqlite3

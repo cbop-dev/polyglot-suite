@@ -9,6 +9,14 @@ node_modules
 /build
 /static/data
 /sources
+/pipeline/raw_data
+/pipeline/build
+/pipeline/cache
+/pipeline/sources
+playwright-report/
+blob-report/
+coverage/
+.nyc_output/
 
 # OS
 .DS_Store

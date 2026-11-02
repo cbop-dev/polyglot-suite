@@ -12,7 +12,11 @@
     "./KwicSnippet.svelte": "./src/components/KwicSnippet.svelte",
     "./AttestedFormsSection.svelte": "./src/components/AttestedFormsSection.svelte",
     "./InflectionFilterBar.svelte": "./src/components/InflectionFilterBar.svelte",
+    "./HighlightColorPicker.svelte": "./src/components/HighlightColorPicker.svelte",
     "./bible": "./src/bible/index.ts",
+    "./highlightStore": "./src/stores/highlightStore.svelte.ts",
+    "./citations": "./src/citations/index.ts",
+    "./stores/*": "./src/stores/*",
     "./components/*": "./src/components/*"
   },
   "scripts": {

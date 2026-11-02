@@ -8,6 +8,7 @@
         showButton = true,
         btnSizeCssClass = 'px-2 py-0.5 text-xs',
         btnCssClass= '',
+        copiedCssClass = '',
         width = 14,
         height = 14,
         svgIcon = null,
@@ -65,14 +66,14 @@
     type="button"
     title={copied ? "Copied!" : tooltip} 
     onclick={copyToClipboard} 
-    class="inline-flex items-center gap-1 rounded-md font-sans transition-colors cursor-pointer border border-rule/50 bg-rule/30 hover:bg-rule/70 text-ink {btnSizeCssClass} {btnCssClass}"
+    class="inline-flex items-center gap-1 rounded-md font-sans transition-colors cursor-pointer border border-rule/50 bg-rule/30 hover:bg-rule/70 text-ink {btnSizeCssClass} {btnCssClass} {copied && copiedCssClass ? copiedCssClass : ''}"
 >
     {#if copied && !supressCopiedMsg}
-        <svg class="w-3.5 h-3.5 text-green-600 stroke-current" stroke="var(--strokecolor, currentColor)" 
+        <svg class="w-3.5 h-3.5 {copiedCssClass.includes('text-white') ? 'text-white' : 'text-green-600'} stroke-current" stroke="var(--strokecolor, currentColor)" 
         viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12" />
         </svg>
-        <span class="text-xs font-bold text-green-700">Copied!</span>
+        <span class="text-xs font-bold {copiedCssClass.includes('text-white') ? 'text-white' : 'text-green-700'}">Copied!</span>
     {:else}
         {#if linkText}
             <span>{linkText}</span>

@@ -12,6 +12,7 @@
     "build:github": "npm run build:gh",
     "preview": "npm run preview:www",
     "preview:www": "ADAPTER=static vite preview",
+    "test:e2e": "playwright test",
     "pipeline:fetch": "python3 -m pipeline.fetcher",
     "pipeline:build": "python3 -m pipeline.build --build-db --chunk --export-ts",
     "pipeline:all": "python3 -m pipeline.build --all",
@@ -43,7 +44,9 @@
   "dependencies": {
     "@polyglot/ancient-languages": "*",
     "@polyglot/db-vfs": "*",
+    "@polyglot/lemma-ui": "*",
     "@polyglot/theme": "*",
+    "@polyglot/ui": "*",
     "chart.js": "^4.5.1",
     "sql.js-httpvfs": "^0.8.12",
     "svelte-chartjs": "^4.0.1"
