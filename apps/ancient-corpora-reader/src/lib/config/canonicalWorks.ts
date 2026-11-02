@@ -1,4 +1,5 @@
 import type { AncientCorpusId } from '@polyglot/ancient-languages';
+export type { AncientCorpusId };
 import {
 	AF_CANONICAL_WORKS,
 	PHILO_CANONICAL_WORKS,
@@ -94,5 +95,24 @@ export function findWork(corpusId: AncientCorpusId, codeOrSlug: string): Unified
 	const list = getCorpusWorks(corpusId);
 	if (!codeOrSlug) return list[0];
 	const norm = slugify(codeOrSlug);
-	return list.find((w) => slugify(w.code) === norm || w.slug === norm || slugify(w.titleEnglish) === norm);
+
+	// 1. Exact match on code, slug, English title, Latin title, or abbrev
+	const exact = list.find(
+		(w) =>
+			slugify(w.code) === norm ||
+			w.slug === norm ||
+			slugify(w.titleEnglish) === norm ||
+			(w.titleLatin && slugify(w.titleLatin) === norm) ||
+			slugify(w.abbrev) === norm
+	);
+	if (exact) return exact;
+
+	// 2. Prefix / alias match (e.g. 'ant' -> 'antiquities', 'war' -> 'war')
+	return list.find(
+		(w) =>
+			w.slug.startsWith(norm) ||
+			norm.startsWith(w.slug) ||
+			slugify(w.titleEnglish).startsWith(norm) ||
+			slugify(w.abbrev).startsWith(norm)
+	);
 }
