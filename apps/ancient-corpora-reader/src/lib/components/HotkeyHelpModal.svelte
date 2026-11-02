@@ -3,10 +3,10 @@
 	import { readerState } from '../stores/readerState.svelte.js';
 
 	const HOTKEYS = [
-		{ key: 'W / B', desc: 'Open Work / Book selector' },
-		{ key: 'C / S', desc: 'Open Chapter / Division selector' },
-		{ key: 'J / →', desc: 'Next division' },
-		{ key: 'K / ←', desc: 'Previous division' },
+		{ key: 'W / B', desc: 'Open Work / Treatise selector' },
+		{ key: 'J / S / C', desc: 'Jump to Section & Book/Chapter selector' },
+		{ key: '] / →', desc: 'Next division' },
+		{ key: '[ / ←', desc: 'Previous division' },
 		{ key: 'P', desc: 'Parallel view mode' },
 		{ key: 'G', desc: 'Greek only view mode' },
 		{ key: 'E', desc: 'English only view mode' },

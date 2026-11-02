@@ -75,4 +75,25 @@ describe('ReaderState Store', () => {
 		state.toggleSidePanel('search');
 		expect(state.isSidePanelOpen).toBe(false);
 	});
+
+	it('supports book and section jump navigation across corpora', () => {
+		const state = new ReaderState();
+		state.setCorpus('josephus', 'Antiquities', 1);
+
+		// Jump to Book 3, Section 110
+		state.setDivision(3, 110);
+		expect(state.currentDivision).toBe(3);
+		expect(state.currentSection).toBe(110);
+
+		// Jump to Section 45 within current book
+		state.setDivision(3, 45);
+		expect(state.currentDivision).toBe(3);
+		expect(state.currentSection).toBe(45);
+
+		// Philo multi-book treatise
+		state.setCorpus('philo', 'LEG', 1);
+		state.setDivision(2, 50);
+		expect(state.currentDivision).toBe(2);
+		expect(state.currentSection).toBe(50);
+	});
 });

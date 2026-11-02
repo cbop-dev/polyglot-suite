@@ -62,7 +62,9 @@
 			if (readerState.currentSection) {
 				const s = readerState.currentSection;
 				setTimeout(() => {
-					const el = document.getElementById(`section-${s}`) || document.getElementById(`niese-${s}`);
+					const el = document.getElementById(`section-${s}`) ||
+						document.getElementById(`niese-${s}`) ||
+						document.getElementById(`sec-${s}`);
 					el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 				}, 120);
 			}
@@ -73,6 +75,19 @@
 			loading = false;
 		}
 	}
+
+	// Smooth scroll to target section when selected
+	$effect(() => {
+		const s = readerState.currentSection;
+		if (s !== null && !loading) {
+			setTimeout(() => {
+				const el = document.getElementById(`section-${s}`) ||
+					document.getElementById(`niese-${s}`) ||
+					document.getElementById(`sec-${s}`);
+				el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}, 60);
+		}
+	});
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -94,13 +109,17 @@
 		} else if (e.key === 'w' || e.key === 'W' || e.key === 'b' || e.key === 'B') {
 			e.preventDefault();
 			readerState.isWorkModalOpen = true;
-		} else if (e.key === 'c' || e.key === 'C' || e.key === 's' || e.key === 'S') {
+		} else if (
+			e.key === 'j' || e.key === 'J' ||
+			e.key === 's' || e.key === 'S' ||
+			e.key === 'c' || e.key === 'C'
+		) {
 			e.preventDefault();
 			readerState.isDivisionModalOpen = true;
-		} else if (e.key === 'j' || e.key === 'ArrowRight') {
+		} else if (e.key === ']' || e.key === 'ArrowRight') {
 			e.preventDefault();
 			readerState.nextDivision();
-		} else if (e.key === 'k' || e.key === 'ArrowLeft') {
+		} else if (e.key === '[' || e.key === 'ArrowLeft') {
 			e.preventDefault();
 			readerState.prevDivision();
 		} else if (e.key === 'p' || e.key === 'P') {
@@ -155,7 +174,7 @@
 
 	<!-- Modals -->
 	<WorkPickerModalWrapper />
-	<DivisionPickerModalWrapper />
+	<DivisionPickerModalWrapper greekSectionsCount={greekSections.length} />
 	<AcademicCitationModalWrapper />
 	<HotkeyHelpModal />
 </div>
