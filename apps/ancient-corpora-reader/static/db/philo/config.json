@@ -1,0 +1,9 @@
+{
+  "serverMode": "chunked",
+  "requestChunkSize": 4096,
+  "urlPrefix": "philo.db.",
+  "serverChunkSize": 5242880,
+  "databaseLengthBytes": 284033024,
+  "suffixLength": 2,
+  "cacheBust": "v1793653022"
+}

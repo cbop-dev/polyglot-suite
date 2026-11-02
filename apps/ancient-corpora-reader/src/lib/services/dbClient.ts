@@ -41,6 +41,7 @@ export interface LexiconEntry {
 	strongs_id?: string;
 	lemma: string;
 	normalized_lemma: string;
+	pos?: string;
 	transliteration?: string;
 	gloss: string;
 	definition: string;
@@ -119,78 +120,38 @@ export async function fetchDivisionSections(
 	const english: TextUnit[] = [];
 	const latin: TextUnit[] = [];
 
-	if (corpusId === 'af') {
-		const sql = `
-			SELECT id, corpus_id, work_code, chapter, section, display_citation, text_content, tokens_json
-			FROM text_units
-			WHERE work_code = ? AND chapter = ?
-			ORDER BY section ASC, corpus_id ASC
-		`;
-		const rows = await worker.db.query(sql, [workCode, division]);
-		for (const row of rows as any[]) {
-			const rawTokens = getRowVal(row, 'tokens_json', 7);
-			const unit: TextUnit = {
-				id: getRowVal<number>(row, 'id', 0),
-				corpus_id: getRowVal<string>(row, 'corpus_id', 1),
-				work_code: getRowVal<string>(row, 'work_code', 2),
-				chapter: getRowVal<number>(row, 'chapter', 3),
-				section: getRowVal<number>(row, 'section', 4),
-				display_citation: getRowVal<string>(row, 'display_citation', 5),
-				text_content: getRowVal<string>(row, 'text_content', 6),
-				tokens: parseJsonField<Token[] | undefined>(rawTokens)
-			};
-			if (unit.corpus_id === 'lake_grc') greek.push(unit);
-			else if (unit.corpus_id === 'lake_eng') english.push(unit);
-			else if (unit.corpus_id === 'lake_lat') latin.push(unit);
-		}
-	} else if (corpusId === 'philo') {
-		const sql = `
-			SELECT id, corpus_id, work_code, chapter, section, display_citation, mangey_ref, is_supplement, text_content, tokens_json
-			FROM text_units
-			WHERE work_code = ? AND chapter = ?
-			ORDER BY section ASC, corpus_id ASC
-		`;
-		const rows = await worker.db.query(sql, [workCode, division]);
-		for (const row of rows as any[]) {
-			const rawTokens = getRowVal(row, 'tokens_json', 9);
-			const unit: TextUnit = {
-				id: getRowVal<number>(row, 'id', 0),
-				corpus_id: getRowVal<string>(row, 'corpus_id', 1),
-				work_code: getRowVal<string>(row, 'work_code', 2),
-				chapter: getRowVal<number>(row, 'chapter', 3),
-				section: getRowVal<number>(row, 'section', 4),
-				display_citation: getRowVal<string>(row, 'display_citation', 5),
-				mangey_ref: getRowVal<string | undefined>(row, 'mangey_ref', 6),
-				is_supplement: getRowVal<number | undefined>(row, 'is_supplement', 7),
-				text_content: getRowVal<string>(row, 'text_content', 8),
-				tokens: parseJsonField<Token[] | undefined>(rawTokens)
-			};
-			if (unit.corpus_id === 'grc') greek.push(unit);
-			else if (unit.corpus_id === 'eng') english.push(unit);
-		}
-	} else if (corpusId === 'josephus') {
-		const sql = `
-			SELECT id, corpus_id, work_code, book, section_num, niese_section, display_citation, text_content, tokens_json
-			FROM text_units
-			WHERE work_code = ? AND book = ?
-			ORDER BY id ASC
-		`;
-		const rows = await worker.db.query(sql, [workCode, division]);
-		for (const row of rows as any[]) {
-			const rawTokens = getRowVal(row, 'tokens_json', 8);
-			const unit: TextUnit = {
-				id: getRowVal<number>(row, 'id', 0),
-				corpus_id: getRowVal<string>(row, 'corpus_id', 1),
-				work_code: getRowVal<string>(row, 'work_code', 2),
-				book: getRowVal<number>(row, 'book', 3),
-				section_num: getRowVal<number>(row, 'section_num', 4),
-				niese_section: getRowVal<string>(row, 'niese_section', 5),
-				display_citation: getRowVal<string>(row, 'display_citation', 6),
-				text_content: getRowVal<string>(row, 'text_content', 7),
-				tokens: parseJsonField<Token[] | undefined>(rawTokens)
-			};
-			if (unit.corpus_id === 'josephus_grc') greek.push(unit);
-			else if (unit.corpus_id === 'josephus_eng') english.push(unit);
+	const sql = `
+		SELECT u.id, u.corpus_id, u.work_code, u.book, u.chapter, u.section, u.section_num, u.niese_section,
+		       u.mangey_ref, u.is_supplement, u.display_citation, u.text_content, tok.tokens_json
+		FROM text_units u
+		LEFT JOIN text_unit_tokens tok ON tok.work_unit_id = u.id
+		WHERE u.work_code = ? AND (u.chapter = ? OR u.book = ?)
+		ORDER BY u.section ASC, u.id ASC
+	`;
+	const rows = await worker.db.query(sql, [workCode, division, division]);
+	for (const row of rows as any[]) {
+		const rawTokens = getRowVal(row, 'tokens_json', 12);
+		const unit: TextUnit = {
+			id: getRowVal<number>(row, 'id', 0),
+			corpus_id: getRowVal<string>(row, 'corpus_id', 1),
+			work_code: getRowVal<string>(row, 'work_code', 2),
+			book: getRowVal<number>(row, 'book', 3),
+			chapter: getRowVal<number>(row, 'chapter', 4),
+			section: getRowVal<number>(row, 'section', 5),
+			section_num: getRowVal<number>(row, 'section_num', 6),
+			niese_section: getRowVal<string | undefined>(row, 'niese_section', 7),
+			mangey_ref: getRowVal<string | undefined>(row, 'mangey_ref', 8),
+			is_supplement: getRowVal<number | undefined>(row, 'is_supplement', 9),
+			display_citation: getRowVal<string>(row, 'display_citation', 10),
+			text_content: getRowVal<string>(row, 'text_content', 11),
+			tokens: parseJsonField<Token[] | undefined>(rawTokens)
+		};
+		if (unit.corpus_id.endsWith('_grc') || unit.corpus_id === 'grc') {
+			greek.push(unit);
+		} else if (unit.corpus_id.endsWith('_eng') || unit.corpus_id === 'eng') {
+			english.push(unit);
+		} else if (unit.corpus_id.endsWith('_lat') || unit.corpus_id === 'lat') {
+			latin.push(unit);
 		}
 	}
 
@@ -202,9 +163,8 @@ export async function fetchDivisionSections(
  */
 export async function fetchAvailableDivisions(corpusId: AncientCorpusId, workCode: string): Promise<number[]> {
 	const worker = await getDbWorker(corpusId);
-	const column = corpusId === 'josephus' ? 'book' : 'chapter';
 	const sql = `
-		SELECT DISTINCT ${column} AS div_num
+		SELECT DISTINCT CASE WHEN book > 0 THEN book ELSE chapter END AS div_num
 		FROM text_units
 		WHERE work_code = ?
 		ORDER BY div_num ASC
@@ -223,7 +183,7 @@ export async function fetchLexiconEntry(corpusId: AncientCorpusId, lemma: string
 	const norm = stripGreekAccents(clean);
 
 	const sql = `
-		SELECT dictionary, strongs_id, lemma, normalized_lemma, transliteration, gloss, definition
+		SELECT dictionary, strongs_id, lemma, normalized_lemma, pos, transliteration, gloss, definition
 		FROM lexicon_entries
 		WHERE normalized_lemma = ? OR lemma = ?
 		LIMIT 1
@@ -237,9 +197,10 @@ export async function fetchLexiconEntry(corpusId: AncientCorpusId, lemma: string
 		strongs_id: getRowVal<string | undefined>(r, 'strongs_id', 1),
 		lemma: getRowVal<string>(r, 'lemma', 2),
 		normalized_lemma: getRowVal<string>(r, 'normalized_lemma', 3),
-		transliteration: getRowVal<string | undefined>(r, 'transliteration', 4),
-		gloss: getRowVal<string>(r, 'gloss', 5),
-		definition: getRowVal<string>(r, 'definition', 6)
+		pos: getRowVal<string | undefined>(r, 'pos', 4),
+		transliteration: getRowVal<string | undefined>(r, 'transliteration', 5),
+		gloss: getRowVal<string>(r, 'gloss', 6),
+		definition: getRowVal<string>(r, 'definition', 7)
 	};
 }
 
@@ -335,60 +296,35 @@ export async function fetchConcordancePage(
 		return { refs: [], totalCount, hasMore: false, nextOffset: offset };
 	}
 
-	// Step 3: Query page rows using CTE pushdown
-	let pagedRefs: ConcordanceRef[] = [];
-
-	if (corpusId === 'josephus') {
-		const sql = `
-			WITH top_refs AS (
-				SELECT display_citation, work_unit_id
-				FROM concordance_refs
-				WHERE corpus_id = ? AND lemma IN (${placeholders})
-				ORDER BY work_unit_id ASC
-				LIMIT ? OFFSET ?
-			)
-			SELECT r.display_citation, r.work_unit_id, t.work_code, t.book, t.section_num, t.niese_section, t.text_content
-			FROM top_refs r
-			JOIN text_units t ON t.id = r.work_unit_id
-		`;
-		const rows = await worker.db.query(sql, [targetCorpus, ...matchingLemmas, pageSize, offset]);
-		pagedRefs = (rows as any[]).map((r) => ({
+	// Step 3: Direct Covering Query from concordance_refs (ZERO JOINS)
+	const sql = `
+		SELECT 
+			display_citation, work_unit_id, work_code, 
+			book, chapter, section, niese_section, 
+			matched_form, kwic_snippet
+		FROM concordance_refs
+		WHERE corpus_id = ? AND lemma IN (${placeholders})
+		ORDER BY work_unit_id ASC
+		LIMIT ? OFFSET ?
+	`;
+	const rows = await worker.db.query(sql, [targetCorpus, ...matchingLemmas, pageSize, offset]);
+	const pagedRefs: ConcordanceRef[] = (rows as any[]).map((r) => {
+		const matchedWord = getRowVal<string>(r, 'matched_form', 7) || clean;
+		const sec = getRowVal<number>(r, 'section', 5);
+		return {
 			display_citation: getRowVal<string>(r, 'display_citation', 0),
 			work_unit_id: getRowVal<number>(r, 'work_unit_id', 1),
 			work_code: getRowVal<string>(r, 'work_code', 2),
 			book: getRowVal<number>(r, 'book', 3),
-			section_num: getRowVal<number>(r, 'section_num', 4),
-			niese_section: getRowVal<string>(r, 'niese_section', 5),
-			text_content: getRowVal<string>(r, 'text_content', 6),
-			matched_word: clean,
-			matched_words: [clean]
-		}));
-	} else {
-		// AF and Philo schema
-		const sql = `
-			WITH top_refs AS (
-				SELECT display_citation, work_unit_id
-				FROM concordance_refs
-				WHERE corpus_id = ? AND lemma IN (${placeholders})
-				ORDER BY work_unit_id ASC
-				LIMIT ? OFFSET ?
-			)
-			SELECT r.display_citation, r.work_unit_id, t.work_code, t.chapter, t.section, t.text_content
-			FROM top_refs r
-			JOIN text_units t ON t.id = r.work_unit_id
-		`;
-		const rows = await worker.db.query(sql, [targetCorpus, ...matchingLemmas, pageSize, offset]);
-		pagedRefs = (rows as any[]).map((r) => ({
-			display_citation: getRowVal<string>(r, 'display_citation', 0),
-			work_unit_id: getRowVal<number>(r, 'work_unit_id', 1),
-			work_code: getRowVal<string>(r, 'work_code', 2),
-			chapter: getRowVal<number>(r, 'chapter', 3),
-			section: getRowVal<number>(r, 'section', 4),
-			text_content: getRowVal<string>(r, 'text_content', 5),
-			matched_word: clean,
-			matched_words: [clean]
-		}));
-	}
+			chapter: getRowVal<number>(r, 'chapter', 4),
+			section: sec,
+			section_num: sec,
+			niese_section: getRowVal<string | undefined>(r, 'niese_section', 6),
+			text_content: getRowVal<string>(r, 'kwic_snippet', 8),
+			matched_word: matchedWord,
+			matched_words: [matchedWord]
+		};
+	});
 
 	const nextOffset = offset + pagedRefs.length;
 	const hasMore = nextOffset < totalCount;
@@ -407,6 +343,18 @@ export async function fetchConcordancePage(
 export async function fetchConcordance(corpusId: AncientCorpusId, lemma: string): Promise<ConcordanceRef[]> {
 	const result = await fetchConcordancePage(corpusId, lemma, 0, 100);
 	return result.refs as ConcordanceRef[];
+}
+
+/**
+ * Fetch full text for a section on demand (e.g. when user expands KWIC preview)
+ */
+export async function fetchSectionText(corpusId: AncientCorpusId, workUnitId: number): Promise<string> {
+	const worker = await getDbWorker(corpusId);
+	const rows = (await worker.db.query(
+		`SELECT text_content FROM text_units WHERE id = ? LIMIT 1`,
+		[workUnitId]
+	)) as any[];
+	return rows && rows.length > 0 ? getRowVal<string>(rows[0], 'text_content', 0) : '';
 }
 
 /**
@@ -455,12 +403,13 @@ export async function fetchAttestedForms(corpusId: AncientCorpusId, lemma: strin
 		const parsed = parseJsonField<{ forms?: AttestedForm[] }>(rawJson);
 		return parsed?.forms || [];
 	} else {
-		// AF: extract from tokens_json
+		// AF: extract from text_unit_tokens
 		const sql = `
-			SELECT t.tokens_json
+			SELECT tok.tokens_json
 			FROM concordance_refs c
-			JOIN text_units t ON t.id = c.work_unit_id
-			WHERE c.lemma = ?
+			JOIN text_unit_tokens tok ON tok.work_unit_id = c.work_unit_id
+			WHERE c.corpus_id = 'lake_grc' AND c.lemma = ?
+			LIMIT 50
 		`;
 		const rows = await worker.db.query(sql, [clean]);
 		const rawItems: { word: string; pos?: string; morph?: string }[] = [];
