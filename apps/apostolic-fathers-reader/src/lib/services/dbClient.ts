@@ -158,36 +158,26 @@ export async function fetchLemmaStats(lemma: string): Promise<LemmaStat | null> 
 	};
 }
 
-export async function fetchConcordance(lemma: string): Promise<ConcordanceRef[]> {
+export async function fetchConcordance(lemma: string, corpusId: string = 'lake_grc'): Promise<ConcordanceRef[]> {
 	if (!lemma) return [];
 	const worker = await getDbWorker();
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
+	const norm = stripGreekAccents(clean);
 
 	const sql = `
-		SELECT c.display_citation, c.work_unit_id, t.work_code, t.chapter, t.section, t.text_content, t.tokens_json
-		FROM concordance_refs c
-		JOIN text_units t ON t.id = c.work_unit_id
-		WHERE c.lemma = ?
-		ORDER BY t.work_code, t.chapter, t.section
-		LIMIT 200
+		WITH top_refs AS (
+			SELECT display_citation, work_unit_id
+			FROM concordance_refs
+			WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
+			ORDER BY work_unit_id ASC
+			LIMIT 200
+		)
+		SELECT r.display_citation, r.work_unit_id, t.work_code, t.chapter, t.section, t.text_content
+		FROM top_refs r
+		JOIN text_units t ON t.id = r.work_unit_id
 	`;
-	const rows = await worker.db.query(sql, [clean]);
+	const rows = await worker.db.query(sql, [corpusId, clean, norm]);
 	return (rows as any[]).map((r) => {
-		const rawTokens = getRowVal<string | undefined>(r, 'tokens_json', 6);
-		const tokens = parseJsonField<Token[] | undefined>(rawTokens);
-		const matchedWords: string[] = [];
-
-		if (tokens) {
-			for (const tok of tokens) {
-				if (tok.l === clean || tok.l === lemma) {
-					const surface = tok.w.replace(/[.,;:·’—\s]/g, '').trim();
-					if (surface && !matchedWords.includes(surface)) {
-						matchedWords.push(surface);
-					}
-				}
-			}
-		}
-
 		return {
 			display_citation: getRowVal<string>(r, 'display_citation', 0),
 			work_unit_id: getRowVal<number>(r, 'work_unit_id', 1),
@@ -195,8 +185,8 @@ export async function fetchConcordance(lemma: string): Promise<ConcordanceRef[]>
 			chapter: getRowVal<number>(r, 'chapter', 3),
 			section: getRowVal<number>(r, 'section', 4),
 			text_content: getRowVal<string>(r, 'text_content', 5),
-			matched_word: matchedWords[0] || clean,
-			matched_words: matchedWords
+			matched_word: clean,
+			matched_words: [clean]
 		};
 	});
 }
