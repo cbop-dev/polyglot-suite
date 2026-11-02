@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { FloatingSidePanel, Loading } from '@polyglot/ui';
+	import { FloatingSidePanel, Modal2, Loading } from '@polyglot/ui';
 	import HighlightColorPicker from '@polyglot/ancient-languages/HighlightColorPicker.svelte';
 	import KwicSnippet from '@polyglot/ancient-languages/KwicSnippet.svelte';
 	import AttestedFormsSection from '@polyglot/ancient-languages/AttestedFormsSection.svelte';
@@ -85,6 +85,8 @@
 		width?: number;
 		ariaLabel?: string;
 		highlightStore?: any;
+		displayMode?: 'sidepanel' | 'modal';
+		onDisplayModeChange?: (mode: 'sidepanel' | 'modal') => void;
 
 		// Data fetching
 		fetchLexiconEntry?: (lemma: string) => Promise<LexiconEntry | null>;
@@ -118,6 +120,8 @@
 		width = 440,
 		ariaLabel,
 		highlightStore,
+		displayMode: externalDisplayMode,
+		onDisplayModeChange,
 
 		fetchLexiconEntry,
 		fetchLemmaStats,
@@ -140,6 +144,45 @@
 	let effectiveLexiconTitle = $derived(
 		lexiconArticleTitle || (corpusTitle === 'Josephus' ? 'LSJ Lexicon Article' : 'Full Lexicon Article')
 	);
+
+	// Display mode (dual-mode: sidepanel vs centered floating modal)
+	const STORAGE_KEY = 'polyglot_lemma_display_mode';
+
+	function getInitialDisplayMode(): 'sidepanel' | 'modal' {
+		if (externalDisplayMode) return externalDisplayMode;
+		if (typeof window !== 'undefined' && window.localStorage) {
+			try {
+				const saved = localStorage.getItem(STORAGE_KEY);
+				if (saved === 'modal' || saved === 'sidepanel') {
+					return saved;
+				}
+			} catch (e) {
+				// Ignore
+			}
+		}
+		return 'sidepanel';
+	}
+
+	let displayMode = $state<'sidepanel' | 'modal'>(getInitialDisplayMode());
+	let isModalMaximized = $state<boolean>(false);
+
+	$effect(() => {
+		if (externalDisplayMode && externalDisplayMode !== displayMode) {
+			displayMode = externalDisplayMode;
+		}
+	});
+
+	function toggleDisplayMode() {
+		displayMode = displayMode === 'sidepanel' ? 'modal' : 'sidepanel';
+		if (typeof window !== 'undefined' && window.localStorage) {
+			try {
+				localStorage.setItem(STORAGE_KEY, displayMode);
+			} catch (e) {
+				console.warn('Failed to save lemma display mode preference', e);
+			}
+		}
+		onDisplayModeChange?.(displayMode);
+	}
 
 	// Internal state
 	let currentTab = $state<string>('lexeme');
@@ -209,15 +252,58 @@
 	let isKwic = $state<boolean>(true);
 	let concordance = $state<ConcordanceRef[]>([]);
 	let concordanceTotalCount = $state<number>(0);
-	let concordanceNextOffset = $state<number>(0);
-	let concordanceHasMore = $state<boolean>(false);
-	let isLoadingMoreConcordance = $state<boolean>(false);
-	let loadMoreError = $state<string | null>(null);
+	let concordancePage = $state<number>(1);
+	let isPageNavigating = $state<boolean>(false);
+	let concordancePageCache = new Map<number, ConcordanceRef[]>();
+	let concordanceScrollContainer = $state<HTMLElement | null>(null);
 	let stats = $state<LemmaStat | null>(null);
 	let isConcordanceLoading = $state<boolean>(false);
 	let concordanceLoaded = $state<boolean>(false);
 	let concordanceError = $state<string | null>(null);
 	let concordanceQueryId = 0;
+
+	let concordanceTotalPages = $derived(
+		Math.max(1, Math.ceil(concordanceTotalCount / concordancePageSize))
+	);
+	let concordanceStartIdx = $derived(
+		concordanceTotalCount === 0 ? 0 : (concordancePage - 1) * concordancePageSize + 1
+	);
+	let concordanceEndIdx = $derived(
+		Math.min(concordancePage * concordancePageSize, concordanceTotalCount)
+	);
+
+	let paginationPills = $derived.by(() => {
+		const total = concordanceTotalPages;
+		const current = concordancePage;
+		if (total <= 1) return [];
+
+		if (total <= 7) {
+			return Array.from({ length: total }, (_, i) => i + 1);
+		}
+
+		const pages = new Set<number>();
+		pages.add(1);
+		pages.add(total);
+
+		for (let offset = -2; offset <= 2; offset++) {
+			const p = current + offset;
+			if (p >= 1 && p <= total) {
+				pages.add(p);
+			}
+		}
+
+		const sorted = Array.from(pages).sort((a, b) => a - b);
+		const items: (number | 'ellipsis')[] = [];
+
+		for (let i = 0; i < sorted.length; i++) {
+			if (i > 0 && sorted[i] - sorted[i - 1] > 1) {
+				items.push('ellipsis');
+			}
+			items.push(sorted[i]);
+		}
+
+		return items;
+	});
 
 	let filteredConcordance = $derived.by(() => {
 		const filter = selectedFormFilter;
@@ -256,11 +342,10 @@
 		isLexArticleLoading = false;
 
 		concordance = [];
+		concordancePageCache.clear();
 		concordanceTotalCount = 0;
-		concordanceNextOffset = 0;
-		concordanceHasMore = false;
-		isLoadingMoreConcordance = false;
-		loadMoreError = null;
+		concordancePage = 1;
+		isPageNavigating = false;
 		concordanceLoaded = false;
 		concordanceError = null;
 		isConcordanceLoading = false;
@@ -328,12 +413,76 @@
 		}
 	}
 
+	function prefetchNextPage(page: number, lemma: string, queryId: number) {
+		if (!fetchConcordancePage || !lemma) return;
+		const nextPage = page + 1;
+		if (concordanceTotalCount > 0 && nextPage > concordanceTotalPages) return;
+		if (concordancePageCache.has(nextPage)) return;
+
+		const offset = (nextPage - 1) * concordancePageSize;
+		fetchConcordancePage(lemma, offset, concordancePageSize)
+			.then((pageData) => {
+				if (queryId === concordanceQueryId && currentLemma === lemma && pageData?.refs) {
+					concordancePageCache.set(nextPage, pageData.refs);
+				}
+			})
+			.catch((err) => {
+				// Silent non-blocking prefetch failure
+				console.debug('Concordance prefetch failed for page', nextPage, err);
+			});
+	}
+
+	async function goToConcordancePage(page: number) {
+		if (!currentLemma || page < 1 || (concordanceTotalCount > 0 && page > concordanceTotalPages)) return;
+		if (page === concordancePage && concordanceLoaded) return;
+
+		const queryId = concordanceQueryId;
+		const lemma = currentLemma;
+
+		// 1. In-memory cache hit
+		if (concordancePageCache.has(page)) {
+			concordance = concordancePageCache.get(page) || [];
+			concordancePage = page;
+			concordanceScrollContainer?.scrollTo({ top: 0, behavior: 'smooth' });
+			prefetchNextPage(page, lemma, queryId);
+			return;
+		}
+
+		if (!fetchConcordancePage) return;
+
+		isPageNavigating = true;
+		concordanceError = null;
+
+		try {
+			const offset = (page - 1) * concordancePageSize;
+			const pageData = await fetchConcordancePage(lemma, offset, concordancePageSize);
+			if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
+
+			const refs = pageData.refs || [];
+			concordancePageCache.set(page, refs);
+			concordance = refs;
+			concordanceTotalCount = pageData.totalCount ?? concordanceTotalCount;
+			concordancePage = page;
+			concordanceScrollContainer?.scrollTo({ top: 0, behavior: 'smooth' });
+			prefetchNextPage(page, lemma, queryId);
+		} catch (err: any) {
+			if (queryId !== concordanceQueryId) return;
+			console.error(`Error loading concordance page ${page}:`, err);
+			concordanceError = err?.message || `Failed to load page ${page}`;
+		} finally {
+			if (queryId === concordanceQueryId) {
+				isPageNavigating = false;
+			}
+		}
+	}
+
 	async function loadConcordance(lemma: string) {
 		if (!lemma || (!fetchConcordance && !fetchConcordancePage)) return;
 		const queryId = ++concordanceQueryId;
 		isConcordanceLoading = true;
 		concordanceError = null;
-		loadMoreError = null;
+		concordancePageCache.clear();
+		concordancePage = 1;
 
 		try {
 			if (fetchConcordancePage) {
@@ -342,22 +491,28 @@
 					stats ? Promise.resolve(stats) : (fetchLemmaStats ? fetchLemmaStats(lemma) : Promise.resolve(null))
 				]);
 				if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
-				concordance = pageData.refs || [];
-				concordanceTotalCount = pageData.totalCount ?? (pageData.refs?.length || 0);
-				concordanceNextOffset = pageData.nextOffset ?? (pageData.refs?.length || 0);
-				concordanceHasMore = pageData.hasMore ?? false;
+				const refs = pageData.refs || [];
+				concordancePageCache.set(1, refs);
+				concordance = refs;
+				concordanceTotalCount = pageData.totalCount ?? (refs.length || 0);
+				concordancePage = 1;
 				if (!stats) stats = s;
 				concordanceLoaded = true;
+				prefetchNextPage(1, lemma, queryId);
 			} else if (fetchConcordance) {
 				const [c, s] = await Promise.all([
 					fetchConcordance(lemma),
 					stats ? Promise.resolve(stats) : (fetchLemmaStats ? fetchLemmaStats(lemma) : Promise.resolve(null))
 				]);
 				if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
-				concordance = c || [];
-				concordanceTotalCount = c?.length || 0;
-				concordanceNextOffset = c?.length || 0;
-				concordanceHasMore = false;
+				const allRefs = c || [];
+				concordanceTotalCount = allRefs.length;
+				for (let i = 0; i < allRefs.length; i += concordancePageSize) {
+					const p = Math.floor(i / concordancePageSize) + 1;
+					concordancePageCache.set(p, allRefs.slice(i, i + concordancePageSize));
+				}
+				concordance = concordancePageCache.get(1) || [];
+				concordancePage = 1;
 				if (!stats) stats = s;
 				concordanceLoaded = true;
 			}
@@ -368,31 +523,6 @@
 		} finally {
 			if (queryId === concordanceQueryId && currentLemma === lemma) {
 				isConcordanceLoading = false;
-			}
-		}
-	}
-
-	async function loadMoreConcordance() {
-		if (!currentLemma || !fetchConcordancePage || isLoadingMoreConcordance || !concordanceHasMore) return;
-		const queryId = concordanceQueryId;
-		isLoadingMoreConcordance = true;
-		loadMoreError = null;
-
-		try {
-			const pageData = await fetchConcordancePage(currentLemma, concordanceNextOffset, concordancePageSize);
-			if (queryId !== concordanceQueryId || currentLemma !== currentLemma) return;
-			const newRefs = pageData.refs || [];
-			concordance = [...concordance, ...newRefs];
-			concordanceTotalCount = pageData.totalCount ?? concordanceTotalCount;
-			concordanceNextOffset = pageData.nextOffset ?? (concordance.length);
-			concordanceHasMore = pageData.hasMore ?? false;
-		} catch (err: any) {
-			if (queryId !== concordanceQueryId) return;
-			console.error('Error loading more concordance occurrences:', err);
-			loadMoreError = err?.message || 'Failed to load more results';
-		} finally {
-			if (queryId === concordanceQueryId) {
-				isLoadingMoreConcordance = false;
 			}
 		}
 	}
@@ -459,23 +589,15 @@
 	});
 </script>
 
-<FloatingSidePanel
-	{isOpen}
-	{onClose}
-	{top}
-	{width}
-	noPadding={true}
-	showDefaultCloseButton={false}
-	ariaLabel={ariaLabel || `${corpusTitle} Reference and Lexicon Panel`}
->
-	<!-- Panel Top Navigation: Tabs and Close Button -->
-	<div class="flex items-center justify-between border-b border-[var(--color-rule)] bg-[var(--color-card-bg)] px-3 py-2 shrink-0">
+{#snippet panelContent()}
+	<!-- Panel Top Navigation: Tabs and Action Buttons (Pop-out, Maximize, Close) -->
+	<div class="sticky top-0 z-20 flex items-center justify-between border-b border-[var(--color-rule)] bg-[var(--color-card-bg)] px-3 py-2 shrink-0">
 		<!-- Tabs Bar -->
-		<div class="flex items-center gap-1 text-xs font-semibold">
+		<div class="flex items-center gap-1 text-xs font-semibold overflow-x-auto pr-2">
 			<button
 				type="button"
 				onclick={() => setTab('lexeme')}
-				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer {currentTab === 'lexeme'
+				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 {currentTab === 'lexeme'
 					? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold'
 					: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)]'}"
 			>
@@ -493,7 +615,7 @@
 			<button
 				type="button"
 				onclick={() => setTab('search')}
-				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer {currentTab === 'search'
+				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 {currentTab === 'search'
 					? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold'
 					: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)]'}"
 			>
@@ -507,7 +629,7 @@
 				<button
 					type="button"
 					onclick={() => setTab(extraTab.id)}
-					class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer {currentTab === extraTab.id
+					class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 {currentTab === extraTab.id
 						? 'bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 font-bold'
 						: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)]'}"
 				>
@@ -523,7 +645,7 @@
 			<button
 				type="button"
 				onclick={() => setTab('highlights')}
-				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer {currentTab === 'highlights'
+				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 {currentTab === 'highlights'
 					? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold'
 					: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)]'}"
 			>
@@ -537,16 +659,70 @@
 			</button>
 		</div>
 
-		<!-- Close Button -->
-		<button
-			type="button"
-			onclick={onClose}
-			class="rounded-lg p-1.5 text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)] cursor-pointer text-lg leading-none"
-			aria-label="Close side panel"
-			title="Close panel (Esc)"
-		>
-			&times;
-		</button>
+		<!-- Action Buttons: Popout/Dock Toggle, Maximize/Restore, Close -->
+		<div class="flex items-center gap-1 shrink-0">
+			<!-- Dual Mode Toggle Button -->
+			<button
+				type="button"
+				onclick={toggleDisplayMode}
+				class="rounded-lg p-1.5 text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)] cursor-pointer transition-colors"
+				aria-label={displayMode === 'sidepanel' ? 'Open as floating modal' : 'Dock to side panel'}
+				title={displayMode === 'sidepanel' ? 'Open as floating modal' : 'Dock to side panel'}
+			>
+				{#if displayMode === 'sidepanel'}
+					<!-- Pop-out to modal icon -->
+					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+					</svg>
+				{:else}
+					<!-- Dock to side panel icon -->
+					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2" />
+						<line x1="15" y1="3" x2="15" y2="21" stroke-width="2" />
+					</svg>
+				{/if}
+			</button>
+
+			<!-- Fullscreen Maximize / Restore Toggle (Modal Mode only) -->
+			{#if displayMode === 'modal'}
+				<button
+					type="button"
+					onclick={() => (isModalMaximized = !isModalMaximized)}
+					class="rounded-lg p-1.5 text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)] cursor-pointer transition-colors"
+					aria-label={isModalMaximized ? 'Restore window size' : 'Expand to fullscreen'}
+					title={isModalMaximized ? 'Restore window size' : 'Expand to fullscreen'}
+				>
+					{#if isModalMaximized}
+						<!-- Inward / Restore arrows -->
+						<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="4 14 10 14 10 20" />
+							<polyline points="20 10 14 10 14 4" />
+							<line x1="14" y1="10" x2="21" y2="3" />
+							<line x1="10" y1="14" x2="3" y2="21" />
+						</svg>
+					{:else}
+						<!-- Outward / Maximize arrows -->
+						<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="15 3 21 3 21 9" />
+							<polyline points="9 21 3 21 3 15" />
+							<line x1="21" y1="3" x2="14" y2="10" />
+							<line x1="3" y1="21" x2="10" y2="14" />
+						</svg>
+					{/if}
+				</button>
+			{/if}
+
+			<!-- Close Button -->
+			<button
+				type="button"
+				onclick={onClose}
+				class="rounded-lg p-1.5 text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)] cursor-pointer text-lg leading-none transition-colors"
+				aria-label={displayMode === 'sidepanel' ? 'Close side panel' : 'Close modal'}
+				title="Close (Esc)"
+			>
+				&times;
+			</button>
+		</div>
 	</div>
 
 	<!-- Panel Body Area -->
@@ -685,7 +861,7 @@
 					<button
 						type="button"
 						onclick={toggleLexArticle}
-						class="w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 cursor-pointer text-left select-none transition-colors"
+						class="w-full flex items-center justify-between px-4 py-3.5 min-h-[44px] text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 cursor-pointer text-left select-none transition-colors"
 						aria-expanded={isLexArticleOpen}
 					>
 						<div class="flex items-center gap-2">
@@ -735,7 +911,7 @@
 					<button
 						type="button"
 						onclick={toggleConcordance}
-						class="w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 cursor-pointer text-left select-none transition-colors"
+						class="w-full flex items-center justify-between px-4 py-3.5 min-h-[44px] text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 cursor-pointer text-left select-none transition-colors"
 						aria-expanded={isConcordanceOpen}
 					>
 						<div class="flex items-center gap-2">
@@ -783,10 +959,60 @@
 									{/if}
 								</div>
 							{:else}
+								{#snippet paginationPillsNav(pos: 'top' | 'bottom')}
+									{#if concordanceTotalPages > 1}
+										<div
+											class="flex items-center justify-between gap-1 py-1.5 px-2 {pos === 'top' ? 'mb-2' : 'mt-2'} rounded-lg bg-[var(--color-rule)]/20 border border-[var(--color-rule)]/50 text-[11px]"
+											aria-label={`Concordance navigation (${pos})`}
+										>
+											<button
+												type="button"
+												disabled={concordancePage <= 1 || isPageNavigating}
+												onclick={() => goToConcordancePage(concordancePage - 1)}
+												class="px-2 py-0.5 rounded-md border border-[var(--color-rule)] bg-[var(--color-card-bg)] text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors font-medium select-none"
+												aria-label="Previous page"
+											>
+												&larr; Prev
+											</button>
+
+											<div class="flex items-center gap-1 overflow-x-auto py-0.5 {displayMode === 'modal' ? 'max-w-md' : 'max-w-[220px]'}">
+												{#each paginationPills as item}
+													{#if item === 'ellipsis'}
+														<span class="px-0.5 text-[11px] text-[var(--color-ink-soft)] select-none">&hellip;</span>
+													{:else}
+														<button
+															type="button"
+															disabled={isPageNavigating}
+															onclick={() => goToConcordancePage(item)}
+															class="min-w-[22px] h-[22px] px-1 rounded text-[11px] font-semibold transition-all cursor-pointer flex items-center justify-center select-none {item === concordancePage
+																? 'bg-blue-600 text-white shadow-2xs'
+																: 'bg-[var(--color-card-bg)] border border-[var(--color-rule)] text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40'}"
+															aria-current={item === concordancePage ? 'page' : undefined}
+															aria-label={`Page ${item}`}
+														>
+															{item}
+														</button>
+													{/if}
+												{/each}
+											</div>
+
+											<button
+												type="button"
+												disabled={concordancePage >= concordanceTotalPages || isPageNavigating}
+												onclick={() => goToConcordancePage(concordancePage + 1)}
+												class="px-2 py-0.5 rounded-md border border-[var(--color-rule)] bg-[var(--color-card-bg)] text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors font-medium select-none"
+												aria-label="Next page"
+											>
+												Next &rarr;
+											</button>
+										</div>
+									{/if}
+								{/snippet}
+
 								<div class="flex items-center justify-between pb-2 mb-2 border-b border-[var(--color-rule)]">
 									<span class="text-[11px] text-[var(--color-ink-soft)] font-medium">
 										{#if fetchConcordancePage && concordanceTotalCount > 0}
-											Showing {filteredConcordance.length} of {concordanceTotalCount} {concordanceTotalCount === 1 ? 'occurrence' : 'occurrences'}
+											Showing {concordanceStartIdx}–{concordanceEndIdx} of {concordanceTotalCount} {concordanceTotalCount === 1 ? 'occurrence' : 'occurrences'}
 										{:else}
 											{filteredConcordance.length} {filteredConcordance.length === 1 ? 'occurrence' : 'occurrences'}
 										{/if}
@@ -813,7 +1039,18 @@
 									</div>
 								</div>
 
-								<div class="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+								{@render paginationPillsNav('top')}
+
+								<div
+									bind:this={concordanceScrollContainer}
+									class="space-y-1.5 {displayMode === 'modal' ? (isModalMaximized ? 'max-h-[58vh]' : 'max-h-[44vh]') : 'max-h-72'} overflow-y-auto pr-1 relative"
+								>
+									{#if isPageNavigating}
+										<div class="absolute inset-0 bg-[var(--color-card-bg)]/70 backdrop-blur-xs flex items-center justify-center z-10 rounded-lg">
+											<Loading inline size="sm" />
+										</div>
+									{/if}
+
 									{#each filteredConcordance as ref}
 										{@const citation = formatRefLabel ? formatRefLabel(ref) : (ref.display_citation || `${ref.work || ''} ${ref.book ? `${ref.book}.` : ''}${ref.section || ref.chapter || ''}`)}
 										<button
@@ -846,28 +1083,9 @@
 											{/if}
 										</button>
 									{/each}
-
-									{#if concordanceHasMore && !selectedFormFilter}
-										<div class="pt-2 text-center">
-											<button
-												type="button"
-												onclick={loadMoreConcordance}
-												disabled={isLoadingMoreConcordance}
-												class="w-full py-1.5 px-3 rounded-lg border border-[var(--color-rule)] bg-[var(--color-card-bg)] hover:bg-[var(--color-rule)]/30 text-xs font-semibold text-blue-600 dark:text-blue-400 cursor-pointer transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-											>
-												{#if isLoadingMoreConcordance}
-													<Loading inline size="xs" />
-													<span>Loading more occurrences...</span>
-												{:else}
-													<span>Load more ({Math.max(0, concordanceTotalCount - concordance.length)} remaining)</span>
-												{/if}
-											</button>
-											{#if loadMoreError}
-												<p class="text-[11px] text-red-500 mt-1">{loadMoreError}</p>
-											{/if}
-										</div>
-									{/if}
 								</div>
+
+								{@render paginationPillsNav('bottom')}
 							{/if}
 						</div>
 					{/if}
@@ -1010,4 +1228,36 @@
 			{@render extraTabPanels(currentTab)}
 		{/if}
 	</div>
-</FloatingSidePanel>
+{/snippet}
+
+{#if isOpen}
+	{#if displayMode === 'modal'}
+		<Modal2
+			bind:showModal={isOpen}
+			onclose={onClose}
+			bind:max={isModalMaximized}
+			showMaximize={false}
+			showClose={false}
+			showFooter={false}
+			maxWidth="max-w-4xl lg:max-w-5xl"
+		>
+			<div class="flex flex-col h-full min-h-0 bg-[var(--color-page)] text-[var(--color-ink)]">
+				{@render panelContent()}
+			</div>
+		</Modal2>
+	{:else}
+		<FloatingSidePanel
+			{isOpen}
+			{onClose}
+			{top}
+			{width}
+			noPadding={true}
+			showDefaultCloseButton={false}
+			ariaLabel={ariaLabel || `${corpusTitle} Reference and Lexicon Panel`}
+		>
+			<div class="flex flex-col h-full min-h-0">
+				{@render panelContent()}
+			</div>
+		</FloatingSidePanel>
+	{/if}
+{/if}

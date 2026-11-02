@@ -232,9 +232,9 @@
 <style>
 	.attested-forms-section {
 		border: 1px solid var(--border, var(--color-rule, #d4d8d3));
-		border-radius: 8px;
+		border-radius: 1rem;
 		background: var(--popup-bg, var(--color-page, #ffffff));
-		margin-bottom: 0.75rem;
+		margin-bottom: 0;
 		overflow: hidden;
 		transition: border-color 0.15s ease;
 	}
@@ -243,9 +243,11 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0.6rem 0.85rem;
+		padding: 0.75rem 1rem;
+		min-height: 44px;
+		box-sizing: border-box;
 		font-size: 0.875rem;
-		font-weight: 700;
+		line-height: 1.4;
 		color: var(--accent, var(--color-ink, #1f6f7a));
 		background: var(--col-bg, var(--color-page-soft, #f5f6f2));
 		cursor: pointer;

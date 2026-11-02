@@ -257,19 +257,38 @@ export async function fetchLemmaStats(corpusId: AncientCorpusId, lemma: string):
 		SELECT corpus_id, lemma, normalized_lemma, total_count, work_counts_json
 		FROM lemma_stats
 		WHERE corpus_id = ? AND (lemma = ? OR normalized_lemma = ?)
-		LIMIT 1
+		ORDER BY
+			CASE
+				WHEN lemma = ? THEN 1
+				WHEN normalized_lemma = ? THEN 2
+				ELSE 3
+			END ASC,
+			total_count DESC
 	`;
-	const rows = await worker.db.query(sql, [targetCorpus, clean, norm]);
-	if (!rows || (rows as any[]).length === 0) return null;
+	const rows = (await worker.db.query(sql, [targetCorpus, clean, norm, clean, norm])) as any[];
+	if (!rows || rows.length === 0) return null;
 
-	const r = (rows as any[])[0];
-	const rawCounts = getRowVal(r, 'work_counts_json', 4);
+	const topRow = rows[0];
+
+	// Aggregate total count and merge work distributions across all variant spellings/breathings
+	let totalCount = 0;
+	const mergedWorkCounts: Record<string, number> = {};
+
+	for (const r of rows) {
+		const c = getRowVal<number>(r, 'total_count', 3) || 0;
+		totalCount += c;
+		const wc = parseJsonField<Record<string, number>>(getRowVal(r, 'work_counts_json', 4), {});
+		for (const [wCode, count] of Object.entries(wc)) {
+			mergedWorkCounts[wCode] = (mergedWorkCounts[wCode] || 0) + count;
+		}
+	}
+
 	return {
-		corpus_id: getRowVal<string>(r, 'corpus_id', 0),
-		lemma: getRowVal<string>(r, 'lemma', 1),
-		normalized_lemma: getRowVal<string>(r, 'normalized_lemma', 2),
-		total_count: getRowVal<number>(r, 'total_count', 3),
-		work_counts: parseJsonField<Record<string, number>>(rawCounts, {})
+		corpus_id: getRowVal<string>(topRow, 'corpus_id', 0),
+		lemma: getRowVal<string>(topRow, 'lemma', 1),
+		normalized_lemma: getRowVal<string>(topRow, 'normalized_lemma', 2),
+		total_count: totalCount,
+		work_counts: mergedWorkCounts
 	};
 }
 
@@ -291,20 +310,32 @@ export async function fetchConcordancePage(
 	const norm = stripGreekAccents(clean);
 	const targetCorpus = PRIMARY_GREEK_CORPUS_IDS[corpusId];
 
-	// Step 1: Count total occurrences using index
+	// Step 1: Find all lemma variations from lemma_stats (to capture all occurrences in corpus)
+	const lemmaRows = (await worker.db.query(
+		`SELECT DISTINCT lemma FROM lemma_stats WHERE corpus_id = ? AND (lemma = ? OR normalized_lemma = ?)`,
+		[targetCorpus, clean, norm]
+	)) as any[];
+
+	const matchingLemmas = lemmaRows && lemmaRows.length > 0
+		? Array.from(new Set(lemmaRows.map((r) => getRowVal<string>(r, 'lemma', 0)).concat([clean])))
+		: [clean];
+
+	const placeholders = matchingLemmas.map(() => '?').join(',');
+
+	// Step 2: Count total occurrences using index
 	const countSql = `
 		SELECT COUNT(*) AS total
 		FROM concordance_refs
-		WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
+		WHERE corpus_id = ? AND lemma IN (${placeholders})
 	`;
-	const countRows = await worker.db.query(countSql, [targetCorpus, clean, norm]);
+	const countRows = await worker.db.query(countSql, [targetCorpus, ...matchingLemmas]);
 	const totalCount = countRows && (countRows as any[]).length > 0 ? getRowVal<number>((countRows as any[])[0], 'total', 0) : 0;
 
 	if (totalCount === 0 || offset >= totalCount) {
 		return { refs: [], totalCount, hasMore: false, nextOffset: offset };
 	}
 
-	// Step 2: Query page rows using CTE pushdown
+	// Step 3: Query page rows using CTE pushdown
 	let pagedRefs: ConcordanceRef[] = [];
 
 	if (corpusId === 'josephus') {
@@ -312,7 +343,7 @@ export async function fetchConcordancePage(
 			WITH top_refs AS (
 				SELECT display_citation, work_unit_id
 				FROM concordance_refs
-				WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
+				WHERE corpus_id = ? AND lemma IN (${placeholders})
 				ORDER BY work_unit_id ASC
 				LIMIT ? OFFSET ?
 			)
@@ -320,7 +351,7 @@ export async function fetchConcordancePage(
 			FROM top_refs r
 			JOIN text_units t ON t.id = r.work_unit_id
 		`;
-		const rows = await worker.db.query(sql, [targetCorpus, clean, norm, pageSize, offset]);
+		const rows = await worker.db.query(sql, [targetCorpus, ...matchingLemmas, pageSize, offset]);
 		pagedRefs = (rows as any[]).map((r) => ({
 			display_citation: getRowVal<string>(r, 'display_citation', 0),
 			work_unit_id: getRowVal<number>(r, 'work_unit_id', 1),
@@ -338,7 +369,7 @@ export async function fetchConcordancePage(
 			WITH top_refs AS (
 				SELECT display_citation, work_unit_id
 				FROM concordance_refs
-				WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
+				WHERE corpus_id = ? AND lemma IN (${placeholders})
 				ORDER BY work_unit_id ASC
 				LIMIT ? OFFSET ?
 			)
@@ -346,7 +377,7 @@ export async function fetchConcordancePage(
 			FROM top_refs r
 			JOIN text_units t ON t.id = r.work_unit_id
 		`;
-		const rows = await worker.db.query(sql, [targetCorpus, clean, norm, pageSize, offset]);
+		const rows = await worker.db.query(sql, [targetCorpus, ...matchingLemmas, pageSize, offset]);
 		pagedRefs = (rows as any[]).map((r) => ({
 			display_citation: getRowVal<string>(r, 'display_citation', 0),
 			work_unit_id: getRowVal<number>(r, 'work_unit_id', 1),

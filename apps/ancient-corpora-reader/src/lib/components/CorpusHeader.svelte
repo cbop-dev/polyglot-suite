@@ -11,11 +11,15 @@
 		{ id: 'josephus', label: 'Josephus' }
 	];
 
-	function handleCorpusChange(e: Event) {
-		const target = e.target as HTMLSelectElement;
-		const nextCorpus = target.value as AncientCorpusId;
-		if (nextCorpus !== readerState.currentCorpus) {
-			readerState.setCorpus(nextCorpus);
+	let selectedCorpus = $state<AncientCorpusId>(readerState.currentCorpus);
+
+	$effect(() => {
+		selectedCorpus = readerState.currentCorpus;
+	});
+
+	function handleGo() {
+		if (selectedCorpus !== readerState.currentCorpus) {
+			readerState.setCorpus(selectedCorpus);
 		}
 	}
 </script>
@@ -49,16 +53,29 @@
 	{#snippet extraDesktopControls()}
 		<!-- Corpus Selector Pill -->
 		<div class="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-[var(--color-rule)] bg-[var(--color-card-bg)] text-xs font-semibold">
-			<span class="text-[var(--color-ink-soft)] text-[10px] uppercase font-bold tracking-wider">Corpus:</span>
+			<span class="text-[var(--color-ink-soft)] text-[10px] uppercase font-bold tracking-wider hidden lg:inline">Corpus:</span>
 			<select
-				value={readerState.currentCorpus}
-				onchange={handleCorpusChange}
+				bind:value={selectedCorpus}
+				onkeydown={(e) => {
+					if (e.key === 'Enter') {
+						e.preventDefault();
+						handleGo();
+					}
+				}}
 				class="bg-transparent font-bold text-blue-600 dark:text-blue-400 focus:outline-hidden cursor-pointer"
 			>
 				{#each corpora as c}
 					<option value={c.id}>{c.label}</option>
 				{/each}
 			</select>
+			<button
+				type="button"
+				onclick={handleGo}
+				class="px-2 py-0.5 rounded bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-[11px] font-bold transition-colors cursor-pointer shadow-2xs"
+				title="Switch to selected corpus"
+			>
+				Go!
+			</button>
 		</div>
 	{/snippet}
 </ReaderHeader>

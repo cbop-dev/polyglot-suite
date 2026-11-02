@@ -123,4 +123,36 @@ describe('Multi-Corpus Database Service Layer', () => {
 
 		db.close();
 	});
+
+	it('aggregates total occurrences for Greek article variations in Philo lemma_stats', () => {
+		const philoDbPath = path.resolve(__dirname, '../../philo-reader/pipeline/build/philo.sqlite3');
+		if (!existsSync(philoDbPath)) return;
+
+		const db = new DatabaseSync(philoDbPath, { readOnly: true });
+
+		const statsSql = `
+			SELECT corpus_id, lemma, normalized_lemma, total_count, work_counts_json
+			FROM lemma_stats
+			WHERE corpus_id = ? AND (lemma = ? OR normalized_lemma = ?)
+			ORDER BY
+				CASE
+					WHEN lemma = ? THEN 1
+					WHEN normalized_lemma = ? THEN 2
+					ELSE 3
+				END ASC,
+				total_count DESC
+		`;
+		const rows = db.prepare(statsSql).all('grc', 'ὅ', 'ο', 'ὅ', 'ο') as any[];
+		expect(rows.length).toBeGreaterThan(1);
+
+		let totalSum = 0;
+		for (const r of rows) {
+			totalSum += r.total_count;
+		}
+
+		// Verify the sum reflects the full corpus occurrences (~52,500+) rather than 1
+		expect(totalSum).toBeGreaterThan(50000);
+
+		db.close();
+	});
 });
