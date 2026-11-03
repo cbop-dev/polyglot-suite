@@ -1,5 +1,5 @@
 import { getDbWorker } from './dbWorker';
-import { stripGreekAccents, buildAttestedForms, type AttestedForm } from '@polyglot/ancient-languages';
+import { stripGreekAccents, buildAttestedForms, getDefaultDictionary, type AttestedForm } from '@polyglot/ancient-languages';
 import { getRowVal, parseJsonField } from '@polyglot/db-vfs';
 
 export { stripGreekAccents, type AttestedForm };
@@ -147,15 +147,31 @@ export async function fetchLexiconEntry(lemma: string): Promise<LexiconEntry | n
 	if (!lemma) return null;
 	const worker = await getDbWorker();
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
-	const norm = stripGreekAccents(clean);
+	const dict = getDefaultDictionary('philo');
 
-	const sql = `
-		SELECT dictionary, strongs_id, lemma, normalized_lemma, transliteration, gloss, definition
-		FROM lexicon_entries
-		WHERE normalized_lemma = ? OR lemma = ?
-		LIMIT 1
-	`;
-	const rows = await worker.db.query(sql, [norm, clean]);
+	// Step 1: Direct indexed seek on idx_lexicon_exact (dictionary, lemma)
+	let rows = (await worker.db.query(
+		`SELECT dictionary, strongs_id, lemma, normalized_lemma, transliteration, gloss, definition
+		 FROM lexicon_entries
+		 WHERE dictionary = ? AND lemma = ?
+		 LIMIT 1`,
+		[dict, clean]
+	)) as any[];
+
+	// Step 2: Fallback to normalized index on idx_lexicon_lemma (dictionary, normalized_lemma)
+	if (!rows || rows.length === 0) {
+		const norm = stripGreekAccents(clean);
+		if (norm !== clean) {
+			rows = (await worker.db.query(
+				`SELECT dictionary, strongs_id, lemma, normalized_lemma, transliteration, gloss, definition
+				 FROM lexicon_entries
+				 WHERE dictionary = ? AND normalized_lemma = ?
+				 LIMIT 1`,
+				[dict, norm]
+			)) as any[];
+		}
+	}
+
 	if (!rows || rows.length === 0) return null;
 
 	const r = rows[0] as any;
@@ -174,15 +190,30 @@ export async function fetchLemmaStats(lemma: string): Promise<LemmaStat | null> 
 	if (!lemma) return null;
 	const worker = await getDbWorker();
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
-	const norm = stripGreekAccents(clean);
 
-	const sql = `
-		SELECT corpus_id, lemma, normalized_lemma, total_count, work_counts_json
-		FROM lemma_stats
-		WHERE lemma = ? OR normalized_lemma = ?
-		LIMIT 1
-	`;
-	const rows = await worker.db.query(sql, [clean, norm]);
+	// Step 1: Direct indexed seek on PRIMARY KEY (corpus_id, lemma)
+	let rows = (await worker.db.query(
+		`SELECT corpus_id, lemma, normalized_lemma, total_count, work_counts_json
+		 FROM lemma_stats
+		 WHERE corpus_id = 'grc' AND lemma = ?
+		 LIMIT 1`,
+		[clean]
+	)) as any[];
+
+	// Step 2: Fallback to normalized lemma with LIMIT 1 if exact match misses
+	if (!rows || rows.length === 0) {
+		const norm = stripGreekAccents(clean);
+		if (norm !== clean) {
+			rows = (await worker.db.query(
+				`SELECT corpus_id, lemma, normalized_lemma, total_count, work_counts_json
+				 FROM lemma_stats
+				 WHERE corpus_id = 'grc' AND normalized_lemma = ?
+				 LIMIT 1`,
+				[norm]
+			)) as any[];
+		}
+	}
+
 	if (!rows || rows.length === 0) return null;
 
 	const r = rows[0] as any;

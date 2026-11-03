@@ -1,5 +1,54 @@
 export type AncientCorpusId = 'af' | 'philo' | 'josephus';
 
+/**
+ * Canonical default dictionary / lexicon identifiers by language code.
+ */
+export const LANGUAGE_DEFAULT_DICTIONARIES: Record<string, string> = {
+	grc: 'lsj',   // Ancient Greek -> Liddell-Scott-Jones
+	heb: 'bdb',   // Hebrew -> Brown-Driver-Briggs
+	hbo: 'bdb',   // Biblical Hebrew -> Brown-Driver-Briggs
+	syr: 'sedra', // Syriac -> SEDRA
+	lat: 'lewis-short' // Latin -> Lewis & Short (future)
+};
+
+/**
+ * Canonical default dictionary / lexicon identifiers by corpus ID.
+ */
+export const CORPUS_DEFAULT_DICTIONARIES: Record<AncientCorpusId, string> = {
+	af: 'lsj',
+	philo: 'lsj',
+	josephus: 'lsj'
+};
+
+/**
+ * Canonical primary language code by corpus ID.
+ */
+export const CORPUS_PRIMARY_LANGUAGES: Record<AncientCorpusId, string> = {
+	af: 'grc',
+	philo: 'grc',
+	josephus: 'grc'
+};
+
+/**
+ * Retrieve the canonical primary language code for a given corpus (e.g., 'grc', 'lat', 'heb').
+ */
+export function getCorpusPrimaryLanguage(corpusId: string): string {
+	if (corpusId in CORPUS_PRIMARY_LANGUAGES) {
+		return CORPUS_PRIMARY_LANGUAGES[corpusId as AncientCorpusId];
+	}
+	return 'grc';
+}
+
+/**
+ * Retrieve the canonical default dictionary for a given corpus or language.
+ */
+export function getDefaultDictionary(langOrCorpus: string): string {
+	if (langOrCorpus in CORPUS_DEFAULT_DICTIONARIES) {
+		return CORPUS_DEFAULT_DICTIONARIES[langOrCorpus as AncientCorpusId];
+	}
+	return LANGUAGE_DEFAULT_DICTIONARIES[langOrCorpus] || 'lsj';
+}
+
 export interface AncientWorkMetadata {
 	code: string;
 	corpusId: AncientCorpusId;

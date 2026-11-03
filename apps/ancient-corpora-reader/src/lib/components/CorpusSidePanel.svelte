@@ -3,6 +3,7 @@
 	import { readerState } from '../stores/readerState.svelte.js';
 	import { highlightStore } from '../stores/highlightStore.svelte.js';
 	import { CORPUS_TITLES } from '../config/canonicalWorks.js';
+	import { getCorpusPrimaryLanguage } from '@polyglot/ancient-languages';
 	import {
 		fetchLexiconEntry,
 		fetchLemmaStats,
@@ -32,12 +33,13 @@
 	onTabChange={(tab) => (readerState.activeSidePanelTab = tab)}
 	selectedToken={readerState.selectedToken}
 	{corpusTitle}
+	language={getCorpusPrimaryLanguage(readerState.currentCorpus)}
 	top="53px"
 	ariaLabel="Lexicon & Study Panel"
 	{highlightStore}
 	fetchLexiconEntry={(lemma) => fetchLexiconEntry(readerState.currentCorpus, lemma)}
 	fetchLemmaStats={(lemma) => fetchLemmaStats(readerState.currentCorpus, lemma)}
-	fetchConcordancePage={(lemma, offset, size) => fetchConcordancePage(readerState.currentCorpus, lemma, offset, size)}
+	fetchConcordancePage={(lemma, offset, size, totalCount) => fetchConcordancePage(readerState.currentCorpus, lemma, offset, size, totalCount)}
 	fetchConcordance={(lemma) => fetchConcordance(readerState.currentCorpus, lemma)}
 	fetchSectionText={(ref) => fetchSectionText(readerState.currentCorpus, ref.work_unit_id ?? ref.id)}
 	fetchSectionsTextBatch={(ids) => fetchSectionsTextBatch(readerState.currentCorpus, ids)}

@@ -11,6 +11,7 @@
 		filterAttestedForms,
 		extractAvailableInflections,
 		isCriteriaActive,
+		getLanguageFontClass,
 		type InflectionFilterCriteria,
 		type AttestedForm,
 		type AvailableInflections
@@ -36,6 +37,7 @@
 
 	export interface LemmaStat {
 		total_count: number;
+		concordance_count?: number;
 		works_count?: number;
 		[key: string]: any;
 	}
@@ -89,12 +91,13 @@
 		highlightStore?: any;
 		displayMode?: 'sidepanel' | 'modal';
 		onDisplayModeChange?: (mode: 'sidepanel' | 'modal') => void;
+		language?: string;
 
 		// Data fetching
 		fetchLexiconEntry?: (lemma: string) => Promise<LexiconEntry | null>;
 		fetchLemmaStats?: (lemma: string) => Promise<LemmaStat | null>;
 		fetchConcordance?: (lemma: string) => Promise<ConcordanceRef[]>;
-		fetchConcordancePage?: (lemma: string, offset: number, pageSize: number) => Promise<PaginatedConcordance>;
+		fetchConcordancePage?: (lemma: string, offset: number, pageSize: number, totalCount?: number) => Promise<PaginatedConcordance>;
 		concordancePageSize?: number;
 		fetchSectionText?: (ref: ConcordanceRef) => Promise<string>;
 		fetchSectionsTextBatch?: (workUnitIds: number[]) => Promise<Record<number, string>>;
@@ -126,6 +129,7 @@
 		highlightStore,
 		displayMode: externalDisplayMode,
 		onDisplayModeChange,
+		language,
 
 		fetchLexiconEntry,
 		fetchLemmaStats,
@@ -149,6 +153,13 @@
 
 	let effectiveLexiconTitle = $derived(
 		lexiconArticleTitle || (corpusTitle === 'Josephus' ? 'LSJ Lexicon Article' : 'Full Lexicon Article')
+	);
+
+	let activeLanguage = $derived(
+		language || selectedToken?.lang || 'greek'
+	);
+	let langFontClass = $derived(
+		getLanguageFontClass(activeLanguage)
 	);
 
 	// Display mode (dual-mode: sidepanel vs centered floating modal)
@@ -285,10 +296,12 @@
 		Math.max(1, Math.ceil(concordanceTotalCount / currentPageSize))
 	);
 	let concordanceStartIdx = $derived(
-		concordanceTotalCount === 0 ? 0 : (concordancePage - 1) * currentPageSize + 1
+		concordanceTotalCount === 0 || concordance.length === 0 ? 0 : (concordancePage - 1) * currentPageSize + 1
 	);
 	let concordanceEndIdx = $derived(
-		Math.min(concordancePage * currentPageSize, concordanceTotalCount)
+		concordanceTotalCount === 0 || concordance.length === 0
+			? 0
+			: Math.min((concordancePage - 1) * currentPageSize + concordance.length, concordanceTotalCount)
 	);
 
 	let paginationPills = $derived.by(() => {
@@ -529,7 +542,7 @@
 		if (concordancePageCache.has(nextPage)) return;
 
 		const offset = (nextPage - 1) * currentPageSize;
-		fetchConcordancePage(lemma, offset, currentPageSize)
+		fetchConcordancePage(lemma, offset, currentPageSize, concordanceTotalCount)
 			.then((pageData) => {
 				if (queryId === concordanceQueryId && currentLemma === lemma && pageData?.refs) {
 					concordancePageCache.set(nextPage, pageData.refs);
@@ -567,13 +580,18 @@
 
 		try {
 			const offset = (page - 1) * currentPageSize;
-			const pageData = await fetchConcordancePage(lemma, offset, currentPageSize);
+			const pageData = await fetchConcordancePage(lemma, offset, currentPageSize, concordanceTotalCount);
 			if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
 
 			const refs = pageData.refs || [];
 			concordancePageCache.set(page, refs);
 			concordance = refs;
-			concordanceTotalCount = pageData.totalCount ?? concordanceTotalCount;
+			if (pageData.totalCount !== undefined) {
+				concordanceTotalCount = pageData.totalCount;
+			} else if (refs.length === 0 && page > 1) {
+				// Offset exceeded actual data - clamp total count to offset
+				concordanceTotalCount = Math.min(concordanceTotalCount, offset);
+			}
 			concordancePage = page;
 			concordanceScrollContainer?.scrollTo({ top: 0, behavior: 'smooth' });
 			prefetchNextPage(page, lemma, queryId);
@@ -601,15 +619,16 @@
 
 		try {
 			if (fetchConcordancePage) {
+				const knownTotal = stats?.concordance_count ?? stats?.total_count ?? (concordanceTotalCount > 0 ? concordanceTotalCount : undefined);
 				const [pageData, s] = await Promise.all([
-					fetchConcordancePage(lemma, 0, currentPageSize),
+					fetchConcordancePage(lemma, 0, currentPageSize, knownTotal),
 					stats ? Promise.resolve(stats) : (fetchLemmaStats ? fetchLemmaStats(lemma) : Promise.resolve(null))
 				]);
 				if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
 				const refs = pageData.refs || [];
 				concordancePageCache.set(1, refs);
 				concordance = refs;
-				concordanceTotalCount = pageData.totalCount ?? (refs.length || 0);
+				concordanceTotalCount = pageData.totalCount ?? knownTotal ?? (refs.length || 0);
 				concordancePage = 1;
 				if (!stats) stats = s;
 				concordanceLoaded = true;
@@ -858,8 +877,8 @@
 				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] p-4 shadow-xs space-y-3 shrink-0">
 					<div class="flex items-start justify-between">
 						<div>
-							<div class="text-xl font-bold greek-font text-[var(--color-ink)] flex items-baseline gap-2">
-								<h2 class="greek-font text-xl font-bold inline">
+							<div class="text-xl font-bold {langFontClass} text-[var(--color-ink)] flex items-baseline gap-2">
+								<h2 class="{langFontClass} text-xl font-bold inline">
 									<span>{currentWord || currentLemma}</span>
 									{#if currentLemma && currentLemma !== currentWord}
 										<span class="text-sm font-normal text-[var(--color-ink-soft)] font-sans">({currentLemma})</span>
@@ -1073,13 +1092,9 @@
 										Retry
 									</button>
 								</div>
-							{:else if filteredConcordance.length === 0}
+							{:else if concordanceLoaded && concordanceTotalCount === 0}
 								<div class="py-3 text-center text-xs text-[var(--color-ink-soft)]">
-									{#if selectedFormFilter}
-										No occurrences found for "{selectedFormFilter}".
-									{:else}
-										No concordance occurrences found in {corpusTitle}.
-									{/if}
+									No concordance occurrences found in {corpusTitle}.
 								</div>
 							{:else}
 								{#snippet paginationPillsNav(pos: 'top' | 'bottom')}
@@ -1195,77 +1210,96 @@
 										</div>
 									{/if}
 
-									{#each filteredConcordance as ref, idx (`${ref.work_unit_id ?? ''}_${ref.matched_word ?? ''}_${idx}`)}
-										{@const citation = formatRefLabel ? formatRefLabel(ref) : (ref.display_citation || `${ref.work || ''} ${ref.book ? `${ref.book}.` : ''}${ref.section || ref.chapter || ''}`)}
-										{@const cardKey = `${ref.work_unit_id ?? ''}_${ref.matched_word ?? ''}_${idx}`}
-										{@const isExpanded = expandedCardIds.has(cardKey)}
-
-										<div
-											class="w-full text-left rounded-lg p-2 hover:bg-[var(--color-page)] border border-transparent hover:border-[var(--color-rule)] transition-colors group"
-										>
-											<div class="flex items-center justify-between">
+									{#if filteredConcordance.length === 0}
+										<div class="py-8 text-center text-xs text-[var(--color-ink-soft)] space-y-2">
+											{#if selectedFormFilter}
+												<p>No occurrences matching "{selectedFormFilter}" on page {concordancePage}.</p>
+											{:else}
+												<p>No occurrences found on page {concordancePage}.</p>
+											{/if}
+											{#if concordancePage > 1}
 												<button
 													type="button"
-													onclick={() => onNavigateToRef?.(ref)}
-													class="font-bold text-blue-600 dark:text-blue-400 text-xs hover:underline cursor-pointer text-left"
+													onclick={() => goToConcordancePage(1)}
+													class="px-2.5 py-1 text-xs rounded bg-blue-600 text-white font-medium hover:bg-blue-700 cursor-pointer"
 												>
-													{citation}
+													Return to page 1
 												</button>
-												<div class="flex items-center gap-2">
-													{#if fetchSectionText && isKwic}
-														<button
-															type="button"
-															onclick={() => toggleExpandCard(ref, cardKey)}
-															class="text-[10px] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] px-1.5 py-0.5 rounded border border-[var(--color-rule)] bg-[var(--color-card-bg)] hover:bg-[var(--color-rule)]/40 cursor-pointer transition-colors"
-															title={isExpanded ? 'Collapse snippet' : 'Expand full text'}
-														>
-															{isExpanded ? 'Less' : 'More'}
-														</button>
-													{/if}
+											{/if}
+										</div>
+									{:else}
+										{#each filteredConcordance as ref, idx (`${ref.work_unit_id ?? ''}_${ref.matched_word ?? ''}_${idx}`)}
+											{@const citation = formatRefLabel ? formatRefLabel(ref) : (ref.display_citation || `${ref.work || ''} ${ref.book ? `${ref.book}.` : ''}${ref.section || ref.chapter || ''}`)}
+											{@const cardKey = `${ref.work_unit_id ?? ''}_${ref.matched_word ?? ''}_${idx}`}
+											{@const isExpanded = expandedCardIds.has(cardKey)}
+
+											<div
+												class="w-full text-left rounded-lg p-2 hover:bg-[var(--color-page)] border border-transparent hover:border-[var(--color-rule)] transition-colors group"
+											>
+												<div class="flex items-center justify-between">
 													<button
 														type="button"
 														onclick={() => onNavigateToRef?.(ref)}
-														class="text-[10px] text-[var(--color-ink-soft)] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+														class="font-bold text-blue-600 dark:text-blue-400 text-xs hover:underline cursor-pointer text-left"
 													>
-														Jump &rarr;
+														{citation}
 													</button>
+													<div class="flex items-center gap-2">
+														{#if fetchSectionText && isKwic}
+															<button
+																type="button"
+																onclick={() => toggleExpandCard(ref, cardKey)}
+																class="text-[10px] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] px-1.5 py-0.5 rounded border border-[var(--color-rule)] bg-[var(--color-card-bg)] hover:bg-[var(--color-rule)]/40 cursor-pointer transition-colors"
+																title={isExpanded ? 'Collapse snippet' : 'Expand full text'}
+															>
+																{isExpanded ? 'Less' : 'More'}
+															</button>
+														{/if}
+														<button
+															type="button"
+															onclick={() => onNavigateToRef?.(ref)}
+															class="text-[10px] text-[var(--color-ink-soft)] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+														>
+															Jump &rarr;
+														</button>
+													</div>
+												</div>
+
+												<div
+													role="button"
+													tabindex="0"
+													onclick={() => onNavigateToRef?.(ref)}
+													onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigateToRef?.(ref); }}
+													class="cursor-pointer"
+												>
+													{#if isKwic && !isExpanded}
+														<div class="mt-1 text-xs text-[var(--color-ink)] {langFontClass}">
+															<KwicSnippet
+																text={ref.text_content || ''}
+																matchWord={selectedFormFilter || ref.matched_word || currentLemma}
+																lang={activeLanguage}
+																radius={48}
+																class="w-full"
+															/>
+														</div>
+													{:else}
+														<div class="text-[11px] text-[var(--color-ink-soft)] mt-1 leading-relaxed {langFontClass}">
+															{#if ref.full_text}
+																{ref.full_text}
+															{:else if isFullTextLoading}
+																<div class="flex items-center gap-1.5 py-1 text-xs text-[var(--color-ink-soft)] italic">
+																	<Loading inline size="xs" />
+																	<span>Loading full section text...</span>
+																</div>
+															{:else}
+																{ref.text_content || ''}
+															{/if}
+														</div>
+													{/if}
 												</div>
 											</div>
-
-											<div
-												role="button"
-												tabindex="0"
-												onclick={() => onNavigateToRef?.(ref)}
-												onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigateToRef?.(ref); }}
-												class="cursor-pointer"
-											>
-												{#if isKwic && !isExpanded}
-													<div class="mt-1 text-xs text-[var(--color-ink)]">
-														<KwicSnippet
-															text={ref.text_content || ''}
-															matchWord={selectedFormFilter || ref.matched_word || currentLemma}
-															lang="greek"
-															radius={48}
-															class="w-full"
-														/>
-													</div>
-												{:else}
-													<div class="text-[11px] text-[var(--color-ink-soft)] mt-1 leading-relaxed greek-font">
-														{#if ref.full_text}
-															{ref.full_text}
-														{:else if isFullTextLoading}
-															<div class="flex items-center gap-1.5 py-1 text-xs text-[var(--color-ink-soft)] italic">
-																<Loading inline size="xs" />
-																<span>Loading full section text...</span>
-															</div>
-														{:else}
-															{ref.text_content || ''}
-														{/if}
-													</div>
-												{/if}
-											</div>
-										</div>
-									{/each}
+										{/each}
+									{/if}
 								</div>
 
 								{@render paginationPillsNav('bottom')}
@@ -1296,7 +1330,7 @@
 					/>
 					{#if convertedSearchQuery && convertedSearchQuery !== searchQuery}
 						<div class="mt-1 text-[11px] text-[var(--color-ink-soft)]">
-							Transliterated query: <span class="font-bold greek-font text-[var(--color-ink)]">{convertedSearchQuery}</span>
+							Transliterated query: <span class="font-bold {langFontClass} text-[var(--color-ink)]">{convertedSearchQuery}</span>
 						</div>
 					{/if}
 				</div>
@@ -1314,7 +1348,7 @@
 								class="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-[var(--color-card-bg)] border border-transparent hover:border-[var(--color-rule)] transition-colors cursor-pointer"
 							>
 								<div>
-									<div class="font-bold text-sm greek-font text-[var(--color-ink)]">{res.lemma}</div>
+									<div class="font-bold text-sm {langFontClass} text-[var(--color-ink)]">{res.lemma}</div>
 									<div class="text-[11px] text-[var(--color-ink-soft)]">
 										{cnt} {cnt === 1 ? 'occurrence' : 'occurrences'} across {corpusTitle}
 									</div>
@@ -1379,7 +1413,7 @@
 										class="flex items-center gap-2 cursor-pointer text-left hover:underline"
 									>
 										<span class="h-3 w-3 rounded-full shrink-0" style="background-color: {hl?.hex}; border: 1px solid {hl?.borderLight}"></span>
-										<span class="font-bold text-sm greek-font text-[var(--color-ink)]">{lemma}</span>
+										<span class="font-bold text-sm {langFontClass} text-[var(--color-ink)]">{lemma}</span>
 										<span class="text-[11px] font-medium text-[var(--color-ink-soft)] capitalize">({hl?.name})</span>
 									</button>
 									<button

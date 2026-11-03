@@ -364,6 +364,8 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
     stat_placeholders = ", ".join(["?"] * len(stat_cols))
     src_cur.execute(f"SELECT {stat_cols_str} FROM lemma_stats")
     tgt_cur.executemany(f"INSERT INTO lemma_stats ({stat_cols_str}) VALUES ({stat_placeholders})", src_cur.fetchall())
+    tgt_cur.execute("ALTER TABLE lemma_stats ADD COLUMN concordance_count INTEGER DEFAULT 0;")
+    tgt_cur.execute("CREATE INDEX IF NOT EXISTS idx_lemma_stats_norm ON lemma_stats(corpus_id, normalized_lemma);")
 
     # 6. Copy corpus-specific optional tables
     if corpus_type == "philo":
@@ -393,6 +395,17 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 
     # 7. Build Covering Concordance Table
     build_covering_concordance(src_conn, tgt_conn, corpus_type)
+
+    # 7.1 Populate concordance_count in lemma_stats
+    print("  → Populating concordance_count in lemma_stats...")
+    tgt_cur.execute("""
+        UPDATE lemma_stats
+        SET concordance_count = COALESCE((
+            SELECT count(*) 
+            FROM concordance_refs c 
+            WHERE c.corpus_id = lemma_stats.corpus_id AND c.lemma = lemma_stats.lemma
+        ), 0)
+    """)
 
     # 8. Commit and Optimize
     tgt_conn.commit()

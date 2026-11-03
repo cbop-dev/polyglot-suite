@@ -107,6 +107,12 @@ const server = http.createServer((req, res) => {
         spaFallback = path.join(DIST_DIR, 'bible/index.html');
       } else if (reqPath.startsWith('/lexemes')) {
         spaFallback = path.join(DIST_DIR, 'lexemes/index.html');
+      } else if (reqPath.startsWith('/philo')) {
+        spaFallback = path.join(DIST_DIR, 'philo/index.html');
+      } else if (reqPath.startsWith('/josephus')) {
+        spaFallback = path.join(DIST_DIR, 'josephus/index.html');
+      } else if (reqPath.startsWith('/fathers')) {
+        spaFallback = path.join(DIST_DIR, 'fathers/index.html');
       }
 
       if (spaFallback && fs.existsSync(spaFallback)) {

@@ -1,5 +1,11 @@
 import { getDbWorker } from './dbWorker.js';
-import { stripGreekAccents, buildAttestedForms, type AttestedForm, type AncientCorpusId } from '@polyglot/ancient-languages';
+import {
+	stripGreekAccents,
+	buildAttestedForms,
+	getDefaultDictionary,
+	type AttestedForm,
+	type AncientCorpusId
+} from '@polyglot/ancient-languages';
 import { getRowVal, parseJsonField } from '@polyglot/db-vfs';
 import type { PaginatedConcordance, ConcordanceRef as UiConcordanceRef } from '@polyglot/lemma-ui';
 
@@ -52,6 +58,7 @@ export interface LemmaStat {
 	lemma: string;
 	normalized_lemma: string;
 	total_count: number;
+	concordance_count?: number;
 	work_counts: Record<string, number>;
 }
 
@@ -178,21 +185,37 @@ export async function fetchAvailableDivisions(corpusId: AncientCorpusId, workCod
 }
 
 /**
- * Fetch LSJ lexicon entry for a lemma
+ * Fetch lexicon entry for a lemma using leading indexed columns (dictionary, lemma)
  */
 export async function fetchLexiconEntry(corpusId: AncientCorpusId, lemma: string): Promise<LexiconEntry | null> {
 	if (!lemma) return null;
 	const worker = await getDbWorker(corpusId);
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
-	const norm = stripGreekAccents(clean);
+	const dict = getDefaultDictionary(corpusId);
 
-	const sql = `
-		SELECT dictionary, strongs_id, lemma, normalized_lemma, pos, transliteration, gloss, definition
-		FROM lexicon_entries
-		WHERE normalized_lemma = ? OR lemma = ?
-		LIMIT 1
-	`;
-	const rows = await worker.db.query(sql, [norm, clean]);
+	// Step 1: Direct indexed seek on idx_lexicon_exact (dictionary, lemma)
+	let rows = (await worker.db.query(
+		`SELECT dictionary, strongs_id, lemma, normalized_lemma, pos, transliteration, gloss, definition
+		 FROM lexicon_entries
+		 WHERE dictionary = ? AND lemma = ?
+		 LIMIT 1`,
+		[dict, clean]
+	)) as any[];
+
+	// Step 2: Fallback to normalized index on idx_lexicon_lemma (dictionary, normalized_lemma)
+	if (!rows || rows.length === 0) {
+		const norm = stripGreekAccents(clean);
+		if (norm !== clean) {
+			rows = (await worker.db.query(
+				`SELECT dictionary, strongs_id, lemma, normalized_lemma, pos, transliteration, gloss, definition
+				 FROM lexicon_entries
+				 WHERE dictionary = ? AND normalized_lemma = ?
+				 LIMIT 1`,
+				[dict, norm]
+			)) as any[];
+		}
+	}
+
 	if (!rows || (rows as any[]).length === 0) return null;
 
 	const r = (rows as any[])[0];
@@ -209,51 +232,52 @@ export async function fetchLexiconEntry(corpusId: AncientCorpusId, lemma: string
 }
 
 /**
- * Fetch lemma statistics from lemma_stats
+ * Fetch lemma statistics from lemma_stats using primary key indexed seek (corpus_id, lemma)
  */
 export async function fetchLemmaStats(corpusId: AncientCorpusId, lemma: string): Promise<LemmaStat | null> {
 	if (!lemma) return null;
 	const worker = await getDbWorker(corpusId);
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
-	const norm = stripGreekAccents(clean);
 	const targetCorpus = PRIMARY_GREEK_CORPUS_IDS[corpusId];
 
-	const sql = `
-		SELECT corpus_id, lemma, normalized_lemma, total_count, work_counts_json
-		FROM lemma_stats
-		WHERE corpus_id = ? AND (lemma = ? OR normalized_lemma = ?)
-		ORDER BY
-			CASE
-				WHEN lemma = ? THEN 1
-				WHEN normalized_lemma = ? THEN 2
-				ELSE 3
-			END ASC,
-			total_count DESC
-	`;
-	const rows = (await worker.db.query(sql, [targetCorpus, clean, norm, clean, norm])) as any[];
+	// Step 1: Direct indexed seek on PRIMARY KEY (corpus_id, lemma)
+	let rows = (await worker.db.query(
+		`SELECT corpus_id, lemma, normalized_lemma, total_count, work_counts_json, concordance_count
+		 FROM lemma_stats 
+		 WHERE corpus_id = ? AND lemma = ? 
+		 LIMIT 1;`,
+		[targetCorpus, clean]
+	)) as any[];
+
+	// Step 2: Fallback to normalized lemma with LIMIT 1 if exact match misses
+	if (!rows || rows.length === 0) {
+		const norm = stripGreekAccents(clean);
+		if (norm !== clean) {
+			rows = (await worker.db.query(
+				`SELECT corpus_id, lemma, normalized_lemma, total_count, work_counts_json, concordance_count
+				 FROM lemma_stats
+				 WHERE corpus_id = ? AND normalized_lemma = ?
+				 LIMIT 1`,
+				[targetCorpus, norm]
+			)) as any[];
+		}
+	}
+
 	if (!rows || rows.length === 0) return null;
 
 	const topRow = rows[0];
-
-	// Aggregate total count and merge work distributions across all variant spellings/breathings
-	let totalCount = 0;
-	const mergedWorkCounts: Record<string, number> = {};
-
-	for (const r of rows) {
-		const c = getRowVal<number>(r, 'total_count', 3) || 0;
-		totalCount += c;
-		const wc = parseJsonField<Record<string, number>>(getRowVal(r, 'work_counts_json', 4), {});
-		for (const [wCode, count] of Object.entries(wc)) {
-			mergedWorkCounts[wCode] = (mergedWorkCounts[wCode] || 0) + count;
-		}
-	}
+	const rawCounts = getRowVal(topRow, 'work_counts_json', 4);
+	const workCounts = parseJsonField<Record<string, number>>(rawCounts, {});
+	const cCount = getRowVal<number | undefined>(topRow, 'concordance_count', 5);
+	const tCount = getRowVal<number>(topRow, 'total_count', 3) || 0;
 
 	return {
 		corpus_id: getRowVal<string>(topRow, 'corpus_id', 0),
 		lemma: getRowVal<string>(topRow, 'lemma', 1),
 		normalized_lemma: getRowVal<string>(topRow, 'normalized_lemma', 2),
-		total_count: totalCount,
-		work_counts: mergedWorkCounts
+		total_count: tCount,
+		concordance_count: cCount !== undefined && cCount !== null ? cCount : tCount,
+		work_counts: workCounts
 	};
 }
 
@@ -264,7 +288,8 @@ export async function fetchConcordancePage(
 	corpusId: AncientCorpusId,
 	lemma: string,
 	offset: number = 0,
-	pageSize: number = 50
+	pageSize: number = 50,
+	knownTotalCount?: number
 ): Promise<PaginatedConcordance> {
 	if (!lemma) {
 		return { refs: [], totalCount: 0, hasMore: false, nextOffset: 0 };
@@ -274,27 +299,44 @@ export async function fetchConcordancePage(
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
 	const targetCorpus = PRIMARY_GREEK_CORPUS_IDS[corpusId];
 
-	// Step 1: Resolve exact target lemma from lemma_stats (or normalized fallback)
 	let targetLemma = clean;
-	let totalCount = 0;
+	let totalCount = knownTotalCount;
 
-	const statRows = (await worker.db.query(
-		`SELECT lemma, total_count FROM lemma_stats 
-		 WHERE corpus_id = ? AND (lemma = ? OR normalized_lemma = ?)
-		 ORDER BY (lemma = ?) DESC, total_count DESC LIMIT 1`,
-		[targetCorpus, clean, stripGreekAccents(clean), clean]
-	)) as any[];
+	// Step 1: Resolve exact target lemma from lemma_stats (or normalized fallback)
+	// ONLY if totalCount was not already supplied by the caller
+	if (totalCount === undefined) {
+		const statRows = (await worker.db.query(
+			`SELECT lemma, concordance_count, total_count FROM lemma_stats 
+			 WHERE corpus_id = ? AND lemma = ? LIMIT 1`,
+			[targetCorpus, clean]
+		)) as any[];
 
-	if (statRows && statRows.length > 0) {
-		targetLemma = getRowVal<string>(statRows[0], 'lemma', 0) || clean;
-		totalCount = getRowVal<number>(statRows[0], 'total_count', 1) || 0;
-	} else {
-		// Fast fallback count directly from covering table
-		const countRows = await worker.db.query(
-			`SELECT COUNT(*) AS total FROM concordance_refs WHERE corpus_id = ? AND lemma = ?`,
-			[targetCorpus, targetLemma]
-		);
-		totalCount = countRows && (countRows as any[]).length > 0 ? getRowVal<number>((countRows as any[])[0], 'total', 0) : 0;
+		if (statRows && statRows.length > 0) {
+			targetLemma = getRowVal<string>(statRows[0], 'lemma', 0) || clean;
+			const cCount = getRowVal<number | undefined>(statRows[0], 'concordance_count', 1);
+			totalCount = cCount !== undefined && cCount !== null ? cCount : getRowVal<number>(statRows[0], 'total_count', 2, 0);
+		} else {
+			const stripped = stripGreekAccents(clean);
+			const normRows = (await worker.db.query(
+				`SELECT lemma, concordance_count, total_count FROM lemma_stats 
+				 WHERE corpus_id = ? AND normalized_lemma = ?
+				 ORDER BY total_count DESC LIMIT 1`,
+				[targetCorpus, stripped]
+			)) as any[];
+
+			if (normRows && normRows.length > 0) {
+				targetLemma = getRowVal<string>(normRows[0], 'lemma', 0) || clean;
+				const cCount = getRowVal<number | undefined>(normRows[0], 'concordance_count', 1);
+				totalCount = cCount !== undefined && cCount !== null ? cCount : getRowVal<number>(normRows[0], 'total_count', 2, 0);
+			} else {
+				// Fast fallback count directly from covering table
+				const countRows = await worker.db.query(
+					`SELECT COUNT(*) AS total FROM concordance_refs WHERE corpus_id = ? AND lemma = ?`,
+					[targetCorpus, targetLemma]
+				);
+				totalCount = countRows && (countRows as any[]).length > 0 ? getRowVal<number>((countRows as any[])[0], 'total', 0) : 0;
+			}
+		}
 	}
 
 	if (totalCount === 0 || offset >= totalCount) {
@@ -334,11 +376,13 @@ export async function fetchConcordancePage(
 	});
 
 	const nextOffset = offset + pagedRefs.length;
-	const hasMore = pagedRefs.length === pageSize && nextOffset < totalCount;
+	// If fewer rows than pageSize were returned, we have reached the exact end of data
+	const resolvedTotal = pagedRefs.length < pageSize ? nextOffset : Math.max(totalCount, nextOffset);
+	const hasMore = pagedRefs.length === pageSize && nextOffset < resolvedTotal;
 
 	return {
 		refs: pagedRefs,
-		totalCount: Math.max(totalCount, pagedRefs.length),
+		totalCount: resolvedTotal,
 		hasMore,
 		nextOffset
 	};
