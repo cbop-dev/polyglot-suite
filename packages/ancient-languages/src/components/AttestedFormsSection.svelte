@@ -236,6 +236,7 @@
 		background: var(--popup-bg, var(--color-page, #ffffff));
 		margin-bottom: 0;
 		overflow: hidden;
+		flex-shrink: 0;
 		transition: border-color 0.15s ease;
 	}
 
@@ -253,6 +254,7 @@
 		cursor: pointer;
 		user-select: none;
 		list-style: none;
+		flex-shrink: 0;
 	}
 
 	.attested-summary::-webkit-details-marker {
@@ -268,12 +270,16 @@
 		align-items: center;
 		gap: 0.45rem;
 		flex-wrap: wrap;
+		min-width: 0;
+		line-height: 1.35;
 	}
 
 	.summary-title {
 		display: inline-flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 0.25rem;
+		line-height: 1.35;
 	}
 
 	.lemma-quote {

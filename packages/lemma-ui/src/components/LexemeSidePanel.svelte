@@ -847,7 +847,7 @@
 	</div>
 
 	<!-- Panel Body Area -->
-	<div class="lemma-card flex-1 overflow-y-auto p-4 flex flex-col gap-4 space-y-4" role="dialog" aria-label="Lemma & Lexicon Inspection">
+	<div class="lemma-card flex-1 overflow-y-auto p-4 flex flex-col gap-4" role="dialog" aria-label="Lemma & Lexicon Inspection">
 		{#if currentTab === 'lexeme'}
 			{#if !currentLemma}
 				<div class="py-16 text-center text-xs text-[var(--color-ink-soft)]">
@@ -855,7 +855,7 @@
 				</div>
 			{:else}
 				<!-- Header Box: Surface Word & Lemma Headword -->
-				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] p-4 shadow-xs space-y-3">
+				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] p-4 shadow-xs space-y-3 shrink-0">
 					<div class="flex items-start justify-between">
 						<div>
 							<div class="text-xl font-bold greek-font text-[var(--color-ink)] flex items-baseline gap-2">
@@ -941,6 +941,7 @@
 				<!-- Section: Inflection Filter Bar (if attested forms exist) -->
 				{#if availableInflections.tenses.length > 0 || availableInflections.moods.length > 0 || availableInflections.cases.length > 0}
 					<InflectionFilterBar
+						class="shrink-0"
 						available={availableInflections}
 						bind:criteria={inflectionCriteria}
 						bind:isOpen={isInflectionFilterOpen}
@@ -959,6 +960,7 @@
 
 				<!-- Section 1: Attested Word Forms -->
 				<AttestedFormsSection
+					class="shrink-0"
 					attestedForms={filteredAttestedForms}
 					totalCount={attestedForms.length}
 					selectedFormFilter={selectedFormFilter}
@@ -978,7 +980,7 @@
 				/>
 
 				<!-- Section 2: Full Lexicon Article -->
-				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] shadow-xs overflow-hidden">
+				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] shadow-xs overflow-hidden shrink-0">
 					<button
 						type="button"
 						onclick={toggleLexArticle}
@@ -1028,7 +1030,7 @@
 				</div>
 
 				<!-- Section 3: Concordance / Corpus Occurrences -->
-				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] shadow-xs overflow-hidden">
+				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] shadow-xs overflow-hidden shrink-0">
 					<button
 						type="button"
 						onclick={toggleConcordance}

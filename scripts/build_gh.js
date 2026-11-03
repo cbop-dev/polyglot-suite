@@ -25,6 +25,6 @@ build.on('close', code => {
     process.exit(code || 1);
   } else {
     console.log(`\n\x1b[32m✔ GitHub Pages suite build completed successfully in dist/\x1b[0m`);
-    console.log(`  Run "npm run preview:gh" to preview locally on http://localhost:5000/polyglot-suite/\n`);
+    console.log(`  Run "npm run preview:gh" to preview locally on http://localhost:5000/\n`);
   }
 });

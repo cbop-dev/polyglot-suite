@@ -96,3 +96,40 @@ for (const f of forwarders) {
   writeFileSync(resolve(fullDir, 'index.html'), forwardHtml, 'utf8');
 }
 console.log('✓ Generated legacy forwarders in dist/josephus, dist/fathers, dist/philo');
+
+// Generate root dist/404.html for GitHub Pages SPA routing
+const root404Html = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Polyglot Suite</title>
+  <script>
+    (function() {
+      var pathname = window.location.pathname;
+      var search = window.location.search || '';
+      var hash = window.location.hash || '';
+      
+      if (pathname.startsWith('/corpora') || pathname.includes('/corpora/')) {
+        window.location.replace('/corpora/' + search + hash);
+        return;
+      }
+      if (pathname.startsWith('/bible') || pathname.includes('/bible/')) {
+        window.location.replace('/bible/' + search + hash);
+        return;
+      }
+      if (pathname.startsWith('/lexemes') || pathname.includes('/lexemes/')) {
+        window.location.replace('/lexemes/' + search + hash);
+        return;
+      }
+      window.location.replace('/');
+    })();
+  </script>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center; padding: 4rem 1rem;">
+  <h2>Polyglot Suite</h2>
+  <p>Redirecting to <a href="./">Polyglot Suite</a>...</p>
+</body>
+</html>
+`;
+writeFileSync(resolve(ROOT_DIR, 'dist/404.html'), root404Html, 'utf8');
+console.log('✓ Generated dist/404.html SPA router for GitHub Pages');
