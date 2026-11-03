@@ -403,3 +403,9 @@
 		{/each}
 	</div>
 </div>
+<style>
+	.section-row {
+		content-visibility: auto;
+  		contain-intrinsic-size: auto 120px; /* estimated average height */
+	}
+</style>
