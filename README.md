@@ -2,7 +2,7 @@
 
 Monorepo workspace for ancient language readers, lexical engines, and comparative textual tooling.
 
-> 📖 **Architectural Guide**: For an in-depth technical breakdown of the zero-backend WebAssembly VFS layer, shared package boundaries, database release mechanics, and CI/CD pipelines, see [**Monorepo Architecture & Technical Design**](monorepo-architecture.md).
+> 📖 **Architectural Guide**: For an in-depth technical breakdown of the zero-backend WebAssembly VFS layer, shared package boundaries, database release mechanics, and CI/CD pipelines, see [**Monorepo Architecture & Technical Design**](docs/monorepo-architecture.md).
 
 ## Apps
 
