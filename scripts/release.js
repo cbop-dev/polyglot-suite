@@ -19,6 +19,16 @@ const TARGETS = {
   fathers: { name: 'apostolic-fathers-reader', file: 'apps/apostolic-fathers-reader/package.json', tagPrefix: 'af' },
   af: { name: 'apostolic-fathers-reader', file: 'apps/apostolic-fathers-reader/package.json', tagPrefix: 'af' },
   josephus: { name: 'josephus-reader', file: 'apps/josephus-reader/package.json', tagPrefix: 'josephus' },
+  corpora: { 
+    name: 'ancient-corpora-reader', 
+    file: 'apps/ancient-corpora-reader/package.json', 
+    tagPrefix: 'corpora' 
+  },
+  acr: { 
+    name: 'ancient-corpora-reader', 
+    file: 'apps/ancient-corpora-reader/package.json', 
+    tagPrefix: 'corpora' 
+  },
   ui: { name: '@polyglot/ui', file: 'packages/ui/package.json', tagPrefix: 'ui' },
   theme: { name: '@polyglot/theme', file: 'packages/theme/package.json', tagPrefix: 'theme' },
   'db-vfs': { name: '@polyglot/db-vfs', file: 'packages/db-vfs/package.json', tagPrefix: 'db-vfs' },
@@ -29,6 +39,7 @@ const TARGETS = {
   pipeline: { name: '@polyglot/pipeline-core', file: 'packages/pipeline-core/package.json', tagPrefix: 'pipeline' },
   'data-pipeline': { name: '@polyglot/data-pipeline', file: 'packages/data-pipeline/package.json', tagPrefix: 'data-pipeline' },
   'biblical-data': { name: '@biblical-data/corpora', file: 'packages/biblical-data/package.json', tagPrefix: 'biblical-data' },
+
 };
 
 function formatTag(prefix, version) {
