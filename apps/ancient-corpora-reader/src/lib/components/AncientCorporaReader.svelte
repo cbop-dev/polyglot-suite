@@ -2,6 +2,7 @@
 	import CorpusHeader from './CorpusHeader.svelte';
 	import CorpusColumnView from './CorpusColumnView.svelte';
 	import CorpusSidePanel from './CorpusSidePanel.svelte';
+	import CorpusPickerModalWrapper from './CorpusPickerModalWrapper.svelte';
 	import WorkPickerModalWrapper from './WorkPickerModalWrapper.svelte';
 	import DivisionPickerModalWrapper from './DivisionPickerModalWrapper.svelte';
 	import AcademicCitationModalWrapper from './AcademicCitationModalWrapper.svelte';
@@ -43,12 +44,47 @@
 		}
 	});
 
+	let prefetchTimer: any = null;
+
+	function cancelPrefetch() {
+		if (prefetchTimer !== null && typeof window !== 'undefined') {
+			if ('cancelIdleCallback' in window && typeof prefetchTimer === 'number') {
+				(window as any).cancelIdleCallback(prefetchTimer);
+			} else {
+				clearTimeout(prefetchTimer);
+			}
+			prefetchTimer = null;
+		}
+	}
+
+	function schedulePrefetchNextDivision(corpus: AncientCorpusId, work: string, currentDiv: number) {
+		if (typeof window === 'undefined') return;
+		cancelPrefetch();
+
+		const currentWork = readerState.currentWork;
+		const nextDiv = currentDiv + 1;
+		if (nextDiv > currentWork.totalDivisions) return;
+
+		const runPrefetch = () => {
+			fetchDivisionSections(corpus, work, nextDiv).catch(() => {});
+		};
+
+		if ('requestIdleCallback' in window) {
+			prefetchTimer = (window as any).requestIdleCallback(runPrefetch, { timeout: 3000 });
+		} else {
+			prefetchTimer = setTimeout(runPrefetch, 800);
+		}
+	}
+
 	// Load sections when corpus, work, or division changes
 	$effect(() => {
 		const corpus = readerState.currentCorpus;
 		const work = readerState.currentWorkCode;
 		const div = readerState.currentDivision;
 		loadData(corpus, work, div);
+		return () => {
+			cancelPrefetch();
+		};
 	});
 
 	async function loadData(corpus: AncientCorpusId, work: string, division: number) {
@@ -74,6 +110,9 @@
 					el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 				}, 120);
 			}
+
+			// Pre-fetch subsequent division in idle time so next-book navigation is instantaneous
+			schedulePrefetchNextDivision(corpus, work, division);
 		} catch (err: any) {
 			console.error('Failed to load text units:', err);
 			error = err?.message || 'Error loading texts from database';
@@ -131,6 +170,9 @@
 		} else if (e.key === 'p' || e.key === 'P') {
 			e.preventDefault();
 			readerState.viewMode = 'parallel';
+		} else if (e.key === 'd' || e.key === 'D') {
+			e.preventDefault();
+			readerState.viewMode = readerState.viewMode === 'stacked' ? 'parallel' : 'stacked';
 		} else if (e.key === 'g' || e.key === 'G') {
 			e.preventDefault();
 			readerState.viewMode = 'greek';
@@ -183,6 +225,7 @@
 	<CorpusSidePanel />
 
 	<!-- Modals -->
+	<CorpusPickerModalWrapper />
 	<WorkPickerModalWrapper />
 	<DivisionPickerModalWrapper greekSectionsCount={greekSections.length} />
 	<AcademicCitationModalWrapper />

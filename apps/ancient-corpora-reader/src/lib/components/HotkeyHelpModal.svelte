@@ -8,6 +8,7 @@
 		{ key: '] / →', desc: 'Next division' },
 		{ key: '[ / ←', desc: 'Previous division' },
 		{ key: 'P', desc: 'Parallel view mode' },
+		{ key: 'D', desc: 'Toggle Dual mode (Parallel ↔ Stacked)' },
 		{ key: 'G', desc: 'Greek only view mode' },
 		{ key: 'E', desc: 'English only view mode' },
 		{ key: 'F / /', desc: 'Toggle Lemma Search & Lexeme Side Panel' },

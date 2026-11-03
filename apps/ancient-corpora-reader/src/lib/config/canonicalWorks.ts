@@ -19,6 +19,7 @@ export interface UnifiedCanonicalWork {
 	totalDivisions: number;
 	minDivision: number;
 	sectionsByDivision?: Record<number, number>;
+	coordinateScheme?: 'book_only' | 'division_both';
 }
 
 export const CORPUS_TITLES: Record<AncientCorpusId, { name: string; subtitle: string; badge: string }> = {
@@ -55,7 +56,8 @@ export const ALL_CANONICAL_WORKS: Record<AncientCorpusId, UnifiedCanonicalWork[]
 		category: w.category,
 		divisionLabel: 'Chapter',
 		totalDivisions: w.totalChapters,
-		minDivision: w.minChapter ?? 1
+		minDivision: w.minChapter ?? 1,
+		coordinateScheme: 'division_both'
 	})),
 	philo: (PHILO_CANONICAL_WORKS as any[]).map((w) => ({
 		corpusId: 'philo',
@@ -69,7 +71,8 @@ export const ALL_CANONICAL_WORKS: Record<AncientCorpusId, UnifiedCanonicalWork[]
 		divisionLabel: w.totalBooks > 1 ? 'Book' : 'Chapter',
 		totalDivisions: w.totalBooks,
 		minDivision: 1,
-		sectionsByDivision: w.sectionsByBook
+		sectionsByDivision: w.sectionsByBook,
+		coordinateScheme: 'division_both'
 	})),
 	josephus: (JOSEPHUS_CANONICAL_WORKS as any[]).map((w) => ({
 		corpusId: 'josephus',
@@ -83,9 +86,29 @@ export const ALL_CANONICAL_WORKS: Record<AncientCorpusId, UnifiedCanonicalWork[]
 		divisionLabel: 'Book',
 		totalDivisions: w.totalBooks,
 		minDivision: 1,
-		sectionsByDivision: w.sectionsByBook
+		sectionsByDivision: w.sectionsByBook,
+		coordinateScheme: 'book_only'
 	}))
 };
+
+export interface DivisionCoordinates {
+	book: number;
+	chapter: number;
+}
+
+/**
+ * Resolves the database storage coordinates (book, chapter) for a division
+ * based on the work's structural metadata rather than hardcoded corpus names.
+ */
+export function resolveDivisionCoordinates(
+	work: UnifiedCanonicalWork | undefined,
+	division: number
+): DivisionCoordinates {
+	if (work?.coordinateScheme === 'book_only') {
+		return { book: division, chapter: 0 };
+	}
+	return { book: division, chapter: division };
+}
 
 export function getCorpusWorks(corpusId: AncientCorpusId): UnifiedCanonicalWork[] {
 	return ALL_CANONICAL_WORKS[corpusId] || [];

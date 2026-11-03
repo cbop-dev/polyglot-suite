@@ -3,6 +3,7 @@ import type { AncientCorpusId } from '@polyglot/ancient-languages';
 import {
 	getCorpusWorks,
 	findWork,
+	resolveDivisionCoordinates,
 	CORPUS_TITLES
 } from '../src/lib/config/canonicalWorks.js';
 
@@ -52,5 +53,22 @@ describe('Canonical Works Registry', () => {
 		expect(findWork('josephus', 'war')?.code).toBe('War');
 		expect(findWork('josephus', 'life')?.code).toBe('Life');
 		expect(findWork('josephus', 'apion')?.code).toBe('Apion');
+	});
+
+	it('resolves division coordinates dynamically based on work metadata without hardcoded corpus checks', () => {
+		// Josephus works are book_only: (book = div, chapter = 0)
+		const antWork = findWork('josephus', 'Antiquities');
+		expect(resolveDivisionCoordinates(antWork, 3)).toEqual({ book: 3, chapter: 0 });
+
+		// Philo works use division_both: (book = div, chapter = div)
+		const legWork = findWork('philo', 'LEG');
+		expect(resolveDivisionCoordinates(legWork, 2)).toEqual({ book: 2, chapter: 2 });
+
+		// Apostolic Fathers works use division_both: (book = div, chapter = div)
+		const cleWork = findWork('af', '1CLE');
+		expect(resolveDivisionCoordinates(cleWork, 5)).toEqual({ book: 5, chapter: 5 });
+
+		// Fallback for undefined work
+		expect(resolveDivisionCoordinates(undefined, 1)).toEqual({ book: 1, chapter: 1 });
 	});
 });

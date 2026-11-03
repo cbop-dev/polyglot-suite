@@ -3,35 +3,17 @@
 	import { ReaderHeader, type ViewMode } from '@polyglot/ui';
 	import { readerState } from '../stores/readerState.svelte.js';
 	import { CORPUS_TITLES } from '../config/canonicalWorks.js';
-	import type { AncientCorpusId } from '@polyglot/ancient-languages';
-
-	const corpora: { id: AncientCorpusId; label: string }[] = [
-		{ id: 'af', label: 'Apostolic Fathers' },
-		{ id: 'philo', label: 'Philo' },
-		{ id: 'josephus', label: 'Josephus' }
-	];
-
-	let selectedCorpus = $state<AncientCorpusId>(readerState.currentCorpus);
-
-	$effect(() => {
-		selectedCorpus = readerState.currentCorpus;
-	});
-
-	function handleGo() {
-		if (selectedCorpus !== readerState.currentCorpus) {
-			readerState.isSidePanelOpen = false;
-			readerState.selectedToken = null;
-			readerState.selectedCitation = null;
-			readerState.setCorpus(selectedCorpus);
-		}
-	}
+	let {
+		test='',
+		suiteHref="/"
+	} = $props();
 </script>
 
 <ReaderHeader
 	title="Ancient Corpora"
 	titleShort="Corpora"
 	homeHref="{base}/"
-	suiteHref="{base}/"
+	suiteHref=suiteHref
 	workTitle={readerState.currentWork.titleEnglish}
 	workAbbrev={readerState.currentWork.abbrev}
 	onOpenWorkPicker={() => (readerState.isWorkModalOpen = true)}
@@ -53,32 +35,19 @@
 	showHelp={true}
 	onOpenHelp={() => (readerState.showHotkeyHelp = true)}
 >
-	{#snippet extraDesktopControls()}
-		<!-- Corpus Selector Pill -->
-		<div class="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-[var(--color-rule)] bg-[var(--color-card-bg)] text-xs font-semibold">
-			<span class="text-[var(--color-ink-soft)] text-[10px] uppercase font-bold tracking-wider hidden lg:inline">Corpus:</span>
-			<select
-				bind:value={selectedCorpus}
-				onkeydown={(e) => {
-					if (e.key === 'Enter') {
-						e.preventDefault();
-						handleGo();
-					}
-				}}
-				class="bg-transparent font-bold text-blue-600 dark:text-blue-400 focus:outline-hidden cursor-pointer"
-			>
-				{#each corpora as c}
-					<option value={c.id}>{c.label}</option>
-				{/each}
-			</select>
-			<button
-				type="button"
-				onclick={handleGo}
-				class="px-2 py-0.5 rounded bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-[11px] font-bold transition-colors cursor-pointer shadow-2xs"
-				title="Switch to selected corpus"
-			>
-				Go!
-			</button>
-		</div>
+	{#snippet afterTitle()}
+		<!-- Corpus Selector Trigger -->
+		<button
+			type="button"
+			onclick={() => (readerState.isCorpusModalOpen = true)}
+			class="corpus-picker-trigger max-w-[120px] sm:max-w-[180px] md:max-w-[220px] truncate rounded-lg border border-[var(--color-rule)] bg-[var(--color-card-bg)] px-2 py-1 text-xs sm:text-sm font-semibold text-[var(--color-ink)] shadow-2xs hover:bg-[var(--color-rule)] cursor-pointer flex items-center gap-1 shrink-0"
+			title="Choose corpus (Hot key: 'g')"
+		>
+			<!--<span class="text-[var(--color-ink-soft)] text-[10px] uppercase font-bold tracking-wider hidden lg:inline">Corpus:</span>-->
+			<span class="text-blue-600 dark:text-blue-400 font-bold truncate">
+				{CORPUS_TITLES[readerState.currentCorpus]?.name || readerState.currentCorpus}
+			</span>
+			<span class="text-[10px] text-[var(--color-ink-soft)] shrink-0">▾</span>
+		</button>
 	{/snippet}
 </ReaderHeader>

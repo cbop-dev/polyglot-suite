@@ -42,6 +42,7 @@ export class ReaderState {
 	activeSidePanelTab = $state<string>('lexeme');
 
 	// Modals
+	isCorpusModalOpen = $state<boolean>(false);
 	isWorkModalOpen = $state<boolean>(false);
 	isDivisionModalOpen = $state<boolean>(false);
 	showHotkeyHelp = $state<boolean>(false);
@@ -55,11 +56,15 @@ export class ReaderState {
 		return fallback;
 	}
 
-	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: number, section?: string | number | null) {
+	closeSidePanel() {
 		this.isSidePanelOpen = false;
 		this.selectedToken = null;
 		this.selectedCitation = null;
 		this.selectedScriptureCitation = null;
+	}
+
+	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: number, section?: string | number | null) {
+		this.closeSidePanel();
 		this.currentCorpus = corpusId;
 		const works = getCorpusWorks(corpusId);
 		const targetWork = workCode ? (findWork(corpusId, workCode) || works[0]) : works[0];
@@ -73,6 +78,7 @@ export class ReaderState {
 	setWork(workCode: string, division?: number, section?: string | number | null) {
 		const target = findWork(this.currentCorpus, workCode);
 		if (target) {
+			this.closeSidePanel();
 			this.currentWorkCode = target.code;
 			this.currentDivision = division !== undefined
 				? Math.max(target.minDivision, Math.min(division, target.totalDivisions))
@@ -82,6 +88,7 @@ export class ReaderState {
 	}
 
 	setDivision(division: number, section?: string | number | null) {
+		this.closeSidePanel();
 		const work = this.currentWork;
 		this.currentDivision = Math.max(work.minDivision, Math.min(division, work.totalDivisions));
 		this.currentSection = section ?? null;
@@ -90,6 +97,7 @@ export class ReaderState {
 	nextDivision() {
 		const work = this.currentWork;
 		if (this.currentDivision < work.totalDivisions) {
+			this.closeSidePanel();
 			this.currentDivision += 1;
 			this.currentSection = null;
 		}
@@ -98,6 +106,7 @@ export class ReaderState {
 	prevDivision() {
 		const work = this.currentWork;
 		if (this.currentDivision > work.minDivision) {
+			this.closeSidePanel();
 			this.currentDivision -= 1;
 			this.currentSection = null;
 		}

@@ -1,4 +1,5 @@
 import { getDbWorker } from './dbWorker.js';
+import { findWork, resolveDivisionCoordinates } from '../config/canonicalWorks.js';
 import {
 	stripGreekAccents,
 	buildAttestedForms,
@@ -118,28 +119,70 @@ export const PRIMARY_GREEK_CORPUS_IDS: Record<AncientCorpusId, string> = {
 	josephus: 'josephus_grc'
 };
 
+export interface DivisionResult {
+	greek: TextUnit[];
+	english: TextUnit[];
+	latin: TextUnit[];
+}
+
+const divisionCache = new Map<string, DivisionResult>();
+const MAX_DIVISION_CACHE_SIZE = 24;
+
+export function clearDivisionCache(): void {
+	divisionCache.clear();
+}
+
 /**
- * Fetch parallel text units for a specific division (chapter for AF & Philo, book for Josephus)
+ * Fetch parallel text units for a specific division (chapter for AF & single-treatise Philo, book for Josephus & multi-book Philo)
  */
 export async function fetchDivisionSections(
 	corpusId: AncientCorpusId,
 	workCode: string,
 	division: number
-): Promise<{ greek: TextUnit[]; english: TextUnit[]; latin: TextUnit[] }> {
+): Promise<DivisionResult> {
+	const cacheKey = `${corpusId}:${workCode}:${division}`;
+	const cached = divisionCache.get(cacheKey);
+	if (cached) {
+		// Re-insert to mark as most recently used in LRU order
+		divisionCache.delete(cacheKey);
+		divisionCache.set(cacheKey, cached);
+		return cached;
+	}
+
 	const worker = await getDbWorker(corpusId);
 	const greek: TextUnit[] = [];
 	const english: TextUnit[] = [];
 	const latin: TextUnit[] = [];
 
-	const sql = `
+	// Resolve exact coordinates via work metadata (e.g. book_only vs division_both)
+	const work = findWork(corpusId, workCode);
+	const coords = resolveDivisionCoordinates(work, division);
+
+	// Primary query: Direct indexed seek on idx_text_units_coords (work_code, book, chapter, section)
+	// Guaranteed 0 temp B-trees and 0 disk sorts in SQLite!
+	const sqlExact = `
 		SELECT u.id, u.corpus_id, u.work_code, u.book, u.chapter, u.section, u.section_num, u.niese_section,
 		       u.mangey_ref, u.is_supplement, u.display_citation, u.text_content, tok.tokens_json
 		FROM text_units u
 		LEFT JOIN text_unit_tokens tok ON tok.work_unit_id = u.id
-		WHERE u.work_code = ? AND (u.chapter = ? OR u.book = ?)
+		WHERE u.work_code = ? AND u.book = ? AND u.chapter = ?
 		ORDER BY u.section ASC, u.id ASC
 	`;
-	const rows = await worker.db.query(sql, [workCode, division, division]);
+	let rows = await worker.db.query(sqlExact, [workCode, coords.book, coords.chapter]);
+
+	// Resilient fallback for any work with non-standard coordinate schemas
+	if (!rows || (rows as any[]).length === 0) {
+		const sqlFallback = `
+			SELECT u.id, u.corpus_id, u.work_code, u.book, u.chapter, u.section, u.section_num, u.niese_section,
+			       u.mangey_ref, u.is_supplement, u.display_citation, u.text_content, tok.tokens_json
+			FROM text_units u
+			LEFT JOIN text_unit_tokens tok ON tok.work_unit_id = u.id
+			WHERE u.work_code = ? AND (u.book = ? OR u.chapter = ?)
+			ORDER BY u.section ASC, u.id ASC
+		`;
+		rows = await worker.db.query(sqlFallback, [workCode, division, division]);
+	}
+
 	for (const row of rows as any[]) {
 		const rawTokens = getRowVal(row, 'tokens_json', 12);
 		const unit: TextUnit = {
@@ -166,7 +209,18 @@ export async function fetchDivisionSections(
 		}
 	}
 
-	return { greek, english, latin };
+	const result: DivisionResult = { greek, english, latin };
+
+	// Store in bounded LRU cache
+	if (divisionCache.size >= MAX_DIVISION_CACHE_SIZE) {
+		const oldestKey = divisionCache.keys().next().value;
+		if (oldestKey) {
+			divisionCache.delete(oldestKey);
+		}
+	}
+	divisionCache.set(cacheKey, result);
+
+	return result;
 }
 
 /**

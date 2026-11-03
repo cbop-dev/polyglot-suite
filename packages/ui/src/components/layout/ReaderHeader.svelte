@@ -52,6 +52,7 @@
 		onOpenHelp?: () => void;
 
 		// Extensibility Slots
+		afterTitle?: Snippet;
 		extraDesktopControls?: Snippet;
 		extraMobileControls?: Snippet;
 
@@ -92,6 +93,7 @@
 		onOpenBookmarks,
 		showHelp = true,
 		onOpenHelp,
+		afterTitle,
 		extraDesktopControls,
 		extraMobileControls,
 		class: className = ''
@@ -132,7 +134,9 @@
 					/>
 				{/if}
 			</div>
-
+			{#if afterTitle}
+			{@render afterTitle()}
+			{/if}
 			<!-- Work Selector Button -->
 			<button
 				type="button"

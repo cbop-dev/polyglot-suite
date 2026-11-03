@@ -48,3 +48,23 @@ export interface WorkCategory {
 	id: string;
 	label: string;
 }
+
+export interface GenericPickerItem {
+	id?: string | number;
+	label?: string;
+	subLabel?: string;
+	badge?: string;
+	[key: string]: any;
+}
+
+export interface CorpusPickerItem {
+	id: string;
+	title: string;
+	subtitle?: string;
+	badge?: string;
+	totalWorks?: number;
+	authors?: string;
+	era?: string;
+	languages?: string[];
+	[key: string]: any;
+}

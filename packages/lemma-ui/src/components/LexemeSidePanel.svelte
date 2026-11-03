@@ -347,6 +347,16 @@
 		});
 	});
 
+	// Collapse sub-sections whenever the panel is closed or token is cleared
+	$effect(() => {
+		if (!isOpen || !selectedToken) {
+			isAttestedFormsOpen = false;
+			isInflectionFilterOpen = false;
+			isLexArticleOpen = false;
+			isConcordanceOpen = false;
+		}
+	});
+
 	// Reset state when active lemma changes
 	let lastFetchedLemma = '';
 	$effect(() => {
@@ -358,10 +368,18 @@
 			if (fetchWordMorph && currentWord) {
 				fetchWordMorph(currentWord, lemma).then((m) => (wordMorph = m)).catch(() => {});
 			}
+		} else if (!lemma) {
+			lastFetchedLemma = '';
+			resetLemmaSections();
 		}
 	});
 
 	function resetLemmaSections() {
+		isAttestedFormsOpen = false;
+		isInflectionFilterOpen = false;
+		isLexArticleOpen = false;
+		isConcordanceOpen = false;
+
 		attestedForms = [];
 		attestedFormsLoaded = false;
 		attestedFormsError = null;

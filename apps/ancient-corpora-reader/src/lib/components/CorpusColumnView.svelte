@@ -31,6 +31,7 @@
 	{greek}
 	{english}
 	{latin}
+	viewMode={readerState.viewMode}
 	showGreek={readerState.showGreek}
 	showEnglish={readerState.showEnglish}
 	showLatin={readerState.showLatin}

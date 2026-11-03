@@ -13,6 +13,26 @@ describe('ReaderState Store', () => {
 		expect(state.showLatin).toBe(true); // AF supports Latin where extant
 	});
 
+	it('supports switching viewMode between parallel, stacked, greek, and english', () => {
+		const state = new ReaderState();
+		state.viewMode = 'stacked';
+		expect(state.viewMode).toBe('stacked');
+		expect(state.showGreek).toBe(true);
+		expect(state.showEnglish).toBe(true);
+
+		state.viewMode = 'greek';
+		expect(state.showGreek).toBe(true);
+		expect(state.showEnglish).toBe(false);
+
+		state.viewMode = 'english';
+		expect(state.showGreek).toBe(false);
+		expect(state.showEnglish).toBe(true);
+
+		state.viewMode = 'parallel';
+		expect(state.showGreek).toBe(true);
+		expect(state.showEnglish).toBe(true);
+	});
+
 	it('switches corpus to Philo and updates active work/division', () => {
 		const state = new ReaderState();
 		state.setCorpus('philo');
@@ -95,5 +115,45 @@ describe('ReaderState Store', () => {
 		state.setDivision(2, 50);
 		expect(state.currentDivision).toBe(2);
 		expect(state.currentSection).toBe(50);
+	});
+
+	it('closes side panel and resets token when switching corpus, work, or division', () => {
+		const state = new ReaderState();
+		state.openToken({ w: 'λόγος', l: 'λόγος', m: 'N-NSM', p: 'N', lang: 'grc' }, '1 Clem. 1:1');
+		expect(state.isSidePanelOpen).toBe(true);
+		expect(state.selectedToken).not.toBeNull();
+
+		// Switching division closes side panel
+		state.setDivision(2);
+		expect(state.isSidePanelOpen).toBe(false);
+		expect(state.selectedToken).toBeNull();
+
+		// Re-open token and switch via nextDivision
+		state.openToken({ w: 'λόγος', l: 'λόγος', m: 'N-NSM', p: 'N', lang: 'grc' }, '1 Clem. 2:1');
+		expect(state.isSidePanelOpen).toBe(true);
+		state.nextDivision();
+		expect(state.isSidePanelOpen).toBe(false);
+		expect(state.selectedToken).toBeNull();
+
+		// Re-open token and switch via prevDivision
+		state.openToken({ w: 'λόγος', l: 'λόγος', m: 'N-NSM', p: 'N', lang: 'grc' }, '1 Clem. 3:1');
+		expect(state.isSidePanelOpen).toBe(true);
+		state.prevDivision();
+		expect(state.isSidePanelOpen).toBe(false);
+		expect(state.selectedToken).toBeNull();
+
+		// Re-open token and switch work
+		state.openToken({ w: 'λόγος', l: 'λόγος', m: 'N-NSM', p: 'N', lang: 'grc' }, '1 Clem. 2:1');
+		expect(state.isSidePanelOpen).toBe(true);
+		state.setWork('2CLE');
+		expect(state.isSidePanelOpen).toBe(false);
+		expect(state.selectedToken).toBeNull();
+
+		// Re-open token and switch corpus
+		state.openToken({ w: 'λόγος', l: 'λόγος', m: 'N-NSM', p: 'N', lang: 'grc' }, '2 Clem. 1:1');
+		expect(state.isSidePanelOpen).toBe(true);
+		state.setCorpus('philo');
+		expect(state.isSidePanelOpen).toBe(false);
+		expect(state.selectedToken).toBeNull();
 	});
 });
