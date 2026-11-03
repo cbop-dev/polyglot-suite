@@ -41,12 +41,40 @@ export const APPS = {
     title: 'Josephus Reader SQLite Database',
     notes: 'Pre-computed 5MB SQLite database chunks for Josephus Reader.',
   },
+  'corpora-af': {
+    name: 'Ancient Corpora: Apostolic Fathers',
+    dir: path.join(REPO_ROOT, 'apps/ancient-corpora-reader/static/db/af'),
+    pattern: 'af.db.*',
+    defaultPrefix: 'corpora-af-db-v',
+    title: 'Ancient Corpora - Apostolic Fathers SQLite Database',
+    notes: 'Pre-computed 5MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (AF).',
+  },
+  'corpora-philo': {
+    name: 'Ancient Corpora: Philo of Alexandria',
+    dir: path.join(REPO_ROOT, 'apps/ancient-corpora-reader/static/db/philo'),
+    pattern: 'philo.db.*',
+    defaultPrefix: 'corpora-philo-db-v',
+    title: 'Ancient Corpora - Philo SQLite Database',
+    notes: 'Pre-computed 5MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (Philo).',
+  },
+  'corpora-josephus': {
+    name: 'Ancient Corpora: Flavius Josephus',
+    dir: path.join(REPO_ROOT, 'apps/ancient-corpora-reader/static/db/josephus'),
+    pattern: 'josephus.db.*',
+    defaultPrefix: 'corpora-josephus-db-v',
+    title: 'Ancient Corpora - Josephus SQLite Database',
+    notes: 'Pre-computed 5MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (Josephus).',
+  },
 };
 APPS.data = APPS.bible;
 APPS['bible-data'] = APPS.bible;
 APPS.lex = APPS.bible;
 APPS.af = APPS.fathers;
 APPS.jr = APPS.josephus;
+APPS['acr-af'] = APPS['corpora-af'];
+APPS['acr-philo'] = APPS['corpora-philo'];
+APPS['acr-josephus'] = APPS['corpora-josephus'];
+APPS['acr-jr'] = APPS['corpora-josephus'];
 
 export function getGhEnv() {
   const env = { ...process.env };
@@ -143,11 +171,15 @@ Actions:
   --publish, publish   Upload local database chunks to GitHub Releases
 
 Apps:
-  all                  Sync all reader databases (bible, philo, fathers, josephus) [default for pull]
+  all                  Sync all reader databases (bible, philo, fathers, josephus, corpora-af, corpora-philo, corpora-josephus) [default for pull]
   bible (or data)      Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
   philo                Philo Reader database (tag: philo-db-vX.Y.Z)
   fathers (or af)      Apostolic Fathers Reader database (tag: af-db-vX.Y.Z)
   josephus (or jr)     Josephus Reader database (tag: josephus-db-vX.Y.Z)
+  corpora (or acr)     All Ancient Corpora Reader databases (AF, Philo, Josephus)
+  corpora-af           Ancient Corpora - Apostolic Fathers database (tag: corpora-af-db-vX.Y.Z)
+  corpora-philo        Ancient Corpora - Philo database (tag: corpora-philo-db-vX.Y.Z)
+  corpora-josephus     Ancient Corpora - Josephus database (tag: corpora-josephus-db-vX.Y.Z)
 
 Options:
   --help, -h, help     Show this help message
@@ -158,6 +190,7 @@ Workflow Note:
 
 Examples:
   npm run pull:db                       # Pull all reader databases from GitHub Releases
+  npm run pull:db:corpora               # Pull all Ancient Corpora databases
   node scripts/sync_db.js pull bible    # Pull only the biblical database
   node scripts/sync_db.js publish bible # Upload local bible chunks to GitHub Releases
 `);
@@ -174,7 +207,14 @@ if (isMain) {
     process.exit(0);
   }
 
-  const targets = targetApp === 'all' ? ['bible', 'philo', 'fathers', 'josephus'] : [targetApp];
+  let targets;
+  if (targetApp === 'all') {
+    targets = ['bible', 'philo', 'fathers', 'josephus', 'corpora-af', 'corpora-philo', 'corpora-josephus'];
+  } else if (targetApp === 'corpora' || targetApp === 'acr') {
+    targets = ['corpora-af', 'corpora-philo', 'corpora-josephus'];
+  } else {
+    targets = [targetApp];
+  }
 
   if (!['--pull', 'pull', '--publish', 'publish'].includes(action)) {
     printUsage();
