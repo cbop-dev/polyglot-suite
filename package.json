@@ -29,7 +29,7 @@
     "chunk:bible": "npm run chunk:db",
     "data:all": "python3 packages/data-pipeline/build.py --all && python3 scripts/export_ble_manifests.py",
     "export:manifests": "python3 scripts/export_ble_manifests.py",
-    "build:www": "npm run build:www:bible && npm run build:www:lexeme && npm run build:www:josephus && npm run build:www:fathers && npm run build:www:philo && npm run build:www:corpora && npm run build:www:portal",
+    "build:www": "npm run build:www:bible && npm run build:www:lexeme && npm run build:www:corpora && npm run build:www:portal",
     "build:gh": "node scripts/build_gh.js",
     "build:vps": "node scripts/build_vps.js",
     "preview:gh": "node scripts/preview.js",

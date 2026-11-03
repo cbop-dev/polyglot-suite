@@ -225,7 +225,9 @@ function main() {
   const targetArg = positional[0] || 'all';
   let targetKeys;
   if (targetArg === 'all') {
-    targetKeys = ['bible', 'philo', 'fathers', 'josephus', 'corpora-af', 'corpora-philo', 'corpora-josephus'];
+    targetKeys = ['bible', 'corpora-af', 'corpora-philo', 'corpora-josephus'];
+  } else if (targetArg === 'legacy') {
+    targetKeys = ['philo', 'fathers', 'josephus'];
   } else if (targetArg === 'corpora' || targetArg === 'acr') {
     targetKeys = ['corpora-af', 'corpora-philo', 'corpora-josephus'];
   } else {

@@ -209,7 +209,9 @@ if (isMain) {
 
   let targets;
   if (targetApp === 'all') {
-    targets = ['bible', 'philo', 'fathers', 'josephus', 'corpora-af', 'corpora-philo', 'corpora-josephus'];
+    targets = ['bible', 'corpora-af', 'corpora-philo', 'corpora-josephus'];
+  } else if (targetApp === 'legacy') {
+    targets = ['philo', 'fathers', 'josephus'];
   } else if (targetApp === 'corpora' || targetApp === 'acr') {
     targets = ['corpora-af', 'corpora-philo', 'corpora-josephus'];
   } else {
