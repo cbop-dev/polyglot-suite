@@ -1,4 +1,5 @@
 {
+  "databaseVersion": "corpora-af-db-v1.0.0",
   "serverMode": "chunked",
   "requestChunkSize": 4096,
   "urlPrefix": "af.db.",
