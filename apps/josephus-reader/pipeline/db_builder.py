@@ -226,7 +226,7 @@ def build_database(output_path: Optional[Path] = None) -> Path:
             pos = entry.get("pos") or ""
             gloss = entry.get("gloss") or ""
             definition = entry.get("def") or ""
-            lex_rows.append(("LSJ", None, lemma, norm_lemma, pos, gloss, definition))
+            lex_rows.append(("lsj", None, lemma, norm_lemma, pos, gloss, definition))
 
         cur.executemany(
             """INSERT INTO lexicon_entries (dictionary, strongs_id, lemma, normalized_lemma, pos, gloss, definition)

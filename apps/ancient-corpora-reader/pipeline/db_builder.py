@@ -324,25 +324,25 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 
     if has_pos and has_translit:
         src_cur.execute("""
-            SELECT dictionary, strongs_id, lemma, normalized_lemma, pos, transliteration, gloss, definition
+            SELECT LOWER(dictionary), strongs_id, lemma, normalized_lemma, pos, transliteration, gloss, definition
             FROM lexicon_entries
         """)
         norm_lex = src_cur.fetchall()
     elif has_pos and not has_translit:
         src_cur.execute("""
-            SELECT dictionary, strongs_id, lemma, normalized_lemma, pos, gloss, definition
+            SELECT LOWER(dictionary), strongs_id, lemma, normalized_lemma, pos, gloss, definition
             FROM lexicon_entries
         """)
         norm_lex = [(r[0], r[1], r[2], r[3], r[4], None, r[5], r[6]) for r in src_cur.fetchall()]
     elif has_translit and not has_pos:
         src_cur.execute("""
-            SELECT dictionary, strongs_id, lemma, normalized_lemma, transliteration, gloss, definition
+            SELECT LOWER(dictionary), strongs_id, lemma, normalized_lemma, transliteration, gloss, definition
             FROM lexicon_entries
         """)
         norm_lex = [(r[0], r[1], r[2], r[3], None, r[4], r[5], r[6]) for r in src_cur.fetchall()]
     else:
         src_cur.execute("""
-            SELECT dictionary, strongs_id, lemma, normalized_lemma, gloss, definition
+            SELECT LOWER(dictionary), strongs_id, lemma, normalized_lemma, gloss, definition
             FROM lexicon_entries
         """)
         norm_lex = [(r[0], r[1], r[2], r[3], None, None, r[4], r[5]) for r in src_cur.fetchall()]

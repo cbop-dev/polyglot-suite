@@ -116,14 +116,15 @@ export async function fetchLexiconEntry(lemma: string): Promise<LexiconEntry | n
 	const worker = await getDbWorker();
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
 	const dict = getDefaultDictionary('josephus');
+	const dictAlt = dict === dict.toLowerCase() ? dict.toUpperCase() : dict.toLowerCase();
 
 	// Step 1: Direct indexed seek on idx_lexicon_exact (dictionary, lemma)
 	let rows = (await worker.db.query(
 		`SELECT dictionary, strongs_id, lemma, normalized_lemma, pos, gloss, definition
 		 FROM lexicon_entries
-		 WHERE dictionary = ? AND lemma = ?
+		 WHERE dictionary IN (?, ?) AND lemma = ?
 		 LIMIT 1`,
-		[dict, clean]
+		[dict, dictAlt, clean]
 	)) as any[];
 
 	// Step 2: Fallback to normalized index on idx_lexicon_lemma (dictionary, normalized_lemma)
@@ -133,9 +134,9 @@ export async function fetchLexiconEntry(lemma: string): Promise<LexiconEntry | n
 			rows = (await worker.db.query(
 				`SELECT dictionary, strongs_id, lemma, normalized_lemma, pos, gloss, definition
 				 FROM lexicon_entries
-				 WHERE dictionary = ? AND normalized_lemma = ?
+				 WHERE dictionary IN (?, ?) AND normalized_lemma = ?
 				 LIMIT 1`,
-				[dict, norm]
+				[dict, dictAlt, norm]
 			)) as any[];
 		}
 	}
