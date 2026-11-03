@@ -192,11 +192,15 @@ Usage:
   npm run status:db [app]
 
 Apps:
-  all                  Check all reader databases (bible, philo, fathers, josephus) [default]
+  all                  Check all reader databases (bible, philo, fathers, josephus, corpora-af, corpora-philo, corpora-josephus) [default]
   bible (or lex, data) Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
   philo                Philo Reader database (tag: philo-db-vX.Y.Z)
   fathers (or af)      Apostolic Fathers Reader database (tag: af-db-vX.Y.Z)
   josephus (or jr)     Josephus Reader database (tag: josephus-db-vX.Y.Z)
+  corpora (or acr)     All Ancient Corpora Reader databases (AF, Philo, Josephus)
+  corpora-af           Ancient Corpora - Apostolic Fathers database (tag: corpora-af-db-vX.Y.Z)
+  corpora-philo        Ancient Corpora - Philo database (tag: corpora-philo-db-vX.Y.Z)
+  corpora-josephus     Ancient Corpora - Josephus database (tag: corpora-josephus-db-vX.Y.Z)
 
 Options:
   --help, -h           Show this help message
@@ -204,7 +208,7 @@ Options:
 Examples:
   npm run status:db:gh          # Check all databases
   npm run status:db:gh bible    # Check only Polyglot Bible & BLE database
-  npm run status:db:gh philo    # Check only Philo Reader database
+  npm run status:db:gh corpora  # Check Ancient Corpora databases
   npm run status:db:gh fathers  # Check only Apostolic Fathers database
 `);
 }
@@ -219,10 +223,16 @@ function main() {
   }
 
   const targetArg = positional[0] || 'all';
-  const targetKeys =
-    targetArg === 'all'
-      ? ['bible', 'philo', 'fathers', 'josephus']
-      : [targetArg];
+  let targetKeys;
+  if (targetArg === 'all') {
+    targetKeys = ['bible', 'corpora-af', 'corpora-philo', 'corpora-josephus'];
+  } else if (targetArg === 'legacy') {
+    targetKeys = ['philo', 'fathers', 'josephus'];
+  } else if (targetArg === 'corpora' || targetArg === 'acr') {
+    targetKeys = ['corpora-af', 'corpora-philo', 'corpora-josephus'];
+  } else {
+    targetKeys = [targetArg];
+  }
 
   for (const key of targetKeys) {
     if (!APPS[key]) {

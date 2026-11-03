@@ -91,6 +91,9 @@ Apps:
   philo               Philo Reader database (tag: philo-db-vX.Y.Z)
   fathers (or af)     Apostolic Fathers Reader database (tag: af-db-vX.Y.Z)
   josephus (or jr)    Josephus Reader database (tag: josephus-db-vX.Y.Z)
+  corpora-af          Ancient Corpora - Apostolic Fathers (tag: corpora-af-db-vX.Y.Z)
+  corpora-philo       Ancient Corpora - Philo of Alexandria (tag: corpora-philo-db-vX.Y.Z)
+  corpora-josephus    Ancient Corpora - Flavius Josephus (tag: corpora-josephus-db-vX.Y.Z)
 
 Bump Types:
   patch               Increment patch version (e.g. 1.0.0 -> 1.0.1) [default]

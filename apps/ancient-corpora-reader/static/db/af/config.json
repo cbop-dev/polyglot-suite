@@ -1,0 +1,10 @@
+{
+  "databaseVersion": "corpora-af-db-v1.0.0",
+  "serverMode": "chunked",
+  "requestChunkSize": 4096,
+  "urlPrefix": "af.db.",
+  "serverChunkSize": 5242880,
+  "databaseLengthBytes": 42479616,
+  "suffixLength": 2,
+  "cacheBust": "v1793653000"
+}

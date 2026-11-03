@@ -308,6 +308,9 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.75rem 1rem;
+		min-height: 44px;
+		box-sizing: border-box;
+		line-height: 1.4;
 		cursor: pointer;
 		user-select: none;
 	}

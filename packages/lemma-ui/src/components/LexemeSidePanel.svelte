@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { FloatingSidePanel, Loading } from '@polyglot/ui';
+	import { FloatingSidePanel, Modal2, Loading } from '@polyglot/ui';
 	import HighlightColorPicker from '@polyglot/ancient-languages/HighlightColorPicker.svelte';
 	import KwicSnippet from '@polyglot/ancient-languages/KwicSnippet.svelte';
 	import AttestedFormsSection from '@polyglot/ancient-languages/AttestedFormsSection.svelte';
@@ -50,7 +50,16 @@
 		display_citation?: string;
 		text_content?: string;
 		matched_word?: string;
+		work_unit_id?: number;
+		full_text?: string;
 		[key: string]: any;
+	}
+
+	export interface PaginatedConcordance {
+		refs: ConcordanceRef[];
+		totalCount: number;
+		hasMore: boolean;
+		nextOffset: number;
 	}
 
 	export interface LemmaSearchResult {
@@ -78,11 +87,17 @@
 		width?: number;
 		ariaLabel?: string;
 		highlightStore?: any;
+		displayMode?: 'sidepanel' | 'modal';
+		onDisplayModeChange?: (mode: 'sidepanel' | 'modal') => void;
 
 		// Data fetching
 		fetchLexiconEntry?: (lemma: string) => Promise<LexiconEntry | null>;
 		fetchLemmaStats?: (lemma: string) => Promise<LemmaStat | null>;
 		fetchConcordance?: (lemma: string) => Promise<ConcordanceRef[]>;
+		fetchConcordancePage?: (lemma: string, offset: number, pageSize: number) => Promise<PaginatedConcordance>;
+		concordancePageSize?: number;
+		fetchSectionText?: (ref: ConcordanceRef) => Promise<string>;
+		fetchSectionsTextBatch?: (workUnitIds: number[]) => Promise<Record<number, string>>;
 		fetchAttestedForms?: (lemma: string) => Promise<AttestedForm[]>;
 		fetchWordMorph?: ((word: string, lemma?: string) => Promise<any>) | null;
 		searchLemmas?: (query: string) => Promise<LemmaSearchResult[]>;
@@ -109,10 +124,16 @@
 		width = 440,
 		ariaLabel,
 		highlightStore,
+		displayMode: externalDisplayMode,
+		onDisplayModeChange,
 
 		fetchLexiconEntry,
 		fetchLemmaStats,
 		fetchConcordance,
+		fetchConcordancePage,
+		concordancePageSize = 50,
+		fetchSectionText,
+		fetchSectionsTextBatch,
 		fetchAttestedForms,
 		fetchWordMorph,
 		searchLemmas,
@@ -129,6 +150,45 @@
 	let effectiveLexiconTitle = $derived(
 		lexiconArticleTitle || (corpusTitle === 'Josephus' ? 'LSJ Lexicon Article' : 'Full Lexicon Article')
 	);
+
+	// Display mode (dual-mode: sidepanel vs centered floating modal)
+	const STORAGE_KEY = 'polyglot_lemma_display_mode';
+
+	function getInitialDisplayMode(): 'sidepanel' | 'modal' {
+		if (externalDisplayMode) return externalDisplayMode;
+		if (typeof window !== 'undefined' && window.localStorage) {
+			try {
+				const saved = localStorage.getItem(STORAGE_KEY);
+				if (saved === 'modal' || saved === 'sidepanel') {
+					return saved;
+				}
+			} catch (e) {
+				// Ignore
+			}
+		}
+		return 'sidepanel';
+	}
+
+	let displayMode = $state<'sidepanel' | 'modal'>(getInitialDisplayMode());
+	let isModalMaximized = $state<boolean>(false);
+
+	$effect(() => {
+		if (externalDisplayMode && externalDisplayMode !== displayMode) {
+			displayMode = externalDisplayMode;
+		}
+	});
+
+	function toggleDisplayMode() {
+		displayMode = displayMode === 'sidepanel' ? 'modal' : 'sidepanel';
+		if (typeof window !== 'undefined' && window.localStorage) {
+			try {
+				localStorage.setItem(STORAGE_KEY, displayMode);
+			} catch (e) {
+				console.warn('Failed to save lemma display mode preference', e);
+			}
+		}
+		onDisplayModeChange?.(displayMode);
+	}
 
 	// Internal state
 	let currentTab = $state<string>('lexeme');
@@ -197,10 +257,72 @@
 	let isConcordanceOpen = $state<boolean>(false);
 	let isKwic = $state<boolean>(true);
 	let concordance = $state<ConcordanceRef[]>([]);
+	let concordanceTotalCount = $state<number>(0);
+	let concordancePage = $state<number>(1);
+	// svelte-ignore state_referenced_locally
+	let currentPageSize = $state<number>(concordancePageSize || 50);
+
+	$effect(() => {
+		if (concordancePageSize && concordancePageSize !== currentPageSize) {
+			currentPageSize = concordancePageSize;
+		}
+	});
+
+	let isPageNavigating = $state<boolean>(false);
+	let concordancePageCache = new Map<number, ConcordanceRef[]>();
+	let concordanceScrollContainer = $state<HTMLElement | null>(null);
 	let stats = $state<LemmaStat | null>(null);
 	let isConcordanceLoading = $state<boolean>(false);
 	let concordanceLoaded = $state<boolean>(false);
 	let concordanceError = $state<string | null>(null);
+	let concordanceQueryId = 0;
+
+	// On-demand full-text loading & expandable cards
+	let isFullTextLoading = $state<boolean>(false);
+	let expandedCardIds = $state<Set<number | string>>(new Set());
+
+	let concordanceTotalPages = $derived(
+		Math.max(1, Math.ceil(concordanceTotalCount / currentPageSize))
+	);
+	let concordanceStartIdx = $derived(
+		concordanceTotalCount === 0 ? 0 : (concordancePage - 1) * currentPageSize + 1
+	);
+	let concordanceEndIdx = $derived(
+		Math.min(concordancePage * currentPageSize, concordanceTotalCount)
+	);
+
+	let paginationPills = $derived.by(() => {
+		const total = concordanceTotalPages;
+		const current = concordancePage;
+		if (total <= 1) return [];
+
+		if (total <= 7) {
+			return Array.from({ length: total }, (_, i) => i + 1);
+		}
+
+		const pages = new Set<number>();
+		pages.add(1);
+		pages.add(total);
+
+		for (let offset = -2; offset <= 2; offset++) {
+			const p = current + offset;
+			if (p >= 1 && p <= total) {
+				pages.add(p);
+			}
+		}
+
+		const sorted = Array.from(pages).sort((a, b) => a - b);
+		const items: (number | 'ellipsis')[] = [];
+
+		for (let i = 0; i < sorted.length; i++) {
+			if (i > 0 && sorted[i] - sorted[i - 1] > 1) {
+				items.push('ellipsis');
+			}
+			items.push(sorted[i]);
+		}
+
+		return items;
+	});
 
 	let filteredConcordance = $derived.by(() => {
 		const filter = selectedFormFilter;
@@ -239,9 +361,15 @@
 		isLexArticleLoading = false;
 
 		concordance = [];
+		concordancePageCache.clear();
+		concordanceTotalCount = 0;
+		concordancePage = 1;
+		isPageNavigating = false;
 		concordanceLoaded = false;
 		concordanceError = null;
 		isConcordanceLoading = false;
+		concordanceQueryId++;
+		expandedCardIds = new Set();
 		stats = null;
 		wordMorph = null;
 	}
@@ -305,25 +433,216 @@
 		}
 	}
 
+	async function ensureFullTextLoaded(refsToLoad: ConcordanceRef[]) {
+		if ((!fetchSectionText && !fetchSectionsTextBatch) || refsToLoad.length === 0) return;
+		const needed = refsToLoad.filter(
+			(r) => !r.full_text && (r.work_unit_id !== undefined || r.id !== undefined)
+		);
+		if (needed.length === 0) return;
+
+		isFullTextLoading = true;
+		try {
+			if (fetchSectionsTextBatch) {
+				const ids = needed.map((r) => r.work_unit_id ?? r.id).filter(Boolean) as number[];
+				const textMap = await fetchSectionsTextBatch(ids);
+				for (const ref of needed) {
+					const id = ref.work_unit_id ?? ref.id;
+					if (id !== undefined && textMap[id]) {
+						ref.full_text = textMap[id];
+					}
+				}
+			} else if (fetchSectionText) {
+				const uniqueRefs = new Map<number, ConcordanceRef>();
+				for (const ref of needed) {
+					const id = ref.work_unit_id ?? ref.id;
+					if (id !== undefined && !uniqueRefs.has(id)) {
+						uniqueRefs.set(id, ref);
+					}
+				}
+				await Promise.all(
+					Array.from(uniqueRefs.values()).map(async (ref) => {
+						try {
+							const text = await fetchSectionText!(ref);
+							if (text) {
+								const id = ref.work_unit_id ?? ref.id;
+								for (const r of needed) {
+									if ((r.work_unit_id ?? r.id) === id) {
+										r.full_text = text;
+									}
+								}
+							}
+						} catch (e) {
+							console.warn('Failed to fetch full text for ref', ref, e);
+						}
+					})
+				);
+			}
+			concordance = [...concordance];
+		} finally {
+			isFullTextLoading = false;
+		}
+	}
+
+	function handleSwitchToFullText() {
+		isKwic = false;
+		if (fetchSectionText || fetchSectionsTextBatch) {
+			ensureFullTextLoaded(concordance);
+		}
+	}
+
+	async function toggleExpandCard(ref: ConcordanceRef, cardKey: number | string) {
+		const next = new Set(expandedCardIds);
+		if (next.has(cardKey)) {
+			next.delete(cardKey);
+			expandedCardIds = next;
+		} else {
+			next.add(cardKey);
+			expandedCardIds = next;
+			if (!ref.full_text && fetchSectionText) {
+				try {
+					const text = await fetchSectionText(ref);
+					if (text) {
+						ref.full_text = text;
+						concordance = [...concordance];
+					}
+				} catch (err) {
+					console.warn('Failed to load full text for card', ref, err);
+				}
+			}
+		}
+	}
+
+	function handlePageSizeChange(newSize: number) {
+		if (newSize === currentPageSize) return;
+		currentPageSize = newSize;
+		concordancePageCache.clear();
+		concordancePage = 1;
+		if (currentLemma) {
+			loadConcordance(currentLemma);
+		}
+	}
+
+	function prefetchNextPage(page: number, lemma: string, queryId: number) {
+		if (!fetchConcordancePage || !lemma) return;
+		const nextPage = page + 1;
+		if (concordanceTotalCount > 0 && nextPage > concordanceTotalPages) return;
+		if (concordancePageCache.has(nextPage)) return;
+
+		const offset = (nextPage - 1) * currentPageSize;
+		fetchConcordancePage(lemma, offset, currentPageSize)
+			.then((pageData) => {
+				if (queryId === concordanceQueryId && currentLemma === lemma && pageData?.refs) {
+					concordancePageCache.set(nextPage, pageData.refs);
+				}
+			})
+			.catch((err) => {
+				// Silent non-blocking prefetch failure
+				console.debug('Concordance prefetch failed for page', nextPage, err);
+			});
+	}
+
+	async function goToConcordancePage(page: number) {
+		if (!currentLemma || page < 1 || (concordanceTotalCount > 0 && page > concordanceTotalPages)) return;
+		if (page === concordancePage && concordanceLoaded) return;
+
+		const queryId = concordanceQueryId;
+		const lemma = currentLemma;
+
+		// 1. In-memory cache hit
+		if (concordancePageCache.has(page)) {
+			concordance = concordancePageCache.get(page) || [];
+			concordancePage = page;
+			concordanceScrollContainer?.scrollTo({ top: 0, behavior: 'smooth' });
+			prefetchNextPage(page, lemma, queryId);
+			if (!isKwic && fetchSectionText) {
+				ensureFullTextLoaded(concordance);
+			}
+			return;
+		}
+
+		if (!fetchConcordancePage) return;
+
+		isPageNavigating = true;
+		concordanceError = null;
+
+		try {
+			const offset = (page - 1) * currentPageSize;
+			const pageData = await fetchConcordancePage(lemma, offset, currentPageSize);
+			if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
+
+			const refs = pageData.refs || [];
+			concordancePageCache.set(page, refs);
+			concordance = refs;
+			concordanceTotalCount = pageData.totalCount ?? concordanceTotalCount;
+			concordancePage = page;
+			concordanceScrollContainer?.scrollTo({ top: 0, behavior: 'smooth' });
+			prefetchNextPage(page, lemma, queryId);
+			if (!isKwic && fetchSectionText) {
+				ensureFullTextLoaded(refs);
+			}
+		} catch (err: any) {
+			if (queryId !== concordanceQueryId) return;
+			console.error(`Error loading concordance page ${page}:`, err);
+			concordanceError = err?.message || `Failed to load page ${page}`;
+		} finally {
+			if (queryId === concordanceQueryId) {
+				isPageNavigating = false;
+			}
+		}
+	}
+
 	async function loadConcordance(lemma: string) {
-		if (!lemma || !fetchConcordance) return;
+		if (!lemma || (!fetchConcordance && !fetchConcordancePage)) return;
+		const queryId = ++concordanceQueryId;
 		isConcordanceLoading = true;
 		concordanceError = null;
+		concordancePageCache.clear();
+		concordancePage = 1;
+
 		try {
-			const [c, s] = await Promise.all([
-				fetchConcordance(lemma),
-				stats ? Promise.resolve(stats) : (fetchLemmaStats ? fetchLemmaStats(lemma) : Promise.resolve(null))
-			]);
-			if (currentLemma !== lemma) return;
-			concordance = c;
-			if (!stats) stats = s;
-			concordanceLoaded = true;
+			if (fetchConcordancePage) {
+				const [pageData, s] = await Promise.all([
+					fetchConcordancePage(lemma, 0, currentPageSize),
+					stats ? Promise.resolve(stats) : (fetchLemmaStats ? fetchLemmaStats(lemma) : Promise.resolve(null))
+				]);
+				if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
+				const refs = pageData.refs || [];
+				concordancePageCache.set(1, refs);
+				concordance = refs;
+				concordanceTotalCount = pageData.totalCount ?? (refs.length || 0);
+				concordancePage = 1;
+				if (!stats) stats = s;
+				concordanceLoaded = true;
+				prefetchNextPage(1, lemma, queryId);
+				if (!isKwic && fetchSectionText) {
+					ensureFullTextLoaded(refs);
+				}
+			} else if (fetchConcordance) {
+				const [c, s] = await Promise.all([
+					fetchConcordance(lemma),
+					stats ? Promise.resolve(stats) : (fetchLemmaStats ? fetchLemmaStats(lemma) : Promise.resolve(null))
+				]);
+				if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
+				const allRefs = c || [];
+				concordanceTotalCount = allRefs.length;
+				for (let i = 0; i < allRefs.length; i += currentPageSize) {
+					const p = Math.floor(i / currentPageSize) + 1;
+					concordancePageCache.set(p, allRefs.slice(i, i + currentPageSize));
+				}
+				concordance = concordancePageCache.get(1) || [];
+				concordancePage = 1;
+				if (!stats) stats = s;
+				concordanceLoaded = true;
+				if (!isKwic && fetchSectionText) {
+					ensureFullTextLoaded(concordance);
+				}
+			}
 		} catch (err: any) {
-			if (currentLemma !== lemma) return;
+			if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
 			console.error('Error loading concordance:', err);
 			concordanceError = err?.message || 'Failed to load concordance';
 		} finally {
-			if (currentLemma === lemma) {
+			if (queryId === concordanceQueryId && currentLemma === lemma) {
 				isConcordanceLoading = false;
 			}
 		}
@@ -391,23 +710,15 @@
 	});
 </script>
 
-<FloatingSidePanel
-	{isOpen}
-	{onClose}
-	{top}
-	{width}
-	noPadding={true}
-	showDefaultCloseButton={false}
-	ariaLabel={ariaLabel || `${corpusTitle} Reference and Lexicon Panel`}
->
-	<!-- Panel Top Navigation: Tabs and Close Button -->
-	<div class="flex items-center justify-between border-b border-[var(--color-rule)] bg-[var(--color-card-bg)] px-3 py-2 shrink-0">
+{#snippet panelContent()}
+	<!-- Panel Top Navigation: Tabs and Action Buttons (Pop-out, Maximize, Close) -->
+	<div class="sticky top-0 z-20 flex items-center justify-between border-b border-[var(--color-rule)] bg-[var(--color-card-bg)] px-3 py-2 shrink-0">
 		<!-- Tabs Bar -->
-		<div class="flex items-center gap-1 text-xs font-semibold">
+		<div class="flex items-center gap-1 text-xs font-semibold overflow-x-auto pr-2">
 			<button
 				type="button"
 				onclick={() => setTab('lexeme')}
-				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer {currentTab === 'lexeme'
+				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 {currentTab === 'lexeme'
 					? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold'
 					: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)]'}"
 			>
@@ -425,7 +736,7 @@
 			<button
 				type="button"
 				onclick={() => setTab('search')}
-				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer {currentTab === 'search'
+				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 {currentTab === 'search'
 					? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold'
 					: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)]'}"
 			>
@@ -439,7 +750,7 @@
 				<button
 					type="button"
 					onclick={() => setTab(extraTab.id)}
-					class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer {currentTab === extraTab.id
+					class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 {currentTab === extraTab.id
 						? 'bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 font-bold'
 						: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)]'}"
 				>
@@ -455,7 +766,7 @@
 			<button
 				type="button"
 				onclick={() => setTab('highlights')}
-				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer {currentTab === 'highlights'
+				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 {currentTab === 'highlights'
 					? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold'
 					: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)]'}"
 			>
@@ -469,20 +780,74 @@
 			</button>
 		</div>
 
-		<!-- Close Button -->
-		<button
-			type="button"
-			onclick={onClose}
-			class="rounded-lg p-1.5 text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)] cursor-pointer text-lg leading-none"
-			aria-label="Close side panel"
-			title="Close panel (Esc)"
-		>
-			&times;
-		</button>
+		<!-- Action Buttons: Popout/Dock Toggle, Maximize/Restore, Close -->
+		<div class="flex items-center gap-1 shrink-0">
+			<!-- Dual Mode Toggle Button -->
+			<button
+				type="button"
+				onclick={toggleDisplayMode}
+				class="rounded-lg p-1.5 text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)] cursor-pointer transition-colors"
+				aria-label={displayMode === 'sidepanel' ? 'Open as floating modal' : 'Dock to side panel'}
+				title={displayMode === 'sidepanel' ? 'Open as floating modal' : 'Dock to side panel'}
+			>
+				{#if displayMode === 'sidepanel'}
+					<!-- Pop-out to modal icon -->
+					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+					</svg>
+				{:else}
+					<!-- Dock to side panel icon -->
+					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2" />
+						<line x1="15" y1="3" x2="15" y2="21" stroke-width="2" />
+					</svg>
+				{/if}
+			</button>
+
+			<!-- Fullscreen Maximize / Restore Toggle (Modal Mode only) -->
+			{#if displayMode === 'modal'}
+				<button
+					type="button"
+					onclick={() => (isModalMaximized = !isModalMaximized)}
+					class="rounded-lg p-1.5 text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)] cursor-pointer transition-colors"
+					aria-label={isModalMaximized ? 'Restore window size' : 'Expand to fullscreen'}
+					title={isModalMaximized ? 'Restore window size' : 'Expand to fullscreen'}
+				>
+					{#if isModalMaximized}
+						<!-- Inward / Restore arrows -->
+						<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="4 14 10 14 10 20" />
+							<polyline points="20 10 14 10 14 4" />
+							<line x1="14" y1="10" x2="21" y2="3" />
+							<line x1="10" y1="14" x2="3" y2="21" />
+						</svg>
+					{:else}
+						<!-- Outward / Maximize arrows -->
+						<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="15 3 21 3 21 9" />
+							<polyline points="9 21 3 21 3 15" />
+							<line x1="21" y1="3" x2="14" y2="10" />
+							<line x1="3" y1="21" x2="10" y2="14" />
+						</svg>
+					{/if}
+				</button>
+			{/if}
+
+			<!-- Close Button -->
+			<button
+				type="button"
+				onclick={onClose}
+				class="rounded-lg p-1.5 text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)] cursor-pointer text-lg leading-none transition-colors"
+				aria-label={displayMode === 'sidepanel' ? 'Close side panel' : 'Close modal'}
+				title="Close (Esc)"
+			>
+				&times;
+			</button>
+		</div>
 	</div>
 
 	<!-- Panel Body Area -->
-	<div class="lemma-card flex-1 overflow-y-auto p-4 flex flex-col gap-4 space-y-4" role="dialog" aria-label="Lemma & Lexicon Inspection">
+	<div class="lemma-card flex-1 overflow-y-auto p-4 flex flex-col gap-4" role="dialog" aria-label="Lemma & Lexicon Inspection">
 		{#if currentTab === 'lexeme'}
 			{#if !currentLemma}
 				<div class="py-16 text-center text-xs text-[var(--color-ink-soft)]">
@@ -490,7 +855,7 @@
 				</div>
 			{:else}
 				<!-- Header Box: Surface Word & Lemma Headword -->
-				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] p-4 shadow-xs space-y-3">
+				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] p-4 shadow-xs space-y-3 shrink-0">
 					<div class="flex items-start justify-between">
 						<div>
 							<div class="text-xl font-bold greek-font text-[var(--color-ink)] flex items-baseline gap-2">
@@ -576,6 +941,7 @@
 				<!-- Section: Inflection Filter Bar (if attested forms exist) -->
 				{#if availableInflections.tenses.length > 0 || availableInflections.moods.length > 0 || availableInflections.cases.length > 0}
 					<InflectionFilterBar
+						class="shrink-0"
 						available={availableInflections}
 						bind:criteria={inflectionCriteria}
 						bind:isOpen={isInflectionFilterOpen}
@@ -594,6 +960,7 @@
 
 				<!-- Section 1: Attested Word Forms -->
 				<AttestedFormsSection
+					class="shrink-0"
 					attestedForms={filteredAttestedForms}
 					totalCount={attestedForms.length}
 					selectedFormFilter={selectedFormFilter}
@@ -613,11 +980,11 @@
 				/>
 
 				<!-- Section 2: Full Lexicon Article -->
-				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] shadow-xs overflow-hidden">
+				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] shadow-xs overflow-hidden shrink-0">
 					<button
 						type="button"
 						onclick={toggleLexArticle}
-						class="w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 cursor-pointer text-left select-none transition-colors"
+						class="w-full flex items-center justify-between px-4 py-3.5 min-h-[44px] text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 cursor-pointer text-left select-none transition-colors"
 						aria-expanded={isLexArticleOpen}
 					>
 						<div class="flex items-center gap-2">
@@ -663,11 +1030,11 @@
 				</div>
 
 				<!-- Section 3: Concordance / Corpus Occurrences -->
-				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] shadow-xs overflow-hidden">
+				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] shadow-xs overflow-hidden shrink-0">
 					<button
 						type="button"
 						onclick={toggleConcordance}
-						class="w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 cursor-pointer text-left select-none transition-colors"
+						class="w-full flex items-center justify-between px-4 py-3.5 min-h-[44px] text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 cursor-pointer text-left select-none transition-colors"
 						aria-expanded={isConcordanceOpen}
 					>
 						<div class="flex items-center gap-2">
@@ -715,66 +1082,193 @@
 									{/if}
 								</div>
 							{:else}
-								<div class="flex items-center justify-between pb-2 mb-2 border-b border-[var(--color-rule)]">
+								{#snippet paginationPillsNav(pos: 'top' | 'bottom')}
+									{#if concordanceTotalPages > 1}
+										<div
+											class="flex items-center justify-between gap-1 py-1.5 px-2 {pos === 'top' ? 'mb-2' : 'mt-2'} rounded-lg bg-[var(--color-rule)]/20 border border-[var(--color-rule)]/50 text-[11px]"
+											aria-label={`Concordance navigation (${pos})`}
+										>
+											<button
+												type="button"
+												disabled={concordancePage <= 1 || isPageNavigating}
+												onclick={() => goToConcordancePage(concordancePage - 1)}
+												class="px-2 py-0.5 rounded-md border border-[var(--color-rule)] bg-[var(--color-card-bg)] text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors font-medium select-none"
+												aria-label="Previous page"
+											>
+												&larr; Prev
+											</button>
+
+											<div class="flex items-center gap-1 overflow-x-auto py-0.5 {displayMode === 'modal' ? 'max-w-md' : 'max-w-[220px]'}">
+												{#each paginationPills as item}
+													{#if item === 'ellipsis'}
+														<span class="px-0.5 text-[11px] text-[var(--color-ink-soft)] select-none">&hellip;</span>
+													{:else}
+														<button
+															type="button"
+															disabled={isPageNavigating}
+															onclick={() => goToConcordancePage(item)}
+															class="min-w-[22px] h-[22px] px-1 rounded text-[11px] font-semibold transition-all cursor-pointer flex items-center justify-center select-none {item === concordancePage
+																? 'bg-blue-600 text-white shadow-2xs'
+																: 'bg-[var(--color-card-bg)] border border-[var(--color-rule)] text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40'}"
+															aria-current={item === concordancePage ? 'page' : undefined}
+															aria-label={`Page ${item}`}
+														>
+															{item}
+														</button>
+													{/if}
+												{/each}
+											</div>
+
+											<button
+												type="button"
+												disabled={concordancePage >= concordanceTotalPages || isPageNavigating}
+												onclick={() => goToConcordancePage(concordancePage + 1)}
+												class="px-2 py-0.5 rounded-md border border-[var(--color-rule)] bg-[var(--color-card-bg)] text-[var(--color-ink)] hover:bg-[var(--color-rule)]/40 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors font-medium select-none"
+												aria-label="Next page"
+											>
+												Next &rarr;
+											</button>
+										</div>
+									{/if}
+								{/snippet}
+
+								<div class="flex items-center justify-between pb-2 mb-2 border-b border-[var(--color-rule)] gap-2 flex-wrap">
 									<span class="text-[11px] text-[var(--color-ink-soft)] font-medium">
-										{filteredConcordance.length} {filteredConcordance.length === 1 ? 'occurrence' : 'occurrences'}
+										{#if fetchConcordancePage && concordanceTotalCount > 0}
+											Showing {concordanceStartIdx}–{concordanceEndIdx} of {concordanceTotalCount} {concordanceTotalCount === 1 ? 'occurrence' : 'occurrences'}
+										{:else}
+											{filteredConcordance.length} {filteredConcordance.length === 1 ? 'occurrence' : 'occurrences'}
+										{/if}
 									</span>
-									<div class="inline-flex rounded-lg bg-[var(--color-rule)] p-0.5 text-[11px] font-semibold">
-										<button
-											type="button"
-											onclick={() => (isKwic = true)}
-											class="px-2 py-0.5 rounded-md transition-colors cursor-pointer {isKwic
-												? 'bg-[var(--color-card-bg)] shadow-2xs text-blue-600 dark:text-blue-400 font-bold'
-												: 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'}"
-										>
-											KWIC
-										</button>
-										<button
-											type="button"
-											onclick={() => (isKwic = false)}
-											class="px-2 py-0.5 rounded-md transition-colors cursor-pointer {!isKwic
-												? 'bg-[var(--color-card-bg)] shadow-2xs text-blue-600 dark:text-blue-400 font-bold'
-												: 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'}"
-										>
-											Full Text
-										</button>
+
+									<div class="flex items-center gap-2">
+										{#if fetchConcordancePage}
+											<div class="flex items-center gap-1">
+												<label for="concordance-page-size-select" class="sr-only">Results per page</label>
+												<select
+													id="concordance-page-size-select"
+													value={currentPageSize}
+													onchange={(e) => handlePageSizeChange(Number((e.currentTarget as HTMLSelectElement).value))}
+													class="text-[11px] font-semibold bg-[var(--color-card-bg)] text-[var(--color-ink)] border border-[var(--color-rule)] rounded px-1.5 py-0.5 cursor-pointer focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+													aria-label="Results per page"
+												>
+													<option value={50}>50 / page</option>
+													<option value={100}>100 / page</option>
+													<option value={250}>250 / page</option>
+													<option value={500}>500 / page</option>
+												</select>
+											</div>
+										{/if}
+
+										<div class="inline-flex rounded-lg bg-[var(--color-rule)] p-0.5 text-[11px] font-semibold">
+											<button
+												type="button"
+												onclick={() => (isKwic = true)}
+												class="px-2 py-0.5 rounded-md transition-colors cursor-pointer {isKwic
+													? 'bg-[var(--color-card-bg)] shadow-2xs text-blue-600 dark:text-blue-400 font-bold'
+													: 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'}"
+											>
+												KWIC
+											</button>
+											<button
+												type="button"
+												onclick={handleSwitchToFullText}
+												class="px-2 py-0.5 rounded-md transition-colors cursor-pointer {!isKwic
+													? 'bg-[var(--color-card-bg)] shadow-2xs text-blue-600 dark:text-blue-400 font-bold'
+													: 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'}"
+											>
+												Full Text
+											</button>
+										</div>
 									</div>
 								</div>
 
-								<div class="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-									{#each filteredConcordance as ref}
+								{@render paginationPillsNav('top')}
+
+								<div
+									bind:this={concordanceScrollContainer}
+									class="space-y-1.5 {displayMode === 'modal' ? (isModalMaximized ? 'max-h-[58vh]' : 'max-h-[44vh]') : 'max-h-72'} overflow-y-auto pr-1 relative"
+								>
+									{#if isPageNavigating}
+										<div class="absolute inset-0 bg-[var(--color-card-bg)]/70 backdrop-blur-xs flex items-center justify-center z-10 rounded-lg">
+											<Loading inline size="sm" />
+										</div>
+									{/if}
+
+									{#each filteredConcordance as ref, idx (`${ref.work_unit_id ?? ''}_${ref.matched_word ?? ''}_${idx}`)}
 										{@const citation = formatRefLabel ? formatRefLabel(ref) : (ref.display_citation || `${ref.work || ''} ${ref.book ? `${ref.book}.` : ''}${ref.section || ref.chapter || ''}`)}
-										<button
-											type="button"
-											onclick={() => onNavigateToRef?.(ref)}
-											class="w-full text-left rounded-lg p-2 hover:bg-[var(--color-page)] border border-transparent hover:border-[var(--color-rule)] transition-colors cursor-pointer group"
+										{@const cardKey = `${ref.work_unit_id ?? ''}_${ref.matched_word ?? ''}_${idx}`}
+										{@const isExpanded = expandedCardIds.has(cardKey)}
+
+										<div
+											class="w-full text-left rounded-lg p-2 hover:bg-[var(--color-page)] border border-transparent hover:border-[var(--color-rule)] transition-colors group"
 										>
 											<div class="flex items-center justify-between">
-												<span class="font-bold text-blue-600 dark:text-blue-400 text-xs">
+												<button
+													type="button"
+													onclick={() => onNavigateToRef?.(ref)}
+													class="font-bold text-blue-600 dark:text-blue-400 text-xs hover:underline cursor-pointer text-left"
+												>
 													{citation}
-												</span>
-												<span class="text-[10px] text-[var(--color-ink-soft)] opacity-0 group-hover:opacity-100 transition-opacity">
-													Jump &rarr;
-												</span>
+												</button>
+												<div class="flex items-center gap-2">
+													{#if fetchSectionText && isKwic}
+														<button
+															type="button"
+															onclick={() => toggleExpandCard(ref, cardKey)}
+															class="text-[10px] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] px-1.5 py-0.5 rounded border border-[var(--color-rule)] bg-[var(--color-card-bg)] hover:bg-[var(--color-rule)]/40 cursor-pointer transition-colors"
+															title={isExpanded ? 'Collapse snippet' : 'Expand full text'}
+														>
+															{isExpanded ? 'Less' : 'More'}
+														</button>
+													{/if}
+													<button
+														type="button"
+														onclick={() => onNavigateToRef?.(ref)}
+														class="text-[10px] text-[var(--color-ink-soft)] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+													>
+														Jump &rarr;
+													</button>
+												</div>
 											</div>
-											{#if isKwic}
-												<div class="mt-1 text-xs text-[var(--color-ink)]">
-													<KwicSnippet
-														text={ref.text_content || ''}
-														matchWord={selectedFormFilter || ref.matched_word || currentLemma}
-														lang="greek"
-														radius={48}
-														class="w-full"
-													/>
-												</div>
-											{:else}
-												<div class="text-[11px] text-[var(--color-ink-soft)] mt-1 leading-relaxed greek-font">
-													{ref.text_content || ''}
-												</div>
-											{/if}
-										</button>
+
+											<div
+												role="button"
+												tabindex="0"
+												onclick={() => onNavigateToRef?.(ref)}
+												onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigateToRef?.(ref); }}
+												class="cursor-pointer"
+											>
+												{#if isKwic && !isExpanded}
+													<div class="mt-1 text-xs text-[var(--color-ink)]">
+														<KwicSnippet
+															text={ref.text_content || ''}
+															matchWord={selectedFormFilter || ref.matched_word || currentLemma}
+															lang="greek"
+															radius={48}
+															class="w-full"
+														/>
+													</div>
+												{:else}
+													<div class="text-[11px] text-[var(--color-ink-soft)] mt-1 leading-relaxed greek-font">
+														{#if ref.full_text}
+															{ref.full_text}
+														{:else if isFullTextLoading}
+															<div class="flex items-center gap-1.5 py-1 text-xs text-[var(--color-ink-soft)] italic">
+																<Loading inline size="xs" />
+																<span>Loading full section text...</span>
+															</div>
+														{:else}
+															{ref.text_content || ''}
+														{/if}
+													</div>
+												{/if}
+											</div>
+										</div>
 									{/each}
 								</div>
+
+								{@render paginationPillsNav('bottom')}
 							{/if}
 						</div>
 					{/if}
@@ -917,4 +1411,36 @@
 			{@render extraTabPanels(currentTab)}
 		{/if}
 	</div>
-</FloatingSidePanel>
+{/snippet}
+
+{#if isOpen}
+	{#if displayMode === 'modal'}
+		<Modal2
+			bind:showModal={isOpen}
+			onclose={onClose}
+			bind:max={isModalMaximized}
+			showMaximize={false}
+			showClose={false}
+			showFooter={false}
+			maxWidth="max-w-4xl lg:max-w-5xl"
+		>
+			<div class="flex flex-col h-full min-h-0 bg-[var(--color-page)] text-[var(--color-ink)]">
+				{@render panelContent()}
+			</div>
+		</Modal2>
+	{:else}
+		<FloatingSidePanel
+			{isOpen}
+			{onClose}
+			{top}
+			{width}
+			noPadding={true}
+			showDefaultCloseButton={false}
+			ariaLabel={ariaLabel || `${corpusTitle} Reference and Lexicon Panel`}
+		>
+			<div class="flex flex-col h-full min-h-0">
+				{@render panelContent()}
+			</div>
+		</FloatingSidePanel>
+	{/if}
+{/if}

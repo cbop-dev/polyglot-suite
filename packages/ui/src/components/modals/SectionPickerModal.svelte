@@ -8,6 +8,8 @@
 		searchQuery?: string;
 		subBooks?: SubBookItem[];
 		onSelectSubBook?: (book: number) => void;
+		subBookLabel?: string;
+		subBookShortLabel?: string;
 		quickJumpSections?: number[];
 		items?: SectionListItem[];
 		totalCount?: number;
@@ -22,6 +24,8 @@
 		searchQuery = $bindable(''),
 		subBooks = [],
 		onSelectSubBook = () => {},
+		subBookLabel = "Book",
+		subBookShortLabel = "Bk.",
 		quickJumpSections = [],
 		items = [],
 		totalCount = 0,
@@ -128,15 +132,15 @@
 					aria-expanded={isBooksOpen}
 				>
 					<span class="flex items-center gap-1.5">
-						<span>Select Book</span>
-						{#if currentSelectedBook}
-							<span class="text-[11px] font-normal normal-case text-blue-600 dark:text-blue-400">(Bk. {currentSelectedBook})</span>
+						<span>Select {subBookLabel}</span>
+						{#if currentSelectedBook !== undefined}
+							<span class="text-[11px] font-normal normal-case text-blue-600 dark:text-blue-400">({subBookShortLabel} {currentSelectedBook})</span>
 						{/if}
 					</span>
 					<span class="text-[10px] transform transition-transform duration-150 {isBooksOpen ? 'rotate-180' : ''}">▾</span>
 				</button>
 				{#if isBooksOpen}
-					<div class="flex flex-wrap gap-1.5 pt-2">
+					<div class="flex flex-wrap gap-1.5 pt-2 max-h-48 overflow-y-auto">
 						{#each subBooks as item}
 							<button
 								type="button"
@@ -144,7 +148,7 @@
 								class="rounded-lg px-2.5 py-1 text-xs font-semibold border transition-all cursor-pointer {item.isSelected ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100 font-bold shadow-2xs' : 'border-[var(--color-rule)] bg-[var(--color-card-bg)] text-[var(--color-ink)] hover:bg-[var(--color-rule)]'}"
 								title="{item.label}{item.sections ? ` (${item.sections} sections)` : ''}"
 							>
-								Bk. {item.book}
+								{item.label || `${subBookShortLabel} ${item.book}`}
 							</button>
 						{/each}
 					</div>

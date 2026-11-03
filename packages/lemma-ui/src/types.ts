@@ -22,6 +22,13 @@ export interface ConcordanceOccurrence {
 	morph?: string;
 }
 
+export interface PaginatedConcordance<T = any> {
+	refs: T[];
+	totalCount: number;
+	hasMore: boolean;
+	nextOffset: number;
+}
+
 export interface LemmaData {
 	id?: string | number;
 	lemma: string;

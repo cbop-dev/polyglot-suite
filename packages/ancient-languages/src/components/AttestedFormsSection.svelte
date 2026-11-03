@@ -232,10 +232,11 @@
 <style>
 	.attested-forms-section {
 		border: 1px solid var(--border, var(--color-rule, #d4d8d3));
-		border-radius: 8px;
+		border-radius: 1rem;
 		background: var(--popup-bg, var(--color-page, #ffffff));
-		margin-bottom: 0.75rem;
+		margin-bottom: 0;
 		overflow: hidden;
+		flex-shrink: 0;
 		transition: border-color 0.15s ease;
 	}
 
@@ -243,14 +244,17 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0.6rem 0.85rem;
+		padding: 0.75rem 1rem;
+		min-height: 44px;
+		box-sizing: border-box;
 		font-size: 0.875rem;
-		font-weight: 700;
+		line-height: 1.4;
 		color: var(--accent, var(--color-ink, #1f6f7a));
 		background: var(--col-bg, var(--color-page-soft, #f5f6f2));
 		cursor: pointer;
 		user-select: none;
 		list-style: none;
+		flex-shrink: 0;
 	}
 
 	.attested-summary::-webkit-details-marker {
@@ -266,12 +270,16 @@
 		align-items: center;
 		gap: 0.45rem;
 		flex-wrap: wrap;
+		min-width: 0;
+		line-height: 1.35;
 	}
 
 	.summary-title {
 		display: inline-flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 0.25rem;
+		line-height: 1.35;
 	}
 
 	.lemma-quote {

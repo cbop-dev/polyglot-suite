@@ -61,18 +61,12 @@ const server = http.createServer((req, res) => {
 
   let reqPath = decodeURI(req.url.split('?')[0]);
 
-  // Normalize /polyglot-suite base path
-  if (reqPath === '/' || reqPath === '') {
-    res.writeHead(302, { Location: '/polyglot-suite/' });
-    res.end();
-    return;
-  }
-
+  // Support both domain-root / and legacy /polyglot-suite prefixes
   if (reqPath.startsWith('/polyglot-suite')) {
     reqPath = reqPath.slice('/polyglot-suite'.length);
-    if (!reqPath.startsWith('/')) {
-      reqPath = '/' + reqPath;
-    }
+  }
+  if (!reqPath.startsWith('/')) {
+    reqPath = '/' + reqPath;
   }
 
   // Resolve target file path within dist
@@ -97,20 +91,34 @@ const server = http.createServer((req, res) => {
       }
     }
   } catch {
-    // Try appending .html
-    if (fs.existsSync(targetPath + '.html')) {
-      targetPath = targetPath + '.html';
-      stat = fs.statSync(targetPath);
-    } else {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end(`Not Found: ${req.url}`);
-      return;
+    // File not found on disk
+  }
+
+  // SPA Fallback: if not an existing file on disk and not requesting a static asset extension
+  if (!stat || !stat.isFile()) {
+    const ext = path.extname(targetPath).toLowerCase();
+    const isStaticAsset = ext && !['.html', '.htm'].includes(ext);
+
+    if (!isStaticAsset) {
+      let spaFallback = null;
+      if (reqPath.startsWith('/corpora')) {
+        spaFallback = path.join(DIST_DIR, 'corpora/index.html');
+      } else if (reqPath.startsWith('/bible')) {
+        spaFallback = path.join(DIST_DIR, 'bible/index.html');
+      } else if (reqPath.startsWith('/lexemes')) {
+        spaFallback = path.join(DIST_DIR, 'lexemes/index.html');
+      }
+
+      if (spaFallback && fs.existsSync(spaFallback)) {
+        targetPath = spaFallback;
+        stat = fs.statSync(targetPath);
+      }
     }
   }
 
-  if (!stat.isFile()) {
+  if (!stat || !stat.isFile()) {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('Not Found');
+    res.end(`Not Found: ${req.url}`);
     return;
   }
 
@@ -168,11 +176,12 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log('\n  🌍 Polyglot Suite Preview Server running at:');
-  console.log(`     ➜ Portal:   http://localhost:${PORT}/polyglot-suite/`);
-  console.log(`     ➜ Bible:    http://localhost:${PORT}/polyglot-suite/bible/`);
-  console.log(`     ➜ Lexemes:  http://localhost:${PORT}/polyglot-suite/lexemes/`);
-  console.log(`     ➜ Josephus: http://localhost:${PORT}/polyglot-suite/josephus/`);
-  console.log(`     ➜ Fathers:  http://localhost:${PORT}/polyglot-suite/fathers/`);
-  console.log(`     ➜ Philo:    http://localhost:${PORT}/polyglot-suite/philo/\n`);
+  console.log(`     ➜ Portal:   http://localhost:${PORT}/`);
+  console.log(`     ➜ Bible:    http://localhost:${PORT}/bible/`);
+  console.log(`     ➜ Lexemes:  http://localhost:${PORT}/lexemes/`);
+  console.log(`     ➜ Corpora:  http://localhost:${PORT}/corpora/`);
+  console.log(`     ➜ AF:       http://localhost:${PORT}/corpora/af/1-clem/1`);
+  console.log(`     ➜ Philo:    http://localhost:${PORT}/corpora/philo/opif/1`);
+  console.log(`     ➜ Josephus: http://localhost:${PORT}/corpora/josephus/war/1\n`);
   console.log('  Press Ctrl+C to stop.\n');
 });

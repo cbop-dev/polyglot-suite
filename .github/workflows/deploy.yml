@@ -40,10 +40,8 @@ jobs:
         with:
           path: |
             apps/polyglot-bible-reader/static/db/polyglot.db.*
-            apps/philo-reader/static/db/philo.db.*
-            apps/apostolic-fathers-reader/static/db/af.db.*
-            apps/josephus-reader/static/db/josephus.db.*
-          key: polyglot-dbs-${{ hashFiles('apps/*/static/db/config.json') }}
+            apps/ancient-corpora-reader/static/db/*/*.db.*
+          key: polyglot-dbs-${{ hashFiles('apps/*/static/db/config.json', 'apps/*/static/db/*/config.json') }}
 
       - name: Fetch Database Chunks
         if: steps.db-cache.outputs.cache-hit != 'true'
