@@ -6,7 +6,7 @@
 **Design Version**: 0.2  
 **Document Version**: 0.2  
 **Created**: 2026-11-04T11:10:06-05:00  
-**Last Modified**: 2026-11-04T15:20:00-05:00  
+**Last Modified**: 2026-11-04T15:28:00-05:00  
 **Status**: Draft / RFC  
 **Human Reviewer**: [cbop-dev](https://github.com/cbop-dev)
 ---
@@ -33,6 +33,7 @@ Because the three standalone reader applications have now been superseded and de
 4. **Single Source of Truth for Metadata**: All corpus definitions, corpus works, division structures, and citation formats must reside in `config/` (e.g. `corpora.ts`, `corpora.data.ts`, and optional pipeline-generated files like `corpora.generated.ts`). Redundant static tables in `@polyglot/ancient-languages` must be eliminated.
 5. **Decoupled Shared Lexicons Architecture**: Lexicons (e.g. LSJ, BDB) should live in a dedicated, unified `lexicons.sqlite3` database with its own GitHub release, rather than being duplicated inside every individual corpus database.
 6. **Dynamic Font & Typography Integration**: Font styling must not use static, hardcoded classes like `.greek-font`. Instead, CSS classes and font families must be dynamically resolved via `@polyglot/ancient-languages/fonts.ts`.
+7. **Progressive Batch Rendering for Large Divisions**: To eliminate main-thread freezes on long treatises (such as Philo's 150+ section works with 25,000+ interactive word tokens), column views must render an initial interactive batch immediately (< 50ms) and progressively stream subsequent batches during browser idle cycles.
 
 ---
 
