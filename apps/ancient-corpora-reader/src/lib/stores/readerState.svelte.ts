@@ -2,8 +2,8 @@ import type { AncientCorpusId } from '@polyglot/ancient-languages';
 import {
 	getCorpusWorks,
 	findWork,
-	type UnifiedCanonicalWork
-} from '../config/canonicalWorks.js';
+	type AncientCorpus
+} from '../config/corpora.js';
 import type { Token } from '../services/dbClient.js';
 
 export type ViewMode = 'parallel' | 'greek' | 'english' | 'latin' | 'stacked';
@@ -49,7 +49,7 @@ export class ReaderState {
 	isCommandPaletteOpen = $state<boolean>(false);
 	showCitationModal = $state<boolean>(false);
 
-	get currentWork(): UnifiedCanonicalWork {
+	get currentWork(): AncientCorpus {
 		const target = findWork(this.currentCorpus, this.currentWorkCode);
 		if (target) return target;
 		const fallback = getCorpusWorks(this.currentCorpus)[0];

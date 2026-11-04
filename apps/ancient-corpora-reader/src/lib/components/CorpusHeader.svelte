@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { ReaderHeader, type ViewMode } from '@polyglot/ui';
 	import { readerState } from '../stores/readerState.svelte.js';
-	import { CORPUS_TITLES } from '../config/canonicalWorks.js';
+	import { CORPUS_TITLES } from '../config/corpora.js';
 	let {
 		test='',
 		suiteHref="/"
@@ -13,7 +13,7 @@
 	title="Ancient Corpora"
 	titleShort="Corpora"
 	homeHref="{base}/"
-	suiteHref=suiteHref
+	suiteHref={suiteHref}
 	workTitle={readerState.currentWork.titleEnglish}
 	workAbbrev={readerState.currentWork.abbrev}
 	onOpenWorkPicker={() => (readerState.isWorkModalOpen = true)}
