@@ -1,5 +1,5 @@
 import { getDbWorker } from './dbWorker.js';
-import { findWork, resolveDivisionCoordinates } from '../config/corpora.js';
+import { findWork, resolveDivisionCoordinates } from '../config/canonicalWorks.js';
 import {
 	getCorpusConfig,
 	getAllCorpora,

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { WorkPickerModal } from '@polyglot/ui';
 	import { readerState } from '../stores/readerState.svelte.js';
-	import { getCorpusWorks } from '../config/corpora.js';
+	import { getCorpusWorks } from '../config/canonicalWorks.js';
 
 	let searchQuery = $state<string>('');
 

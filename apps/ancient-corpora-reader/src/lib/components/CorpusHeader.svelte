@@ -2,7 +2,8 @@
 	import { base } from '$app/paths';
 	import { ReaderHeader, type ViewMode } from '@polyglot/ui';
 	import { readerState } from '../stores/readerState.svelte.js';
-	import { CORPUS_TITLES } from '../config/corpora.js';
+	import {Languages} from '@polyglot/ancient-languages';
+	
 	let {
 		test = '',
 		suiteHref = '/'

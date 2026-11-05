@@ -9,7 +9,6 @@
 	import HotkeyHelpModal from './HotkeyHelpModal.svelte';
 
 	import { readerState } from '../stores/readerState.svelte.js';
-	import { CORPUS_TITLES } from '../config/corpora.js';
 	import {
 		fetchDivisionSections,
 		type TextVersion

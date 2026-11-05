@@ -5,7 +5,7 @@ import {
 	findWork,
 	resolveDivisionCoordinates,
 	CORPUS_TITLES
-} from '../src/lib/config/corpora.js';
+} from '../src/lib/config/canonicalWorks.js';
 
 describe('Canonical Works Registry', () => {
 	it('provides corpus titles and subtitles for all three corpora', () => {

@@ -1,141 +1,237 @@
-import type { AncientCorpusId } from '@polyglot/ancient-languages';
-export type { AncientCorpusId };
-import {
-	AF_CANONICAL_WORKS,
-	PHILO_CANONICAL_WORKS,
-	JOSEPHUS_CANONICAL_WORKS
-} from './corpora.data.js';
+/**
+ * Master Corpus Configurations for Ancient Corpora Reader (ACR).
+ * 
+ * Declares all corpus identities, text versions, milestone schemes,
+ * and academic citation metadata. Svelte components and services read
+ * from this registry rather than hardcoding corpus or language values.
+ */
 
-export interface AncientCorpus {
-	corpusId: AncientCorpusId;
-	code: string;
-	slug: string;
-	titleEnglish: string;
-	titleGreek: string;
-	titleLatin?: string;
-	abbrev: string;
-	category?: string;
-	divisionLabel: 'Chapter' | 'Book';
-	totalDivisions: number;
-	minDivision: number;
-	sectionsByDivision?: Record<number, number>;
-	coordinateScheme?: 'book_only' | 'division_both';
-}
+export type TextDirection = 'ltr' | 'rtl';
 
-export const CORPUS_TITLES: Record<AncientCorpusId, { name: string; subtitle: string; badge: string }> = {
-	af: {
-		name: 'Apostolic Fathers',
-		subtitle: 'Early Christian Greek writings (1st–2nd century CE)',
-		badge: 'AF'
-	},
-	philo: {
-		name: 'Philo of Alexandria',
-		subtitle: 'Hellenistic Jewish philosophical & allegorical treatises',
-		badge: 'Philo'
-	},
-	josephus: {
-		name: 'Flavius Josephus',
-		subtitle: 'Jewish history, autobiography, and defense of antiquity',
-		badge: 'Josephus'
-	}
-};
-
-function slugify(text: string): string {
-	return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
-
-export const ALL_CANONICAL_WORKS: Record<AncientCorpusId, AncientCorpus[]> = {
-	af: (AF_CANONICAL_WORKS as any[]).map((w) => ({
-		corpusId: 'af',
-		code: w.code,
-		slug: slugify(w.code),
-		titleEnglish: w.titleEnglish,
-		titleGreek: w.titleGreek,
-		titleLatin: w.titleLatin,
-		abbrev: w.titleEnglish.split(' ')[0] + '.',
-		category: w.category,
-		divisionLabel: 'Chapter',
-		totalDivisions: w.totalChapters,
-		minDivision: w.minChapter ?? 1,
-		coordinateScheme: 'division_both'
-	})),
-	philo: (PHILO_CANONICAL_WORKS as any[]).map((w) => ({
-		corpusId: 'philo',
-		code: w.code,
-		slug: slugify(w.code),
-		titleEnglish: w.titleEnglish,
-		titleGreek: w.titleGreek,
-		titleLatin: w.titleLatin,
-		abbrev: w.abbrev,
-		category: w.category,
-		divisionLabel: w.totalBooks > 1 ? 'Book' : 'Chapter',
-		totalDivisions: w.totalBooks,
-		minDivision: 1,
-		sectionsByDivision: w.sectionsByBook,
-		coordinateScheme: 'division_both'
-	})),
-	josephus: (JOSEPHUS_CANONICAL_WORKS as any[]).map((w) => ({
-		corpusId: 'josephus',
-		code: w.code,
-		slug: slugify(w.code),
-		titleEnglish: w.titleEnglish,
-		titleGreek: w.titleGreek,
-		titleLatin: w.titleLatin,
-		abbrev: w.abbrev,
-		category: w.category,
-		divisionLabel: 'Book',
-		totalDivisions: w.totalBooks,
-		minDivision: 1,
-		sectionsByDivision: w.sectionsByBook,
-		coordinateScheme: 'book_only'
-	}))
-};
-
-export interface DivisionCoordinates {
-	book: number;
-	chapter: number;
+/**
+ * Declares a specific textual witness or translation available within a corpus.
+ */
+export interface TextVersionConfig {
+	id: string;              // Unique DB/version ID (e.g. 'lake_grc', 'yonge_eng', 'af_lat')
+	language: string;        // Language code: 'grc', 'eng', 'lat', 'hbo', 'syr'
+	title: string;           // Full title (e.g. 'Kirsopp Lake Greek Critical Text (1912)')
+	shortTitle: string;      // Short header label (e.g. 'Lake Greek (1912)')
+	direction?: TextDirection; // Defaults to 'ltr'
+	isDefaultVisible: boolean; // True if column should display on initial load
+	order: number;           // Left-to-right display order
 }
 
 /**
- * Resolves the database storage coordinates (book, chapter) for a division
- * based on the work's structural metadata rather than hardcoded corpus names.
+ * Declares secondary milestone numbering schemes (e.g. Niese, Mangey).
  */
-export function resolveDivisionCoordinates(
-	work: AncientCorpus | undefined,
-	division: number
-): DivisionCoordinates {
-	if (work?.coordinateScheme === 'book_only') {
-		return { book: division, chapter: 0 };
+export interface MilestoneSchemeConfig {
+	id: string;              // 'niese', 'mangey', 'stephanus', etc.
+	label: string;           // 'Niese Section', 'Mangey Milestone'
+	badgePrefix: string;     // '§', 'M.'
+	badgeColorClass: string; // Tailwind color classes for pill
+}
+
+/**
+ * Complete metadata contract for a corpus.
+ */
+export interface CorpusConfig {
+	id: string;              // e.g. 'af', 'philo', 'josephus'
+	name: string;            // e.g. 'Apostolic Fathers'
+	title?: string;          // Ergonomic alias for name
+	subtitle: string;        // e.g. 'Early Christian Greek writings (1st–2nd century CE)'
+	badge: string;           // Short badge for triggers (e.g. 'AF', 'Philo')
+	era: string;             // Historical period (e.g. '1st–2nd c. CE')
+	author: string;          // Author or collection designation
+	primaryLanguage: string; // 'grc', 'lat', 'hbo', etc.
+	availableLanguages: string[]; // ['grc', 'eng', 'lat']
+	textVersions: TextVersionConfig[];
+	milestoneScheme?: MilestoneSchemeConfig;
+	coordinateScheme: 'book_only' | 'division_both';
+	features: {
+		hasScriptureCitations: boolean;
+		hasTextualApparatus: boolean;
+		hasAudio: boolean;
+	};
+	citation: {
+		author: string;
+		seriesTitle: string;
+		defaultYear: string;
+		publisher?: string;
+	};
+}
+
+export const CORPORA_CONFIG: Record<string, CorpusConfig> = {
+	af: {
+		id: 'af',
+		name: 'Apostolic Fathers',
+		title: 'Apostolic Fathers',
+		subtitle: 'Early Christian Greek writings (1st–2nd century CE)',
+		badge: 'AF',
+		era: '1st–2nd c. CE',
+		author: 'Early Christian Fathers',
+		primaryLanguage: 'grc',
+		availableLanguages: ['grc', 'eng', 'lat'],
+		coordinateScheme: 'division_both',
+		features: {
+			hasScriptureCitations: false,
+			hasTextualApparatus: true,
+			hasAudio: false
+		},
+		citation: {
+			author: 'Kirsopp Lake',
+			seriesTitle: 'The Apostolic Fathers (Loeb Classical Library)',
+			defaultYear: '1912'
+		},
+		textVersions: [
+			{
+				id: 'lake_grc',
+				language: 'grc',
+				title: 'Kirsopp Lake Greek Critical Text (1912)',
+				shortTitle: 'Lake Greek (1912)',
+				direction: 'ltr',
+				isDefaultVisible: true,
+				order: 1
+			},
+			{
+				id: 'lake_lat',
+				language: 'lat',
+				title: 'Latin Witness (Where Extant)',
+				shortTitle: 'Latin Text',
+				direction: 'ltr',
+				isDefaultVisible: true,
+				order: 2
+			},
+			{
+				id: 'lake_eng',
+				language: 'eng',
+				title: 'Kirsopp Lake English Translation (1912)',
+				shortTitle: 'English (Lake)',
+				direction: 'ltr',
+				isDefaultVisible: true,
+				order: 3
+			}
+		]
+	},
+
+	philo: {
+		id: 'philo',
+		name: 'Philo of Alexandria',
+		title: 'Philo of Alexandria',
+		subtitle: 'Hellenistic Jewish philosophical & allegorical treatises',
+		badge: 'Philo',
+		era: 'c. 20 BCE – 50 CE',
+		author: 'Philo of Alexandria',
+		primaryLanguage: 'grc',
+		availableLanguages: ['grc', 'eng'],
+		coordinateScheme: 'division_both',
+		milestoneScheme: {
+			id: 'mangey',
+			label: 'Mangey Milestone',
+			badgePrefix: 'M.',
+			badgeColorClass: 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200'
+		},
+		features: {
+			hasScriptureCitations: true,
+			hasTextualApparatus: false,
+			hasAudio: false
+		},
+		citation: {
+			author: 'Philo of Alexandria',
+			seriesTitle: 'The Works of Philo Judaeus',
+			defaultYear: '1854'
+		},
+		textVersions: [
+			{
+				id: 'grc',
+				language: 'grc',
+				title: 'Cohn-Wendland Greek Critical Text',
+				shortTitle: 'Cohn-Wendland Greek',
+				direction: 'ltr',
+				isDefaultVisible: true,
+				order: 1
+			},
+			{
+				id: 'eng',
+				language: 'eng',
+				title: 'C. D. Yonge English Translation',
+				shortTitle: 'Yonge English',
+				direction: 'ltr',
+				isDefaultVisible: true,
+				order: 2
+			}
+		]
+	},
+
+	josephus: {
+		id: 'josephus',
+		name: 'Flavius Josephus',
+		title: 'Flavius Josephus',
+		subtitle: 'Jewish history, autobiography, and defense of antiquity',
+		badge: 'Josephus',
+		era: 'c. 37 – 100 CE',
+		author: 'Flavius Josephus',
+		primaryLanguage: 'grc',
+		availableLanguages: ['grc', 'eng'],
+		coordinateScheme: 'book_only',
+		milestoneScheme: {
+			id: 'niese',
+			label: 'Niese Section',
+			badgePrefix: '§',
+			badgeColorClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200'
+		},
+		features: {
+			hasScriptureCitations: false,
+			hasTextualApparatus: false,
+			hasAudio: false
+		},
+		citation: {
+			author: 'Flavius Josephus',
+			seriesTitle: 'The Works of Flavius Josephus (Ed. B. Niese)',
+			defaultYear: '1895'
+		},
+		textVersions: [
+			{
+				id: 'josephus_grc',
+				language: 'grc',
+				title: 'Benedikt Niese Greek Critical Text (1885–1895)',
+				shortTitle: 'Niese Greek',
+				direction: 'ltr',
+				isDefaultVisible: true,
+				order: 1
+			},
+			{
+				id: 'josephus_eng',
+				language: 'eng',
+				title: 'H. St. J. Thackeray & William Whiston English Translation',
+				shortTitle: 'English Translation',
+				direction: 'ltr',
+				isDefaultVisible: true,
+				order: 2
+			}
+		]
 	}
-	return { book: division, chapter: division };
+};
+
+/**
+ * Retrieve the configuration for a given corpus ID, falling back to AF.
+ */
+export function getCorpusConfig(id?: string): CorpusConfig {
+	if (id && id in CORPORA_CONFIG) {
+		return CORPORA_CONFIG[id];
+	}
+	return CORPORA_CONFIG.af;
 }
 
-export function getCorpusWorks(corpusId: AncientCorpusId): AncientCorpus[] {
-	return ALL_CANONICAL_WORKS[corpusId] || [];
+/**
+ * Return all registered corpora in canonical display order.
+ */
+export function getAllCorpora(): CorpusConfig[] {
+	return Object.values(CORPORA_CONFIG);
 }
 
-export function findWork(corpusId: AncientCorpusId, codeOrSlug: string): AncientCorpus | undefined {
-	const list = getCorpusWorks(corpusId);
-	if (!codeOrSlug) return list[0];
-	const norm = slugify(codeOrSlug);
-
-	// 1. Exact match on code, slug, English title, Latin title, or abbrev
-	const exact = list.find(
-		(w) =>
-			slugify(w.code) === norm ||
-			w.slug === norm ||
-			slugify(w.titleEnglish) === norm ||
-			(w.titleLatin && slugify(w.titleLatin) === norm) ||
-			slugify(w.abbrev) === norm
-	);
-	if (exact) return exact;
-
-	// 2. Prefix / alias match (e.g. 'ant' -> 'antiquities', 'war' -> 'war')
-	return list.find(
-		(w) =>
-			w.slug.startsWith(norm) ||
-			norm.startsWith(w.slug) ||
-			slugify(w.titleEnglish).startsWith(norm) ||
-			slugify(w.abbrev).startsWith(norm)
-	);
+/**
+ * Return all available text versions for a corpus.
+ */
+export function getCorpusTextVersions(id: string): TextVersionConfig[] {
+	return getCorpusConfig(id).textVersions;
 }

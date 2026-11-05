@@ -2,7 +2,7 @@
 	import { LexemeSidePanel } from '@polyglot/lemma-ui';
 	import { readerState } from '../stores/readerState.svelte.js';
 	import { highlightStore } from '../stores/highlightStore.svelte.js';
-	import { CORPUS_TITLES } from '../config/corpora.js';
+	import { CORPUS_TITLES } from '../config/canonicalWorks.js';
 	import { getCorpusPrimaryLanguage } from '@polyglot/ancient-languages';
 	import {
 		fetchLexiconEntry,
