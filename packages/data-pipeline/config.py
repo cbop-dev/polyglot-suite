@@ -114,13 +114,13 @@ UPSTREAM_SOURCES = {
     # 10. Syriac Peshitta Texts
     "peshitta_ot": {
         "url": "https://github.com/ETCBC/peshitta/archive/refs/heads/master.zip",
-        "filename": "peshitta_ot_raw.jsonl",
-        "description": "ETCBC Leiden Peshitta Old Testament (Text-Fabric exported JSONL)",
+        "filename": "peshitta_ot.zip",
+        "description": "ETCBC Leiden Peshitta Old Testament (Text-Fabric archive)",
     },
     "peshitta_nt": {
         "url": "https://github.com/ETCBC/syrnt/archive/refs/heads/master.zip",
-        "filename": "peshitta_nt_raw.jsonl",
-        "description": "ETCBC SEDRA 3 Syriac New Testament (Text-Fabric exported JSONL)",
+        "filename": "peshitta_nt.zip",
+        "description": "ETCBC SEDRA 3 Syriac New Testament (Text-Fabric archive)",
     },
     # 11. Greek NT: SBLGNT & MorphGNT
     "sblgnt": {

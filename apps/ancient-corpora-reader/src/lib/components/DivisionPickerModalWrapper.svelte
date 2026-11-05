@@ -3,10 +3,11 @@
 	import { readerState } from '../stores/readerState.svelte.js';
 
 	interface Props {
+		sectionsCount?: number;
 		greekSectionsCount?: number;
 	}
 
-	let { greekSectionsCount = 0 }: Props = $props();
+	let { sectionsCount = 0, greekSectionsCount = 0 }: Props = $props();
 
 	let currentWork = $derived(readerState.currentWork);
 	let isMultiDivision = $derived(currentWork.totalDivisions > 1);
@@ -31,6 +32,7 @@
 		if (currentWork.sectionsByDivision && currentWork.sectionsByDivision[readerState.currentDivision]) {
 			return currentWork.sectionsByDivision[readerState.currentDivision];
 		}
+		if (sectionsCount > 0) return sectionsCount;
 		if (greekSectionsCount > 0) return greekSectionsCount;
 		return 50;
 	});
@@ -57,7 +59,7 @@
 
 		setTimeout(() => {
 			const el = document.getElementById(`section-${secNum}`) ||
-				document.getElementById(`niese-${secNum}`) ||
+				document.getElementById(`milestone-${secNum}`) ||
 				document.getElementById(`sec-${secNum}`);
 			el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}, 100);

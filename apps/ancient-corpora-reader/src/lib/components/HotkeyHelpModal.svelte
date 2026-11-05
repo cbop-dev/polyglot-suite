@@ -3,14 +3,13 @@
 	import { readerState } from '../stores/readerState.svelte.js';
 
 	const HOTKEYS = [
-		{ key: 'W / B', desc: 'Open Work / Treatise selector' },
-		{ key: 'J / S / C', desc: 'Jump to Section & Book/Chapter selector' },
+		{ key: 'B', desc: 'Open Corpus selector' },
+		{ key: 'W', desc: 'Open Work / Treatise selector' },
+		{ key: 'J / S / C', desc: 'Jump to Section & Division selector' },
 		{ key: '] / →', desc: 'Next division' },
 		{ key: '[ / ←', desc: 'Previous division' },
-		{ key: 'P', desc: 'Parallel view mode' },
-		{ key: 'D', desc: 'Toggle Dual mode (Parallel ↔ Stacked)' },
-		{ key: 'G', desc: 'Greek only view mode' },
-		{ key: 'E', desc: 'English only view mode' },
+		{ key: 'P', desc: 'Parallel view layout' },
+		{ key: 'D', desc: 'Toggle layout (Parallel ↔ Stacked)' },
 		{ key: 'F / /', desc: 'Toggle Lemma Search & Lexeme Side Panel' },
 		{ key: 'Esc', desc: 'Close modals & side panel' },
 		{ key: '?', desc: 'Show this keyboard shortcuts guide' }

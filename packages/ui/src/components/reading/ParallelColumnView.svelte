@@ -16,80 +16,91 @@
 	}
 
 	export interface TextUnitData {
+		id?: number;
+		corpus_id?: string;
+		version_id?: string;
+		work_code?: string;
+		chapter?: number;
+		book?: number;
 		section?: number;
+		section_label?: string;
 		section_num?: number;
 		niese_section?: string | number;
 		display_citation?: string;
-		text_content?: string;
-		tokens?: TextToken[];
+		milestone_ref?: string;
 		mangey_ref?: string;
 		is_supplement?: number;
+		text_content?: string;
+		tokens?: TextToken[];
 		[key: string]: any;
 	}
 
+	export interface TextVersionData {
+		versionId: string;
+		language: string;
+		label: string;
+		shortLabel?: string;
+		direction?: 'ltr' | 'rtl';
+		fontClass?: string;
+		textUnits: TextUnitData[];
+	}
+
 	export interface Props {
-		greek?: TextUnitData[];
-		english?: TextUnitData[];
-		latin?: TextUnitData[];
-		viewMode?: 'parallel' | 'stacked' | 'greek' | 'english' | string;
-		showGreek?: boolean;
-		showEnglish?: boolean;
-		showLatin?: boolean;
-		gridBreakpoint?: 'md' | 'lg';
+		textVersions?: TextVersionData[];
+		visibleLanguages?: Set<string> | any;
+		viewMode?: 'parallel' | 'stacked' | 'single' | 'greek' | 'english' | 'latin' | string;
+		targetSection?: number | string | null;
+		gridBreakpoint?: 'md' | 'lg' | 'xl';
 		highlightStore?: any;
 
 		// Section identification
 		getSectionKey?: (u: TextUnitData) => number | string;
-		getNieseSection?: (u: TextUnitData) => string | undefined;
-		getCitation?: (secKey: number | string, gUnit?: TextUnitData, eUnit?: TextUnitData, lUnit?: TextUnitData) => string;
-		rowId?: (secKey: number | string, nieseSec?: string) => string;
+		getMilestoneRef?: (u: TextUnitData) => string | undefined;
+		getCitation?: (secKey: number | string, unitsByVersion: Record<string, TextUnitData>) => string;
+		rowId?: (secKey: number | string, milestone?: string) => string;
 
-		// Header labels
+		// Actions
+		onWordClick?: (token: TextToken, citation: string, version: TextVersionData) => void;
+		onBookmarkToggle?: (secKey: string, snippet: string) => void;
+		onCitationClick?: (secKey: number | string, unitsByVersion: Record<string, TextUnitData>) => void;
+		onBiblicalCitationClick?: (bookCode: string, chapter: number, verse: number, display: string, bookName?: string) => void;
+		showBookmarkButton?: boolean;
+		showCiteButton?: boolean;
+
+		// Custom snippets
+		sectionBadge?: Snippet<[{ secKey: number | string; units: Record<string, TextUnitData>; milestone?: string }]>;
+		extraSectionTools?: Snippet<[{ secKey: number | string; units: Record<string, TextUnitData> }]>;
+
+		// Backward-compatibility props for legacy callers:
+		greek?: TextUnitData[];
+		english?: TextUnitData[];
+		latin?: TextUnitData[];
+		showGreek?: boolean;
+		showEnglish?: boolean;
+		showLatin?: boolean;
 		greekHeaderTitle?: string;
 		greekHeaderSubtitle?: string;
 		latinHeaderTitle?: string;
 		latinHeaderSubtitle?: string;
 		englishHeaderTitle?: string;
 		englishHeaderSubtitle?: string;
-
-		// Actions
-		onWordClick?: (token: TextToken, citation: string, lang: 'greek' | 'latin') => void;
-		onBookmarkToggle?: (secStr: string, snippet: string) => void;
-		onCitationClick?: (secKey: number | string, gUnit?: TextUnitData, eUnit?: TextUnitData, lUnit?: TextUnitData) => void;
-		onBiblicalCitationClick?: (bookCode: string, chapter: number, verse: number, display: string, bookName?: string) => void;
-		showBookmarkButton?: boolean;
-		showCiteButton?: boolean;
-
-		// Custom snippets
-		sectionBadge?: Snippet<[{ secKey: number | string; nieseSec?: string; gUnit?: TextUnitData; eUnit?: TextUnitData; lUnit?: TextUnitData }]>;
-		extraSectionTools?: Snippet<[{ secKey: number | string; nieseSec?: string; gUnit?: TextUnitData; eUnit?: TextUnitData; lUnit?: TextUnitData }]>;
 		customGreekColumn?: Snippet<[{ secKey: number | string; unit?: TextUnitData; citation: string }]>;
 		customEnglishColumn?: Snippet<[{ secKey: number | string; unit?: TextUnitData; citation: string }]>;
 		customLatinColumn?: Snippet<[{ secKey: number | string; unit?: TextUnitData; citation: string }]>;
 	}
 
 	let {
-		greek = [],
-		english = [],
-		latin = [],
+		textVersions = [],
+		visibleLanguages,
 		viewMode = 'parallel',
-		showGreek = true,
-		showEnglish = true,
-		showLatin = false,
+		targetSection,
 		gridBreakpoint = 'lg',
 		highlightStore,
 
 		getSectionKey = (u) => (u.section_num !== undefined ? u.section_num : (u.section ?? 0)),
-		getNieseSection = (u) => (u.niese_section !== undefined ? String(u.niese_section) : undefined),
+		getMilestoneRef = (u) => u.milestone_ref || (u.niese_section !== undefined ? String(u.niese_section) : undefined),
 		getCitation,
 		rowId,
-
-		greekHeaderTitle,
-		greekHeaderSubtitle,
-		latinHeaderTitle,
-		latinHeaderSubtitle,
-		englishHeaderTitle,
-		englishHeaderSubtitle,
 
 		onWordClick,
 		onBookmarkToggle,
@@ -100,26 +111,115 @@
 
 		sectionBadge,
 		extraSectionTools,
+
+		// Backward-compatibility
+		greek,
+		english,
+		latin,
+		showGreek,
+		showEnglish,
+		showLatin,
+		greekHeaderTitle,
+		latinHeaderTitle,
+		englishHeaderTitle,
 		customGreekColumn,
 		customEnglishColumn,
 		customLatinColumn
 	}: Props = $props();
 
-	// Deduplicated ordered list of section keys
+	// Resolve versions: use textVersions or synthesize from legacy props
+	let resolvedTextVersions = $derived.by(() => {
+		if (textVersions && textVersions.length > 0) {
+			return textVersions;
+		}
+		const legacy: TextVersionData[] = [];
+		if (greek && greek.length > 0) {
+			legacy.push({
+				versionId: 'grc',
+				language: 'grc',
+				label: greekHeaderTitle || 'Greek Critical Text',
+				shortLabel: 'Greek',
+				direction: 'ltr',
+				fontClass: 'font-greek greek',
+				textUnits: greek
+			});
+		}
+		if (latin && latin.length > 0) {
+			legacy.push({
+				versionId: 'lat',
+				language: 'lat',
+				label: latinHeaderTitle || 'Latin Witness',
+				shortLabel: 'Latin',
+				direction: 'ltr',
+				fontClass: 'font-latin latin',
+				textUnits: latin
+			});
+		}
+		if (english && english.length > 0) {
+			legacy.push({
+				versionId: 'eng',
+				language: 'eng',
+				label: englishHeaderTitle || 'English Translation',
+				shortLabel: 'English',
+				direction: 'ltr',
+				fontClass: 'font-serif',
+				textUnits: english
+			});
+		}
+		return legacy;
+	});
+
+	// Filter active versions based on visibleLanguages or legacy viewMode flags
+	let activeVersions = $derived.by(() => {
+		if (!visibleLanguages) {
+			if (showGreek !== undefined || showEnglish !== undefined || showLatin !== undefined) {
+				return resolvedTextVersions.filter((v) => {
+					if (v.language === 'grc' && showGreek === false) return false;
+					if (v.language === 'eng' && showEnglish === false) return false;
+					if (v.language === 'lat' && showLatin === false) return false;
+					return true;
+				});
+			}
+			return resolvedTextVersions;
+		}
+		return resolvedTextVersions.filter((v) => {
+			if (typeof visibleLanguages.has === 'function') {
+				return visibleLanguages.has(v.language) || visibleLanguages.has(v.versionId);
+			}
+			if (Array.isArray(visibleLanguages)) {
+				return visibleLanguages.includes(v.language) || visibleLanguages.includes(v.versionId);
+			}
+			return true;
+		});
+	});
+
+	// Map of versionId -> Map(secKey -> TextUnitData)
+	let unitsByVersionAndSec = $derived.by(() => {
+		const map = new Map<string, Map<number | string, TextUnitData>>();
+		for (const ver of resolvedTextVersions) {
+			const secMap = new Map<number | string, TextUnitData>();
+			for (const u of ver.textUnits || []) {
+				const k = getSectionKey(u);
+				if (k !== undefined && k !== null) {
+					secMap.set(k, u);
+				}
+			}
+			map.set(ver.versionId, secMap);
+		}
+		return map;
+	});
+
+	// Deduplicated ordered list of all section keys across all versions
 	let sectionKeys = $derived.by(() => {
 		const keys = new Set<number | string>();
-		greek.forEach((u) => {
-			const k = getSectionKey(u);
-			if (k !== undefined && k !== null) keys.add(k);
-		});
-		english.forEach((u) => {
-			const k = getSectionKey(u);
-			if (k !== undefined && k !== null) keys.add(k);
-		});
-		latin.forEach((u) => {
-			const k = getSectionKey(u);
-			if (k !== undefined && k !== null) keys.add(k);
-		});
+		for (const ver of resolvedTextVersions) {
+			for (const u of ver.textUnits || []) {
+				const k = getSectionKey(u);
+				if (k !== undefined && k !== null) {
+					keys.add(k);
+				}
+			}
+		}
 		return Array.from(keys).sort((a, b) => {
 			const numA = Number(a);
 			const numB = Number(b);
@@ -128,38 +228,104 @@
 		});
 	});
 
-	let greekBySec = $derived(new Map(greek.map((u) => [getSectionKey(u), u])));
-	let engBySec = $derived(new Map(english.map((u) => [getSectionKey(u), u])));
-	let latBySec = $derived(new Map(latin.map((u) => [getSectionKey(u), u])));
-
 	let isStacked = $derived(viewMode === 'stacked');
-	let hasLatin = $derived(latin.length > 0 && showLatin);
-	let hasGreek = $derived(showGreek && viewMode !== 'english');
-	let hasEng = $derived(showEnglish && viewMode !== 'greek');
-
-	let visibleColCount = $derived.by(() => {
-		let count = 0;
-		if (hasGreek) count++;
-		if (hasLatin) count++;
-		if (hasEng) count++;
-		return count;
-	});
 
 	let gridColsClass = $derived.by(() => {
-		if (isStacked) return 'grid-cols-1';
+		if (isStacked || activeVersions.length <= 1) return 'grid-cols-1';
+		const count = activeVersions.length;
 		if (gridBreakpoint === 'md') {
-			if (visibleColCount === 3) return 'grid-cols-1 md:grid-cols-3';
-			if (visibleColCount === 2) return 'grid-cols-1 md:grid-cols-2';
+			if (count >= 3) return 'grid-cols-1 md:grid-cols-3';
+			if (count === 2) return 'grid-cols-1 md:grid-cols-2';
 		} else {
-			if (visibleColCount === 3) return 'grid-cols-1 lg:grid-cols-3';
-			if (visibleColCount === 2) return 'grid-cols-1 lg:grid-cols-2';
+			if (count >= 3) return 'grid-cols-1 lg:grid-cols-3';
+			if (count === 2) return 'grid-cols-1 lg:grid-cols-2';
 		}
 		return 'grid-cols-1';
 	});
 
-	function resolveCitation(secKey: number | string, gUnit?: TextUnitData, eUnit?: TextUnitData, lUnit?: TextUnitData): string {
-		if (getCitation) return getCitation(secKey, gUnit, eUnit, lUnit);
-		return gUnit?.display_citation || eUnit?.display_citation || lUnit?.display_citation || `Section ${secKey}`;
+	// --- Progressive Batch Rendering Engine ---
+	const INITIAL_BATCH_SIZE = 25;
+	const BATCH_STEP_SIZE = 25;
+
+	let renderedCount = $state<number>(INITIAL_BATCH_SIZE);
+	let renderedKeys = $derived(sectionKeys.slice(0, renderedCount));
+	let isFullyRendered = $derived(renderedCount >= sectionKeys.length);
+
+	let idleHandle: any = null;
+	let sentinelEl = $state<HTMLElement | null>(null);
+
+	function scheduleNextBatch() {
+		if (isFullyRendered || typeof window === 'undefined') return;
+
+		const run = (deadline?: IdleDeadline) => {
+			while ((!deadline || deadline.timeRemaining() > 5) && renderedCount < sectionKeys.length) {
+				renderedCount = Math.min(sectionKeys.length, renderedCount + BATCH_STEP_SIZE);
+			}
+			if (renderedCount < sectionKeys.length) {
+				scheduleNextBatch();
+			}
+		};
+
+		if ('requestIdleCallback' in window) {
+			idleHandle = (window as any).requestIdleCallback(run, { timeout: 150 });
+		} else {
+			idleHandle = setTimeout(run, 50);
+		}
+	}
+
+	$effect(() => {
+		if (sectionKeys.length > 0) {
+			if (targetSection) {
+				const idx = sectionKeys.findIndex((k) => String(k) === String(targetSection));
+				renderedCount = idx >= 0
+					? Math.min(sectionKeys.length, Math.max(INITIAL_BATCH_SIZE, idx + 15))
+					: INITIAL_BATCH_SIZE;
+			} else {
+				renderedCount = INITIAL_BATCH_SIZE;
+			}
+			scheduleNextBatch();
+		}
+		return () => {
+			if (idleHandle && typeof window !== 'undefined') {
+				if ('cancelIdleCallback' in window) (window as any).cancelIdleCallback(idleHandle);
+				else clearTimeout(idleHandle);
+			}
+		};
+	});
+
+	// Fast-scroll Sentinel IntersectionObserver
+	$effect(() => {
+		if (!sentinelEl || isFullyRendered || typeof window === 'undefined') return;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0]?.isIntersecting) {
+					renderedCount = Math.min(sectionKeys.length, renderedCount + BATCH_STEP_SIZE * 2);
+					scheduleNextBatch();
+				}
+			},
+			{ rootMargin: '300px' }
+		);
+		observer.observe(sentinelEl);
+		return () => observer.disconnect();
+	});
+
+	function getUnitsForSection(secKey: number | string): Record<string, TextUnitData> {
+		const res: Record<string, TextUnitData> = {};
+		for (const ver of resolvedTextVersions) {
+			const u = unitsByVersionAndSec.get(ver.versionId)?.get(secKey);
+			if (u) {
+				res[ver.versionId] = u;
+			}
+		}
+		return res;
+	}
+
+	function resolveCitationForUnits(secKey: number | string, units: Record<string, TextUnitData>): string {
+		if (getCitation) return getCitation(secKey, units);
+		for (const u of Object.values(units)) {
+			if (u.display_citation) return u.display_citation;
+		}
+		return `Section ${secKey}`;
 	}
 
 	const PUNCT_REGEX = /^[,.;:·)—\]]+$/;
@@ -170,113 +336,98 @@
 	<!-- Tailwind scan anchor: md:grid lg:grid md:grid-cols-2 lg:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 -->
 	{#if !isStacked}
 		<div class="column-headers hidden {gridBreakpoint === 'md' ? 'md:grid' : 'lg:grid'} {gridColsClass} gap-6 sm:gap-8 border-b border-[var(--color-rule)] pb-2 text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)]">
-			{#if hasGreek}
+			{#each activeVersions as ver (ver.versionId)}
 				<div class="flex items-center justify-between">
-					<span>{greekHeaderTitle || 'Greek Critical Text'}</span>
-					{#if greekHeaderSubtitle}
-						<span class="text-[10px] font-normal normal-case text-[var(--color-ink-soft)]">{greekHeaderSubtitle}</span>
+					<span>{ver.label}</span>
+					{#if ver.shortLabel && ver.shortLabel !== ver.label}
+						<span class="text-[10px] font-normal normal-case text-[var(--color-ink-soft)]">{ver.shortLabel}</span>
 					{/if}
 				</div>
-			{/if}
-			{#if hasLatin}
-				<div class="flex items-center justify-between">
-					<span>{latinHeaderTitle || 'Latin Text'}</span>
-					{#if latinHeaderSubtitle}
-						<span class="text-[10px] font-normal normal-case text-[var(--color-ink-soft)]">{latinHeaderSubtitle}</span>
-					{/if}
-				</div>
-			{/if}
-			{#if hasEng}
-				<div class="flex items-center justify-between">
-					<span>{englishHeaderTitle || 'English Translation'}</span>
-					{#if englishHeaderSubtitle}
-						<span class="text-[10px] font-normal normal-case text-[var(--color-ink-soft)]">{englishHeaderSubtitle}</span>
-					{/if}
-				</div>
-			{/if}
+			{/each}
 		</div>
 	{/if}
 
 	<!-- Section Rows -->
 	<div class="divide-y divide-[var(--color-rule)]">
-		{#each sectionKeys as secKey (secKey)}
-			{@const gUnit = greekBySec.get(secKey)}
-			{@const eUnit = engBySec.get(secKey)}
-			{@const lUnit = latBySec.get(secKey)}
-			{@const nieseSec = (gUnit && getNieseSection(gUnit)) || (eUnit && getNieseSection(eUnit)) || (lUnit && getNieseSection(lUnit)) || String(secKey)}
-			{@const citation = resolveCitation(secKey, gUnit, eUnit, lUnit)}
-
-			{@const primaryId = rowId ? rowId(secKey, nieseSec) : `section-${secKey}`}
+		{#each renderedKeys as secKey (secKey)}
+			{@const unitsByVer = getUnitsForSection(secKey)}
+			{@const primaryUnit = Object.values(unitsByVer)[0]}
+			{@const milestone = primaryUnit ? getMilestoneRef(primaryUnit) : undefined}
+			{@const citation = resolveCitationForUnits(secKey, unitsByVer)}
+			{@const primaryId = rowId ? rowId(secKey, milestone) : `section-${secKey}`}
 
 			<div
 				id={primaryId}
 				class="section-row group/sec {isStacked ? 'flex flex-col gap-4' : `grid ${gridColsClass} gap-6 sm:gap-8`} py-5 hover:bg-[var(--color-card-bg)]/60 rounded-xl transition-colors scroll-mt-20"
 				data-section={secKey}
-				data-niese={nieseSec}
+				data-milestone={milestone}
 			>
-				{#if primaryId !== `niese-${secKey}`}
-					<span id="niese-{secKey}" class="sr-only"></span>
-				{/if}
 				{#if primaryId !== `section-${secKey}`}
 					<span id="section-{secKey}" class="sr-only"></span>
 				{/if}
-				{#if nieseSec && nieseSec !== String(secKey) && primaryId !== `niese-${nieseSec}`}
-					<span id="niese-{nieseSec}" class="sr-only"></span>
-				{/if}
-				{#if primaryId !== `sec-${secKey}`}
-					<span id="sec-{secKey}" class="sr-only"></span>
+				{#if milestone && primaryId !== `milestone-${milestone}`}
+					<span id="milestone-{milestone}" class="sr-only"></span>
 				{/if}
 
-				<!-- Greek Column -->
-				{#if hasGreek}
-					{#if customGreekColumn}
-						{@render customGreekColumn({ secKey, unit: gUnit, citation })}
+				{#each activeVersions as ver, verIdx (ver.versionId)}
+					{@const unit = unitsByVer[ver.versionId]}
+					{@const isPrimary = verIdx === 0}
+
+					<!-- Legacy custom column snippets compatibility -->
+					{#if ver.language === 'grc' && customGreekColumn}
+						{@render customGreekColumn({ secKey, unit, citation })}
+					{:else if ver.language === 'lat' && customLatinColumn}
+						{@render customLatinColumn({ secKey, unit, citation })}
+					{:else if ver.language === 'eng' && customEnglishColumn}
+						{@render customEnglishColumn({ secKey, unit, citation })}
 					{:else}
-						<div class="greek-col text-lg leading-relaxed text-[var(--color-ink)] greek-font">
-							<!-- Section Badge & Tools -->
-							{#if sectionBadge}
-								{@render sectionBadge({ secKey, nieseSec, gUnit, eUnit, lUnit })}
-							{:else}
-								<div class="inline-flex items-center gap-1.5 mr-2 align-baseline select-none">
-									<span
-										class="section-badge text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-900 rounded px-1.5 py-0.5"
-										title="Section {nieseSec || secKey}"
-									>
-										§ {nieseSec || secKey}
-									</span>
-
-									{#if showBookmarkButton}
-										<button
-											type="button"
-											class="sec-action-btn bm-star-btn text-xs text-[var(--color-ink-soft)] hover:text-amber-500 cursor-pointer"
-											onclick={() => onBookmarkToggle?.(nieseSec || String(secKey), gUnit?.text_content || '')}
-											title="Bookmark section"
+						<div class="column-version text-base leading-relaxed text-[var(--color-ink)] {ver.fontClass || ''}" dir={ver.direction || 'ltr'}>
+							<!-- Section Badge & Actions in primary leading column -->
+							{#if isPrimary}
+								{#if sectionBadge}
+									{@render sectionBadge({ secKey, units: unitsByVer, milestone })}
+								{:else}
+									<div class="inline-flex items-center gap-1.5 mr-2 align-baseline select-none">
+										<span
+											class="section-badge text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-900 rounded px-1.5 py-0.5"
+											title="Section {milestone || secKey}"
 										>
-											☆
-										</button>
-									{/if}
+											§ {milestone || secKey}
+										</span>
 
-									{#if showCiteButton}
-										<button
-											type="button"
-											class="sec-action-btn cite-trigger-btn text-xs font-medium text-[var(--color-ink-soft)] hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer underline"
-											onclick={() => onCitationClick?.(secKey, gUnit, eUnit, lUnit)}
-											title="Cite section"
-										>
-											Cite
-										</button>
-									{/if}
+										{#if showBookmarkButton}
+											<button
+												type="button"
+												class="sec-action-btn bm-star-btn text-xs text-[var(--color-ink-soft)] hover:text-amber-500 cursor-pointer"
+												onclick={() => onBookmarkToggle?.(String(milestone || secKey), unit?.text_content || '')}
+												title="Bookmark section"
+											>
+												☆
+											</button>
+										{/if}
 
-									{#if extraSectionTools}
-										{@render extraSectionTools({ secKey, nieseSec, gUnit, eUnit, lUnit })}
-									{/if}
-								</div>
+										{#if showCiteButton}
+											<button
+												type="button"
+												class="sec-action-btn cite-trigger-btn text-xs font-medium text-[var(--color-ink-soft)] hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer underline"
+												onclick={() => onCitationClick?.(secKey, unitsByVer)}
+												title="Cite section"
+											>
+												Cite
+											</button>
+										{/if}
+
+										{#if extraSectionTools}
+											{@render extraSectionTools({ secKey, units: unitsByVer })}
+										{/if}
+									</div>
+								{/if}
 							{/if}
 
-							<!-- Greek Word Tokens -->
-							{#if gUnit?.tokens && gUnit.tokens.length > 0}
-								{#each gUnit.tokens as tok, idx (idx)}
-									{@const nextTok = gUnit.tokens[idx + 1]}
+							<!-- Token Word Rendering -->
+							{#if unit?.tokens && unit.tokens.length > 0}
+								{#each unit.tokens as tok, idx (idx)}
+									{@const nextTok = unit.tokens[idx + 1]}
 									{@const isPunct = PUNCT_REGEX.test(tok.w)}
 									{@const nextIsPunct = nextTok && PUNCT_REGEX.test(nextTok.w)}
 									{#if tok.type === 'citation'}
@@ -304,108 +455,36 @@
 										{@const hl = tok.l && highlightStore ? highlightStore.get(tok.l) : undefined}
 										<button
 											type="button"
-											class="greek-word inline cursor-pointer transition-colors hover:text-blue-600 dark:hover:text-blue-400 hover:underline focus:outline-hidden {hl ? 'hl-token' : ''}"
+											class="token-word inline cursor-pointer transition-colors hover:text-blue-600 dark:hover:text-blue-400 hover:underline focus:outline-hidden {hl ? 'hl-token' : ''}"
 											style={hl ? `--hl-bg: ${hl.bgLight}; --hl-text: ${hl.textLight}; --hl-border: ${hl.borderLight}; --hl-bg-dark: ${hl.bgDark}; --hl-text-dark: ${hl.textDark}; --hl-border-dark: ${hl.borderDark};` : undefined}
-											onclick={() => onWordClick?.(tok, citation, 'greek')}
+											onclick={() => onWordClick?.(tok, citation, ver)}
 											title={tok.l ? `${tok.l}${tok.p || tok.m ? ` (${tok.p ?? ''} ${tok.m ?? ''})` : ''}` : undefined}
 										>{tok.w}</button>{#if !nextIsPunct}{' '}{/if}
 									{/if}
 								{/each}
-							{:else if gUnit?.text_content}
-								{#each gUnit.text_content.split(/\s+/) as rawWord, idx (idx)}
-									<button
-										type="button"
-										class="greek-word inline cursor-pointer transition-colors hover:text-blue-600 dark:hover:text-blue-400 hover:underline focus:outline-hidden"
-										onclick={() => onWordClick?.({ w: rawWord, l: rawWord }, citation, 'greek')}
-									>{rawWord}</button>{' '}
-								{/each}
-							{:else}
-								<span class="italic text-[var(--color-ink-soft)] text-sm">(Greek text lacuna / not extant)</span>
-							{/if}
-						</div>
-					{/if}
-				{/if}
-
-				<!-- Latin Column -->
-				{#if hasLatin}
-					{#if customLatinColumn}
-						{@render customLatinColumn({ secKey, unit: lUnit, citation })}
-					{:else}
-						<div class="latin-col text-base leading-relaxed text-[var(--color-ink)] latin-font">
-							{#if !hasGreek}
-								{#if sectionBadge}
-									{@render sectionBadge({ secKey, nieseSec, gUnit, eUnit, lUnit })}
-								{:else}
-									<div class="inline-flex items-center gap-1.5 mr-2 align-baseline select-none">
-										<span class="section-badge text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5">
-											§ {nieseSec || secKey}
-										</span>
-									</div>
-								{/if}
-							{/if}
-
-							{#if lUnit?.tokens && lUnit.tokens.length > 0}
-								{#each lUnit.tokens as tok, idx (idx)}
-									{@const hl = tok.l && highlightStore ? highlightStore.get(tok.l) : undefined}
-									<button
-										type="button"
-										class="latin-word inline cursor-pointer hover:underline hover:text-blue-600 dark:hover:text-blue-400 focus:outline-hidden transition-colors {hl ? 'hl-token' : ''}"
-										style={hl ? `--hl-bg: ${hl.bgLight}; --hl-text: ${hl.textLight}; --hl-border: ${hl.borderLight}; --hl-bg-dark: ${hl.bgDark}; --hl-text-dark: ${hl.textDark}; --hl-border-dark: ${hl.borderDark};` : undefined}
-										onclick={() => onWordClick?.(tok, citation, 'latin')}
-										title={tok.l ? `${tok.l}${tok.p || tok.m ? ` (${tok.p ?? ''} ${tok.m ?? ''})` : ''}` : undefined}
-									>{tok.w}</button>{' '}
-								{/each}
-							{:else if lUnit?.text_content}
-								<span>{lUnit.text_content}</span>
+							{:else if unit?.text_content}
+								<span>{unit.text_content}</span>
 							{:else}
 								<span class="italic text-[var(--color-ink-soft)] text-sm">—</span>
 							{/if}
 						</div>
 					{/if}
-				{/if}
-
-				<!-- English Column -->
-				{#if hasEng}
-					{#if customEnglishColumn}
-						{@render customEnglishColumn({ secKey, unit: eUnit, citation })}
-					{:else}
-						<div class="english-col text-base leading-relaxed text-[var(--color-ink-soft)] font-serif">
-							{#if !hasGreek && !hasLatin}
-								{#if sectionBadge}
-									{@render sectionBadge({ secKey, nieseSec, gUnit, eUnit, lUnit })}
-								{:else}
-									<div class="inline-flex items-center gap-1.5 mr-2 align-baseline select-none">
-										<span class="section-badge text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5">
-											§ {nieseSec || secKey}
-										</span>
-										{#if showCiteButton}
-											<button
-												type="button"
-												class="sec-action-btn cite-trigger-btn text-xs font-medium text-[var(--color-ink-soft)] hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer underline"
-												onclick={() => onCitationClick?.(secKey, gUnit, eUnit, lUnit)}
-											>
-												Cite
-											</button>
-										{/if}
-									</div>
-								{/if}
-							{/if}
-
-							{#if eUnit?.text_content}
-								<span>{eUnit.text_content}</span>
-							{:else}
-								<span class="italic text-[var(--color-ink-soft)] text-sm">(No English translation recorded)</span>
-							{/if}
-						</div>
-					{/if}
-				{/if}
+				{/each}
 			</div>
 		{/each}
 	</div>
+
+	<!-- Progressive Sentinel -->
+	{#if !isFullyRendered}
+		<div bind:this={sentinelEl} class="h-8 flex items-center justify-center text-xs text-[var(--color-ink-soft)] select-none py-2" aria-hidden="true">
+			<span class="animate-pulse">Loading sections... ({renderedCount} / {sectionKeys.length})</span>
+		</div>
+	{/if}
 </div>
+
 <style>
 	.section-row {
 		content-visibility: auto;
-  		contain-intrinsic-size: auto 120px; /* estimated average height */
+		contain-intrinsic-size: auto 120px;
 	}
 </style>

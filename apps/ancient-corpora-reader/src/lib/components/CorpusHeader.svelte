@@ -4,8 +4,8 @@
 	import { readerState } from '../stores/readerState.svelte.js';
 	import { CORPUS_TITLES } from '../config/corpora.js';
 	let {
-		test='',
-		suiteHref="/"
+		test = '',
+		suiteHref = '/'
 	} = $props();
 </script>
 
@@ -41,13 +41,30 @@
 			type="button"
 			onclick={() => (readerState.isCorpusModalOpen = true)}
 			class="corpus-picker-trigger max-w-[120px] sm:max-w-[180px] md:max-w-[220px] truncate rounded-lg border border-[var(--color-rule)] bg-[var(--color-card-bg)] px-2 py-1 text-xs sm:text-sm font-semibold text-[var(--color-ink)] shadow-2xs hover:bg-[var(--color-rule)] cursor-pointer flex items-center gap-1 shrink-0"
-			title="Choose corpus (Hot key: 'g')"
+			title="Choose corpus (Hot key: 'b')"
 		>
-			<!--<span class="text-[var(--color-ink-soft)] text-[10px] uppercase font-bold tracking-wider hidden lg:inline">Corpus:</span>-->
 			<span class="text-blue-600 dark:text-blue-400 font-bold truncate">
-				{CORPUS_TITLES[readerState.currentCorpus]?.name || readerState.currentCorpus}
+				{readerState.currentCorpusConfig.name}
 			</span>
 			<span class="text-[10px] text-[var(--color-ink-soft)] shrink-0">▾</span>
 		</button>
+	{/snippet}
+
+	{#snippet extraDesktopControls()}
+		<!-- Dynamic Version Visibility Chips -->
+		<div class="hidden xl:flex items-center gap-1 border-r border-[var(--color-rule)] pr-3 mr-1">
+			{#each readerState.currentCorpusConfig.textVersions as ver (ver.id)}
+				{@const isVisible = readerState.isLanguageVisible(ver.language || ver.id)}
+				<button
+					type="button"
+					onclick={() => readerState.toggleLanguage(ver.language || ver.id)}
+					class="px-2 py-0.5 rounded text-xs font-semibold transition-colors cursor-pointer border {isVisible ? 'bg-blue-600 text-white border-blue-600' : 'bg-transparent text-[var(--color-ink-soft)] border-[var(--color-rule)] hover:bg-[var(--color-rule)]'}"
+					title="Toggle {ver.title}"
+				>
+					<!--<span class="hidden md:inline">{Languages.getNameFromCode(ver.language) || ver.shortTitle}</span>-->
+					<span  class="">{Languages.getShortNameFromCode(ver.language) || ver.shortTitle}</span>
+				</button>
+			{/each}
+		</div>
 	{/snippet}
 </ReaderHeader>

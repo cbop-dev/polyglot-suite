@@ -1,33 +1,36 @@
 <script lang="ts">
 	import { AcademicCitationModal } from '@polyglot/ui';
 	import { readerState } from '../stores/readerState.svelte.js';
-	import { formatAncientCorpusCitation } from '@polyglot/ancient-languages';
-	import { buildBibtexIncollection } from '@polyglot/ancient-languages';
+	import { formatAncientCorpusCitation, buildBibtexIncollection } from '@polyglot/ancient-languages';
 
 	let locus = $derived.by(() => {
 		const work = readerState.currentWork;
 		return formatAncientCorpusCitation({
 			corpusId: readerState.currentCorpus,
-			workCode: work.code,
-			chapter: readerState.currentDivision,
-			book: readerState.currentDivision,
+			work,
+			division: readerState.currentDivision,
 			section: readerState.currentSection ?? undefined
 		});
 	});
 
 	let citations = $derived.by(() => {
 		const work = readerState.currentWork;
-		const corpusName = readerState.currentCorpus === 'af' ? 'Apostolic Fathers' : (readerState.currentCorpus === 'philo' ? 'Philo' : 'Josephus');
-		const shortRef = locus;
+		const cfg = readerState.currentCorpusConfig;
+		const corpusName = cfg.name;
+		const citationCfg = cfg.citation;
+		const author = citationCfg?.author || cfg.author || corpusName;
+		const seriesTitle = citationCfg?.seriesTitle || `The Works of ${corpusName}`;
+		const year = citationCfg?.defaultYear || '1912';
 
-		const chicago = `${corpusName}, *${work.titleEnglish}*, ${readerState.currentDivision}${readerState.currentSection ? `.${readerState.currentSection}` : ''}.`;
-		const sbl = `${work.abbrev} ${readerState.currentDivision}${readerState.currentSection ? `.${readerState.currentSection}` : ''}`;
+		const divSec = `${readerState.currentDivision}${readerState.currentSection ? `.${readerState.currentSection}` : ''}`;
+		const chicago = `${author}, *${work.titleEnglish}*, ${divSec}.`;
+		const sbl = `${work.abbrev} ${divSec}`;
 		const bibtex = buildBibtexIncollection({
-			key: `${readerState.currentCorpus}_${work.code}_${readerState.currentDivision}`,
-			author: corpusName,
+			key: `${cfg.id}_${work.code}_${readerState.currentDivision}`,
+			author,
 			title: work.titleEnglish,
-			booktitle: `The Works of ${corpusName}`,
-			year: '1912',
+			booktitle: seriesTitle,
+			year,
 			chapter: String(readerState.currentDivision)
 		});
 

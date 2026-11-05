@@ -641,10 +641,10 @@ class DatabaseBuilder:
 
             # Auto-export compact lemma search indexes for single-request client search
             try:
-                app_scripts = APP_ROOT / "scripts"
-                if str(app_scripts) not in sys.path:
-                    sys.path.insert(0, str(app_scripts))
-                from export_lemma_search_json import export_lemma_indexes
+                try:
+                    from .export_lemma_search_json import export_lemma_indexes
+                except (ImportError, ValueError):
+                    from export_lemma_search_json import export_lemma_indexes
                 export_lemma_indexes(conn)
             except Exception as e:
                 print(f"Warning: Failed to auto-export lemma search JSON: {e}")

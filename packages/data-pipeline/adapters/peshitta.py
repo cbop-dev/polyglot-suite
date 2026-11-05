@@ -34,8 +34,11 @@ class PeshittaAdapter(BaseAdapter):
         if not ot_path.exists() or not nt_path.exists():
             # Try running the exporter automatically
             print(f"Peshitta caches missing in {self.cache_dir}. Running export_peshitta_tf...")
-            from scripts.export_peshitta_tf import export_all
-            export_all()
+            try:
+                from ..export_peshitta_tf import export_all
+            except (ImportError, ValueError):
+                from export_peshitta_tf import export_all
+            export_all(self.cache_dir)
 
         total_ot = 0
         total_nt = 0
