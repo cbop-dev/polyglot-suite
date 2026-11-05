@@ -1,10 +1,10 @@
 {
-  "databaseVersion": "corpora-philo-db-v1.1.2",
+  "databaseVersion": "corpora-philo-db-v1.2.0",
   "serverMode": "chunked",
-  "requestChunkSize": 4096,
+  "requestChunkSize": 16384,
   "urlPrefix": "philo.db.",
   "serverChunkSize": 5242880,
-  "databaseLengthBytes": 309137408,
+  "databaseLengthBytes": 355844096,
   "suffixLength": 2,
-  "cacheBust": "v1793892823"
+  "cacheBust": "v1793905983"
 }

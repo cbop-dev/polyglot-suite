@@ -396,7 +396,7 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 	tgt_conn = sqlite3.connect(tgt_path)
 
 	tgt_cur = tgt_conn.cursor()
-	tgt_cur.execute("PRAGMA page_size = 4096;")
+	tgt_cur.execute("PRAGMA page_size = 16384;")
 	tgt_cur.execute("PRAGMA synchronous = OFF;")
 	tgt_cur.execute("PRAGMA journal_mode = MEMORY;")
 

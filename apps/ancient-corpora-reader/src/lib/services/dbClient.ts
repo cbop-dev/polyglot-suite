@@ -190,12 +190,12 @@ export async function fetchDivisionSections(
 	const coords = resolveDivisionCoordinates(work, division);
 
 	// Primary query: Direct indexed seek on idx_text_units_coords (work_code, book, chapter, section)
+	// Fast first paint: only query text_units (no heavy tokens_json join)
 	const sqlExact = `
 		SELECT u.id, u.version_id, u.corpus_id, u.work_code, u.book, u.chapter, u.section,
 		       u.section_label, u.section_num, u.niese_section, u.mangey_ref, u.is_supplement,
-		       u.display_citation, u.milestone_ref, u.text_content, tok.tokens_json
+		       u.display_citation, u.milestone_ref, u.text_content
 		FROM text_units u
-		LEFT JOIN text_unit_tokens tok ON tok.work_unit_id = u.id
 		WHERE u.work_code = ? AND u.book = ? AND u.chapter = ?
 		ORDER BY u.section ASC, u.id ASC
 	`;
@@ -206,9 +206,8 @@ export async function fetchDivisionSections(
 		const sqlFallback = `
 			SELECT u.id, u.version_id, u.corpus_id, u.work_code, u.book, u.chapter, u.section,
 			       u.section_label, u.section_num, u.niese_section, u.mangey_ref, u.is_supplement,
-			       u.display_citation, u.milestone_ref, u.text_content, tok.tokens_json
+			       u.display_citation, u.milestone_ref, u.text_content
 			FROM text_units u
-			LEFT JOIN text_unit_tokens tok ON tok.work_unit_id = u.id
 			WHERE u.work_code = ? AND (u.book = ? OR u.chapter = ?)
 			ORDER BY u.section ASC, u.id ASC
 		`;
@@ -218,7 +217,6 @@ export async function fetchDivisionSections(
 	const unitsByVersion = new Map<string, TextUnit[]>();
 
 	for (const row of rows as any[]) {
-		const rawTokens = getRowVal(row, 'tokens_json', 15);
 		const versionId = getRowVal<string>(row, 'version_id', 1) || getRowVal<string>(row, 'corpus_id', 2);
 		const unit: TextUnit = {
 			id: getRowVal<number>(row, 'id', 0),
@@ -235,8 +233,7 @@ export async function fetchDivisionSections(
 			is_supplement: getRowVal<number | undefined>(row, 'is_supplement', 11),
 			display_citation: getRowVal<string>(row, 'display_citation', 12),
 			milestone_ref: getRowVal<string | undefined>(row, 'milestone_ref', 13),
-			text_content: getRowVal<string>(row, 'text_content', 14),
-			tokens: parseJsonField<Token[] | undefined>(rawTokens)
+			text_content: getRowVal<string>(row, 'text_content', 14)
 		};
 
 		if (!unitsByVersion.has(versionId)) {
@@ -284,6 +281,64 @@ export async function fetchDivisionSections(
 	divisionCache.set(cacheKey, result);
 
 	return result;
+}
+
+/**
+ * Fetch tokens for a list of work unit IDs in batches to progressively hydrate morphology
+ */
+export async function fetchDivisionTokens(
+	corpusId: AncientCorpusId,
+	workUnitIds: number[],
+	onBatchLoaded?: (tokensByUnitId: Map<number, Token[]>) => void
+): Promise<Map<number, Token[]>> {
+	if (!workUnitIds || workUnitIds.length === 0) return new Map();
+
+	const worker = await getDbWorker(corpusId);
+	const resultMap = new Map<number, Token[]>();
+	const BATCH_SIZE = 40;
+
+	for (let i = 0; i < workUnitIds.length; i += BATCH_SIZE) {
+		const slice = workUnitIds.slice(i, i + BATCH_SIZE);
+		const placeholders = slice.map(() => '?').join(',');
+		const sql = `
+			SELECT work_unit_id, tokens_json
+			FROM text_unit_tokens
+			WHERE work_unit_id IN (${placeholders})
+		`;
+		const rows = await worker.db.query(sql, slice);
+		const batchMap = new Map<number, Token[]>();
+
+		for (const row of rows as any[]) {
+			const unitId = getRowVal<number>(row, 'work_unit_id', 0);
+			const rawTokens = getRowVal(row, 'tokens_json', 1);
+			const tokens = parseJsonField<Token[] | undefined>(rawTokens);
+			if (unitId && tokens) {
+				resultMap.set(unitId, tokens);
+				batchMap.set(unitId, tokens);
+			}
+		}
+
+		if (onBatchLoaded && batchMap.size > 0) {
+			onBatchLoaded(batchMap);
+		}
+	}
+
+	return resultMap;
+}
+
+/**
+ * On-demand fallback: fetch tokens for a single work unit ID
+ */
+export async function fetchUnitTokens(
+	corpusId: AncientCorpusId,
+	workUnitId: number
+): Promise<Token[] | null> {
+	const worker = await getDbWorker(corpusId);
+	const sql = `SELECT tokens_json FROM text_unit_tokens WHERE work_unit_id = ? LIMIT 1`;
+	const rows = await worker.db.query(sql, [workUnitId]);
+	if (!rows || (rows as any[]).length === 0) return null;
+	const rawTokens = getRowVal(rows[0], 'tokens_json', 0);
+	return parseJsonField<Token[] | undefined>(rawTokens) || null;
 }
 
 /**
