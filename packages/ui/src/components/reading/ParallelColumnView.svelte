@@ -333,6 +333,35 @@
 		return `Section ${secKey}`;
 	}
 
+	function handleColumnClick(
+		e: MouseEvent,
+		unit: TextUnitData | undefined,
+		ver: TextVersionData,
+		citation: string
+	) {
+		if (!unit?.tokens || unit.tokens.length === 0) return;
+		const target = (e.target as HTMLElement).closest('[data-tok-idx]');
+		if (!target) return;
+
+		const idxStr = target.getAttribute('data-tok-idx');
+		if (idxStr === null) return;
+		const idx = Number(idxStr);
+		const tok = unit.tokens[idx];
+		if (!tok) return;
+
+		if (tok.type === 'citation') {
+			onBiblicalCitationClick?.(
+				tok.book_code || '',
+				tok.bible_chapter || 0,
+				tok.bible_verse || 0,
+				tok.display || '',
+				tok.book_name
+			);
+		} else if (!PUNCT_REGEX.test(tok.w) && tok.type !== 'apparatus') {
+			onWordClick?.(tok, citation, ver);
+		}
+	}
+
 	const PUNCT_REGEX = /^[,.;:·)—\]]+$/;
 </script>
 
@@ -393,7 +422,11 @@
 					{:else if ver.language === 'eng' && customEnglishColumn}
 						{@render customEnglishColumn({ secKey, unit, citation })}
 					{:else}
-						<div class="column-version text-base leading-relaxed text-[var(--color-ink)] {ver.fontClass || ''}" dir={ver.direction || 'ltr'}>
+						<div
+							class="column-version text-base leading-relaxed text-[var(--color-ink)] {ver.fontClass || ''}"
+							dir={ver.direction || 'ltr'}
+							onclick={(e) => handleColumnClick(e, unit, ver, citation)}
+						>
 							<!-- Section Badge & Actions in primary leading column -->
 							{#if isPrimary}
 								{#if sectionBadge}
@@ -445,7 +478,7 @@
 									{#if tok.type === 'citation'}
 										<button
 											type="button"
-											onclick={() => onBiblicalCitationClick?.(tok.book_code || '', tok.bible_chapter || 0, tok.bible_verse || 0, tok.display || '', tok.book_name)}
+											data-tok-idx={idx}
 											class="inline-flex items-center gap-1 text-xs font-sans font-semibold rounded-md px-1.5 py-0.5 mx-1 bg-amber-100/80 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 cursor-pointer select-none align-middle transition-colors shadow-xs"
 											title="Click to explore citation of {tok.book_name || tok.display}"
 										>
@@ -467,9 +500,9 @@
 										{@const hl = tok.l && highlightStore ? highlightStore.get(tok.l) : undefined}
 										<button
 											type="button"
+											data-tok-idx={idx}
 											class="token-word inline cursor-pointer transition-colors hover:text-blue-600 dark:hover:text-blue-400 hover:underline focus:outline-hidden {hl ? 'hl-token' : ''}"
 											style={hl ? `--hl-bg: ${hl.bgLight}; --hl-text: ${hl.textLight}; --hl-border: ${hl.borderLight}; --hl-bg-dark: ${hl.bgDark}; --hl-text-dark: ${hl.textDark}; --hl-border-dark: ${hl.borderDark};` : undefined}
-											onclick={() => onWordClick?.(tok, citation, ver)}
 											title={tok.l ? `${tok.l}${tok.p || tok.m ? ` (${tok.p ?? ''} ${tok.m ?? ''})` : ''}` : undefined}
 										>{tok.w}</button>{#if !nextIsPunct}{' '}{/if}
 									{/if}
