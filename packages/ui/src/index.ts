@@ -46,7 +46,7 @@ export { default as ReaderHeader } from './components/layout/ReaderHeader.svelte
 export type { Props as ReaderHeaderProps } from './components/layout/ReaderHeader.svelte';
 export { default as FloatingSidePanel } from './components/layout/FloatingSidePanel.svelte';
 export { default as ParallelColumnView } from './components/reading/ParallelColumnView.svelte';
-export type { Props as ParallelColumnViewProps, TextToken, TextUnitData } from './components/reading/ParallelColumnView.svelte';
+export type { Props as ParallelColumnViewProps, TextToken, TextUnitData, TextVersionData } from './components/reading/ParallelColumnView.svelte';
 export { default as BackToTopButton } from './components/layout/ScrollButtons/BackToTopButton.svelte';
 export { default as ToBottomButton } from './components/layout/ScrollButtons/ToBottomButton.svelte';
 export { default as DownButton } from './components/layout/ScrollButtons/DownButton.svelte';

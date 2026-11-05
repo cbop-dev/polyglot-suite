@@ -12,7 +12,7 @@
 	import { CORPUS_TITLES } from '../config/corpora.js';
 	import {
 		fetchDivisionSections,
-		type TextUnit
+		type TextVersion
 	} from '../services/dbClient.js';
 	import type { AncientCorpusId } from '@polyglot/ancient-languages';
 	import { Loading } from '@polyglot/ui';
@@ -31,9 +31,7 @@
 		initialSection
 	}: Props = $props();
 
-	let greekSections = $state<TextUnit[]>([]);
-	let englishSections = $state<TextUnit[]>([]);
-	let latinSections = $state<TextUnit[]>([]);
+	let textVersions = $state<TextVersion[]>([]);
 	let loading = $state<boolean>(true);
 	let error = $state<string | null>(null);
 
@@ -41,6 +39,24 @@
 	$effect.pre(() => {
 		if (initialCorpus) {
 			readerState.setCorpus(initialCorpus, initialWork, initialDivision, initialSection);
+		}
+	});
+
+	// Sync section from URL hash if provided
+	$effect(() => {
+		if (typeof window !== 'undefined') {
+			const updateFromHash = () => {
+				const hash = window.location.hash;
+				if (hash) {
+					const m = hash.match(/#(?:section-|sec-|niese-)?(\d+)/i);
+					if (m && m[1]) {
+						readerState.currentSection = parseInt(m[1], 10);
+					}
+				}
+			};
+			updateFromHash();
+			window.addEventListener('hashchange', updateFromHash);
+			return () => window.removeEventListener('hashchange', updateFromHash);
 		}
 	});
 
@@ -90,28 +106,23 @@
 	async function loadData(corpus: AncientCorpusId, work: string, division: number) {
 		loading = true;
 		error = null;
-		// Clear previous sections immediately so previous corpus texts/headings are not displayed
-		greekSections = [];
-		englishSections = [];
-		latinSections = [];
+		textVersions = [];
 
 		try {
 			const res = await fetchDivisionSections(corpus, work, division);
-			greekSections = res.greek;
-			englishSections = res.english;
-			latinSections = res.latin || [];
+			textVersions = res.textVersions;
 
 			if (readerState.currentSection) {
 				const s = readerState.currentSection;
 				setTimeout(() => {
 					const el = document.getElementById(`section-${s}`) ||
-						document.getElementById(`niese-${s}`) ||
+						document.getElementById(`milestone-${s}`) ||
 						document.getElementById(`sec-${s}`);
 					el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 				}, 120);
 			}
 
-			// Pre-fetch subsequent division in idle time so next-book navigation is instantaneous
+			// Pre-fetch subsequent division in idle time so next-division navigation is instantaneous
 			schedulePrefetchNextDivision(corpus, work, division);
 		} catch (err: any) {
 			console.error('Failed to load text units:', err);
@@ -127,7 +138,7 @@
 		if (s !== null && !loading) {
 			setTimeout(() => {
 				const el = document.getElementById(`section-${s}`) ||
-					document.getElementById(`niese-${s}`) ||
+					document.getElementById(`milestone-${s}`) ||
 					document.getElementById(`sec-${s}`);
 				el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 			}, 60);
@@ -141,6 +152,7 @@
 
 		if (e.key === 'Escape') {
 			readerState.isSidePanelOpen = false;
+			readerState.isCorpusModalOpen = false;
 			readerState.isWorkModalOpen = false;
 			readerState.isDivisionModalOpen = false;
 			readerState.showCitationModal = false;
@@ -151,7 +163,10 @@
 		if (e.key === '?' || (e.shiftKey && e.key === '/')) {
 			e.preventDefault();
 			readerState.showHotkeyHelp = !readerState.showHotkeyHelp;
-		} else if (e.key === 'w' || e.key === 'W' || e.key === 'b' || e.key === 'B') {
+		} else if (e.key === 'b' || e.key === 'B') {
+			e.preventDefault();
+			readerState.isCorpusModalOpen = true;
+		} else if (e.key === 'w' || e.key === 'W') {
 			e.preventDefault();
 			readerState.isWorkModalOpen = true;
 		} else if (
@@ -173,17 +188,15 @@
 		} else if (e.key === 'd' || e.key === 'D') {
 			e.preventDefault();
 			readerState.viewMode = readerState.viewMode === 'stacked' ? 'parallel' : 'stacked';
-		} else if (e.key === 'g' || e.key === 'G') {
-			e.preventDefault();
-			readerState.viewMode = 'greek';
-		} else if (e.key === 'e' || e.key === 'E') {
-			e.preventDefault();
-			readerState.viewMode = 'english';
 		} else if (e.key === 'f' || e.key === '/') {
 			e.preventDefault();
 			readerState.toggleSidePanel('search');
 		}
 	}
+
+	let maxSectionCount = $derived(
+		textVersions.length > 0 ? Math.max(0, ...textVersions.map((v) => v.textUnits.length)) : 0
+	);
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -196,7 +209,7 @@
 			<div class="py-24 text-center">
 				<Loading
 					size="lg"
-					title="Loading {CORPUS_TITLES[readerState.currentCorpus]?.name || 'Corpus'}..."
+					title="Loading {readerState.currentCorpusConfig.name}..."
 					message={[`Opening ${readerState.currentWork.titleEnglish} (${readerState.currentWork.divisionLabel} ${readerState.currentDivision})`]}
 				/>
 			</div>
@@ -213,11 +226,7 @@
 				</button>
 			</div>
 		{:else}
-			<CorpusColumnView
-				greek={greekSections}
-				english={englishSections}
-				latin={latinSections}
-			/>
+			<CorpusColumnView {textVersions} isLoading={loading} />
 		{/if}
 	</main>
 
@@ -227,7 +236,7 @@
 	<!-- Modals -->
 	<CorpusPickerModalWrapper />
 	<WorkPickerModalWrapper />
-	<DivisionPickerModalWrapper greekSectionsCount={greekSections.length} />
+	<DivisionPickerModalWrapper sectionsCount={maxSectionCount} />
 	<AcademicCitationModalWrapper />
 	<HotkeyHelpModal />
 </div>

@@ -27,19 +27,19 @@
 </script>
 
 {#if inline}
-    <span class="inline-block border-link border-t-transparent rounded-full animate-spin {spinnerClass} {classes}" title={title || "Loading..."}></span>
+    <span class="inline-block border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin {spinnerClass} {classes}" title={title || "Loading..."}></span>
 {:else}
-    <div class="flex flex-col items-center justify-center p-3 text-center {classes}">
-        <div class="flex justify-center my-2">
-            <span class="inline-block border-link border-t-transparent rounded-full animate-spin {spinnerClass}"></span>
+    <div class="flex flex-col items-center justify-center p-4 text-center {classes}">
+        <div class="flex justify-center my-3">
+            <span class="inline-block border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin {spinnerClass}"></span>
         </div>
         {#if title}
-            <div class="text-xs text-ink-soft font-medium">{title}</div>
+            <div class="text-sm font-semibold text-[var(--color-ink,#0f172a)]">{title}</div>
         {/if}
         {#if message && message.length > 0}
-            <div class="flex flex-col gap-1 mt-2">
+            <div class="flex flex-col gap-1 mt-1.5">
                 {#each message as line}   
-                    <div class="text-ink-soft text-xs">{line}</div>
+                    <div class="text-xs text-[var(--color-ink-soft,#64748b)]">{line}</div>
                 {/each}
             </div>
         {/if}

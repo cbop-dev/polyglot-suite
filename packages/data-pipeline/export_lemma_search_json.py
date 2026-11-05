@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Export compact lemma search index JSON files for WLC, OpenGNT, and Swete LXX.
+"""Export compact lemma search index JSON files for WLC, OpenGNT, Swete LXX, and Peshitta.
 
 Produces:
-  static/data/lemmas/wlc.json
-  static/data/lemmas/ognt.json
-  static/data/lemmas/swete_lxx.json
+  apps/polyglot-bible-reader/static/data/lemmas/wlc.json
+  apps/polyglot-bible-reader/static/data/lemmas/ognt.json
+  apps/polyglot-bible-reader/static/data/lemmas/swete_lxx.json
+  apps/polyglot-bible-reader/static/data/lemmas/peshitta.json
 Format:
-  [[strongs, lemma, total_count], ...]
+  [[strongs_or_key, lemma, total_count], ...]
 Sorted by total_count descending.
 """
 
@@ -16,8 +17,12 @@ import sqlite3
 from pathlib import Path
 from typing import Optional
 
-ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_OUT_DIR = ROOT / "static" / "data" / "lemmas"
+try:
+    from .config import APP_ROOT, BUILD_DIR
+except (ImportError, ValueError):
+    from config import APP_ROOT, BUILD_DIR
+
+DEFAULT_OUT_DIR = APP_ROOT / "static" / "data" / "lemmas"
 CORPORA = ["wlc", "ognt", "swete_lxx", "peshitta"]
 
 
@@ -50,9 +55,9 @@ def export_lemma_indexes(conn: sqlite3.Connection, output_dir: Optional[Path] = 
 
 def main():
     db_candidates = [
-        ROOT / "pipeline" / "build" / "polyglot-working.sqlite3",
-        ROOT / "polyglot-working.sqlite3",
-        ROOT / "build" / "polyglot-working.sqlite3",
+        BUILD_DIR / "polyglot-working.sqlite3",
+        APP_ROOT / "polyglot-working.sqlite3",
+        Path.cwd() / "polyglot-working.sqlite3",
     ]
     db_path = next((p for p in db_candidates if p.exists()), None)
     if not db_path:

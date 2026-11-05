@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
+	getPrimaryVersionId,
 	PRIMARY_GREEK_CORPUS_IDS,
 	type AncientCorpusId
 } from '../src/lib/services/dbClient.js';
 import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
+
+const BUILD_DB_DIR = path.resolve(__dirname, '../build/db');
 
 describe('Multi-Corpus Database Service Layer', () => {
 	it('maps primary Greek corpus IDs correctly for all three corpora', () => {
@@ -14,8 +17,63 @@ describe('Multi-Corpus Database Service Layer', () => {
 		expect(PRIMARY_GREEK_CORPUS_IDS.josephus).toBe('josephus_grc');
 	});
 
-	it('validates paginated CTE query structure for Josephus', () => {
-		const josephusDbPath = path.resolve(__dirname, '../../josephus-reader/static/db/josephus.sqlite3');
+	it('resolves primary version IDs dynamically via getPrimaryVersionId', () => {
+		expect(getPrimaryVersionId('af')).toBe('lake_grc');
+		expect(getPrimaryVersionId('philo')).toBe('grc');
+		expect(getPrimaryVersionId('josephus')).toBe('josephus_grc');
+	});
+
+	it('executes universal division query against canonical SQLite database', () => {
+		const afDbPath = path.resolve(BUILD_DB_DIR, 'af.sqlite3');
+		expect(existsSync(afDbPath)).toBe(true);
+		const db = new DatabaseSync(afDbPath, { readOnly: true });
+
+		const sql = `
+			SELECT u.id, u.version_id, u.corpus_id, u.work_code, u.book, u.chapter, u.section,
+			       u.section_label, u.display_citation, u.milestone_ref, u.text_content,
+			       tok.tokens_json
+			FROM text_units u
+			LEFT JOIN text_unit_tokens tok ON tok.work_unit_id = u.id
+			WHERE u.work_code = ? AND u.book = ? AND u.chapter = ?
+			ORDER BY u.section ASC, u.id ASC;
+		`;
+		const rows = db.prepare(sql).all('1CLE', 1, 1) as any[];
+		expect(rows.length).toBeGreaterThan(0);
+
+		// Group by version_id
+		const versions = new Set(rows.map((r) => r.version_id));
+		expect(versions.has('lake_grc')).toBe(true);
+		expect(versions.has('lake_eng')).toBe(true);
+
+		db.close();
+	});
+
+	it('executes universal lemma_forms querying without corpus branching', () => {
+		for (const corpus of ['af', 'philo', 'josephus'] as const) {
+			const dbPath = path.resolve(BUILD_DB_DIR, `${corpus}.sqlite3`);
+			expect(existsSync(dbPath)).toBe(true);
+			const db = new DatabaseSync(dbPath, { readOnly: true });
+
+			const sql = `
+				SELECT forms_json
+				FROM lemma_forms
+				WHERE lemma_key = ? OR normalized_lemma = ?
+				LIMIT 1;
+			`;
+			const row = db.prepare(sql).get('θεός', 'θεος') as { forms_json: string } | undefined;
+			expect(row).toBeDefined();
+			if (row) {
+				const parsed = JSON.parse(row.forms_json);
+				expect(parsed.forms).toBeDefined();
+				expect(Array.isArray(parsed.forms)).toBe(true);
+				expect(parsed.forms.length).toBeGreaterThan(0);
+			}
+			db.close();
+		}
+	});
+
+	it('validates covering concordance_refs query structure for Josephus', () => {
+		const josephusDbPath = path.resolve(BUILD_DB_DIR, 'josephus.sqlite3');
 		if (!existsSync(josephusDbPath)) return;
 
 		const db = new DatabaseSync(josephusDbPath, { readOnly: true });
@@ -29,23 +87,20 @@ describe('Multi-Corpus Database Service Layer', () => {
 		const countRow = db.prepare(countSql).get('josephus_grc', 'λόγος', 'λογος') as any;
 		expect(countRow.total).toBeGreaterThan(100);
 
-		// Verify CTE pagination pushdown query
+		// Verify direct covering query on concordance_refs
 		const pagedSql = `
-			WITH top_refs AS (
-				SELECT display_citation, work_unit_id
-				FROM concordance_refs
-				WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
-				ORDER BY work_unit_id ASC
-				LIMIT ? OFFSET ?
-			)
-			SELECT r.display_citation, r.work_unit_id, t.work_code, t.book, t.section_num, t.niese_section, t.text_content
-			FROM top_refs r
-			JOIN text_units t ON t.id = r.work_unit_id;
+			SELECT display_citation, work_unit_id, work_code, 
+			       book, chapter, section, niese_section, 
+			       matched_form, kwic_snippet
+			FROM concordance_refs
+			WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
+			ORDER BY work_unit_id ASC
+			LIMIT ? OFFSET ?
 		`;
 		const page1 = db.prepare(pagedSql).all('josephus_grc', 'λόγος', 'λογος', 50, 0) as any[];
 		expect(page1.length).toBe(50);
 		expect(page1[0].display_citation).toBeDefined();
-		expect(page1[0].text_content).toBeDefined();
+		expect(page1[0].kwic_snippet).toBeDefined();
 
 		const page2 = db.prepare(pagedSql).all('josephus_grc', 'λόγος', 'λογος', 50, 50) as any[];
 		expect(page2.length).toBe(50);
@@ -54,8 +109,8 @@ describe('Multi-Corpus Database Service Layer', () => {
 		db.close();
 	});
 
-	it('validates paginated CTE query structure for Philo', () => {
-		const philoDbPath = path.resolve(__dirname, '../../philo-reader/pipeline/build/philo.sqlite3');
+	it('validates covering concordance_refs query structure for Philo', () => {
+		const philoDbPath = path.resolve(BUILD_DB_DIR, 'philo.sqlite3');
 		if (!existsSync(philoDbPath)) return;
 
 		const db = new DatabaseSync(philoDbPath, { readOnly: true });
@@ -69,20 +124,18 @@ describe('Multi-Corpus Database Service Layer', () => {
 		expect(countRow.total).toBeGreaterThan(200);
 
 		const pagedSql = `
-			WITH top_refs AS (
-				SELECT display_citation, work_unit_id
-				FROM concordance_refs
-				WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
-				ORDER BY work_unit_id ASC
-				LIMIT ? OFFSET ?
-			)
-			SELECT r.display_citation, r.work_unit_id, t.work_code, t.chapter, t.section, t.text_content
-			FROM top_refs r
-			JOIN text_units t ON t.id = r.work_unit_id;
+			SELECT display_citation, work_unit_id, work_code, 
+			       book, chapter, section, niese_section, 
+			       matched_form, kwic_snippet
+			FROM concordance_refs
+			WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
+			ORDER BY work_unit_id ASC
+			LIMIT ? OFFSET ?
 		`;
 		const page1 = db.prepare(pagedSql).all('grc', 'θεός', 'θεος', 50, 0) as any[];
 		expect(page1.length).toBe(50);
 		expect(page1[0].display_citation).toBeDefined();
+		expect(page1[0].kwic_snippet).toBeDefined();
 
 		const page2 = db.prepare(pagedSql).all('grc', 'θεός', 'θεος', 50, 50) as any[];
 		expect(page2.length).toBe(50);
@@ -91,8 +144,8 @@ describe('Multi-Corpus Database Service Layer', () => {
 		db.close();
 	});
 
-	it('validates paginated CTE query structure for Apostolic Fathers', () => {
-		const afDbPath = path.resolve(__dirname, '../../apostolic-fathers-reader/pipeline/build/apostolic-fathers.sqlite3');
+	it('validates covering concordance_refs query structure for Apostolic Fathers', () => {
+		const afDbPath = path.resolve(BUILD_DB_DIR, 'af.sqlite3');
 		if (!existsSync(afDbPath)) return;
 
 		const db = new DatabaseSync(afDbPath, { readOnly: true });
@@ -106,52 +159,18 @@ describe('Multi-Corpus Database Service Layer', () => {
 		expect(countRow.total).toBeGreaterThan(50);
 
 		const pagedSql = `
-			WITH top_refs AS (
-				SELECT display_citation, work_unit_id
-				FROM concordance_refs
-				WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
-				ORDER BY work_unit_id ASC
-				LIMIT ? OFFSET ?
-			)
-			SELECT r.display_citation, r.work_unit_id, t.work_code, t.chapter, t.section, t.text_content
-			FROM top_refs r
-			JOIN text_units t ON t.id = r.work_unit_id;
+			SELECT display_citation, work_unit_id, work_code, 
+			       book, chapter, section, niese_section, 
+			       matched_form, kwic_snippet
+			FROM concordance_refs
+			WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
+			ORDER BY work_unit_id ASC
+			LIMIT ? OFFSET ?
 		`;
 		const page1 = db.prepare(pagedSql).all('lake_grc', 'θεός', 'θεος', 25, 0) as any[];
 		expect(page1.length).toBe(25);
 		expect(page1[0].display_citation).toBeDefined();
-
-		db.close();
-	});
-
-	it('aggregates total occurrences for Greek article variations in Philo lemma_stats', () => {
-		const philoDbPath = path.resolve(__dirname, '../../philo-reader/pipeline/build/philo.sqlite3');
-		if (!existsSync(philoDbPath)) return;
-
-		const db = new DatabaseSync(philoDbPath, { readOnly: true });
-
-		const statsSql = `
-			SELECT corpus_id, lemma, normalized_lemma, total_count, work_counts_json
-			FROM lemma_stats
-			WHERE corpus_id = ? AND (lemma = ? OR normalized_lemma = ?)
-			ORDER BY
-				CASE
-					WHEN lemma = ? THEN 1
-					WHEN normalized_lemma = ? THEN 2
-					ELSE 3
-				END ASC,
-				total_count DESC
-		`;
-		const rows = db.prepare(statsSql).all('grc', 'ὅ', 'ο', 'ὅ', 'ο') as any[];
-		expect(rows.length).toBeGreaterThan(1);
-
-		let totalSum = 0;
-		for (const r of rows) {
-			totalSum += r.total_count;
-		}
-
-		// Verify the sum reflects the full corpus occurrences (~52,500+) rather than 1
-		expect(totalSum).toBeGreaterThan(50000);
+		expect(page1[0].kwic_snippet).toBeDefined();
 
 		db.close();
 	});

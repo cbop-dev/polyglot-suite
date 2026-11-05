@@ -10,32 +10,14 @@
 
 	let searchQuery = $state<string>('');
 
-	const allCorpora: ExtendedCorpusItem[] = [
-		{
-			id: 'af',
-			title: CORPUS_TITLES.af.name,
-			subtitle: CORPUS_TITLES.af.subtitle,
-			badge: CORPUS_TITLES.af.badge,
-			era: '1st–2nd c. CE',
-			totalWorks: getCorpusWorks('af').length
-		},
-		{
-			id: 'philo',
-			title: CORPUS_TITLES.philo.name,
-			subtitle: CORPUS_TITLES.philo.subtitle,
-			badge: CORPUS_TITLES.philo.badge,
-			era: 'c. 20 BCE – 50 CE',
-			totalWorks: getCorpusWorks('philo').length
-		},
-		{
-			id: 'josephus',
-			title: CORPUS_TITLES.josephus.name,
-			subtitle: CORPUS_TITLES.josephus.subtitle,
-			badge: CORPUS_TITLES.josephus.badge,
-			era: 'c. 37 – 100 CE',
-			totalWorks: getCorpusWorks('josephus').length
-		}
-	];
+	const allCorpora: ExtendedCorpusItem[] = getAllCorpora().map((cfg) => ({
+		id: cfg.id as AncientCorpusId,
+		title: cfg.name,
+		subtitle: cfg.subtitle,
+		badge: cfg.badge,
+		era: cfg.era,
+		totalWorks: getCorpusWorks(cfg.id as AncientCorpusId).length
+	}));
 
 	let filteredCorpora = $derived.by(() => {
 		const q = searchQuery.trim().toLowerCase();

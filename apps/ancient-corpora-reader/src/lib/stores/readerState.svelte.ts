@@ -1,3 +1,4 @@
+import { SvelteSet } from 'svelte/reactivity';
 import type { AncientCorpusId } from '@polyglot/ancient-languages';
 import {
 	getCorpusWorks,
@@ -6,7 +7,7 @@ import {
 } from '../config/corpora.js';
 import type { Token } from '../services/dbClient.js';
 
-export type ViewMode = 'parallel' | 'greek' | 'english' | 'latin' | 'stacked';
+export type ViewMode = 'parallel' | 'greek' | 'english' | 'latin' | 'stacked' | 'single';
 
 export class ReaderState {
 	currentCorpus = $state<AncientCorpusId>('af');
@@ -16,16 +17,58 @@ export class ReaderState {
 
 	viewMode = $state<ViewMode>('parallel');
 
+	// Reactive language/version visibility set
+	visibleLanguages = $state<SvelteSet<string>>(new SvelteSet(['grc', 'lat', 'eng']));
+
+	get currentCorpusConfig(): CorpusConfig {
+		return getCorpusConfig(this.currentCorpus);
+	}
+
+	isLanguageVisible(langOrVersion: string): boolean {
+		if (this.visibleLanguages.has(langOrVersion)) return true;
+		const cfg = this.currentCorpusConfig;
+		const version = cfg.textVersions.find((v) => v.id === langOrVersion);
+		if (version && this.visibleLanguages.has(version.language)) return true;
+		for (const v of cfg.textVersions) {
+			if (v.language === langOrVersion && this.visibleLanguages.has(v.id)) return true;
+		}
+		return false;
+	}
+
+	toggleLanguage(langOrVersion: string) {
+		if (this.visibleLanguages.has(langOrVersion)) {
+			if (this.visibleLanguages.size > 1) {
+				this.visibleLanguages.delete(langOrVersion);
+			}
+		} else {
+			this.visibleLanguages.add(langOrVersion);
+		}
+	}
+
+	setVisibleLanguages(languages: string[]) {
+		this.visibleLanguages.clear();
+		for (const l of languages) {
+			this.visibleLanguages.add(l);
+		}
+	}
+
+	// Backwards-compatibility bridge for Phase 3 components:
 	get showGreek(): boolean {
-		return this.viewMode === 'parallel' || this.viewMode === 'greek' || this.viewMode === 'stacked';
+		if (this.viewMode === 'greek') return true;
+		if (this.viewMode === 'english' || this.viewMode === 'latin') return false;
+		return this.isLanguageVisible('grc');
 	}
 
 	get showEnglish(): boolean {
-		return this.viewMode === 'parallel' || this.viewMode === 'english' || this.viewMode === 'stacked';
+		if (this.viewMode === 'english') return true;
+		if (this.viewMode === 'greek' || this.viewMode === 'latin') return false;
+		return this.isLanguageVisible('eng');
 	}
 
 	get showLatin(): boolean {
-		return this.currentCorpus === 'af' && (this.viewMode === 'parallel' || this.viewMode === 'latin' || this.viewMode === 'stacked');
+		if (this.viewMode === 'latin') return true;
+		if (this.viewMode === 'greek' || this.viewMode === 'english') return false;
+		return this.isLanguageVisible('lat');
 	}
 
 	// Lexeme side panel inspection
@@ -66,6 +109,12 @@ export class ReaderState {
 	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: number, section?: string | number | null) {
 		this.closeSidePanel();
 		this.currentCorpus = corpusId;
+		const cfg = getCorpusConfig(corpusId);
+		const defaultLangs = cfg.textVersions
+			.filter((v) => v.isDefaultVisible)
+			.map((v) => v.language);
+		this.setVisibleLanguages(defaultLangs.length > 0 ? Array.from(new Set(defaultLangs)) : [cfg.primaryLanguage]);
+
 		const works = getCorpusWorks(corpusId);
 		const targetWork = workCode ? (findWork(corpusId, workCode) || works[0]) : works[0];
 		this.currentWorkCode = targetWork.code;

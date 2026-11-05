@@ -42,6 +42,57 @@ describe('ReaderState Store', () => {
 		expect(state.showLatin).toBe(false); // Philo does not show Latin
 	});
 
+	it('manages reactive visibleLanguages dynamically and prevents removing the last visible language', () => {
+		const state = new ReaderState();
+		// Initial AF state has grc, lat, eng
+		expect(state.isLanguageVisible('grc')).toBe(true);
+		expect(state.isLanguageVisible('eng')).toBe(true);
+		expect(state.isLanguageVisible('lat')).toBe(true);
+
+		// Toggle off Latin
+		state.toggleLanguage('lat');
+		expect(state.isLanguageVisible('lat')).toBe(false);
+
+		// Toggle off English
+		state.toggleLanguage('eng');
+		expect(state.isLanguageVisible('eng')).toBe(false);
+		expect(state.isLanguageVisible('grc')).toBe(true);
+
+		// Toggling off the last language ('grc') should NOT remove it
+		state.toggleLanguage('grc');
+		expect(state.isLanguageVisible('grc')).toBe(true);
+		expect(state.visibleLanguages.size).toBe(1);
+
+		// Toggle English back on
+		state.toggleLanguage('eng');
+		expect(state.isLanguageVisible('eng')).toBe(true);
+		expect(state.visibleLanguages.size).toBe(2);
+
+		// setVisibleLanguages explicitly
+		state.setVisibleLanguages(['grc']);
+		expect(state.isLanguageVisible('grc')).toBe(true);
+		expect(state.isLanguageVisible('eng')).toBe(false);
+	});
+
+	it('updates visibleLanguages automatically when switching corpus to Philo or Josephus', () => {
+		const state = new ReaderState();
+		expect(state.currentCorpusConfig.id).toBe('af');
+		expect(state.isLanguageVisible('lat')).toBe(true);
+
+		// Switch to Philo: defaults to grc, eng
+		state.setCorpus('philo');
+		expect(state.currentCorpusConfig.id).toBe('philo');
+		expect(state.isLanguageVisible('grc')).toBe(true);
+		expect(state.isLanguageVisible('eng')).toBe(true);
+		expect(state.isLanguageVisible('lat')).toBe(false);
+
+		// Switch to Josephus: defaults to grc, eng
+		state.setCorpus('josephus');
+		expect(state.currentCorpusConfig.id).toBe('josephus');
+		expect(state.isLanguageVisible('grc')).toBe(true);
+		expect(state.isLanguageVisible('eng')).toBe(true);
+	});
+
 	it('switches corpus to Josephus and clamps division to totalBooks', () => {
 		const state = new ReaderState();
 		state.setCorpus('josephus', 'War', 5);

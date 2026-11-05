@@ -4,7 +4,7 @@
   "requestChunkSize": 4096,
   "urlPrefix": "philo.db.",
   "serverChunkSize": 5242880,
-  "databaseLengthBytes": 285290496,
+  "databaseLengthBytes": 309137408,
   "suffixLength": 2,
-  "cacheBust": "v1793676464"
+  "cacheBust": "v1793842064"
 }
