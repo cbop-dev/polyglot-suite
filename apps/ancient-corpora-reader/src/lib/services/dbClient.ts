@@ -13,7 +13,7 @@ import {
 	type AttestedForm,
 	type AncientCorpusId
 } from '@polyglot/ancient-languages';
-import { getRowVal, parseJsonField } from '@polyglot/db-vfs';
+import { getRowVal, parseJsonField, unpackJsonBlob } from '@polyglot/db-vfs';
 import type { PaginatedConcordance, ConcordanceRef as UiConcordanceRef } from '@polyglot/lemma-ui';
 
 export { stripGreekAccents, type AttestedForm, type AncientCorpusId, type PaginatedConcordance };
@@ -308,10 +308,15 @@ export async function fetchDivisionTokens(
 		const rows = await worker.db.query(sql, slice);
 		const batchMap = new Map<number, Token[]>();
 
-		for (const row of rows as any[]) {
+		const decompressPromises = (rows as any[]).map(async (row) => {
 			const unitId = getRowVal<number>(row, 'work_unit_id', 0);
 			const rawTokens = getRowVal(row, 'tokens_json', 1);
-			const tokens = parseJsonField<Token[] | undefined>(rawTokens);
+			const tokens = await unpackJsonBlob<Token[] | undefined>(rawTokens);
+			return { unitId, tokens };
+		});
+		const decompressed = await Promise.all(decompressPromises);
+
+		for (const { unitId, tokens } of decompressed) {
 			if (unitId && tokens) {
 				resultMap.set(unitId, tokens);
 				batchMap.set(unitId, tokens);
@@ -338,7 +343,7 @@ export async function fetchUnitTokens(
 	const rows = await worker.db.query(sql, [workUnitId]);
 	if (!rows || (rows as any[]).length === 0) return null;
 	const rawTokens = getRowVal(rows[0], 'tokens_json', 0);
-	return parseJsonField<Token[] | undefined>(rawTokens) || null;
+	return (await unpackJsonBlob<Token[] | undefined>(rawTokens)) || null;
 }
 
 /**

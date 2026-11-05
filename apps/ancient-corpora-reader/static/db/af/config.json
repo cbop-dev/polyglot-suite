@@ -4,7 +4,7 @@
   "requestChunkSize": 16384,
   "urlPrefix": "af.db.",
   "serverChunkSize": 5242880,
-  "databaseLengthBytes": 52297728,
+  "databaseLengthBytes": 43253760,
   "suffixLength": 2,
-  "cacheBust": "v1793905938"
+  "cacheBust": "v1793906492"
 }

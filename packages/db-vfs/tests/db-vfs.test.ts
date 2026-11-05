@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getRowVal, parseJsonField } from '../src/index.js';
+import { getRowVal, parseJsonField, unpackJsonBlob } from '../src/index.js';
+import zlib from 'node:zlib';
 
 describe('@polyglot/db-vfs', () => {
 	describe('getRowVal helper', () => {
@@ -38,6 +39,34 @@ describe('@polyglot/db-vfs', () => {
 		it('returns fallback on invalid JSON', () => {
 			expect(parseJsonField('not-json', [])).toEqual([]);
 			expect(parseJsonField(null, null)).toBeNull();
+		});
+	});
+
+	describe('unpackJsonBlob helper', () => {
+		it('unpacks plain JSON string', async () => {
+			const str = JSON.stringify([{ w: 'test' }]);
+			const res = await unpackJsonBlob(str);
+			expect(res).toEqual([{ w: 'test' }]);
+		});
+
+		it('decompresses gzip compressed Uint8Array blob', async () => {
+			const data = [{ w: 'θεός', l: 'θεός', m: 'N-NSM' }];
+			const compressed = zlib.gzipSync(JSON.stringify(data));
+			const res = await unpackJsonBlob(new Uint8Array(compressed));
+			expect(res).toEqual(data);
+		});
+
+		it('unpacks raw UTF-8 byte array', async () => {
+			const data = [{ w: 'raw' }];
+			const bytes = new TextEncoder().encode(JSON.stringify(data));
+			const res = await unpackJsonBlob(bytes);
+			expect(res).toEqual(data);
+		});
+
+		it('returns fallback on invalid or corrupted blob', async () => {
+			const corrupted = new Uint8Array([0x1f, 0x8b, 0x00, 0x00]);
+			const res = await unpackJsonBlob(corrupted, null);
+			expect(res).toBeNull();
 		});
 	});
 });
