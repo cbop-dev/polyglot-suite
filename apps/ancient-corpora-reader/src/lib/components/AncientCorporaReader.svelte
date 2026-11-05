@@ -41,6 +41,24 @@
 		}
 	});
 
+	// Sync section from URL hash if provided
+	$effect(() => {
+		if (typeof window !== 'undefined') {
+			const updateFromHash = () => {
+				const hash = window.location.hash;
+				if (hash) {
+					const m = hash.match(/#(?:section-|sec-|niese-)?(\d+)/i);
+					if (m && m[1]) {
+						readerState.currentSection = parseInt(m[1], 10);
+					}
+				}
+			};
+			updateFromHash();
+			window.addEventListener('hashchange', updateFromHash);
+			return () => window.removeEventListener('hashchange', updateFromHash);
+		}
+	});
+
 	let prefetchTimer: any = null;
 
 	function cancelPrefetch() {
@@ -207,7 +225,7 @@
 				</button>
 			</div>
 		{:else}
-			<CorpusColumnView {textVersions} />
+			<CorpusColumnView {textVersions} isLoading={loading} />
 		{/if}
 	</main>
 

@@ -52,6 +52,8 @@
 		targetSection?: number | string | null;
 		gridBreakpoint?: 'md' | 'lg' | 'xl';
 		highlightStore?: any;
+		isLoading?: boolean;
+		loadingMessage?: string;
 
 		// Section identification
 		getSectionKey?: (u: TextUnitData) => number | string;
@@ -96,6 +98,8 @@
 		targetSection,
 		gridBreakpoint = 'lg',
 		highlightStore,
+		isLoading = false,
+		loadingMessage = 'Loading text...',
 
 		getSectionKey = (u) => (u.section_num !== undefined ? u.section_num : (u.section ?? 0)),
 		getMilestoneRef = (u) => u.milestone_ref || (u.niese_section !== undefined ? String(u.niese_section) : undefined),
@@ -258,7 +262,8 @@
 		if (isFullyRendered || typeof window === 'undefined') return;
 
 		const run = (deadline?: IdleDeadline) => {
-			while ((!deadline || deadline.timeRemaining() > 5) && renderedCount < sectionKeys.length) {
+			renderedCount = Math.min(sectionKeys.length, renderedCount + BATCH_STEP_SIZE);
+			while (deadline && deadline.timeRemaining() > 5 && renderedCount < sectionKeys.length) {
 				renderedCount = Math.min(sectionKeys.length, renderedCount + BATCH_STEP_SIZE);
 			}
 			if (renderedCount < sectionKeys.length) {
@@ -332,7 +337,14 @@
 </script>
 
 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-	<!-- Column Headers (desktop) -->
+	{#if isLoading}
+		<div class="py-16 flex flex-col items-center justify-center text-center">
+			<span class="inline-block w-9 h-9 border-4 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin mb-3"></span>
+			<div class="text-sm font-semibold text-[var(--color-ink,#0f172a)]">{loadingMessage}</div>
+			<div class="text-xs text-[var(--color-ink-soft,#64748b)] mt-1">Fetching section records and morphological data...</div>
+		</div>
+	{:else}
+		<!-- Column Headers (desktop) -->
 	<!-- Tailwind scan anchor: md:grid lg:grid md:grid-cols-2 lg:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 -->
 	{#if !isStacked}
 		<div class="column-headers hidden {gridBreakpoint === 'md' ? 'md:grid' : 'lg:grid'} {gridColsClass} gap-6 sm:gap-8 border-b border-[var(--color-rule)] pb-2 text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)]">
@@ -474,11 +486,19 @@
 		{/each}
 	</div>
 
-	<!-- Progressive Sentinel -->
-	{#if !isFullyRendered}
-		<div bind:this={sentinelEl} class="h-8 flex items-center justify-center text-xs text-[var(--color-ink-soft)] select-none py-2" aria-hidden="true">
-			<span class="animate-pulse">Loading sections... ({renderedCount} / {sectionKeys.length})</span>
-		</div>
+		<!-- Progressive Sentinel -->
+		{#if !isFullyRendered}
+			{@const percent = sectionKeys.length > 0 ? Math.round((renderedCount / sectionKeys.length) * 100) : 0}
+			<div
+				bind:this={sentinelEl}
+				class="py-6 flex flex-col sm:flex-row items-center justify-center gap-2.5 text-xs text-[var(--color-ink-soft,#64748b)] select-none border-t border-[var(--color-rule,#e2e8f0)] mt-4 bg-[var(--color-page-soft,#f1f5f9)]/50 rounded-lg p-3"
+				aria-live="polite"
+			>
+				<span class="inline-block w-4 h-4 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin shrink-0"></span>
+				<span class="font-medium">Loading and rendering sections...</span>
+				<span class="text-[11px] opacity-80">(Rendered {renderedCount} of {sectionKeys.length} sections &middot; {percent}%)</span>
+			</div>
+		{/if}
 	{/if}
 </div>
 
