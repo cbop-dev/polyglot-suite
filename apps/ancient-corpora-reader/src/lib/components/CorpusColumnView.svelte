@@ -6,18 +6,20 @@
 
 	interface Props {
 		textVersions?: TextVersion[];
+		isLoading?: boolean;
 		// Backward-compatibility
 		greek?: TextUnit[];
 		english?: TextUnit[];
 		latin?: TextUnit[];
 	}
 
-	let { textVersions = [], greek, english, latin }: Props = $props();
+	let { textVersions = [], isLoading = false, greek, english, latin }: Props = $props();
 	let cfg = $derived(readerState.currentCorpusConfig);
 </script>
 
 <ParallelColumnView
 	{textVersions}
+	{isLoading}
 	{greek}
 	{english}
 	{latin}
@@ -45,10 +47,10 @@
 			</button>
 			{#if milestone && milestoneVal}
 				<span
-					class="rounded px-1 py-0.2 text-[10px] font-mono {milestone.badgeColorClass}"
+					class="section-badge rounded px-1 py-0.2 text-[10px] font-mono {milestone.badgeColorClass}"
 					title="{milestone.label} {milestoneVal}"
 				>
-					{milestone.badgePrefix} {milestoneVal}
+					{milestone.badgePrefix && !milestoneVal.startsWith(milestone.badgePrefix) ? `${milestone.badgePrefix} ` : ''}{milestoneVal}
 				</span>
 			{/if}
 		</div>
