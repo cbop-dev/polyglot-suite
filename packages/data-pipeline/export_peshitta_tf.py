@@ -7,11 +7,11 @@ Parses Text-Fabric feature files for both:
 Extracts verse units, surface words, punctuation, trailers, and word tokens
 with lemma, roots, part-of-speech, and SEDRA / CAL identifiers.
 Outputs clean, portable JSONL cache files:
-  - pipeline/cache/peshitta_ot_raw.jsonl
-  - pipeline/cache/peshitta_nt_raw.jsonl
+  - peshitta_ot_raw.jsonl
+  - peshitta_nt_raw.jsonl
 
 Works completely standalone using pure Python (no C extensions or tf package required),
-looking first in ~/text-fabric-data/etcbc/, or falling back to extracted cache folders.
+looking first in ~/text-fabric-data/etcbc/, or pre-fetched zip caches in packages/data-pipeline/cache/.
 """
 
 from __future__ import annotations
@@ -23,10 +23,15 @@ import urllib.request
 from pathlib import Path
 from typing import Iterator, Dict, Any, List, Optional
 
+try:
+    from .config import CACHE_DIR
+except (ImportError, ValueError):
+    from config import CACHE_DIR
+
 # Default paths
 LOCAL_TF_DATA = Path.home() / "text-fabric-data" / "etcbc"
-PIPELINE_CACHE = Path(__file__).resolve().parent.parent / "pipeline" / "cache"
-PESHITTA_CACHE_DIR = PIPELINE_CACHE / "peshitta_tf"
+PIPELINE_CACHE = CACHE_DIR
+PESHITTA_CACHE_DIR = CACHE_DIR / "sources" / "peshitta_tf"
 
 # Book name normalization from TF to canonical USFM 3-letter codes
 OT_BOOK_MAP = {
@@ -137,7 +142,7 @@ def parse_otypes(filepath: Path) -> Dict[str, tuple[int, int]]:
 
 
 def ensure_tf_dir(corpus_name: str) -> Path:
-    """Finds or downloads the tf directory for 'peshitta' or 'syrnt'."""
+    """Finds or extracts/downloads the tf directory for 'peshitta' or 'syrnt'."""
     # 1. Check local ~/text-fabric-data
     local_path = LOCAL_TF_DATA / corpus_name / "tf" / "0.1"
     if local_path.exists():
@@ -148,17 +153,31 @@ def ensure_tf_dir(corpus_name: str) -> Path:
     if cache_path.exists():
         return cache_path
 
-    # 3. Download from GitHub if missing
-    PESHITTA_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    zip_dest = PESHITTA_CACHE_DIR / f"{corpus_name}.zip"
-    url = f"https://github.com/ETCBC/{corpus_name}/archive/refs/heads/master.zip"
-    print(f"Downloading {corpus_name} Text-Fabric data from {url}...")
-    req = urllib.request.Request(url, headers={"User-Agent": "PolyglotBibleReader/1.0"})
-    with urllib.request.urlopen(req) as resp, open(zip_dest, "wb") as f:
-        f.write(resp.read())
+    master_path = PESHITTA_CACHE_DIR / f"{corpus_name}-master" / "tf" / "0.1"
+    if master_path.exists():
+        return master_path
 
-    print(f"Unpacking {zip_dest.name}...")
-    with zipfile.ZipFile(zip_dest, "r") as zf:
+    # 3. Check if pre-fetched zip exists in CACHE_DIR
+    zip_aliases = [
+        CACHE_DIR / f"{'peshitta_ot' if corpus_name == 'peshitta' else 'peshitta_nt'}.zip",
+        CACHE_DIR / f"{corpus_name}.zip",
+        PESHITTA_CACHE_DIR / f"{corpus_name}.zip",
+    ]
+    zip_src = next((z for z in zip_aliases if z.exists()), None)
+
+    PESHITTA_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+    if not zip_src:
+        zip_dest = PESHITTA_CACHE_DIR / f"{corpus_name}.zip"
+        url = f"https://github.com/ETCBC/{corpus_name}/archive/refs/heads/master.zip"
+        print(f"Downloading {corpus_name} Text-Fabric data from {url}...")
+        req = urllib.request.Request(url, headers={"User-Agent": "PolyglotBibleReader/1.0"})
+        with urllib.request.urlopen(req) as resp, open(zip_dest, "wb") as f:
+            f.write(resp.read())
+        zip_src = zip_dest
+
+    print(f"Unpacking {zip_src.name} -> {PESHITTA_CACHE_DIR}...")
+    with zipfile.ZipFile(zip_src, "r") as zf:
         zf.extractall(PESHITTA_CACHE_DIR)
 
     # Look for extracted tf directory
@@ -170,7 +189,7 @@ def ensure_tf_dir(corpus_name: str) -> Path:
             return matches[0]
         raise FileNotFoundError(f"Could not locate tf folder for {corpus_name}")
 
-    subdirs = [d for d in extracted_root.iterdir() if d.is_dir()]
+    subdirs = sorted([d for d in extracted_root.iterdir() if d.is_dir() and d.name != "__pycache__"], key=lambda p: p.name)
     return subdirs[0] if subdirs else extracted_root
 
 
@@ -336,9 +355,11 @@ def export_nt(out_file: Path):
     print(f"  [done] Exported {count:,} NT verses to {out_file.name}")
 
 
-def export_all():
-    ot_cache = PIPELINE_CACHE / "peshitta_ot_raw.jsonl"
-    nt_cache = PIPELINE_CACHE / "peshitta_nt_raw.jsonl"
+def export_all(output_dir: Optional[Path] = None):
+    out_dir = output_dir or PIPELINE_CACHE
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ot_cache = out_dir / "peshitta_ot_raw.jsonl"
+    nt_cache = out_dir / "peshitta_nt_raw.jsonl"
     export_ot(ot_cache)
     export_nt(nt_cache)
     print("\nBoth Peshitta datasets exported successfully!")
