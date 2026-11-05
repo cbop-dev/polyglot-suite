@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { getAllCorpora } from '$lib/config/corpora.js';
-	import { getCorpusWorks } from '$lib/config/corpora.data.js';
+	import { getCorpusWorks } from '$lib/config/canonicalWorks.js';
 
 	const corpora = getAllCorpora();
 </script>

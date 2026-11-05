@@ -2,6 +2,7 @@
 	import { LexemeSidePanel } from '@polyglot/lemma-ui';
 	import { readerState } from '../stores/readerState.svelte.js';
 	import { highlightStore } from '../stores/highlightStore.svelte.js';
+	import { CORPUS_TITLES } from '../config/canonicalWorks.js';
 	import { getCorpusPrimaryLanguage } from '@polyglot/ancient-languages';
 	import {
 		fetchLexiconEntry,
@@ -16,7 +17,7 @@
 	} from '../services/dbClient.js';
 	import ScriptureCitationsTab from './ScriptureCitationsTab.svelte';
 
-	let corpusTitle = $derived(readerState.currentCorpusConfig?.name || 'Corpus');
+	let corpusTitle = $derived(CORPUS_TITLES[readerState.currentCorpus]?.name || 'Corpus');
 
 	function handleNavigateToRef(ref: any) {
 		const targetDiv = ref.book ?? ref.chapter ?? 1;
