@@ -112,4 +112,32 @@ describe('HighlightStore (ancient-languages)', () => {
 		expect(darkStyle).toContain(HIGHLIGHT_PALETTE[0].bgDark);
 		expect(darkStyle).toContain(HIGHLIGHT_PALETTE[0].textDark);
 	});
+
+	it('maintains fast plainMap lookup and dynamic updates across mutations', () => {
+		// Initially empty
+		expect(store.plainMap.size).toBe(0);
+		expect(store.isHighlighted('θεός')).toBe(false);
+
+		// Add item
+		store.toggle('θεός');
+		expect(store.plainMap.size).toBe(1);
+		expect(store.isHighlighted('θεος')).toBe(true);
+		expect(store.getColorIndex('θεος')).toBe(0);
+
+		// Add second item with diacritics
+		store.toggle('Ἰησοῦς');
+		expect(store.plainMap.size).toBe(2);
+		expect(store.isHighlighted('ιησους')).toBe(true);
+
+		// Remove first item
+		store.remove('θεός');
+		expect(store.plainMap.size).toBe(1);
+		expect(store.isHighlighted('θεος')).toBe(false);
+		expect(store.isHighlighted('ιησους')).toBe(true);
+
+		// Clear all
+		store.clear();
+		expect(store.plainMap.size).toBe(0);
+		expect(store.isHighlighted('ιησους')).toBe(false);
+	});
 });

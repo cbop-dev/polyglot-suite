@@ -261,11 +261,9 @@
 	function scheduleNextBatch() {
 		if (isFullyRendered || typeof window === 'undefined') return;
 
-		const run = (deadline?: IdleDeadline) => {
+		const run = () => {
+			if (renderedCount >= sectionKeys.length) return;
 			renderedCount = Math.min(sectionKeys.length, renderedCount + BATCH_STEP_SIZE);
-			while (deadline && deadline.timeRemaining() > 5 && renderedCount < sectionKeys.length) {
-				renderedCount = Math.min(sectionKeys.length, renderedCount + BATCH_STEP_SIZE);
-			}
 			if (renderedCount < sectionKeys.length) {
 				scheduleNextBatch();
 			}
@@ -360,6 +358,11 @@
 		} else if (!PUNCT_REGEX.test(tok.w) && tok.type !== 'apparatus') {
 			onWordClick?.(tok, citation, ver);
 		}
+	}
+
+	function shouldOmitSpaceAfter(tokens: any[], idx: number): boolean {
+		const next = tokens[idx + 1];
+		return Boolean(next && PUNCT_REGEX.test(next.w));
 	}
 
 	const PUNCT_REGEX = /^[,.;:·)—\]]+$/;
@@ -472,9 +475,6 @@
 							<!-- Token Word Rendering -->
 							{#if unit?.tokens && unit.tokens.length > 0}
 								{#each unit.tokens as tok, idx (idx)}
-									{@const nextTok = unit.tokens[idx + 1]}
-									{@const isPunct = PUNCT_REGEX.test(tok.w)}
-									{@const nextIsPunct = nextTok && PUNCT_REGEX.test(nextTok.w)}
 									{#if tok.type === 'citation'}
 										<button
 											type="button"
@@ -486,16 +486,16 @@
 												<path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
 											</svg>
 											<span>{tok.display}</span>
-										</button>{#if !nextIsPunct}{' '}{/if}
+										</button>
 									{:else if tok.type === 'apparatus'}
 										<span
 											class="text-xs text-slate-400 dark:text-slate-500 italic font-sans select-none"
 											title="Textual apparatus note"
 										>
 											{tok.w}
-										</span>{#if !nextIsPunct}{' '}{/if}
-									{:else if isPunct}
-										<span class="select-none">{tok.w}</span>{#if !nextIsPunct}{' '}{/if}
+										</span>
+									{:else if PUNCT_REGEX.test(tok.w)}
+										<span class="select-none">{tok.w}</span>
 									{:else}
 										{@const hl = tok.l && highlightStore ? highlightStore.get(tok.l) : undefined}
 										<button
@@ -504,8 +504,8 @@
 											class="token-word inline cursor-pointer transition-colors hover:text-blue-600 dark:hover:text-blue-400 hover:underline focus:outline-hidden {hl ? 'hl-token' : ''}"
 											style={hl ? `--hl-bg: ${hl.bgLight}; --hl-text: ${hl.textLight}; --hl-border: ${hl.borderLight}; --hl-bg-dark: ${hl.bgDark}; --hl-text-dark: ${hl.textDark}; --hl-border-dark: ${hl.borderDark};` : undefined}
 											title={tok.l ? `${tok.l}${tok.p || tok.m ? ` (${tok.p ?? ''} ${tok.m ?? ''})` : ''}` : undefined}
-										>{tok.w}</button>{#if !nextIsPunct}{' '}{/if}
-									{/if}
+										>{tok.w}</button>
+									{/if}{#if !shouldOmitSpaceAfter(unit.tokens, idx)}{' '}{/if}
 								{/each}
 							{:else if unit?.text_content}
 								<span>{unit.text_content}</span>

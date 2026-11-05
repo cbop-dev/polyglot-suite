@@ -38,6 +38,18 @@ export class HighlightStore {
 		}));
 	});
 
+	// Fast O(1) normalized plain lookup map: plain form -> raw lemma key
+	plainMap = $derived.by<Map<string, string>>(() => {
+		const m = new Map<string, string>();
+		for (const key of Object.keys(this.highlights)) {
+			const plain = toPlainGreek(key);
+			if (!m.has(plain)) {
+				m.set(plain, key);
+			}
+		}
+		return m;
+	});
+
 	constructor(storageKey: string = 'polyglot_highlighted_lemmas') {
 		this.storageKey = storageKey;
 		if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
@@ -77,15 +89,16 @@ export class HighlightStore {
 	 */
 	private resolveKey(lemma: string): string | null {
 		if (!lemma) return null;
+
+		// 1. Instant exit if no highlights are active (avoids Unicode normalization and iteration)
+		if (this.plainMap.size === 0) return null;
+
+		// 2. Direct exact match check
 		if (lemma in this.highlights) return lemma;
 
+		// 3. Fast O(1) normalized plain lookup
 		const targetPlain = toPlainGreek(lemma);
-		for (const key of Object.keys(this.highlights)) {
-			if (toPlainGreek(key) === targetPlain) {
-				return key;
-			}
-		}
-		return null;
+		return this.plainMap.get(targetPlain) ?? null;
 	}
 
 	/**
