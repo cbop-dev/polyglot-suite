@@ -1,9 +1,15 @@
 import { getDbWorker } from './dbWorker.js';
 import { findWork, resolveDivisionCoordinates } from '../config/canonicalWorks.js';
 import {
+	getCorpusConfig,
+	getAllCorpora,
+	type TextDirection
+} from '../config/corpora.js';
+import {
 	stripGreekAccents,
 	buildAttestedForms,
 	getDefaultDictionary,
+	getLanguageFontClass,
 	type AttestedForm,
 	type AncientCorpusId
 } from '@polyglot/ancient-languages';
@@ -30,17 +36,30 @@ export interface Token {
 export interface TextUnit {
 	id: number;
 	corpus_id: string;
+	version_id: string;
 	work_code: string;
 	chapter?: number;
 	book?: number;
 	section?: number;
+	section_label?: string;
 	section_num?: number;
 	niese_section?: string;
 	display_citation: string;
+	milestone_ref?: string;
 	mangey_ref?: string;
 	is_supplement?: number;
 	text_content: string;
 	tokens?: Token[];
+}
+
+export interface TextVersion {
+	versionId: string;
+	language: string;
+	label: string;
+	shortLabel: string;
+	direction: TextDirection;
+	fontClass: string;
+	textUnits: TextUnit[];
 }
 
 export interface LexiconEntry {
@@ -113,6 +132,12 @@ export interface BiblicalBookSummary {
 
 export type ScriptureBookSummary = BiblicalBookSummary;
 
+export function getPrimaryVersionId(corpusId: AncientCorpusId): string {
+	const cfg = getCorpusConfig(corpusId);
+	const primary = cfg.textVersions.find((v) => v.language === cfg.primaryLanguage) || cfg.textVersions[0];
+	return primary ? primary.id : corpusId;
+}
+
 export const PRIMARY_GREEK_CORPUS_IDS: Record<AncientCorpusId, string> = {
 	af: 'lake_grc',
 	philo: 'grc',
@@ -120,6 +145,11 @@ export const PRIMARY_GREEK_CORPUS_IDS: Record<AncientCorpusId, string> = {
 };
 
 export interface DivisionResult {
+	corpusId?: AncientCorpusId;
+	workCode?: string;
+	division?: number;
+	textVersions: TextVersion[];
+	// Backwards-compatibility bridge for Phase 3 components:
 	greek: TextUnit[];
 	english: TextUnit[];
 	latin: TextUnit[];
@@ -150,6 +180,7 @@ export async function fetchDivisionSections(
 	}
 
 	const worker = await getDbWorker(corpusId);
+	const cfg = getCorpusConfig(corpusId);
 	const greek: TextUnit[] = [];
 	const english: TextUnit[] = [];
 	const latin: TextUnit[] = [];
@@ -159,10 +190,10 @@ export async function fetchDivisionSections(
 	const coords = resolveDivisionCoordinates(work, division);
 
 	// Primary query: Direct indexed seek on idx_text_units_coords (work_code, book, chapter, section)
-	// Guaranteed 0 temp B-trees and 0 disk sorts in SQLite!
 	const sqlExact = `
-		SELECT u.id, u.corpus_id, u.work_code, u.book, u.chapter, u.section, u.section_num, u.niese_section,
-		       u.mangey_ref, u.is_supplement, u.display_citation, u.text_content, tok.tokens_json
+		SELECT u.id, u.version_id, u.corpus_id, u.work_code, u.book, u.chapter, u.section,
+		       u.section_label, u.section_num, u.niese_section, u.mangey_ref, u.is_supplement,
+		       u.display_citation, u.milestone_ref, u.text_content, tok.tokens_json
 		FROM text_units u
 		LEFT JOIN text_unit_tokens tok ON tok.work_unit_id = u.id
 		WHERE u.work_code = ? AND u.book = ? AND u.chapter = ?
@@ -173,8 +204,9 @@ export async function fetchDivisionSections(
 	// Resilient fallback for any work with non-standard coordinate schemas
 	if (!rows || (rows as any[]).length === 0) {
 		const sqlFallback = `
-			SELECT u.id, u.corpus_id, u.work_code, u.book, u.chapter, u.section, u.section_num, u.niese_section,
-			       u.mangey_ref, u.is_supplement, u.display_citation, u.text_content, tok.tokens_json
+			SELECT u.id, u.version_id, u.corpus_id, u.work_code, u.book, u.chapter, u.section,
+			       u.section_label, u.section_num, u.niese_section, u.mangey_ref, u.is_supplement,
+			       u.display_citation, u.milestone_ref, u.text_content, tok.tokens_json
 			FROM text_units u
 			LEFT JOIN text_unit_tokens tok ON tok.work_unit_id = u.id
 			WHERE u.work_code = ? AND (u.book = ? OR u.chapter = ?)
@@ -183,33 +215,64 @@ export async function fetchDivisionSections(
 		rows = await worker.db.query(sqlFallback, [workCode, division, division]);
 	}
 
+	const unitsByVersion = new Map<string, TextUnit[]>();
+
 	for (const row of rows as any[]) {
-		const rawTokens = getRowVal(row, 'tokens_json', 12);
+		const rawTokens = getRowVal(row, 'tokens_json', 15);
+		const versionId = getRowVal<string>(row, 'version_id', 1) || getRowVal<string>(row, 'corpus_id', 2);
 		const unit: TextUnit = {
 			id: getRowVal<number>(row, 'id', 0),
-			corpus_id: getRowVal<string>(row, 'corpus_id', 1),
-			work_code: getRowVal<string>(row, 'work_code', 2),
-			book: getRowVal<number>(row, 'book', 3),
-			chapter: getRowVal<number>(row, 'chapter', 4),
-			section: getRowVal<number>(row, 'section', 5),
-			section_num: getRowVal<number>(row, 'section_num', 6),
-			niese_section: getRowVal<string | undefined>(row, 'niese_section', 7),
-			mangey_ref: getRowVal<string | undefined>(row, 'mangey_ref', 8),
-			is_supplement: getRowVal<number | undefined>(row, 'is_supplement', 9),
-			display_citation: getRowVal<string>(row, 'display_citation', 10),
-			text_content: getRowVal<string>(row, 'text_content', 11),
+			version_id: versionId,
+			corpus_id: versionId,
+			work_code: getRowVal<string>(row, 'work_code', 3),
+			book: getRowVal<number>(row, 'book', 4),
+			chapter: getRowVal<number>(row, 'chapter', 5),
+			section: getRowVal<number>(row, 'section', 6),
+			section_label: getRowVal<string | undefined>(row, 'section_label', 7),
+			section_num: getRowVal<number | undefined>(row, 'section_num', 8),
+			niese_section: getRowVal<string | undefined>(row, 'niese_section', 9),
+			mangey_ref: getRowVal<string | undefined>(row, 'mangey_ref', 10),
+			is_supplement: getRowVal<number | undefined>(row, 'is_supplement', 11),
+			display_citation: getRowVal<string>(row, 'display_citation', 12),
+			milestone_ref: getRowVal<string | undefined>(row, 'milestone_ref', 13),
+			text_content: getRowVal<string>(row, 'text_content', 14),
 			tokens: parseJsonField<Token[] | undefined>(rawTokens)
 		};
-		if (unit.corpus_id.endsWith('_grc') || unit.corpus_id === 'grc') {
+
+		if (!unitsByVersion.has(versionId)) {
+			unitsByVersion.set(versionId, []);
+		}
+		unitsByVersion.get(versionId)!.push(unit);
+
+		// Backwards-compatibility bridge for Phase 3 components:
+		if (versionId.endsWith('_grc') || versionId === 'grc') {
 			greek.push(unit);
-		} else if (unit.corpus_id.endsWith('_eng') || unit.corpus_id === 'eng') {
+		} else if (versionId.endsWith('_eng') || versionId === 'eng') {
 			english.push(unit);
-		} else if (unit.corpus_id.endsWith('_lat') || unit.corpus_id === 'lat') {
+		} else if (versionId.endsWith('_lat') || versionId === 'lat') {
 			latin.push(unit);
 		}
 	}
 
-	const result: DivisionResult = { greek, english, latin };
+	const textVersions: TextVersion[] = cfg.textVersions.map((v) => ({
+		versionId: v.id,
+		language: v.language,
+		label: v.title,
+		shortLabel: v.shortTitle,
+		direction: v.direction || 'ltr',
+		fontClass: getLanguageFontClass(v.language),
+		textUnits: unitsByVersion.get(v.id) || []
+	}));
+
+	const result: DivisionResult = {
+		corpusId,
+		workCode,
+		division,
+		textVersions,
+		greek,
+		english,
+		latin
+	};
 
 	// Store in bounded LRU cache
 	if (divisionCache.size >= MAX_DIVISION_CACHE_SIZE) {
@@ -293,7 +356,7 @@ export async function fetchLemmaStats(corpusId: AncientCorpusId, lemma: string):
 	if (!lemma) return null;
 	const worker = await getDbWorker(corpusId);
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
-	const targetCorpus = PRIMARY_GREEK_CORPUS_IDS[corpusId];
+	const targetCorpus = getPrimaryVersionId(corpusId);
 
 	// Step 1: Direct indexed seek on PRIMARY KEY (corpus_id, lemma)
 	let rows = (await worker.db.query(
@@ -352,7 +415,7 @@ export async function fetchConcordancePage(
 
 	const worker = await getDbWorker(corpusId);
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
-	const targetCorpus = PRIMARY_GREEK_CORPUS_IDS[corpusId];
+	const targetCorpus = getPrimaryVersionId(corpusId);
 
 	let targetLemma = clean;
 	let totalCount = knownTotalCount;
@@ -493,7 +556,7 @@ export async function fetchSectionsTextBatch(corpusId: AncientCorpusId, workUnit
 }
 
 /**
- * Fetch attested grammatical forms for a lemma
+ * Fetch attested grammatical forms for a lemma from canonical lemma_forms
  */
 export async function fetchAttestedForms(corpusId: AncientCorpusId, lemma: string): Promise<AttestedForm[]> {
 	if (!lemma) return [];
@@ -501,69 +564,21 @@ export async function fetchAttestedForms(corpusId: AncientCorpusId, lemma: strin
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
 	const norm = stripGreekAccents(clean);
 
-	if (corpusId === 'josephus') {
-		const sql = `
-			SELECT lemma, form, pos, parse_code, description
-			FROM attested_forms
-			WHERE lemma = ?
-			ORDER BY form ASC
-		`;
-		const rows = await worker.db.query(sql, [clean]);
-		const rawItems = (rows as any[]).map((r) => {
-			const form = getRowVal<string>(r, 'form', 1);
-			return {
-				lemma: getRowVal<string>(r, 'lemma', 0),
-				form,
-				word: form,
-				pos: getRowVal<string>(r, 'pos', 2),
-				parse: getRowVal<string>(r, 'parse_code', 3),
-				description: getRowVal<string>(r, 'description', 4)
-			};
-		});
-		return buildAttestedForms(rawItems);
-	} else if (corpusId === 'philo') {
-		let rows = await worker.db.query(
-			`SELECT forms_json FROM lemma_forms WHERE corpus_id = 'grc' AND lemma_key = ? LIMIT 1`,
-			[clean]
-		);
-		if ((!rows || (rows as any[]).length === 0) && norm !== clean) {
-			rows = await worker.db.query(
-				`SELECT forms_json FROM lemma_forms WHERE corpus_id = 'grc' AND lemma_key = ? LIMIT 1`,
-				[norm]
-			);
-		}
-		if (!rows || (rows as any[]).length === 0) return [];
-		const rawJson = getRowVal<string | undefined>((rows as any[])[0], 'forms_json', 0);
-		if (!rawJson) return [];
-		const parsed = parseJsonField<{ forms?: AttestedForm[] }>(rawJson);
-		return parsed?.forms || [];
-	} else {
-		// AF: extract from text_unit_tokens
-		const sql = `
-			SELECT tok.tokens_json
-			FROM concordance_refs c
-			JOIN text_unit_tokens tok ON tok.work_unit_id = c.work_unit_id
-			WHERE c.corpus_id = 'lake_grc' AND c.lemma = ?
-			LIMIT 50
-		`;
-		const rows = await worker.db.query(sql, [clean]);
-		const rawItems: { word: string; pos?: string; morph?: string }[] = [];
-		for (const row of rows as any[]) {
-			const raw = getRowVal<string | undefined>(row, 'tokens_json', 0);
-			const tokens = parseJsonField<Token[] | undefined>(raw);
-			if (!tokens) continue;
-			for (const tok of tokens) {
-				if (tok.l === clean || tok.l === lemma) {
-					rawItems.push({
-						word: tok.w,
-						pos: tok.p,
-						morph: tok.m
-					});
-				}
-			}
-		}
-		return buildAttestedForms(rawItems);
-	}
+	const sql = `
+		SELECT forms_json
+		FROM lemma_forms
+		WHERE lemma_key = ? OR normalized_lemma = ?
+		LIMIT 1
+	`;
+	const rows = await worker.db.query(sql, [clean, norm]);
+	if (!rows || (rows as any[]).length === 0) return [];
+
+	const rawJson = getRowVal<string | undefined>((rows as any[])[0], 'forms_json', 0);
+	if (!rawJson) return [];
+
+	const parsed = parseJsonField<{ forms?: AttestedForm[] } | AttestedForm[]>(rawJson);
+	if (Array.isArray(parsed)) return parsed;
+	return parsed?.forms || [];
 }
 
 /**
@@ -578,7 +593,7 @@ export async function searchLemmas(
 	const worker = await getDbWorker(corpusId);
 	const clean = query.trim().replace(/[.,;:·]/g, '');
 	const norm = stripGreekAccents(clean);
-	const targetCorpus = PRIMARY_GREEK_CORPUS_IDS[corpusId];
+	const targetCorpus = getPrimaryVersionId(corpusId);
 
 	const sql = `
 		SELECT lemma, normalized_lemma, total_count, work_counts_json
@@ -604,7 +619,7 @@ export async function searchLemmasAcrossCorpora(
 	query: string,
 	limitPerCorpus: number = 10
 ): Promise<Record<AncientCorpusId, LemmaSearchResult[]>> {
-	const corpora: AncientCorpusId[] = ['af', 'philo', 'josephus'];
+	const corpora: AncientCorpusId[] = getAllCorpora().map((c) => c.id as AncientCorpusId);
 	const results: Record<AncientCorpusId, LemmaSearchResult[]> = {
 		af: [],
 		philo: [],

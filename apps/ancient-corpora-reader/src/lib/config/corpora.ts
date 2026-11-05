@@ -98,7 +98,7 @@ export const CORPORA_CONFIG: Record<string, CorpusConfig> = {
 				title: 'Latin Witness (Where Extant)',
 				shortTitle: 'Latin Text',
 				direction: 'ltr',
-				isDefaultVisible: false,
+				isDefaultVisible: true,
 				order: 2
 			},
 			{
