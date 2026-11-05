@@ -1,5 +1,7 @@
 import { SvelteSet } from 'svelte/reactivity';
 import type { AncientCorpusId } from '@polyglot/ancient-languages';
+import { replaceState,goto} from '$app/navigation';
+import {resolve, } from '$app/paths';
 import {
 	getCorpusWorks,
 	findWork,
@@ -111,7 +113,9 @@ export class ReaderState {
 	}
 
 	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: number, section?: string | number | null) {
+		
 		this.closeSidePanel();
+		goto(resolve('/')+corpusId);
 		this.currentCorpus = corpusId;
 		const cfg = getCorpusConfig(corpusId);
 		const defaultLangs = cfg.textVersions
@@ -125,6 +129,7 @@ export class ReaderState {
 		this.currentDivision = division !== undefined
 			? Math.max(targetWork.minDivision, Math.min(division, targetWork.totalDivisions))
 			: targetWork.minDivision;
+		
 		this.currentSection = section ?? null;
 	}
 

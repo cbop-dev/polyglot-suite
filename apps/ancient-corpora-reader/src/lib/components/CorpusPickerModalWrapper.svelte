@@ -4,6 +4,8 @@
 	import { getCorpusWorks } from '../config/canonicalWorks.js';
 	import { getAllCorpora } from '../config/corpora.js';
 	import type { AncientCorpusId } from '@polyglot/ancient-languages';
+	import { resolve } from '$app/paths';
+	import {goto} from '$app/navigation';
 
 	interface ExtendedCorpusItem extends CorpusPickerItem {
 		id: AncientCorpusId;
@@ -38,6 +40,8 @@
 	function handleSelect(corpus: ExtendedCorpusItem) {
 		if (corpus.id !== readerState.currentCorpus) {
 			readerState.setCorpus(corpus.id);
+			//goto(resolve('/')+corpus.id);
+
 		}
 		readerState.isCorpusModalOpen = false;
 	}
@@ -46,7 +50,7 @@
 <CorpusPickerModal
 	bind:open={readerState.isCorpusModalOpen}
 	bind:searchQuery
-	placeholder="Filter corpora by name, era, or code..."
+	
 	corpora={filteredCorpora}
 	currentCorpusId={readerState.currentCorpus}
 	onSelectCorpus={handleSelect}
