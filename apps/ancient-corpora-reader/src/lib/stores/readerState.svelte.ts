@@ -115,7 +115,7 @@ export class ReaderState {
 	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: number, section?: string | number | null) {
 		
 		this.closeSidePanel();
-		goto(resolve('/')+corpusId);
+		//goto(resolve('/')+corpusId);
 		this.currentCorpus = corpusId;
 		const cfg = getCorpusConfig(corpusId);
 		const defaultLangs = cfg.textVersions

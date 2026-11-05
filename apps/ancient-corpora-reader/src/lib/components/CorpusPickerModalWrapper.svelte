@@ -39,8 +39,9 @@
 
 	function handleSelect(corpus: ExtendedCorpusItem) {
 		if (corpus.id !== readerState.currentCorpus) {
-			readerState.setCorpus(corpus.id);
-			//goto(resolve('/')+corpus.id);
+			goto(resolve('/')+corpus.id);
+			//readerState.setCorpus(corpus.id);
+			
 
 		}
 		readerState.isCorpusModalOpen = false;
