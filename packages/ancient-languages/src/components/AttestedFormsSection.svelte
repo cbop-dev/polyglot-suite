@@ -114,7 +114,7 @@
 			<span class="summary-title">
 				Attested Forms
 				{#if lemmaDisplay}
-					<span class="lemma-quote">of "{lemmaDisplay}"</span>
+					of <span class="lemma-quote {lang}">{lemmaDisplay}</span>
 				{/if}
 				{#if corpusTitle}
 					<span class="corpus-tag">in {corpusTitle}</span>
@@ -207,7 +207,7 @@
 						role="button"
 						tabindex="0"
 					>
-						<span class="chip-text {fontClass} {lang === 'greek' ? 'greek-font' : ''}">{f.form}</span>
+						<span class="chip-text {fontClass} {lang}">{f.form}</span>
 						<span class="chip-count">({f.count})</span>
 
 						{#if showHighlightAction}
