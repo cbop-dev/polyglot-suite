@@ -377,7 +377,7 @@
 								</div>
 
 								{#if c.text_snippet}
-									<div class="text-xs leading-relaxed text-[var(--color-ink)] line-clamp-3 greek-font pt-1">
+									<div class="text-xs leading-relaxed text-[var(--color-ink)] line-clamp-3 font-greek pt-1">
 										{c.text_snippet}
 									</div>
 								{/if}

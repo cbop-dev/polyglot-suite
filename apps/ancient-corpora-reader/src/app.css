@@ -63,7 +63,6 @@
     min-height: 100vh;
   }
 
-  .greek-font,
   .font-greek,
   .greek {
     font-family: 'GFS Didot', 'EB Garamond', 'Gentium Plus', 'Charis SIL', 'SBL BibLit', 'SBL Greek', serif;
@@ -71,10 +70,23 @@
     font-style: normal;
   }
 
-  .latin-font,
   .font-latin,
   .latin {
     font-family: 'Gentium Plus', 'Charis SIL', 'EB Garamond', serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  .font-hebrew,
+  .hebrew {
+    font-family: 'Ezra SIL', 'SBL Hebrew', serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  .font-syriac,
+  .syriac {
+    font-family: 'Estrangelo Marcus', 'Noto Sans Syriac', serif;
     font-weight: 400;
     font-style: normal;
   }

@@ -8,9 +8,8 @@
 		const work = readerState.currentWork;
 		return formatAncientCorpusCitation({
 			corpusId: readerState.currentCorpus,
-			workCode: work.code,
-			chapter: readerState.currentDivision,
-			book: readerState.currentDivision,
+			work,
+			division: readerState.currentDivision,
 			section: readerState.currentSection ?? undefined
 		});
 	});
