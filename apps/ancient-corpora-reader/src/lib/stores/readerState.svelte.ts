@@ -3,8 +3,8 @@ import type { AncientCorpusId } from '@polyglot/ancient-languages';
 import {
 	getCorpusWorks,
 	findWork,
-	type UnifiedCanonicalWork
-} from '../config/canonicalWorks.js';
+	type CorpusWork
+} from '../config/corpora.data.js';
 import {
 	getCorpusConfig,
 	type CorpusConfig
@@ -96,7 +96,7 @@ export class ReaderState {
 	isCommandPaletteOpen = $state<boolean>(false);
 	showCitationModal = $state<boolean>(false);
 
-	get currentWork(): UnifiedCanonicalWork {
+	get currentWork(): CorpusWork {
 		const target = findWork(this.currentCorpus, this.currentWorkCode);
 		if (target) return target;
 		const fallback = getCorpusWorks(this.currentCorpus)[0];

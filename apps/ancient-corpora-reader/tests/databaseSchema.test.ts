@@ -15,7 +15,7 @@ const REQUIRED_TABLES: Record<string, string[]> = {
 	lemma_forms: ['id', 'corpus_id', 'lemma_key', 'normalized_lemma', 'forms_json']
 };
 
-describe('Phase 2: Canonical Database Schema Standardization', () => {
+describe('Database Schema Conformance', () => {
 	const corpora = ['af', 'josephus', 'philo'];
 
 	for (const corpus of corpora) {
