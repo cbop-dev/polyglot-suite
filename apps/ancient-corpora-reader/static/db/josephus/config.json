@@ -1,5 +1,5 @@
 {
-  "databaseVersion": "corpora-josephus-db-v1.1.1",
+  "databaseVersion": "corpora-josephus-db-v1.1.2",
   "serverMode": "chunked",
   "requestChunkSize": 4096,
   "urlPrefix": "josephus.db.",
