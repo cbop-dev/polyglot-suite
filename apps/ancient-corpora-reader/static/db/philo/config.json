@@ -1,5 +1,5 @@
 {
-  "databaseVersion": "corpora-philo-db-v1.2.0",
+  "databaseVersion": "corpora-philo-db-v1.2.1",
   "serverMode": "chunked",
   "requestChunkSize": 16384,
   "urlPrefix": "philo.db.",
