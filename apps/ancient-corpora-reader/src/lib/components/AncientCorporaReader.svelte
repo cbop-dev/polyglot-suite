@@ -85,9 +85,9 @@
 		};
 
 		if ('requestIdleCallback' in window) {
-			prefetchTimer = (window as any).requestIdleCallback(runPrefetch, { timeout: 3000 });
+			prefetchTimer = (window as any).requestIdleCallback(runPrefetch, { timeout: 10000 });
 		} else {
-			prefetchTimer = setTimeout(runPrefetch, 800);
+			prefetchTimer = setTimeout(runPrefetch, 6000);
 		}
 	}
 
