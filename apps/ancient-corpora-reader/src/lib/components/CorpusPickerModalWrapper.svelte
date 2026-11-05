@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { CorpusPickerModal, type CorpusPickerItem } from '@polyglot/ui';
 	import { readerState } from '../stores/readerState.svelte.js';
-	import { getCorpusWorks } from '../config/canonicalWorks.js';
+	import { getCorpusWorks } from '../config/corpora.data.js';
 	import { getAllCorpora } from '../config/corpora.js';
 	import type { AncientCorpusId } from '@polyglot/ancient-languages';
 	import { resolve } from '$app/paths';
