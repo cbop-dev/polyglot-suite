@@ -2,7 +2,8 @@
 	import { base } from '$app/paths';
 	import { ReaderHeader, type ViewMode } from '@polyglot/ui';
 	import { readerState } from '../stores/readerState.svelte.js';
-
+	import {Languages} from '@polyglot/ancient-languages';
+	
 	let {
 		test = '',
 		suiteHref = '/'
@@ -61,7 +62,8 @@
 					class="px-2 py-0.5 rounded text-xs font-semibold transition-colors cursor-pointer border {isVisible ? 'bg-blue-600 text-white border-blue-600' : 'bg-transparent text-[var(--color-ink-soft)] border-[var(--color-rule)] hover:bg-[var(--color-rule)]'}"
 					title="Toggle {ver.title}"
 				>
-					{ver.shortTitle}
+					<!--<span class="hidden md:inline">{Languages.getNameFromCode(ver.language) || ver.shortTitle}</span>-->
+					<span  class="">{Languages.getShortNameFromCode(ver.language) || ver.shortTitle}</span>
 				</button>
 			{/each}
 		</div>

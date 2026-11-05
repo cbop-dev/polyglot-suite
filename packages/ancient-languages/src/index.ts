@@ -10,4 +10,5 @@ export * from './fonts.js';
 export * from './bible/index.js';
 export * from './stores/highlightStore.svelte.js';
 export * from './citations/index.js';
+export * from './languages.js';
 export { default as HighlightColorPicker } from './components/HighlightColorPicker.svelte';
