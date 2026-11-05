@@ -93,7 +93,7 @@ export const CORPORA_CONFIG: Record<string, CorpusConfig> = {
 				order: 1
 			},
 			{
-				id: 'af_lat',
+				id: 'lake_lat',
 				language: 'lat',
 				title: 'Latin Witness (Where Extant)',
 				shortTitle: 'Latin Text',
