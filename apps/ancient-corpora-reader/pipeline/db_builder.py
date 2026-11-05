@@ -11,6 +11,7 @@ Builds standardized canonical Tier-2 SQLite databases for Ancient Corpora Reader
 """
 
 from __future__ import annotations
+import gzip
 import json
 import re
 import sqlite3
@@ -396,7 +397,7 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 	tgt_conn = sqlite3.connect(tgt_path)
 
 	tgt_cur = tgt_conn.cursor()
-	tgt_cur.execute("PRAGMA page_size = 4096;")
+	tgt_cur.execute("PRAGMA page_size = 16384;")
 	tgt_cur.execute("PRAGMA synchronous = OFF;")
 	tgt_cur.execute("PRAGMA journal_mode = MEMORY;")
 
@@ -567,11 +568,11 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	""", norm_units)
 
-	# Populate text_unit_tokens
+	# Populate text_unit_tokens with compressed gzip blobs
 	tgt_cur.execute("""
 	CREATE TABLE text_unit_tokens (
 		work_unit_id INTEGER PRIMARY KEY,
-		tokens_json TEXT NOT NULL
+		tokens_json BLOB NOT NULL
 	) WITHOUT ROWID;
 	""")
 	src_cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='text_unit_tokens'")
@@ -579,7 +580,23 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 		src_cur.execute("SELECT work_unit_id, tokens_json FROM text_unit_tokens")
 	else:
 		src_cur.execute("SELECT id, tokens_json FROM text_units WHERE tokens_json IS NOT NULL")
-	tgt_cur.executemany("INSERT INTO text_unit_tokens VALUES (?, ?)", src_cur.fetchall())
+	
+	raw_rows = src_cur.fetchall()
+	compressed_rows = []
+	for uid, tok in raw_rows:
+		if tok is None:
+			continue
+		if isinstance(tok, str):
+			compressed = gzip.compress(tok.encode("utf-8"), compresslevel=6)
+		elif isinstance(tok, (bytes, bytearray)):
+			if len(tok) >= 2 and tok[:2] == b'\x1f\x8b':
+				compressed = bytes(tok)
+			else:
+				compressed = gzip.compress(tok, compresslevel=6)
+		else:
+			continue
+		compressed_rows.append((uid, compressed))
+	tgt_cur.executemany("INSERT INTO text_unit_tokens VALUES (?, ?)", compressed_rows)
 
 	# 4. Canonical lexicon_entries
 	print("  → Normalizing lexicon_entries...")

@@ -11,6 +11,7 @@
 	import { readerState } from '../stores/readerState.svelte.js';
 	import {
 		fetchDivisionSections,
+		fetchDivisionTokens,
 		type TextVersion
 	} from '../services/dbClient.js';
 	import type { AncientCorpusId } from '@polyglot/ancient-languages';
@@ -85,9 +86,9 @@
 		};
 
 		if ('requestIdleCallback' in window) {
-			prefetchTimer = (window as any).requestIdleCallback(runPrefetch, { timeout: 3000 });
+			prefetchTimer = (window as any).requestIdleCallback(runPrefetch, { timeout: 10000 });
 		} else {
-			prefetchTimer = setTimeout(runPrefetch, 800);
+			prefetchTimer = setTimeout(runPrefetch, 6000);
 		}
 	}
 
@@ -108,8 +109,10 @@
 		textVersions = [];
 
 		try {
+			// Phase 1: Rapid First Paint (only text_units, completes in <150ms)
 			const res = await fetchDivisionSections(corpus, work, division);
 			textVersions = res.textVersions;
+			loading = false;
 
 			if (readerState.currentSection) {
 				const s = readerState.currentSection;
@@ -119,6 +122,45 @@
 						document.getElementById(`sec-${s}`);
 					el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 				}, 120);
+			}
+
+			// Phase 2: Progressive Token Hydration in background
+			const unitIdsToHydrate: number[] = [];
+			for (const v of textVersions) {
+				for (const u of v.textUnits) {
+					if (!u.tokens || u.tokens.length === 0) {
+						unitIdsToHydrate.push(u.id);
+					}
+				}
+			}
+
+			if (unitIdsToHydrate.length > 0) {
+				fetchDivisionTokens(corpus, unitIdsToHydrate, (batchMap) => {
+					if (
+						readerState.currentCorpus !== corpus ||
+						readerState.currentWorkCode !== work ||
+						readerState.currentDivision !== division
+					) {
+						return;
+					}
+
+					let updated = false;
+					for (const v of textVersions) {
+						for (const u of v.textUnits) {
+							const tok = batchMap.get(u.id);
+							if (tok) {
+								u.tokens = tok;
+								updated = true;
+							}
+						}
+					}
+
+					if (updated) {
+						textVersions = [...textVersions];
+					}
+				}).catch((err) => {
+					console.warn('Background token hydration error:', err);
+				});
 			}
 
 			// Pre-fetch subsequent division in idle time so next-division navigation is instantaneous

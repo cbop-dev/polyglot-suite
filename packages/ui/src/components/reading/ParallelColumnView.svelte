@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 
 	export interface TextToken {
 		w: string;
@@ -248,7 +248,7 @@
 	});
 
 	// --- Progressive Batch Rendering Engine ---
-	const INITIAL_BATCH_SIZE = 25;
+	const INITIAL_BATCH_SIZE = 30;
 	const BATCH_STEP_SIZE = 25;
 
 	let renderedCount = $state<number>(INITIAL_BATCH_SIZE);
@@ -259,7 +259,7 @@
 	let sentinelEl = $state<HTMLElement | null>(null);
 
 	function scheduleNextBatch() {
-		if (isFullyRendered || typeof window === 'undefined') return;
+		if (typeof window === 'undefined') return;
 
 		const run = () => {
 			if (renderedCount >= sectionKeys.length) return;
@@ -277,17 +277,25 @@
 	}
 
 	$effect(() => {
-		if (sectionKeys.length > 0) {
-			if (targetSection) {
-				const idx = sectionKeys.findIndex((k) => String(k) === String(targetSection));
-				renderedCount = idx >= 0
-					? Math.min(sectionKeys.length, Math.max(INITIAL_BATCH_SIZE, idx + 15))
-					: INITIAL_BATCH_SIZE;
-			} else {
-				renderedCount = INITIAL_BATCH_SIZE;
-			}
-			scheduleNextBatch();
+		const keys = sectionKeys;
+		const target = targetSection;
+
+		if (keys.length > 0) {
+			untrack(() => {
+				if (target) {
+					const idx = keys.findIndex((k) => String(k) === String(target));
+					renderedCount = idx >= 0
+						? Math.min(keys.length, Math.max(INITIAL_BATCH_SIZE, idx + 15))
+						: INITIAL_BATCH_SIZE;
+				} else {
+					renderedCount = Math.min(keys.length, INITIAL_BATCH_SIZE);
+				}
+				if (renderedCount < keys.length) {
+					scheduleNextBatch();
+				}
+			});
 		}
+
 		return () => {
 			if (idleHandle && typeof window !== 'undefined') {
 				if ('cancelIdleCallback' in window) (window as any).cancelIdleCallback(idleHandle);
@@ -298,15 +306,19 @@
 
 	// Fast-scroll Sentinel IntersectionObserver
 	$effect(() => {
-		if (!sentinelEl || isFullyRendered || typeof window === 'undefined') return;
+		if (!sentinelEl || typeof window === 'undefined') return;
 		const observer = new IntersectionObserver(
 			(entries) => {
 				if (entries[0]?.isIntersecting) {
-					renderedCount = Math.min(sectionKeys.length, renderedCount + BATCH_STEP_SIZE * 2);
-					scheduleNextBatch();
+					untrack(() => {
+						if (renderedCount < sectionKeys.length) {
+							renderedCount = Math.min(sectionKeys.length, renderedCount + BATCH_STEP_SIZE * 2);
+							scheduleNextBatch();
+						}
+					});
 				}
 			},
-			{ rootMargin: '300px' }
+			{ rootMargin: '800px' }
 		);
 		observer.observe(sentinelEl);
 		return () => observer.disconnect();
