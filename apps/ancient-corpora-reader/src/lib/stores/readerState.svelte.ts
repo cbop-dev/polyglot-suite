@@ -20,11 +20,21 @@ export class ReaderState {
 	currentWorkCode = $state<string>('1CLE');
 	currentDivision = $state<number>(1);
 	currentSection = $state<string | number | null>(null);
-
+	
+	//for toggling the slider panel.
+	showThemeSlider=$state<boolean>(false);
+	
+	//whether we even use it at all.
+	enableThemeslider=$state<boolean>(true);
 	viewMode = $state<ViewMode>('parallel');
 
 	// Reactive language/version visibility set
 	visibleLanguages = $state<SvelteSet<string>>(new SvelteSet(['grc', 'lat', 'eng']));
+
+
+	toggleThemeSlider(){
+		this.showThemeSlider = !this.showThemeSlider;
+	}
 
 	get currentCorpusConfig(): CorpusConfig {
 		return getCorpusConfig(this.currentCorpus);
@@ -97,6 +107,7 @@ export class ReaderState {
 	showHotkeyHelp = $state<boolean>(false);
 	isCommandPaletteOpen = $state<boolean>(false);
 	showCitationModal = $state<boolean>(false);
+	hotkeysEnabled = $state<boolean>(true);
 
 	get currentWork(): CorpusWork {
 		const target = findWork(this.currentCorpus, this.currentWorkCode);
@@ -110,6 +121,17 @@ export class ReaderState {
 		this.selectedToken = null;
 		this.selectedCitation = null;
 		this.selectedScriptureCitation = null;
+	}
+
+	closeAllModals() {
+		this.closeSidePanel();
+		this.isCorpusModalOpen = false;
+		this.isWorkModalOpen = false;
+		this.isDivisionModalOpen = false;
+		this.showCitationModal = false;
+		this.showHotkeyHelp = false;
+		this.isCommandPaletteOpen = false;
+		this.showThemeSlider=false;
 	}
 
 	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: number, section?: string | number | null) {

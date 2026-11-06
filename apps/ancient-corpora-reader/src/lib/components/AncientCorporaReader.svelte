@@ -7,6 +7,7 @@
 	import DivisionPickerModalWrapper from './DivisionPickerModalWrapper.svelte';
 	import AcademicCitationModalWrapper from './AcademicCitationModalWrapper.svelte';
 	import HotkeyHelpModal from './HotkeyHelpModal.svelte';
+	import { hotkeyManager } from '../services/hotkeyManager.js';
 
 	import { readerState } from '../stores/readerState.svelte.js';
 	import {
@@ -186,61 +187,12 @@
 		}
 	});
 
-	function handleKeydown(e: KeyboardEvent) {
-		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-			return;
-		}
-
-		if (e.key === 'Escape') {
-			readerState.isSidePanelOpen = false;
-			readerState.isCorpusModalOpen = false;
-			readerState.isWorkModalOpen = false;
-			readerState.isDivisionModalOpen = false;
-			readerState.showCitationModal = false;
-			readerState.showHotkeyHelp = false;
-			return;
-		}
-
-		if (e.key === '?' || (e.shiftKey && e.key === '/')) {
-			e.preventDefault();
-			readerState.showHotkeyHelp = !readerState.showHotkeyHelp;
-		} else if (e.key === 'b' || e.key === 'B') {
-			e.preventDefault();
-			readerState.isCorpusModalOpen = true;
-		} else if (e.key === 'w' || e.key === 'W') {
-			e.preventDefault();
-			readerState.isWorkModalOpen = true;
-		} else if (
-			e.key === 'j' || e.key === 'J' ||
-			e.key === 's' || e.key === 'S' ||
-			e.key === 'c' || e.key === 'C'
-		) {
-			e.preventDefault();
-			readerState.isDivisionModalOpen = true;
-		} else if (e.key === ']' || e.key === 'ArrowRight') {
-			e.preventDefault();
-			readerState.nextDivision();
-		} else if (e.key === '[' || e.key === 'ArrowLeft') {
-			e.preventDefault();
-			readerState.prevDivision();
-		} else if (e.key === 'p' || e.key === 'P') {
-			e.preventDefault();
-			readerState.viewMode = 'parallel';
-		} else if (e.key === 'd' || e.key === 'D') {
-			e.preventDefault();
-			readerState.viewMode = readerState.viewMode === 'stacked' ? 'parallel' : 'stacked';
-		} else if (e.key === 'f' || e.key === '/') {
-			e.preventDefault();
-			readerState.toggleSidePanel('search');
-		}
-	}
-
 	let maxSectionCount = $derived(
 		textVersions.length > 0 ? Math.max(0, ...textVersions.map((v) => v.textUnits.length)) : 0
 	);
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={(e) => hotkeyManager.handleKeyDown(e, readerState)} />
 
 <div class="min-h-screen bg-[var(--color-page)] text-[var(--color-ink)] flex flex-col">
 	<CorpusHeader />

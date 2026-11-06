@@ -82,7 +82,7 @@
 		viewMode = $bindable('parallel'),
 		onViewModeChange,
 		showLayoutOptions = true,
-		showThemeSlider = true,
+		showThemeSlider = $bindable(false),
 		themeStorageKey = 'polyglot_reader_theme',
 		themeWarmthStorageKey = 'polyglot_reader_warmth',
 		showCitation = true,
@@ -246,16 +246,18 @@
 						<span class="hidden md:inline">Bookmarks</span>
 					</button>
 				{/if}
-
-				{#if showThemeSlider}
+					
+				
 					<ThemeSlider
 						storageKey={themeStorageKey}
 						warmthStorageKey={themeWarmthStorageKey}
 						profile="standard"
 						align="right"
 						{enableFontSizeSlider}
+						bind:isOpen={showThemeSlider}
+
 					/>
-				{/if}
+				
 
 				{#if extraDesktopControls}
 					{@render extraDesktopControls()}
@@ -305,16 +307,18 @@
 					</div>
 				{/if}
 
-				{#if showThemeSlider}
+				WHAT????
 					<div class="flex items-center gap-2">
 						<ThemeSlider
 							storageKey={themeStorageKey}
 							warmthStorageKey={themeWarmthStorageKey}
 							profile="standard"
 							align="right"
+							{enableFontSizeSlider}
+							
 						/>
 					</div>
-				{/if}
+				
 			</div>
 
 			<div class="mt-3 pt-2.5 border-t border-[var(--color-rule)] flex items-center justify-between gap-2 flex-wrap">

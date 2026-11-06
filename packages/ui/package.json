@@ -5,8 +5,12 @@
   "description": "Unified design system, UI controls, navigation widgets, charts, and icons for the Polyglot Suite",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "scripts": {
+    "test": "vitest run"
+  },
   "exports": {
     ".": "./src/index.ts",
+    "./hotkeys": "./src/hotkeys.ts",
     "./*": "./src/*",
     "./components/*": "./src/components/*",
     "./Button.svelte": "./src/components/controls/Button.svelte",

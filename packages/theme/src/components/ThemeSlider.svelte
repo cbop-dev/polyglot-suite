@@ -27,10 +27,11 @@
 		align?: 'left' | 'right' | 'center';
 		placement?: 'bottom' | 'top';
 		variant?: 'popover' | 'inline';
-		enableFontSizeSlider?: boolean
+		enableFontSizeSlider?: boolean;
+		isOpen?:boolean
 	}
 
-	const {
+	let {
 		storageKey = 'ne-reading-theme',
 		warmthStorageKey = 'ne-reading-warmth',
 		legacyKey = 'ne-theme',
@@ -39,10 +40,12 @@
 		align = 'right',
 		placement = 'bottom',
 		variant = 'popover',
-		enableFontSizeSlider=true
+		enableFontSizeSlider=true,
+		isOpen=$bindable(false)
+		
 	}: Props = $props();
 	let fontSizeValue = $state<number>(100); // 100%
-	let isOpen = $state<boolean>(false);
+	//let isOpen = $derived<boolean>(open);
 	let containerEl = $state<HTMLElement | null>(null);
 	let sliderValue = $state<number>(25);
 	let warmthValue = $state<number>(50);
@@ -240,7 +243,7 @@
 				</svg>
 				<span class="hidden sm:inline">Light</span>
 			</button>
-			<input
+			<input 
 				type="range"
 				min="0"
 				max="100"

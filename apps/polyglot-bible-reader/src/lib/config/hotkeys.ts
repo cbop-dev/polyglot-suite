@@ -1,7 +1,7 @@
 import type { ReaderState } from '$lib/stores/readerState.svelte';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import type { HotkeyCategory, HotkeyAction as GenericHotkeyAction } from '@polyglot/ancient-languages/hotkeys';
+import type { HotkeyCategory, HotkeyAction as GenericHotkeyAction } from '@polyglot/ui/hotkeys';
 
 export type { HotkeyCategory };
 export type HotkeyAction = GenericHotkeyAction<ReaderState>;

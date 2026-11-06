@@ -42,6 +42,7 @@ export { default as ChevronsUp } from './components/icons/chevrons-up.svelte';
 export * from './types.js';
 
 // Layout & Reading
+export * from './hotkeys.js';
 export { default as ReaderHeader } from './components/layout/ReaderHeader.svelte';
 export type { Props as ReaderHeaderProps } from './components/layout/ReaderHeader.svelte';
 export { default as FloatingSidePanel } from './components/layout/FloatingSidePanel.svelte';

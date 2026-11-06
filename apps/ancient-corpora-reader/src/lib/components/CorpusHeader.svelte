@@ -34,6 +34,7 @@
 	showCitation={true}
 	onOpenCitation={() => (readerState.showCitationModal = true)}
 	showHelp={true}
+	bind:showThemeSlider={readerState.showThemeSlider}
 	onOpenHelp={() => (readerState.showHotkeyHelp = true)}
 >
 	{#snippet afterTitle()}

@@ -6,7 +6,7 @@ import {
 	type HotkeyAction
 } from '../src/hotkeys.js';
 
-describe('Shared HotkeyManager & Utilities', () => {
+describe('Shared HotkeyManager & Utilities (@polyglot/ui)', () => {
 	let manager: HotkeyManager;
 	let mockState: any;
 
