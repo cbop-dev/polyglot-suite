@@ -1,7 +1,7 @@
 {
 	"name": "polyglot-bible-reader",
 	"private": true,
-	"version": "0.3.2",
+	"version": "0.3.3",
 	"repository": {
 		"url": "https://github.com/cbop-dev/polyglot-suite/tree/main/apps/polyglot-bible-reader"
 	},
@@ -40,7 +40,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test:e2e": "playwright install && playwright test",
-		"test": "npm run test:unit && npm run test:e2e",
+		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:unit": "vitest"
 	},
 	"devDependencies": {

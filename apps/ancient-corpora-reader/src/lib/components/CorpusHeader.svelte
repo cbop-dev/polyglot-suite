@@ -8,6 +8,8 @@
 		test = '',
 		suiteHref = '/'
 	} = $props();
+
+	let textVersionsVisible=readerState.visibleLanguages;
 </script>
 
 <ReaderHeader
@@ -36,6 +38,9 @@
 	showHelp={true}
 	bind:showThemeSlider={readerState.showThemeSlider}
 	onOpenHelp={() => (readerState.showHotkeyHelp = true)}
+	textVersions={readerState.currentCorpusConfig.textVersions}
+	bind:textVersionsVisible
+	bind:layoutIsOpen={readerState.layoutIsOpen}
 >
 	{#snippet afterTitle()}
 		<!-- Corpus Selector Trigger -->
@@ -51,9 +56,9 @@
 			<span class="text-[10px] text-[var(--color-ink-soft)] shrink-0">▾</span>
 		</button>
 	{/snippet}
-
-	{#snippet extraDesktopControls()}
-		<!-- Dynamic Version Visibility Chips -->
+	<!--
+	{#snippet columnToggleButtons()}
+		<!-- Dynamic Version Visibility Chips 
 		<div class="hidden xl:flex items-center gap-1 border-r border-[var(--color-rule)] pr-3 mr-1">
 			{#each readerState.currentCorpusConfig.textVersions as ver (ver.id)}
 				{@const isVisible = readerState.isLanguageVisible(ver.language || ver.id)}
@@ -63,10 +68,10 @@
 					class="px-2 py-0.5 rounded text-xs font-semibold transition-colors cursor-pointer border {isVisible ? 'bg-blue-600 text-white border-blue-600' : 'bg-transparent text-[var(--color-ink-soft)] border-[var(--color-rule)] hover:bg-[var(--color-rule)]'}"
 					title="Toggle {ver.title}"
 				>
-					<!--<span class="hidden md:inline">{Languages.getNameFromCode(ver.language) || ver.shortTitle}</span>-->
+					<!--<span class="hidden md:inline">{Languages.getNameFromCode(ver.language) || ver.shortTitle}</span>
 					<span  class="">{Languages.getShortNameFromCode(ver.language) || ver.shortTitle}</span>
 				</button>
 			{/each}
 		</div>
-	{/snippet}
+	{/snippet}-->
 </ReaderHeader>

@@ -1,6 +1,6 @@
 {
   "name": "@polyglot/ancient-languages",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -16,7 +16,8 @@
     "./highlightStore": "./src/stores/highlightStore.svelte.ts",
     "./citations": "./src/citations/index.ts",
     "./stores/*": "./src/stores/*",
-    "./components/*": "./src/components/*"
+    "./components/*": "./src/components/*",
+    "./corpora-types": "./src/ancient-corpora-types.ts"
   },
   "scripts": {
     "test": "vitest run"

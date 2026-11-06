@@ -9,8 +9,9 @@ import {
 } from '../config/corpora.data.js';
 import {
 	getCorpusConfig,
-	type CorpusConfig
+	
 } from '../config/corpora.js';
+import type { CorpusConfig } from '@polyglot/ancient-languages/corpora-types';
 import type { Token } from '../services/dbClient.js';
 
 export type ViewMode = 'parallel' | 'greek' | 'english' | 'latin' | 'stacked' | 'single';
@@ -20,7 +21,7 @@ export class ReaderState {
 	currentWorkCode = $state<string>('1CLE');
 	currentDivision = $state<number>(1);
 	currentSection = $state<string | number | null>(null);
-	
+	layoutIsOpen=$state<boolean>(false);
 	//for toggling the slider panel.
 	showThemeSlider=$state<boolean>(false);
 	
@@ -40,6 +41,10 @@ export class ReaderState {
 		return getCorpusConfig(this.currentCorpus);
 	}
 
+
+	toggleLayoutModal(){
+		this.layoutIsOpen=!this.layoutIsOpen;
+	}
 	isLanguageVisible(langOrVersion: string): boolean {
 		if (this.visibleLanguages.has(langOrVersion)) return true;
 		const cfg = this.currentCorpusConfig;

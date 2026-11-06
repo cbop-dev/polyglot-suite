@@ -17,6 +17,17 @@ export const ACR_HOTKEYS: HotkeyAction[] = [
 		}
 	},
 	{
+		id: 'show-layout-options',
+		name: 'Show Layout Options',
+		description: 'Open the Layout Options Panel',
+		category: 'View',
+		keys: ['l'],
+		preventDefault: true,
+		action: (state) => {
+			state.toggleLayoutModal();
+		}
+	},
+	{
 		id: 'show-theme-slider',
 		name: 'Show Theme Settings',
 		description: 'Open the Theme Options Panel',
@@ -71,6 +82,7 @@ export const ACR_HOTKEYS: HotkeyAction[] = [
 			state.isDivisionModalOpen = true;
 		}
 	},
+	/*
 	{
 		id: 'view-parallel',
 		name: 'Parallel View',
@@ -81,13 +93,13 @@ export const ACR_HOTKEYS: HotkeyAction[] = [
 		action: (state) => {
 			state.viewMode = 'parallel';
 		}
-	},
+	},*/
 	{
 		id: 'toggle-layout',
 		name: 'Toggle View Layout',
 		description: 'Toggle between parallel columns and stacked layout',
 		category: 'View',
-		keys: ['d'],
+		keys: ['p'],
 		preventDefault: true,
 		action: (state) => {
 			state.viewMode = state.viewMode === 'stacked' ? 'parallel' : 'stacked';

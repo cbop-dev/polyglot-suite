@@ -1,35 +1,46 @@
 <script lang="ts">
 	export type ViewMode = 'parallel' | 'stacked' | 'greek' | 'english';
-
+	import * as CorpusTypes from "@polyglot/ancient-languages/corpora-types";
+	import {Languages} from '@polyglot/ancient-languages';
+	import { SvelteSet } from 'svelte/reactivity';
 	interface Props {
 		viewMode?: ViewMode;
 		onchange?: (mode: ViewMode) => void;
 		class?: string;
+		textVersions?:CorpusTypes.TextVersionConfig[];
+		textVersionsVisible?:SvelteSet<string>;
+		isOpen:boolean
+		//columnToggleButtons?:Snippet
 	}
 
 	let {
 		viewMode = $bindable('parallel'),
 		onchange = () => {},
-		class: className = ''
+		class: className = '',
+		textVersions,
+		textVersionsVisible=$bindable(),
+		isOpen=$bindable(false)
+		//columnToggleButtons
 	}: Props = $props();
 
-	let isOpen = $state(false);
+	const toggleKey='p'
+	//let isOpen = $state(false);
 
-	const options: { id: ViewMode; label: string; icon: string; shortcut: string; desc: string }[] = [
+	const options: { id: ViewMode; label: string; icon: string; shortcut?: string; desc: string }[] = [
 		{
 			id: 'parallel',
 			label: 'Parallel',
 			icon: '◧',
-			shortcut: 'd',
-			desc: 'Side-by-side Greek & English'
+			//shortcut: 'p',
+			desc: 'Side-by-side Versions'
 		},
 		{
 			id: 'stacked',
 			label: 'Stacked',
 			icon: '⬓',
-			shortcut: 'd',
-			desc: 'Vertical Greek & English'
-		},
+			//shortcut: 'p',
+			desc: 'Vertically Stacked Versions'
+		}/*
 		{
 			id: 'greek',
 			label: 'Greek Only',
@@ -43,7 +54,7 @@
 			icon: 'EN',
 			shortcut: 'e',
 			desc: 'English translation only'
-		}
+		}*/
 	];
 
 	let currentOption = $derived(options.find((o) => o.id === viewMode) || options[0]);
@@ -60,6 +71,17 @@
 			e.stopPropagation();
 			isOpen = false;
 		}
+	}
+
+	function toggleVisibleLanguage(lang:string){
+
+		if(textVersionsVisible){
+			if (textVersionsVisible.has(lang))
+				textVersionsVisible.delete(lang);
+			else
+				textVersionsVisible.add(lang);
+		}
+
 	}
 </script>
 
@@ -95,8 +117,7 @@
 			style="background-color: var(--color-page, #ffffff); color: var(--color-ink, #0f172a); border-color: var(--color-rule, #e2e8f0);"
 		>
 			<div class="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-soft)] border-b border-[var(--color-rule)] mb-1">
-				Layout Options
-			</div>
+				Layout Options <kbd class="float-right">l</kbd> </div>
 			{#each options as opt (opt.id)}
 				{@const isSelected = opt.id === viewMode}
 				<button
@@ -113,13 +134,36 @@
 						</div>
 					</div>
 					<div class="flex items-center gap-1.5">
-						<kbd class="text-[10px] font-mono text-[var(--color-ink-soft)] bg-[var(--color-rule)]/50 px-1 rounded">{opt.shortcut}</kbd>
+						{#if opt.shortcut}<kbd class="text-[10px] font-mono text-[var(--color-ink-soft)] bg-[var(--color-rule)]/50 px-1 rounded">{opt.shortcut}</kbd>
+						{:else if !isSelected && toggleKey}
+							<kbd class="text-[10px] font-mono text-[var(--color-ink-soft)] bg-[var(--color-rule)]/50 px-1 rounded">{toggleKey}</kbd>
+						{/if}
 						{#if isSelected}
 							<span class="text-blue-600 dark:text-blue-400 font-bold">✓</span>
 						{/if}
 					</div>
 				</button>
 			{/each}
+
+			{#if textVersions}
+			<!-- Dynamic Version Visibility Chips -->
+			<div class="hidden xl:flex gap-1 p-1 m-1 ">
+				{#each textVersions as ver, idx (ver.id)}
+					
+					<button
+						type="button"
+						onclick={() => toggleVisibleLanguage(ver.language)}
+						class="flex-auto px-2 py-0.5 rounded text-xs font-semibold transition-colors cursor-pointer border
+						 {textVersionsVisible?.has(ver.language) ? 'bg-blue-600 text-white border-blue-600' : 'bg-transparent text-[var(--color-ink-soft)] border-[var(--color-rule)] hover:bg-[var(--color-rule)]'}"
+						title="Toggle {ver.title}"
+					>
+						<!--<span class="hidden md:inline">{Languages.getNameFromCode(ver.language) || ver.shortTitle}</span>-->
+						<span  class="">{Languages.getShortNameFromCode(ver.language) || ver.shortTitle}</span>
+					</button>
+				{/each}
+			</div>
+			{/if}
+
 		</div>
 	{/if}
 </div>

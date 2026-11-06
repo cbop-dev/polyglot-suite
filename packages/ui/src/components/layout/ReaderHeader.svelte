@@ -3,6 +3,9 @@
 	import LayoutOptions, { type ViewMode } from '../controls/LayoutOptions.svelte';
 	import ThemeSlider from '@polyglot/theme/ThemeSlider.svelte';
 	import VersionPill from '@polyglot/theme/VersionPill.svelte';
+	import type {TextVersionConfig} from "@polyglot/ancient-languages/corpora-types";
+	import { SvelteSet } from 'svelte/reactivity';
+	//import {TextVersionConfig} from 
 
 	export interface Props {
 		// Branding & Navigation
@@ -50,13 +53,16 @@
 
 		showHelp?: boolean;
 		onOpenHelp?: () => void;
-
+		
 		// Extensibility Slots
 		afterTitle?: Snippet;
 		extraDesktopControls?: Snippet;
 		extraMobileControls?: Snippet;
-
+		columnToggleButtons?:Snippet;
 		class?: string;
+		textVersions?: TextVersionConfig[];
+		textVersionsVisible?:SvelteSet<string>;
+		layoutIsOpen:boolean;
 	}
 
 	let {
@@ -97,7 +103,11 @@
 		enableFontSizeSlider=true,
 		extraDesktopControls,
 		extraMobileControls,
-		class: className = ''
+		columnToggleButtons,
+		class: className = '',
+		textVersions,
+		textVersionsVisible=$bindable(),
+		layoutIsOpen=$bindable(false)
 	}: Props = $props();
 
 	let isMobileMenuOpen = $state(false);
@@ -204,7 +214,13 @@
 			<!-- Desktop Right Controls (hidden on small screens) -->
 			<div class="hidden sm:flex items-center gap-1.5 sm:gap-2">
 				{#if showLayoutOptions}
-					<LayoutOptions bind:viewMode onchange={onViewModeChange} />
+					<LayoutOptions bind:viewMode onchange={onViewModeChange}
+					bind:isOpen={layoutIsOpen}
+					{textVersions} bind:textVersionsVisible>
+					{#if columnToggleButtons}
+					{columnToggleButtons}
+					{/if}
+					</LayoutOptions>
 				{/if}
 
 				{#if showCitation && onOpenCitation}
