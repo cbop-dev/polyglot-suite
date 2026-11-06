@@ -3,7 +3,8 @@
 	import { ReaderHeader, type ViewMode } from '@polyglot/ui';
 	import { readerState } from '../stores/readerState.svelte.js';
 	import {Languages} from '@polyglot/ancient-languages';
-	
+	const version = __APP_VERSION__ ? __APP_VERSION__ : null;
+	const repoHref= __APP_REPO__ ? __APP_REPO__: null;
 	let {
 		test = '',
 		suiteHref = '/'
@@ -41,6 +42,8 @@
 	textVersions={readerState.currentCorpusConfig.textVersions}
 	bind:textVersionsVisible
 	bind:layoutIsOpen={readerState.layoutIsOpen}
+	{version}
+	{repoHref}
 >
 	{#snippet afterTitle()}
 		<!-- Corpus Selector Trigger -->
