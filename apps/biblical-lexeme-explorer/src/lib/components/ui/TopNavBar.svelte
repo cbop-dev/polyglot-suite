@@ -24,7 +24,7 @@
 			goto(resolve(`/${targetVersion}`, {}));
 			/*goto(`${base}/bible/${targetVersion}`, { replaceState: true });*/
 		} else {
-			console.log('WHAT??');
+			//console.log('WHAT??');
 		}
 	}
 </script>

@@ -307,7 +307,7 @@
 					</div>
 				{/if}
 
-				WHAT????
+				
 					<div class="flex items-center gap-2">
 						<ThemeSlider
 							storageKey={themeStorageKey}
