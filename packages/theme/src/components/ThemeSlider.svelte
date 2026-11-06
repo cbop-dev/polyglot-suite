@@ -169,6 +169,7 @@
 			saveReadingTheme(sliderValue, storageKey);
 			saveReadingWarmth(warmthValue, warmthStorageKey);
 			saveReadingFontSize(fontSizeValue, fontSizeStorageKey);
+			
 		});
 	}
 
@@ -189,6 +190,10 @@
 	}
 
 	let isDark = $derived(sliderValue >= 50);
+	async function resetFontSize(){
+		fontSizeValue = 100;
+		scheduleCommit(); 
+	}
 </script>
 {#snippet fontSizeSlider()}
 	<!-- Font Size / Scale Slider -->
@@ -207,7 +212,7 @@
     <button
       type="button"
       class="slider-label-btn font-mono" 
-      onclick={() => { fontSizeValue = 100; scheduleCommit(); }}
+      onclick={() => { resetFontSize() }}
       title="Reset to default (100%)"
     >
       {fontSizeValue}%
@@ -428,7 +433,7 @@
 						<span class="panel-label">{fontSizeValue}%</span>
 						<!--{fontSizeValue}-->
 					</div>
-					<button type="button" class="btn text-sm preset-btn" onclick={()=>fontSizeValue=100} >Reset</button>
+					<button type="button" class="btn text-sm preset-btn" onclick={resetFontSize} >Reset</button>
 					{@render fontSizeSlider()}
 				{/if}
 			</div>
