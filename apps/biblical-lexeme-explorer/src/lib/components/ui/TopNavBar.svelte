@@ -80,6 +80,7 @@
 			<div class="theme-control shrink-0">
 				<ThemeSlider
 					placement="bottom"
+					enableFontSizeSlider=false
 					align="right"
 					storageKey="biblical_reading_theme"
 					warmthStorageKey="biblical_reading_warmth"

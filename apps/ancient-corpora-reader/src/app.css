@@ -91,3 +91,6 @@
     font-style: normal;
   }
 }
+:root {
+  --reading-font-scale: 1; /* 100% default, ranges from 0.75 to 1.5 */
+}

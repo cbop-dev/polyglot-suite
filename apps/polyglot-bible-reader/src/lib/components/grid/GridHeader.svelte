@@ -1,7 +1,7 @@
 <script lang="ts">
   import { versionGroups, formatVersionLabel } from '$lib/config/versions';
   import { readerState } from '$lib/stores/readerState.svelte';
-  import { size } from '$lib/stores/ThemeObserver.svelte';
+  import { size } from '@polyglot/theme';
 </script>
 {#snippet notBase(text:string)}
 {#if size.current!='base'}

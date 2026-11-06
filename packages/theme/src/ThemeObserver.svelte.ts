@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+//?import { browser } from '$app/environment';
 
 export const BREAKPOINTS = {
   sm: '(min-width: 640px)',
@@ -13,7 +13,7 @@ export type Breakpoint = keyof typeof BREAKPOINTS | 'base';
 export function createBreakpointObserver() {
   let active = $state<Breakpoint>('base');
 
-  if (browser) {
+  if (true || browser) {
     const queries = (Object.keys(BREAKPOINTS) as Array<keyof typeof BREAKPOINTS>)
       .reverse()
       .map((key) => ({

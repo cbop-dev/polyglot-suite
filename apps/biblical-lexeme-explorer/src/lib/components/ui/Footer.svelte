@@ -69,6 +69,7 @@
 			<!-- Right: Sliding scale reading theme selector -->
 			<div class="theme-control shrink-0">
 				<ThemeSlider
+					enableFontSizeSlider={false}
 					placement="top"
 					align="right"
 					storageKey="biblical_reading_theme"

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { readerState } from '$lib/stores/readerState.svelte';
-	import { theme } from '$lib/stores/ThemeObserver.svelte';
+	import { theme } from '@polyglot/theme';
 	import {
 		resolveSearchCorpus,
 		getCorpusLanguage,

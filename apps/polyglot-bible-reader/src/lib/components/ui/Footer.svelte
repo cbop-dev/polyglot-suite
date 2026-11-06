@@ -71,6 +71,7 @@
 				<ThemeSlider
 					placement="top"
 					align="right"
+					enableFontSizeSlider={false}
 					storageKey="biblical_reading_theme"
 					warmthStorageKey="biblical_reading_warmth"
 					profile="all"

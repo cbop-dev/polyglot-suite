@@ -4,7 +4,7 @@
   import { readerState } from '$lib/stores/readerState.svelte';
   import { formatVerseText } from '$lib/services/bibleDataLoader';
   import { dataSets, getCorrectVersionName, myDataSets } from '$lib/config/versions';
-  import { size,theme } from '$lib/stores/ThemeObserver.svelte';
+  import { size,theme } from '@polyglot/theme';
   import { findTopmostDiv } from '$lib/utils/ui-utils';
   import Icon from '../ui/Icon.svelte';
   import shareSvg from '$lib/assets/share-this.svg';

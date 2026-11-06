@@ -12,7 +12,7 @@
 		repoHref?: string;
 		suiteHref?: string;
 		homeHref?: string;
-
+		enableFontSizeSlider?:boolean;
 		// Work Selector
 		workTitle: string;
 		workAbbrev?: string;
@@ -94,6 +94,7 @@
 		showHelp = true,
 		onOpenHelp,
 		afterTitle,
+		enableFontSizeSlider=true,
 		extraDesktopControls,
 		extraMobileControls,
 		class: className = ''
@@ -252,6 +253,7 @@
 						warmthStorageKey={themeWarmthStorageKey}
 						profile="standard"
 						align="right"
+						{enableFontSizeSlider}
 					/>
 				{/if}
 

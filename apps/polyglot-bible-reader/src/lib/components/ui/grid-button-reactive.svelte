@@ -5,7 +5,7 @@ import gridButtonWhite from '$lib/assets/grid-white.svg';
 import Icon from './Icon.svelte';
 
 
-import { theme,size } from '$lib/stores/ThemeObserver.svelte';
+import { theme,size } from '@polyglot/theme';
 
 
 

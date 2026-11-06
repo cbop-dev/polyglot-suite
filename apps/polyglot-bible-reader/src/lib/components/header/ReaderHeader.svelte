@@ -16,7 +16,7 @@
   //import { expandRefs } from '$lib/utils/bible-utils';
   import GridButtonReactive from '../ui/grid-button-reactive.svelte';
   import Icon from '../ui/Icon.svelte';
-  import { theme,size } from '$lib/stores/ThemeObserver.svelte';
+  import { theme,size } from '@polyglot/theme';
   
   let displayedLanguages: string[]=$derived(Array.from(new Set(readerState.visibleVersions.map((v)=>getVersionLanguage(v)))));
   //$inspect('readerState.visibleVersions',readerState.visibleVersions);

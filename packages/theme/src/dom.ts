@@ -54,6 +54,7 @@ export function applyReadingTheme(
 		lookupBtnBorder,
 		lookupBtnText
 	} = colors;
+	
 
 	const root = document.documentElement;
 	const profile = options.profile ?? 'all';
@@ -278,4 +279,51 @@ export function generateThemeInitScript(options: ThemeDomOptions = {}): string {
     root.style.colorScheme = isDark ? 'dark' : 'light';
   } catch(e) {}
 })();`;
+}
+
+/***********************************************/
+///
+//// reading-size slider/implementation section:
+//
+/******** */
+
+export const DEFAULT_FONT_SIZE_STORAGE_KEY = 'polyglot-reading-font-size';
+
+export interface ThemeDomOptions {
+  storageKey?: string;
+  warmthStorageKey?: string;
+  fontSizeStorageKey?: string;
+  legacyKey?: string;
+  profile?: 'standard' | 'josephus' | 'all';
+  customTokens?: (colors: ResolvedThemeColors, root: HTMLElement) => void;
+}
+
+export function applyReadingFontSize(scalePercent: number): void {
+  if (typeof document === 'undefined') return;
+  const scale = (scalePercent / 100).toFixed(2);
+  document.documentElement.style.setProperty('--reading-font-scale', scale);
+}
+
+export function initReadingFontSize(options: ThemeDomOptions = {}): number {
+  if (typeof window === 'undefined') return 100;
+  const key = options.fontSizeStorageKey ?? DEFAULT_FONT_SIZE_STORAGE_KEY;
+  try {
+    const stored = localStorage.getItem(key);
+    if (stored !== null) {
+      const parsed = parseInt(stored, 10);
+      if (!isNaN(parsed) && parsed >= 70 && parsed <= 160) {
+        applyReadingFontSize(parsed);
+        return parsed;
+      }
+    }
+  } catch {}
+  applyReadingFontSize(100);
+  return 100;
+}
+
+export function saveReadingFontSize(value: number, key: string = DEFAULT_FONT_SIZE_STORAGE_KEY): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(key, String(Math.round(value)));
+  } catch {}
 }

@@ -552,4 +552,18 @@
 		content-visibility: auto;
 		contain-intrinsic-size: auto 120px;
 	}
+	.column-version {
+  /* Scale font-size and line-height proportionally based on the CSS variable */
+  font-size: calc(1rem * var(--reading-font-scale, 1));
+/*  line-height: calc(1.65 * var(--reading-font-scale, 1));*/
+}
+
+/* Optional per-language base proportion adjustments if needed */
+:global(.column-version.font-hebrew) {
+  font-size: calc(1.2rem * var(--reading-font-scale, 1));
+}
+
+:global(.column-version.font-syriac) {
+  font-size: calc(1.25rem * var(--reading-font-scale, 1));
+}
 </style>

@@ -9,31 +9,39 @@
 		applyReadingTheme,
 		initReadingTheme,
 		initReadingWarmth,
+		initReadingFontSize,
 		saveReadingTheme,
+		applyReadingFontSize,
+		saveReadingFontSize,
 		saveReadingWarmth,
+		
 		type ThemeDomOptions
 	} from '../dom.ts';
 
 	interface Props {
 		storageKey?: string;
 		warmthStorageKey?: string;
+		fontSizeStorageKey?: string;
 		legacyKey?: string;
 		profile?: 'standard' | 'josephus' | 'all';
 		align?: 'left' | 'right' | 'center';
 		placement?: 'bottom' | 'top';
 		variant?: 'popover' | 'inline';
+		enableFontSizeSlider?: boolean
 	}
 
 	const {
 		storageKey = 'ne-reading-theme',
 		warmthStorageKey = 'ne-reading-warmth',
 		legacyKey = 'ne-theme',
+		fontSizeStorageKey = 'polyglot-reading-font-size',
 		profile = 'all',
 		align = 'right',
 		placement = 'bottom',
-		variant = 'popover'
+		variant = 'popover',
+		enableFontSizeSlider=true
 	}: Props = $props();
-
+	let fontSizeValue = $state<number>(100); // 100%
 	let isOpen = $state<boolean>(false);
 	let containerEl = $state<HTMLElement | null>(null);
 	let sliderValue = $state<number>(25);
@@ -44,6 +52,7 @@
 	const options: ThemeDomOptions = {
 		storageKey,
 		warmthStorageKey,
+		fontSizeStorageKey,
 		legacyKey,
 		profile
 	};
@@ -83,38 +92,44 @@
 		}
 	});
 
+	function handleFontSizeInput(e: Event) {
+			fontSizeValue = parseInt((e.target as HTMLInputElement).value, 10);
+			scheduleCommit();
+	}
+	function handleCycleTheme() {
+		const next = getNextPreset(sliderValue, warmthValue);
+		setPreset(next.theme, next.warmth);
+	}
+
+	function handleKeyDown(e: KeyboardEvent) {
+		if (e.key === 'Escape' && isOpen) {
+			isOpen = false;
+		}
+	}
+
+	function handlePointerDown(e: PointerEvent) {
+		if (isOpen && containerEl && !containerEl.contains(e.target as Node)) {
+			isOpen = false;
+		}
+	}
+
+	function handleResize() {
+		if (isOpen) {
+			updatePosition();
+		}
+	}
+
+	function handleScroll() {
+		if (isOpen) {
+			updatePosition();
+		}
+	}
 	onMount(() => {
 		sliderValue = initReadingTheme(options);
 		warmthValue = initReadingWarmth(options);
+		fontSizeValue = initReadingFontSize(options);
 
-		function handleCycleTheme() {
-			const next = getNextPreset(sliderValue, warmthValue);
-			setPreset(next.theme, next.warmth);
-		}
-
-		function handleKeyDown(e: KeyboardEvent) {
-			if (e.key === 'Escape' && isOpen) {
-				isOpen = false;
-			}
-		}
-
-		function handlePointerDown(e: PointerEvent) {
-			if (isOpen && containerEl && !containerEl.contains(e.target as Node)) {
-				isOpen = false;
-			}
-		}
-
-		function handleResize() {
-			if (isOpen) {
-				updatePosition();
-			}
-		}
-
-		function handleScroll() {
-			if (isOpen) {
-				updatePosition();
-			}
-		}
+		
 
 		window.addEventListener('cycle-theme', handleCycleTheme);
 		window.addEventListener('keydown', handleKeyDown);
@@ -147,8 +162,10 @@
 		requestAnimationFrame(() => {
 			rafPending = false;
 			applyReadingTheme(sliderValue, warmthValue, options);
+			applyReadingFontSize(fontSizeValue);
 			saveReadingTheme(sliderValue, storageKey);
 			saveReadingWarmth(warmthValue, warmthStorageKey);
+			saveReadingFontSize(fontSizeValue, fontSizeStorageKey);
 		});
 	}
 
@@ -170,7 +187,49 @@
 
 	let isDark = $derived(sliderValue >= 50);
 </script>
-
+{#snippet fontSizeSlider()}
+	<!-- Font Size / Scale Slider -->
+<div class="slider-group">
+  <div class="slider-labels">
+	
+	
+	<button
+      type="button"
+      class="slider-label-btn"
+      onclick={() => { fontSizeValue = 50; scheduleCommit(); }}
+      title="Small font size"
+    >
+      <span class="text-sm font-bold font-serif">A-</span>
+    </button>
+    <button
+      type="button"
+      class="slider-label-btn font-mono" 
+      onclick={() => { fontSizeValue = 100; scheduleCommit(); }}
+      title="Reset to default (100%)"
+    >
+      {fontSizeValue}%
+    </button>
+    <button
+      type="button"
+      class="slider-label-btn"
+      onclick={() => { fontSizeValue = 200; scheduleCommit(); }}
+      title="Large font size"
+    >
+      <span class="text-xl font-bold font-serif">A+</span>
+    </button>
+  </div>
+  <input
+    type="range"
+    min="75"
+    max="150"
+    step="5"
+    value={fontSizeValue}
+    oninput={handleFontSizeInput}
+    class="theme-range-input text-size-slider brightness-slider"
+    aria-label="Text size slider"
+  />
+</div>
+{/snippet}
 {#if variant === 'inline'}
 	<div class="theme-slider-inline flex flex-col gap-1 items-center select-none text-xs">
 		<!-- Light/Dark Slider -->
@@ -231,6 +290,9 @@
 			<span class="text-[10px] opacity-0 font-mono hidden md:inline ml-0.5 pointer-events-none select-none min-w-[80px]">
 			</span>
 		</div>
+		{#if enableFontSizeSlider}
+		{@render fontSizeSlider()}
+		{/if}
 	</div>
 {:else}
 	<div class="theme-slider-container" bind:this={containerEl}>
@@ -328,7 +390,9 @@
 						aria-label="Warmth slider"
 					/>
 				</div>
-
+				
+			
+				
 				<!-- Quick Presets -->
 				<div class="presets-row">
 					<button
@@ -353,12 +417,24 @@
 						Midnight
 					</button>
 				</div>
+				{#if enableFontSizeSlider}
+					<hr class="m-3 pt-2"/>
+					<div class="panel-header mt-2 pt-1">
+						<span class="panel-title">Reader Text Scale</span>
+						
+						<span class="panel-label">{fontSizeValue}%</span>
+						<!--{fontSizeValue}-->
+					</div>
+					<button type="button" class="btn text-sm preset-btn" onclick={()=>fontSizeValue=100} >Reset</button>
+					{@render fontSizeSlider()}
+				{/if}
 			</div>
 		{/if}
 	</div>
 {/if}
 
 <style>
+	@reference 'tailwindcss';
 	.theme-slider-container {
 		position: relative;
 		display: inline-flex;
@@ -584,5 +660,8 @@
 		background: #1e293b;
 		color: #f8fafc;
 		border-color: #334155;
+	}
+	hr{
+		border-color: var(--color-ink, )
 	}
 </style>

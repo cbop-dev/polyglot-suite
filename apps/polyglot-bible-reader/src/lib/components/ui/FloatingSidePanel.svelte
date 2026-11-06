@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { size } from '$lib/stores/ThemeObserver.svelte';  
+  import { size } from '@polyglot/theme';  
   let { children, isOpen, onClose } = $props();
   
   let panelWidth = $state(400); // initial width
