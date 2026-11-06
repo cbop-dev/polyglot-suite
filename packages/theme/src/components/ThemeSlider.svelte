@@ -223,8 +223,8 @@
   </div>
   <input
     type="range"
-    min="75"
-    max="150"
+    min="50"
+    max="200"
     step="5"
     value={fontSizeValue}
     oninput={handleFontSizeInput}
