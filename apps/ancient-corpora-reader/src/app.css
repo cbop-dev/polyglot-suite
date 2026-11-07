@@ -70,7 +70,7 @@
     font-style: normal;
   }
 
-  .font-latin,
+  .font-latin, .font-english,
   .latin {
     font-family: 'Gentium Plus', 'Charis SIL', 'EB Garamond', serif;
     font-weight: 400;

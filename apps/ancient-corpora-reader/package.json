@@ -1,7 +1,7 @@
 {
   "name": "ancient-corpora-reader",
   "private": true,
-  "version": "0.4.12",
+  "version": "0.4.13",
   "repository": "https://github.com/cbop-dev/polyglot-suite/tree/main/apps/ancient-corpora-reader",
   "type": "module",
   "scripts": {

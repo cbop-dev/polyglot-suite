@@ -566,4 +566,9 @@
 :global(.column-version.font-syriac) {
   font-size: calc(1.25rem * var(--reading-font-scale, 1));
 }
+
+button.token-word.hl-token{
+
+	background-color: var(--hl-bg,white);
+}
 </style>
