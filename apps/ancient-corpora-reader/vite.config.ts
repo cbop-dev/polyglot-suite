@@ -15,5 +15,8 @@ export default defineConfig({
 	define: {
 		__APP_VERSION__: JSON.stringify(pkg.version),
 		__APP_REPO__: JSON.stringify('https://github.com/cbop-dev/polyglot-suite/tree/main/apps/ancient-corpora-reader')
+	},
+	server: {
+		port: 5175
 	}
 });

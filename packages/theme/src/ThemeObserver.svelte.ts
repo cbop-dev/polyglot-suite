@@ -13,7 +13,7 @@ export type Breakpoint = keyof typeof BREAKPOINTS | 'base';
 export function createBreakpointObserver() {
   let active = $state<Breakpoint>('base');
 
-  if (true || browser) {
+  if (typeof window !== 'undefined') {
     const queries = (Object.keys(BREAKPOINTS) as Array<keyof typeof BREAKPOINTS>)
       .reverse()
       .map((key) => ({
@@ -44,8 +44,14 @@ export const size = createBreakpointObserver();
 
 function observeTheme() {
 	let theTheme = $state<string | null>(null);
-
-	
+  if (typeof document === 'undefined') {
+    return {
+      get value() {
+        return theTheme;
+      }
+    };
+  }
+	// Standard platform guard: return safe SSR fallback on server
 	const html = document.documentElement;
 
 	const update = () => {

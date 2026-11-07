@@ -1,0 +1,12 @@
+{
+  "title": "Polyglot Bible Reader",
+  "description": "Multi-corpus biblical reader featuring Tyndale House TVTMS universal cross-tradition verse alignment, unabridged LSJ & BDB lexicons, instant lemma concordance search, and multi-color highlighting.",
+  "tags": [
+    "Hebrew MT",
+    "Greek LXX",
+    "Greek SBLGNT",
+    "Latin Vulgate",
+    "KJV", "WEB"
+  
+  ]
+}

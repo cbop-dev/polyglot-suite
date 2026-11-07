@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Polyglot Suite</title>
+  <script>
+    (function() {
+      var pathname = window.location.pathname;
+      var search = window.location.search || '';
+      var hash = window.location.hash || '';
+      
+      if (pathname.startsWith('/corpora') || pathname.includes('/corpora/')) {
+        window.location.replace('/corpora/' + search + hash);
+        return;
+      }
+      if (pathname.startsWith('/bible') || pathname.includes('/bible/')) {
+        window.location.replace('/bible/' + search + hash);
+        return;
+      }
+      if (pathname.startsWith('/lexemes') || pathname.includes('/lexemes/')) {
+        window.location.replace('/lexemes/' + search + hash);
+        return;
+      }
+      window.location.replace('/');
+    })();
+  </script>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center; padding: 4rem 1rem;">
+  <h2>Polyglot Suite</h2>
+  <p>Redirecting to <a href="./">Polyglot Suite</a>...</p>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "title": "Biblical Lexeme Explorer",
+  "description": "Analytical vocabulary acquisition, section-by-section frequency slicing, concordance search, customizable D3 word clouds, and unabridged LSJ & BDB lexicons for LXX, BHS, and SBLGNT.",
+  "tags": [
+    "Greek LXX",
+    "Hebrew BHS",
+    "Greek NT",
+    "LSJ Lexicon",
+    "BDB Lexicon",
+    "Word Clouds",
+    "Vocab Analytics"
+  ]
+}
