@@ -14,7 +14,7 @@
 				</div>
 				
 			<p class="subtitle">
-				Digital editions, lexical engines, and comparative textual readers for ancient literature.
+				Digital editions, lexical engines, and comparative textual readers for Biblical and related ancient literature.
 			</p>
 			
 		</header>
