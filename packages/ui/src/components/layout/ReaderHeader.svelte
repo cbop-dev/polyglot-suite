@@ -152,7 +152,7 @@
 			<button
 				type="button"
 				onclick={onOpenWorkPicker}
-				class="work-picker-trigger max-w-[110px] sm:max-w-[180px] md:max-w-[220px] lg:max-w-[280px] truncate rounded-lg border border-[var(--color-rule)] bg-[var(--color-card-bg)] px-2 py-1 text-xs sm:text-sm font-medium text-[var(--color-ink)] shadow-2xs hover:bg-[var(--color-rule)] cursor-pointer flex items-center gap-1 shrink min-w-0"
+				class="work-picker-trigger"
 				title={workPickerTitle}
 			>
 				{#if workAbbrev}
@@ -405,3 +405,14 @@
 		</div>
 	{/if}
 </header>
+<style>
+	@reference "tailwindcss";
+	.work-picker-trigger{
+		@apply max-w-[110px] sm:max-w-[180px] md:max-w-[220px] lg:max-w-[280px] truncate rounded-lg 
+				border border-[var(--color-rule)] 
+				bg-[var(--color-card-bg)] px-2 py-1 text-xs sm:text-sm font-medium  text-[var(--color-ink)] font-bold! italic
+				shadow-2xs hover:bg-[var(--color-rule)] cursor-pointer flex items-center gap-1 shrink min-w-0 ;
+
+
+	}
+</style>

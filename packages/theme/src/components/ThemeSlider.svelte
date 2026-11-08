@@ -308,7 +308,7 @@
 		<button
 			type="button"
 			onclick={toggleOpen}
-			class="theme-slider-btn"
+			class="theme-slider-btn {isDark ? 'dark':'light'}"
 			title="Adjust reading theme and warmth ({getThemeLabel(sliderValue)})"
 			aria-label="Adjust reading theme and warmth"
 			aria-expanded={isOpen}
@@ -453,7 +453,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		background: var(--page-bg, var(--color-page, #eceee7));
+		background: var(--bg, var(--color-page, #eceee7));
 		color: var(--text, var(--color-ink, #171a1c));
 		border: 1px solid var(--border, var(--color-rule, #d4d8d3));
 		border-radius: 6px;
@@ -466,7 +466,7 @@
 
 	.theme-slider-btn:hover {
 		border-color: var(--accent, var(--color-accent, #1f6f7a));
-		background: var(--col-bg, var(--color-card-bg, #f5f6f2));
+		background: var(--card-bg, var(--color-card-bg, #f5f6f2));
 	}
 
 	.theme-icon {

@@ -1,11 +1,14 @@
 <script lang="ts">
+
+
 	interface Props {
 		version?: string;
 		href?: string;
 		title?: string;
 		class?: string;
 	}
-
+	//const envVersion = __APP_VERSION__ ?? null;
+	//const envRepoHref = __APP_REPO__ ??  null;
 	let {
 		version = '0.0.0',
 		href = '#',
@@ -13,17 +16,17 @@
 		class: className = ''
 	}: Props = $props();
 </script>
-
+{#if version}
 <a
-	{href}
+	href={href ?? "#"}
 	target="_blank"
 	rel="noopener noreferrer"
-	class="version-pill {className}"
+	class="version-pill {className} align-super"
 	{title}
 >
 	v{version}
 </a>
-
+{/if}
 <style>
 	.version-pill {
 		padding: 0.08rem 0.35rem;
@@ -40,7 +43,8 @@
 		justify-content: center;
 		transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 		white-space: nowrap;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		/*box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);*/
+		box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.35);
 		vertical-align: middle;
 	}
 

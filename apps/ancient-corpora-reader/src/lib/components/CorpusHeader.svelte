@@ -3,14 +3,23 @@
 	import { ReaderHeader, type ViewMode } from '@polyglot/ui';
 	import { readerState } from '../stores/readerState.svelte.js';
 	import {Languages} from '@polyglot/ancient-languages';
-	const version = __APP_VERSION__ ? __APP_VERSION__ : null;
+/*	const version = __APP_VERSION__ ? __APP_VERSION__ : null;
 	const repoHref= __APP_REPO__ ? __APP_REPO__: null;
+	*/
+	/**
+ * Application version and repository metadata.
+ * Injected at build/dev time via Vite's `define` config, with fallback defaults.
+ */
+	import {APP_VERSION, APP_REPO} from "../version.js";
+	
+
 	let {
 		test = '',
 		suiteHref = '/'
 	} = $props();
 
 	let textVersionsVisible=readerState.visibleLanguages;
+	$inspect("version: ");
 </script>
 
 <ReaderHeader
@@ -42,18 +51,18 @@
 	textVersions={readerState.currentCorpusConfig.textVersions}
 	bind:textVersionsVisible
 	bind:layoutIsOpen={readerState.layoutIsOpen}
-	{version}
-	{repoHref}
+	version={__APP_VERSION__}
+	repoHref={__APP_REPO__}
 >
 	{#snippet afterTitle()}
 		<!-- Corpus Selector Trigger -->
 		<button
 			type="button"
 			onclick={() => (readerState.isCorpusModalOpen = true)}
-			class="corpus-picker-trigger max-w-[120px] sm:max-w-[180px] md:max-w-[220px] truncate rounded-lg border border-[var(--color-rule)] bg-[var(--color-card-bg)] px-2 py-1 text-xs sm:text-sm font-semibold text-[var(--color-ink)] shadow-2xs hover:bg-[var(--color-rule)] cursor-pointer flex items-center gap-1 shrink-0"
+			class="corpus-picker-trigger"
 			title="Choose corpus (Hot key: 'b')"
 		>
-			<span class="text-blue-600 dark:text-blue-400 font-bold truncate">
+			<span class="font-bold truncate">
 				{readerState.currentCorpusConfig.name}
 			</span>
 			<span class="text-[10px] text-[var(--color-ink-soft)] shrink-0">▾</span>
@@ -78,3 +87,11 @@
 		</div>
 	{/snippet}-->
 </ReaderHeader>
+<style>
+	@reference "tailwindcss";
+	.corpus-picker-trigger {
+		 @apply max-w-[120px] sm:max-w-[180px] md:max-w-[220px] 
+		 truncate rounded-lg border border-[var(--color-rule)] bg-[var(--color-card-bg)] px-2 py-1 text-xs sm:text-sm font-semibold 
+		  shadow-2xs hover:bg-[var(--color-rule)] cursor-pointer flex items-center gap-1 shrink-0;
+	}
+</style>
