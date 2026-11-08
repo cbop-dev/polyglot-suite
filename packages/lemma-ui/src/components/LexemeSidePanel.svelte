@@ -1017,7 +1017,7 @@
 				/>
 
 				<!-- Section 2: Full Lexicon Article -->
-				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] shadow-xs overflow-hidden shrink-0">
+				<div class="lexicon-article rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] shadow-xs overflow-hidden shrink-0">
 					<button
 						type="button"
 						onclick={toggleLexArticle}
@@ -1067,7 +1067,7 @@
 				</div>
 
 				<!-- Section 3: Concordance / Corpus Occurrences -->
-				<div class="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] shadow-xs overflow-hidden shrink-0">
+				<div class="concordance-div rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card-bg)] shadow-xs overflow-hidden shrink-0">
 					<button
 						type="button"
 						onclick={toggleConcordance}
@@ -1496,3 +1496,9 @@
 		</FloatingSidePanel>
 	{/if}
 {/if}
+<style>
+@reference "tailwindcss";
+.lexicon-article, .concordance-div {
+	@apply py-3;
+}
+</style>
