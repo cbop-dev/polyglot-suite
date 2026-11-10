@@ -105,7 +105,7 @@ let optionGroupsDisplay = $state({
 			name="groupSelection"
 			bind:value={filterGroupSelection}
 			id="groupSelect"
-			class="inline-block self-center text-center align-top"
+			class="inline-block self-center text-center align-top border"
 		>
 			{#each Object.entries(Lexeme.posGroupsUIDesc) as posDescObj}
 				<option value={posDescObj[0]} selected>{posDescObj[1]}</option>
@@ -113,7 +113,7 @@ let optionGroupsDisplay = $state({
 		</select>
 		<Button
 			style="inline"
-			buttonColors="btn-ghost"
+			buttonColors="btn "
 			buttonText="Reset All"
 			toggled={() => {
 				Object.keys(filterOptions.pos).forEach((k) => (filterOptions.pos[k] = 'include'));
@@ -121,7 +121,7 @@ let optionGroupsDisplay = $state({
 		/>
 		<Button
 			style="inline"
-			buttonColors="btn-ghost"
+			buttonColors="btn"
 			buttonText="Include"
 			toggled={() => {
 				setFilterGroupOptions('include');
@@ -130,7 +130,7 @@ let optionGroupsDisplay = $state({
 		<Button
 			style="inline"
 			buttonStyle="btn"
-			buttonColors="btn-ghost"
+			buttonColors="btn"
 			buttonText="Exclude"
 			toggled={() => {
 				setFilterGroupOptions('exclude');
@@ -138,18 +138,18 @@ let optionGroupsDisplay = $state({
 		/>
 		<Button
 			style="inline"
-			buttonColors="btn-ghost"
+			buttonColors="btn"
 			buttonText="Restrict to"
 			toggled={() => {
 				setFilterGroupOptions('restrict');
 			}}
 		/>
-
+	<hr class="mt-2"/>
 		<table class="table">
 			<!-- head -->
 			<thead>
 				<tr>
-					<th class="font-bold">Part of Speech</th>
+					<th class="font-bold text-left">Part of Speech</th>
 					<th class="font-bold">Include</th>
 					<th class="font-bold">Exclude</th>
 					<th class="font-bold">Restrict to</th>
@@ -159,7 +159,7 @@ let optionGroupsDisplay = $state({
 				{#each Object.entries(Lexeme.PosDict) as [posEnum, posAbbrevDesc]}
 					<tr>
 						<td>
-							<div class="tooltip">
+							<div class="tooltip text-left">
 								{posAbbrevDesc.desc}
 							</div>
 						</td>
@@ -200,6 +200,7 @@ let optionGroupsDisplay = $state({
 {#if enableOccurences}
 	<ModalButton buttonStyle=" btn btn-outline btn-primary " buttonText="Word count">
 		<h2><label for="minCorpusCount" class="label-text inline">Min/Max Word Filter</label></h2>
+		<hr/>
 		<div>
 			<style>
 				.rangeSlider {
@@ -325,3 +326,24 @@ let optionGroupsDisplay = $state({
 	/>
 	<input name="maxwords" type="number" bind:value={filterOptions.maxWords} size="10" />
 {/if}
+
+<style>
+@reference "tailwindcss";
+/*border-spacing: 2em;*/
+	table.table th, table.table td{
+		/*padding-left: 1em;	
+		padding-rigth*/
+		@apply px-2;
+	}
+
+	table{
+		margin:auto;
+	}
+
+	hr{
+		border-color: var(--color-rule, #aaa);
+	}
+	select{
+		border-color: var(--color-rule, #aaa)
+	}
+</style>

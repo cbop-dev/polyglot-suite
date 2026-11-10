@@ -28,7 +28,11 @@
 	
 	<div bind:this={box} bind:clientHeight={scrollHeight} >
 		<form method="dialog">
-			<button type="button" class="inline-flex items-center justify-center rounded-full w-7 h-7 text-ink/80 hover:bg-rule/20 hover:text-ink absolute right-2 top-2 cursor-pointer transition-colors" onclick={()=>{showModal=false}}>✕</button>
+			<button type="button" 
+			class="inline-flex items-center justify-center rounded-full 
+			w-7 h-7 text-ink/80 hover:bg-rule/20 hover:text-ink absolute 
+			right-2 top-2 cursor-pointer transition-colors bg-(color:--color-rule)" 
+			onclick={()=>{showModal=false}}>✕</button>
 		</form>
 		{#if title || description}
 			{#if title}
@@ -53,6 +57,7 @@
 </dialog>
 
 <style>
+@reference "tailwindcss";
 	dialog {
 		/*max-width: 32em;*/
 		border-radius: 0.2em;
@@ -89,5 +94,9 @@
 	}
 	button {
 		display: block;
+	}
+
+	hr{
+		border-color: var(--color-rule, yellow);
 	}
 </style>

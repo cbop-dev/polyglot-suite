@@ -66,8 +66,8 @@ export class Lexeme {
         "PRONOUN": [7, 8, 9, 16]
     };
     static posGroupsUIDesc = {
-        "CONTENT": "Content words (nounds, verbs, adjectives, adverbs)",
-        "SYNTAX": "Syntax words (conjuctions, particles, prepositions)",
+        "CONTENT": "Content words",// (nounds, verbs, adjectives, adverbs)"
+        "SYNTAX": "Syntax words",// (conjuctions, particles, prepositions)",
         "PREPOSITIONS": "Prepositions",
         "PARTICLES": "Particles",
         "PRONOUNS": "Pronouns"
