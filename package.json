@@ -1,6 +1,6 @@
 {
   "name": "polyglot-suite",
-  "version": "0.6.15",
+  "version": "0.6.16",
   "private": true,
   "description": "Monorepo workspace for ancient language readers and linguistic toolkits",
   "workspaces": [
@@ -14,7 +14,7 @@
     "dev:lexeme": "npm --workspace=biblical-lexeme-explorer run dev",
     "dev:corpora": "npm --workspace=ancient-corpora-reader run dev",
     "dev:portal": "npm --workspace=portal run dev",
-    "dev:synoptic": "npm --workspace=@cbop-dev/synoptic-viewer run dev" ,
+    "dev:synoptic": "npm --workspace=@cbop-dev/synoptic-viewer run dev",
     "build:bible": "npm --workspace=polyglot-bible-reader run build",
     "build:lexeme": "npm --workspace=biblical-lexeme-explorer run build",
     "build:corpora": "npm --workspace=ancient-corpora-reader run build",
