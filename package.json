@@ -1,6 +1,6 @@
 {
   "name": "polyglot-suite",
-  "version": "0.6.16",
+  "version": "0.6.17",
   "private": true,
   "description": "Monorepo workspace for ancient language readers and linguistic toolkits",
   "workspaces": [
@@ -31,7 +31,7 @@
     "build:vps": "node scripts/build_vps.js",
     "preview:gh": "node scripts/preview.js",
     "preview:www": "node scripts/preview.js",
-    "build:www:synopsis": "NODE_OPTIONS=--max-old-space-size=8192 ADAPTER=static BASE_PATH=/synopsis BUILD_DIR=../../dist/synopsis npm --workspace=apps/synoptic-viewer run build:www",
+    "build:www:synopsis": "NODE_OPTIONS=--max-old-space-size=8192 ADAPTER=static BASE_PATH=/synopsis BUILD_DIR=../../dist/synopsis npm --workspace=@cbop-dev/synoptic-viewer run build:www",
     "preview:corpora": "npm --workspace=ancient-corpora-reader run preview:www",
     "build:www:bible": "NODE_OPTIONS=--max-old-space-size=8192 ADAPTER=static BASE_PATH=/bible BUILD_DIR=../../dist/bible npm --workspace=polyglot-bible-reader run build",
     "build:www:lexeme": "NODE_OPTIONS=--max-old-space-size=8192 ADAPTER=static BASE_PATH=/lexemes BUILD_DIR=../../dist/lexemes npm --workspace=biblical-lexeme-explorer run build:www",
