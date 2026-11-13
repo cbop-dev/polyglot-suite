@@ -1,6 +1,6 @@
 # Polyglot Suite
 
-Monorepo workspace for ancient language readers, lexical engines, and comparative textual tooling.
+Monorepo workspace for various ancient language readers and lexical tools, with a focus on biblical texts.
 
 > 📖 **Architectural Guide**: For an in-depth technical breakdown of the zero-backend WebAssembly VFS layer, shared package boundaries, database release mechanics, and CI/CD pipelines, see [**Monorepo Architecture & Technical Design**](docs/monorepo-architecture.md).
 
@@ -11,9 +11,7 @@ Monorepo workspace for ancient language readers, lexical engines, and comparativ
 | **Polyglot Bible Reader** | [`apps/polyglot-bible-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/polyglot-bible-reader) | SvelteKit 5, Tailwind CSS, `sql.js-httpvfs` | Multi-corpus biblical reader (Hebrew MT, Greek LXX, Greek SBLGNT, Latin Vulgate, English KJV/NET/Brenton) with TVTMS alignment, LSJ/BDB lexicons, and concordance search. | **Active** (Deployed) |
 | **Biblical Lexeme Explorer** | [`apps/biblical-lexeme-explorer`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/biblical-lexeme-explorer) | SvelteKit 5, Tailwind CSS, D3, Chart.js | Vocabulary acquisition, section-by-section frequency distributions, concordance lookups, word clouds, and unabridged LSJ &amp; BDB lexicons for LXX, BHS, and SBLGNT. | **Active** (Deployed) |
 | **Ancient Corpora Reader** | [`apps/ancient-corpora-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader) | SvelteKit 2, Svelte 5, `sql.js-httpvfs` | Unified parallel reader for **Apostolic Fathers**, **Philo of Alexandria**, and **Flavius Josephus** with CTE pushdown paginated concordances, Mangey citations, and Scripture indexes. | **Active** (Deployed) |
-| **Josephus Reader** | [`apps/josephus-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/josephus-reader) | Astro, Svelte 5, SQLite | Parallel Greek and English reader for Flavius Josephus (*Jewish War*, *Antiquities*, *Life*, *Against Apion*). | *Consolidated into ACR* |
-| **Apostolic Fathers Reader** | [`apps/apostolic-fathers-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/apostolic-fathers-reader) | SvelteKit 5, `sql.js-httpvfs` | Trilingual Greek, Latin, and English reader for the 15 Apostolic Fathers works, with LSJ definitions, lemma search, and multi-color highlighting. | *Consolidated into ACR* |
-| **Philo Reader** | [`apps/philo-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/philo-reader) | SvelteKit 5, `@polyglot/db-vfs` | Complete 31-treatise critical reader for Philo of Alexandria with Cohn-Wendland Greek, Yonge English, Mangey 1742 milestones, full LSJ lexicon, and Biblical Citation Explorer. | *Consolidated into ACR* |
+
 
 ## Workspace Structure
 
@@ -23,9 +21,6 @@ polyglot-suite/
 │   ├── polyglot-bible-reader/      # [Active] Multi-corpus biblical reader & pipeline
 │   ├── biblical-lexeme-explorer/   # [Active] Analytical vocabulary explorer & Swete pipeline
 │   ├── ancient-corpora-reader/     # [Active] Consolidated AF, Philo, and Josephus reader
-│   ├── josephus-reader/            # [Preserved] Astro + Svelte parallel Josephus reader
-│   ├── apostolic-fathers-reader/   # [Preserved] SvelteKit 5 + VFS Apostolic Fathers reader
-│   └── philo-reader/               # [Preserved] SvelteKit 5 + VFS Philo reader
 ├── packages/                       # Shared monorepo packages
 │   ├── ancient-languages/          # Morphology decoders, diacritic cleaners, inflection filters
 │   ├── biblical-data/              # Standardized biblical corpora schemas & client readers
@@ -80,6 +75,7 @@ Compare the database version in local `config.json` against the latest published
 # Compare all databases (Bible, Philo, Apostolic Fathers)
 npm run status:db:gh
 
+
 # Compare a specific app database
 npm run status:db:gh bible       # Polyglot Bible Reader & BLE (alias: lex, data)
 npm run status:db:gh philo       # Philo Reader
@@ -101,8 +97,12 @@ npm run pull:db
 
 # Download chunks for a specific app
 npm run pull:db:bible
+npm run pull:db:corpora
+
+## Or component of Ancient Corpora Reader:
 npm run pull:db:philo
 npm run pull:db:fathers
+npm run pull:db:josephus
 ```
 
 ### 3. Release a New Database Version
