@@ -12,7 +12,7 @@
 <div class="card">
 	<div>
 		<div class="card-header">
-			<span class="badge badge-live">Available</span>
+			<!--<span class="badge badge-live">Available</span>-->
 			<h2><a href={app.url} class="link hover:underline" rel="external" data-sveltekit-reload>{app.title}</a></h2>
 		</div>
 		<hr class="mb-2! card-heading-hr"/>

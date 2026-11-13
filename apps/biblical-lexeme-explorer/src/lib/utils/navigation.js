@@ -1,4 +1,7 @@
 import * as bibleUtils from './bible-utils.js';
+import {getReaderVerseUrl} from '@polyglot/ui/navigation';
+
+export {getReaderVerseUrl};
 
 /**
  * Generates a deep link URL into the Polyglot Bible Reader for a given reference and database.
@@ -6,7 +9,9 @@ import * as bibleUtils from './bible-utils.js';
  * @param {string} [dbAbbrev='lxx'] - Corpus identifier ('lxx', 'bhs', or 'sblgnt')
  * @returns {string} URL to polyglot-bible-reader
  */
-export function getReaderVerseUrl(refString, dbAbbrev = 'lxx') {
+
+
+export function getReaderVerseUrl2(refString, dbAbbrev = 'lxx') {
 	const rawBase =
 		import.meta.env.PUBLIC_BIBLE_APP_URL ||
 		(import.meta.env.DEV ? 'http://localhost:5173' : '/polyglot-suite/bible');

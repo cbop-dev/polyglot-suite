@@ -11,5 +11,5 @@
     "noEmit": true,
     "allowJs": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "../ui/src/utils/navigation.js"]
 }

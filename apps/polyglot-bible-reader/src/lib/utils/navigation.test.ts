@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getLexemeExplorerUrl } from './navigation.js';
 
-describe('getLexemeExplorerUrl', () => {
+describe('getLexemeExplorerUrl test', () => {
 	it('generates a URL with id, lemma, panel, and corpus for Greek LXX', () => {
 		const url = getLexemeExplorerUrl({
 			corpusId: 'lxx',
@@ -42,7 +42,8 @@ describe('getLexemeExplorerUrl', () => {
 			book: 'GEN',
 			chapter: 1,
 			verse: 1,
-			panel: 'book'
+			panel: 'book',
+			version:'BHS'
 		});
 		expect(url).toContain('/bhs/?');
 		expect(url).toContain('panel=book');

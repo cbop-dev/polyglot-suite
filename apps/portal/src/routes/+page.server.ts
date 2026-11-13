@@ -1,16 +1,17 @@
+//env key url per app is: PUBLIC_SUITE_<APPDIR>, converted to uppsercase, e.g., "PUBLIC_SUITE_LEXEME"
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dev } from '$app/environment';
 import type { PageServerLoad } from './$types';
-
+import portalJson from '$lib/portal.json';
 export const prerender = true;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Walk up from apps/portal/src/routes to the monorepo root
-function findRootDir(): string {
+/*function findRootDir(): string {
 	let curr = resolve(__dirname, '../../../..');
 	if (existsSync(resolve(curr, 'portal.json'))) {
 		return curr;
@@ -24,9 +25,10 @@ function findRootDir(): string {
 		curr = dirname(curr);
 	}
 	return resolve(__dirname, '../../../..');
-}
+}*/
 
-const ROOT_DIR = findRootDir();
+const ROOT_DIR =  resolve(__dirname, '../../../..');
+
 
 const isGithubTarget =
 	process.env.TARGET === 'github' ||
@@ -55,7 +57,7 @@ if (!isGithubTarget) {
 	}
 }
 
-const ROUTE_CONFIG: Record<string, { slug: string; envKey: string }> = {
+/*const ROUTE_CONFIG: Record<string, { slug: string; envKey: string }> = {
 	'polyglot-bible-reader': { slug: 'bible', envKey: 'PUBLIC_BIBLE_APP_URL' },
 	'biblical-lexeme-explorer': { slug: 'lexemes', envKey: 'PUBLIC_LEXEMES_APP_URL' },
 	'ancient-corpora-reader': { slug: 'corpora', envKey: 'PUBLIC_CORPORA_APP_URL' }
@@ -66,7 +68,7 @@ const DEV_DEFAULT_URLS: Record<string, string> = {
 	'biblical-lexeme-explorer': 'http://localhost:5174',
 	'ancient-corpora-reader': 'http://localhost:5175'
 };
-
+*/
 export interface PortalAppItem {
 	id: string;
 	slug: string;
@@ -77,16 +79,16 @@ export interface PortalAppItem {
 }
 
 export const load: PageServerLoad = async () => {
-	const rootConfigPath = resolve(ROOT_DIR, 'portal.json');
-	if (!existsSync(rootConfigPath)) {
-		console.warn(`[Portal] Root portal.json not found at ${rootConfigPath}`);
+	//const rootConfigPath = resolve(ROOT_DIR, 'portal.json');
+	if (!portalJson) {
+		console.warn(`[Portal] Root portal.json not found!`);
 		return { apps: [] };
 	}
 
-	const { appsEnabled = [] } = JSON.parse(readFileSync(rootConfigPath, 'utf8')) as {
+	const { appsEnabled = [] } = portalJson as {
 		appsEnabled: string[];
 	};
-
+	console.log(`appsEnabled: [${appsEnabled.join(',')}]`)
 	const apps: PortalAppItem[] = [];
 
 	for (const appDir of appsEnabled) {
@@ -101,20 +103,23 @@ export const load: PageServerLoad = async () => {
 				title: string;
 				description: string;
 				tags: string[];
+				slug: string;
+				
 			};
 
-			const routeMeta = ROUTE_CONFIG[appDir];
-			const slug = routeMeta?.slug || appDir;
-			const defaultRelative = `./${slug}/`;
+			const envKey ="PUBLIC_SUITE_" + appDir.toLocaleUpperCase();
+			//const routeMeta = ROUTE_CONFIG[appDir];
+			//const slug = routeMeta?.slug || appDir;
+			const defaultRelative = `./${meta.slug}/`;
 			const url = dev
-				? (routeMeta?.envKey && process.env[routeMeta.envKey]) || DEV_DEFAULT_URLS[appDir] || defaultRelative
+				? (envKey && process.env[envKey]) ||  defaultRelative
 				: isGithubTarget
 					? defaultRelative
-					: (routeMeta?.envKey && process.env[routeMeta.envKey]) || defaultRelative;
-
+					: (envKey && process.env[envKey]) || defaultRelative;
+			console.log("here wer are in : " + appDir);
 			apps.push({
 				id: appDir,
-				slug,
+				slug: meta.slug,
 				title: meta.title,
 				description: meta.description,
 				tags: meta.tags || [],
@@ -124,6 +129,7 @@ export const load: PageServerLoad = async () => {
 			console.error(`[Portal] Failed parsing metadata for ${appDir}:`, err);
 		}
 	}
-
+	console.log("apps:");
+	console.log(apps);
 	return { apps };
 };

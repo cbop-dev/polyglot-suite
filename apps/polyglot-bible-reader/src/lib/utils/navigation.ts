@@ -1,5 +1,7 @@
 import { normalizeBookName } from '$lib/config/bookMapping.js';
-
+import {CANONICAL_CORPORA, resolveCorpus} from "$lib/config/corpora.generated";
+//import {datasetsDict} from "$lib/config/versions";
+	import { resolve } from '$app/paths';
 export interface LexemeExplorerLinkOptions {
 	corpusId?: string;
 	version?: string;
@@ -19,8 +21,33 @@ export interface LexemeExplorerLinkOptions {
  */
 export function getLexemeExplorerUrl(options: LexemeExplorerLinkOptions): string {
 	let db = 'lxx';
+	const validDBs=['bhs','lxx','sblgnt'];
+	
 	const rawCorpus = (options.corpusId || options.version || '').toLowerCase();
+	const resolvedCorpus=resolveCorpus(rawCorpus);
+	if (resolvedCorpus){
+		if (resolvedCorpus.testament=="ot") {
+			if (resolvedCorpus.language=="hbo"){
+				db='bhs';
+			}
+			else {
+				//console.log(`OT corpus ${resolvedCorpus.id} is ${resolvedCorpus.language}, not Hebrew, using LXX as default`);
+				db='lxx';
+			}
+		}
+		else{
+			db='sblgnt';
+		}
+	}
+	else if (rawCorpus && validDBs.includes(rawCorpus)){
+		db= rawCorpus;
+	}
+	else {
 
+		//console.log(`Did not find ${rawCorpus} in ${CANONICAL_CORPORA.join(",")}!`);
+	}
+		
+	/* this is dumb:
 	if (rawCorpus === 'bhs' || rawCorpus === 'wlc') {
 		db = 'bhs';
 	} else if (rawCorpus === 'opengnt' || rawCorpus === 'sblgnt') {
@@ -39,7 +66,7 @@ export function getLexemeExplorerUrl(options: LexemeExplorerLinkOptions): string
 			}
 		}
 	}
-
+	*/
 	const params = new URLSearchParams();
 	const targetId = options.id ?? options.lexemeId;
 	if (targetId !== undefined && targetId !== null && targetId !== '') {
@@ -60,7 +87,8 @@ export function getLexemeExplorerUrl(options: LexemeExplorerLinkOptions): string
 	const qs = params.toString();
 	const rawBase =
 		(import.meta.env.PUBLIC_LEXEMES_APP_URL as string | undefined) ||
-		(import.meta.env.DEV ? 'http://localhost:5174' : '/polyglot-suite/lexemes');
+		("/lexemes")||
+		(import.meta.env.DEV ? 'http://localhost:5174' : '/lexemes');
 	const cleanBase = rawBase.replace(/\/+$/, '');
 
 	return `${cleanBase}/${db}/${qs ? '?' + qs : ''}`;

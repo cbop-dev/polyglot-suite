@@ -1,21 +1,71 @@
 
 <script>
+    import { bibleRefReverseLookupHash } from '@polyglot/ancient-languages';
+	import * as bibleUtils from '@polyglot/ancient-languages/bible';
 /**
  * NB: this component should probably be re-drawn when lemma info changes, i.e., surrounded in {#key lemma}..{/key}
 */
 	import { onMount, untrack } from 'svelte';
+	const defBibleBaseURL='/bible/';
+	function makeBibleUrl(bibleRefString,baseURL=defBibleBaseURL){
+		//const bcv = bibleUtils.getBCVfromRef(bibleRefString);
+		const bcvArray = bibleRefString.split('.').map((s)=>s.trim());
+		const bcv = {
+			book: bcvArray[0] || '',
+			chapter: bcvArray[1] || '',
+			verse: bcvArray[2] || ''
+		};
+		const bookAbbrev = bibleRefReverseLookupHash[bcv.book] || bibleUtils.getBookAbbrev(bcv.book);
+		const bcvParams={
+			book: bookAbbrev ? `&book=${bcv.book}` : '',
+			chapter: bookAbbrev &&bcv.chapter ? `&chapter=${bcv.chapter}` : '',
+			verse: bookAbbrev && bcv.verse ? `&verse=${bcv.verse}` : ''	
+
+		}
+
+		const queryParams=[
+			bcvParams.book,
+			bcvParams.chapter,
+			bcvParams.verse
+		].filter((s)=>s).join('');
+
+
+		return queryParams ? `${baseURL}?${queryParams}&version=bhs` : '';
+	}
 
 	/**
 	 * @typedef BDBEntryProps
 	 * @property {any} lemma - Lexeme object or string
 	 * @property {string} [lang='hebrew']
+	 * @property {string} [bibleBaseUrl=defBibleBaseURL] - Base URL for Bible links
 	 * @property {string} [dbAbbrev='bhs']
 	 * @property {boolean} [autoOpen=false]
 	 * @property {((lemma: string, strongs?: string, lang?: string) => Promise<any>)|null} [fetchEntry]
+	 * @property {((bibleRefString: string) => string)} [bibleURLFunc] - Function to generate a Bible URL from a reference string
 	 */
 	/** @type {BDBEntryProps} */
-	let { lemma, lang = 'hebrew', dbAbbrev = 'bhs', autoOpen = false, fetchEntry = null } = $props();
+	let { 
+		lemma, lang = 'hebrew', bibleBaseUrl = defBibleBaseURL, dbAbbrev = 'bhs', autoOpen = false, fetchEntry = null,
+		bibleURLFunc=makeBibleUrl
+	} = $props();
 
+
+	function udpatedBibleHrefs(htmlString){
+		const parser = new DOMParser();
+		const dom = parser.parseFromString(htmlString, 'text/html');
+		const links = dom.querySelectorAll('a');
+		links.forEach((link) => {
+			const href = link.getAttribute('href');
+			if (href && href.startsWith('bible://')) {
+				const bibleRefString = href.replace('bible://', '');
+				const newUrl = bibleURLFunc(bibleRefString, bibleBaseUrl);
+				link.setAttribute('href', newUrl);
+				link.setAttribute('rel', 'external');
+				link.setAttribute('data-sveltekit-reload', '');
+			}
+		});
+		return dom.body.innerHTML;
+	}
 	let isOpen = $state(autoOpen);
 	let loading = $state(false);
 	/** @type {{ headword?: string, strongs?: string, matchType?: string, def?: string } | null} */
@@ -170,7 +220,7 @@
 					<div class="bdb-entry-body">
 						<div class="bdb-text leading-relaxed text-sm md:text-[15px] max-h-96 overflow-y-auto pr-2 custom-scrollbar text-ink">
 							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-							{@html formattedDef}
+							{@html udpatedBibleHrefs(formattedDef)}
 						</div>
 					</div>
 				{:else}
