@@ -1,0 +1,3 @@
+[submodule "apps/synoptic-viewer"]
+	path = apps/synoptic-viewer
+	url = https://github.com/cbop-dev/synoptic-viewer.git
