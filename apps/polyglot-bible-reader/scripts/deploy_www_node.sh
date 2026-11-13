@@ -262,7 +262,7 @@ if [ "$SKIP_BUILD" = "true" ]; then
   fi
 else
   export BASE_PATH="${BASE_PATH:-}"
-  echo "🔨 Building site for reemote node deployment (BASE_PATH='${BASE_PATH}')..."
+  echo "🔨 Building site for remote node deployment (BASE_PATH='${BASE_PATH}')..."
   npm run build
 fi
 
