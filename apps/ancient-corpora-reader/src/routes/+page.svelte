@@ -1,14 +1,16 @@
 <script lang="ts">
-	import { base } from '$app/paths';
+	import { base , resolve} from '$app/paths';
+	import {goto} from '$app/navigation';
 	import { getAllCorpora } from '$lib/config/corpora.js';
 	import { getCorpusWorks } from '$lib/config/corpora.data.js';
 	import ThemeSlider from '@polyglot/theme/ThemeSlider.svelte';
 
 	const corpora = getAllCorpora();
 
-	const suiteHref = import.meta.env.DEV
+	const suiteHref = import.meta.env.DEV 
 		? 'http://localhost:5170'
-		: (base ? base.replace(/\/corpora\/?$/, '') || '/' : '/');
+		//: (base ? base.replace(/\/corpora\/?$/, '/') || '/' : '/');
+		:  '/';
 
 	const CORPUS_TAGS: Record<string, string[]> = {
 		af: ['Kirsopp Lake Loeb', 'Greek Text', 'Latin Fragments', 'English Translation', 'LSJ Lexicon'],
