@@ -4,5 +4,55 @@
     "biblical-lexeme-explorer",
     "ancient-corpora-reader",
     "synoptic-viewer"
-  ]
+  ],
+  "appsInfo": {
+     "polyglot-bible-reader": {
+      "title": "Polyglot Bible Reader",
+      "description": "A Polyglot Bible Reader, allowing for viewing various ancient and modern versions of the entire bible, with cross-tradition verse alignment, LSJ & BDB lexicon entries, lemma statistics and concordance lookup, and lexeme highlighting. Includes a distraction-free 'Meditation Mode'.",
+      "tags": [
+        "Hebrew MT (WLC)",
+        "Greek LXX",
+        "Greek SBLGNT",
+        "Open Greek NT",
+        "Latin Vulgate",
+        "KJV", "WEB", "Brenton's English LXX"
+      
+      ],
+      "slug": "bible"
+    }, 
+    "biblical-lexeme-explorer": {
+      "title": "Biblical Lexeme Explorer",
+      "description": "Lexical exploration tool for biblical languages, providing detailed information on lexemes, their occurrences across various corpora, and related linguistic data.",
+      "tags": [
+        "Lexical Analysis",
+        "Hebrew Lexicon",
+        "Greek Lexicon",
+        "Biblical Studies"
+      ],
+      "slug": "lexemes"
+    },
+   
+    "ancient-corpora-reader": {
+      "title": "Ancient Corpora Reader",
+      "description": "Greek/English parallel reader for a several 1st-2nd century Jewish and Christian texts. Currently includes: the Apostolic Fathers, Philo of Alexandria, and Flavius Josephus. Includes lexeme searches and LSJ lexicon entries.)",
+      "tags": [
+        "Apostolic Fathers",
+        "Philo of Alexandria",
+        "Flavius Josephus",
+        "LSJ Lexicon"
+      ],
+      "slug":"corpora"
+    },
+    "synoptic-viewer": {
+      "title": "Synoptic Viewer",
+      "description": "NT Gospels synoptic viewer for comparing parallel passages in the Gospels, and the NT, based on the alignment of Kurt Aland's Synopsis Quattuor Evangeliorum. Offers automatic highlighting and identical and similar phrases, lexeme info including word statistics, and occurrences.",
+      "tags": [
+        "NT",
+        "Gospels,","Greek NT", "Synopsis", "Synopsis Quattuor Evangeliorum", "Kurt Aland"
+        
+      ],
+      "slug":"synopsis"
+    }
+  }
+
 }

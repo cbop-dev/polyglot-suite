@@ -9,7 +9,7 @@ import * as bibleUtils from '@polyglot/ancient-languages/bible'
 export function getReaderVerseUrl(refString, dbAbbrev = 'lxx') {
 	const rawBase =
 		import.meta.env.PUBLIC_BIBLE_APP_URL ||
-		(import.meta.env.DEV ? 'http://localhost:5173' : '/polyglot-suite/bible');
+		(import.meta.env.DEV ? 'http://localhost:5173' : '/bible');
 	const cleanBase = rawBase.replace(/\/+$/, '');
 
 	if (!refString) return `${cleanBase}/`;

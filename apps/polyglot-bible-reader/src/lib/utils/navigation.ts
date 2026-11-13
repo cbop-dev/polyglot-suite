@@ -86,7 +86,7 @@ export function getLexemeExplorerUrl(options: LexemeExplorerLinkOptions): string
 
 	const qs = params.toString();
 	const rawBase =
-		(import.meta.env.PUBLIC_LEXEMES_APP_URL as string | undefined) ||
+		(import.meta.env.PUBLIC_APP_LEXEMES_APP_URL as string | undefined) ||
 		("/lexemes")||
 		(import.meta.env.DEV ? 'http://localhost:5174' : '/lexemes');
 	const cleanBase = rawBase.replace(/\/+$/, '');

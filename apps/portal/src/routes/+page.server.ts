@@ -1,4 +1,4 @@
-//env key url per app is: PUBLIC_SUITE_<APPDIR>, converted to uppsercase, e.g., "PUBLIC_SUITE_LEXEME"
+//env key url per app is: PUBLIC_SUITE_<SLUG>_APP_URL, converted to uppsercase
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -85,12 +85,38 @@ export const load: PageServerLoad = async () => {
 		return { apps: [] };
 	}
 
-	const { appsEnabled = [] } = portalJson as {
+	const { appsEnabled = [], appsInfo={} } = portalJson as {
 		appsEnabled: string[];
+		appsInfo: Record<string, any>;
 	};
 	console.log(`appsEnabled: [${appsEnabled.join(',')}]`)
 	const apps: PortalAppItem[] = [];
+	Object.entries(appsInfo).forEach(([appName, appInfo]) => {
+		if (appsEnabled.includes(appName)) {
+			const envKey ="PUBLIC_SUITE_" + appInfo.slug.toLocaleUpperCase().replaceAll(/-/g, '_')+"_APP_URL";
+			//const routeMeta = ROUTE_CONFIG[appDir];
+			//const slug = routeMeta?.slug || appDir;
+			const defaultRelative = `/${appInfo.slug}/`;
+			const url = dev
+				? (envKey && process.env[envKey]) ||  defaultRelative
+				: isGithubTarget
+					? defaultRelative
+					: (envKey && process.env[envKey]) || defaultRelative;
+			console.log("here wer are in : " + appName);
+			apps.push({
+				id: appName,
+				slug: appInfo.slug,
+				title: appInfo.title,
+				description: appInfo.description,
+				tags: appInfo.tags || [],
+				url
+			});
+		}
 
+
+	});
+
+	/*
 	for (const appDir of appsEnabled) {
 		const appConfigPath = resolve(ROOT_DIR, 'apps', appDir, 'src/config/portal.json');
 		if (!existsSync(appConfigPath)) {
@@ -129,6 +155,8 @@ export const load: PageServerLoad = async () => {
 			console.error(`[Portal] Failed parsing metadata for ${appDir}:`, err);
 		}
 	}
+	*/
+
 	console.log("apps:");
 	console.log(apps);
 	return { apps };

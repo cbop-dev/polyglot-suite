@@ -3,12 +3,12 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
+import appJsonObj from '../apps/portal/src/lib/portal.json'  with { type: 'json' };
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DIST_DIR = path.resolve(__dirname, '../dist');
 const PORT = parseInt(process.env.PORT || '5000', 10);
-
+const slugs = Object.values(appJsonObj.appsInfo).map(app => app.slug);
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
@@ -101,20 +101,23 @@ const server = http.createServer((req, res) => {
 
     if (!isStaticAsset) {
       let spaFallback = null;
+      
+      const foundslug = slugs.find(slug => reqPath.startsWith(`/${slug}/`) || reqPath === `/${slug}`);
+      if (foundslug) {
+        spaFallback = path.join(DIST_DIR, foundslug, 'index.html');
+      } 
+
+      /*
       if (reqPath.startsWith('/corpora')) {
         spaFallback = path.join(DIST_DIR, 'corpora/index.html');
       } else if (reqPath.startsWith('/bible')) {
         spaFallback = path.join(DIST_DIR, 'bible/index.html');
       } else if (reqPath.startsWith('/lexemes')) {
         spaFallback = path.join(DIST_DIR, 'lexemes/index.html');
-      } else if (reqPath.startsWith('/philo')) {
-        spaFallback = path.join(DIST_DIR, 'philo/index.html');
-      } else if (reqPath.startsWith('/josephus')) {
-        spaFallback = path.join(DIST_DIR, 'josephus/index.html');
-      } else if (reqPath.startsWith('/fathers')) {
-        spaFallback = path.join(DIST_DIR, 'fathers/index.html');
+      } else if (reqPath.startsWith('/synopsis')) {
+        spaFallback = path.join(DIST_DIR, 'synopsis/index.html');
       }
-
+      */
       if (spaFallback && fs.existsSync(spaFallback)) {
         targetPath = spaFallback;
         stat = fs.statSync(targetPath);
@@ -181,6 +184,12 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
+  console.log(`\n  🌍 Polyglot Suite Preview Server running at: http://localhost:${PORT}/`);
+  Object.entries(appJsonObj.appsInfo).forEach(([appName, appInfo]) => {
+  console.log(`\n  ➜ ${appInfo.title?.padEnd(20, " ")}:\t http://localhost:${PORT}/${appInfo?.slug ?? ''}/`);  
+
+  });
+  /*
   console.log('\n  🌍 Polyglot Suite Preview Server running at:');
   console.log(`     ➜ Portal:   http://localhost:${PORT}/`);
   console.log(`     ➜ Bible:    http://localhost:${PORT}/bible/`);
@@ -190,4 +199,5 @@ server.listen(PORT, () => {
   console.log(`     ➜ Philo:    http://localhost:${PORT}/corpora/philo/opif/1`);
   console.log(`     ➜ Josephus: http://localhost:${PORT}/corpora/josephus/war/1\n`);
   console.log('  Press Ctrl+C to stop.\n');
+  */
 });
