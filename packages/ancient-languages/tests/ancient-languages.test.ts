@@ -127,6 +127,8 @@ describe('@polyglot/ancient-languages', () => {
 			expect(latinToHebrew('b')).toBe('ב');
 			expect(latinToHebrew('adm')).toBe('אדם');
 			expect(latinToHebrew('mlk')).toBe('מלך');
+			expect(latinToHebrew('jJ')).toBe('שׁשׁ');
+			expect(latinToHebrew('$#')).toBe('שש');
 		});
 
 		it('normalizes pointed Hebrew', () => {

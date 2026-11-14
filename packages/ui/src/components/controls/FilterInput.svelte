@@ -9,7 +9,7 @@ let {
     casesensitive = $bindable(false),
     placeholder = "Type here",
     helpTitle = "Text Filter Help",
-    helpText = "Enter Latin characters, which will convert automatically to Greek/Hebrew!",
+    helpText = "Enter Text for filtering",
     transform = (input) => input.trim(),
     searchTerms = (input) => [input],
     bestMatches = $bindable(),

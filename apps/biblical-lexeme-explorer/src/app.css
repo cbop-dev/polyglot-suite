@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@polyglot/ancient-languages/fonts.css";
 @source "../../../packages/lemma-ui";
 @source "../../../packages/ui";
 @source "../../../packages/theme";

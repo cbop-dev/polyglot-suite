@@ -68,7 +68,12 @@ export const LATIN_TO_HEBREW_MAP: Record<string, string> = {
 	y: '\u05D9', Y: '\u05D9', // Yod
 	k: '\u05DB', K: '\u05DB', // Kaf
 	l: '\u05DC', L: '\u05DC', // Lamed
-	m: '\u05DE', M: '\u05DE', // Mem
+	m: '\u05DE', M: '\u05DE', // Mem 
+	/*
+			'F': '\u05E9\u05C2', // Sin with dot
+		'$': '\u05E9\u05C1', // Shin with dot
+		'J': '\u05E9\u05C1', // Shin with dot
+	*/
 	n: '\u05E0', N: '\u05E0', // Nun
 	s: '\u05E1', S: '\u05E1', // Samekh
 	p: '\u05E4', P: '\u05E4', // Pe
@@ -78,8 +83,8 @@ export const LATIN_TO_HEBREW_MAP: Record<string, string> = {
 	'#': '\u05E9',           // Shin / Sin general
 	'&': '\u05E9',           // Shin / Sin general
 	$: '\u05E9',             // Shin
-	f: '\uFB2B', F: '\uFB2B', // Sin with dot
-	j: '\u05E9', J: '\u05E9'  // Shin
+	f: '\u05E9\u05C2', F: '\u05E9\u05C2', // Sin with dot
+	j: '\u05E9\u05C1', J: '\u05E9\u05C1'  // Shin with dot
 };
 
 // Mapping from regular Hebrew consonants to final forms

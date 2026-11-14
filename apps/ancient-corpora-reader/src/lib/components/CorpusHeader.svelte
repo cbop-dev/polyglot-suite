@@ -19,7 +19,7 @@
 	} = $props();
 
 	let textVersionsVisible=readerState.visibleLanguages;
-	$inspect("version: ");
+	//$inspect("version: ");
 </script>
 
 <ReaderHeader

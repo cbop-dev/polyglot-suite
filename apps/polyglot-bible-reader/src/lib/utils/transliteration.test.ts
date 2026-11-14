@@ -44,8 +44,8 @@ describe('transliteration', () => {
 			expect(latinToHebrew('b')).toBe('ב');
 			expect(latinToHebrew('r')).toBe('ר');
 			expect(latinToHebrew('a')).toBe('א');
-			expect(latinToHebrew('j')).toBe('ש'); // 'j' -> Shin
-			expect(latinToHebrew('J')).toBe('ש');
+			expect(latinToHebrew('j')).toBe('שׁ'); // 'j' -> Shin
+			expect(latinToHebrew('J')).toBe('שׁ');
 			expect(latinToHebrew('t')).toBe('ת');
 		});
 
@@ -70,7 +70,7 @@ describe('transliteration', () => {
 	describe('transliterate generic helper', () => {
 		it('transliterates based on language parameter', () => {
 			expect(transliterate('logos', 'greek')).toBe('λογος');
-			expect(transliterate('br>jyt', 'hebrew')).toBe('בראשית');
+			expect(transliterate('br>jyt', 'hebrew')).toBe('בראשׁית');
 		});
 	});
 });

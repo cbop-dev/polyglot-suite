@@ -17,7 +17,8 @@
     "./citations": "./src/citations/index.ts",
     "./stores/*": "./src/stores/*",
     "./components/*": "./src/components/*",
-    "./corpora-types": "./src/ancient-corpora-types.ts"
+    "./corpora-types": "./src/ancient-corpora-types.ts",
+    "./fonts.css": "./src/fonts.css"
   },
   "scripts": {
     "test": "vitest run"

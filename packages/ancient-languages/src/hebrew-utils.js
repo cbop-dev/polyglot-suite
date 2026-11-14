@@ -10,16 +10,17 @@ export class HebrewUtils {
 	static {
 		this.keepChars = "-.: \u0BC3\u0BCE";
 		this.hebLetters = "\u05D0-\u05EA\u05F0-\u05F2";
+		this.hebrewPresentationForms = "\uFB1D\uFB1F-\uFB28\uFB2A\uFB4E";
 //		this.hebMarks = ["\u0591", "\u0592", "\u0593", "\u0594", "\u0595", "\u0596", "\u0597", "\u0598", "\u0599", "\u059A", "\u059B", "\u059C", "\u059D", "\u059E", "\u059F", "\u05A0", "\u05A1", "\u05A2", "\u05A3", "\u05A4", "\u05A5", "\u05A6", "\u05A7", "\u05A8", "\u05A9", "\u05AA", "\u05AB", "\u05AC", "\u05AD", "\u05AE", "\u05AF", "\u05B0", "\u05B1", "\u05B2", "\u05B3", "\u05B4", "\u05B5", "\u05B6", "\u05B7", "\u05B8", "\u05B9", "\u05BA", "\u05BB", "\u05BC", "\u05BD", "\u05C0", "\u05C1", "\u05C2", "\u05C3", "\u05C4", "\u05C5", "\u05C6", "\u05C7"].join();
 		this.hebMarks = "\u0591-\u05BD\u05C0-\u05C7";
 		this.sinShinDots="\u05C1\u05C2";
 		this.hebSpaces = "\u05BE";
 		this.hebVowels="\u05B0-\u05BB";
-		this.hebNonVowelMarks="\u0591-\u05AF\u05C0\u05C3-\u05C7";
+		this.hebNonVowelMarks="\u0591-\u05AF\u05C0\u05C3-\u05C7\uFB1E\uFB4F";
 		this.hebNormalMarks = "\u05DA\u05DD\u05DF\u05E5\u05E3";
 		//this.hebNonVowelMarksPlusNormalMarks=Array.from(new Set((this.hebMarks+this.hebNormalMarks).split()))
 		//		.join().replaceAll(new RegExp(`[${this.hebVowels}]`,'g'),'');
-		this.allHebrew = this.keepChars + this.hebLetters + this.hebMarks + this.hebSpaces + this.hebNormalMarks
+		this.allHebrew = this.keepChars + this.hebLetters + this.hebrewPresentationForms+ this.hebMarks + this.hebSpaces + this.hebNormalMarks
 
 	}
 
@@ -80,9 +81,12 @@ export class HebrewUtils {
 		'R': '\u05E8', // Resh
 		'#': '\u05E9', // Sin/Shin (General)
 		'&': '\u05E9', // Sin/shin (general)
-		'F': '\uFB2B', // Sin with dot
-		'$': '\uFB2A', // Shin with dot
-		'J': '\uFB2A', // Shin with dot
+		'F': '\u05E9\u05C2', // Sin with dot
+		'$': '\u05E9\u05C1', // Shin with dot
+		'J': '\u05E9\u05C1', // Shin with dot
+//		'F': '\uFB2B', // Sin with dot
+//		'$': '\uFB2A', // Shin with dot
+//		'J': '\uFB2A', // Shin with dot
 		'T': '\u05EA', // Taw
 
 	};
