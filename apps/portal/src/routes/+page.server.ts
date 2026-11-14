@@ -96,13 +96,15 @@ export const load: PageServerLoad = async () => {
 			const envKey ="PUBLIC_SUITE_" + appInfo.slug.toLocaleUpperCase().replaceAll(/-/g, '_')+"_APP_URL";
 			//const routeMeta = ROUTE_CONFIG[appDir];
 			//const slug = routeMeta?.slug || appDir;
-			const defaultRelative = `/${appInfo.slug}/`;
-			const url = dev
-				? (envKey && process.env[envKey]) ||  defaultRelative
-				: isGithubTarget
-					? defaultRelative
-					: (envKey && process.env[envKey]) || defaultRelative;
-			console.log("here wer are in : " + appName);
+			const defaultRelative = appInfo?.slug ? `/${appInfo.slug}/` : '';
+			const url = appInfo?.externalApp && appInfo?.url ? 
+				appInfo?.url
+				: dev ?
+				 	(envKey && process.env[envKey]) ||  defaultRelative
+					: isGithubTarget
+						? defaultRelative
+						: (envKey && process.env[envKey]) || defaultRelative;
+			
 			apps.push({
 				id: appName,
 				slug: appInfo.slug,
@@ -142,7 +144,7 @@ export const load: PageServerLoad = async () => {
 				: isGithubTarget
 					? defaultRelative
 					: (envKey && process.env[envKey]) || defaultRelative;
-			console.log("here wer are in : " + appDir);
+			
 			apps.push({
 				id: appDir,
 				slug: meta.slug,
@@ -157,7 +159,7 @@ export const load: PageServerLoad = async () => {
 	}
 	*/
 
-	console.log("apps:");
-	console.log(apps);
+	//console.log("apps:");
+	//console.log(apps);
 	return { apps };
 };

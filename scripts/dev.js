@@ -16,53 +16,54 @@ const apps = [portalAppEntry, ...Object.entries(appJsonObj.appsInfo)
   .filter(([appName,appInfo])=>appJsonObj.appsEnabled.includes(appName))
   .map(([name,info])=>{
     const port = currentAppPort++;
-    const url = `http://localhost:${port}`;
-    const envVar=`PUBLIC_SUITE_${info.slug.toLocaleUpperCase().replaceAll(/-/g, '_')}_APP_URL`;
+    info.url = info.url ||`http://localhost:${port}`;
+    const envVar= info.externalApp ? '' : `PUBLIC_SUITE_${info.slug.toLocaleUpperCase().replaceAll(/-/g, '_')}_APP_URL`;
     
     return {
+      ...info,
       name: info.slug,
+      port:port,
       command: 'npm',
-      port: port,
       args: ['--workspace=apps/'+name, 'run', 'dev', '--', '--port', port],
-      env: envVar,
-      url: url
+      env: envVar,      
     }
   })];
 
+
+  const appsRunningLocally = apps.filter(app=>!app.externalApp);
+/*
 const appsold = [
   { name: 'portal', command: 'npm', args: ['--workspace=portal', 'run', 'dev'], color: '\x1b[35m' },
   { name: 'bible', command: 'npm', args: ['--workspace=polyglot-bible-reader', 'run', 'dev'], color: '\x1b[34m' },
   { name: 'lexemes', command: 'npm', args: ['--workspace=biblical-lexeme-explorer', 'run', 'dev'], color: '\x1b[32m' },
   { name: 'corpora', command: 'npm', args: ['--workspace=ancient-corpora-reader', 'run', 'dev'], color: '\x1b[36m' }
-];
+];*/
 
 
 
 console.log('\n  🚀 Launching Polyglot Suite Dev Servers:');
+console.log(apps.map(app=>app.name).join(" | "));
 apps.forEach((app)=>{
-  console.log(`     ➜ ${app.name.padEnd(25)} http://localhost:${app.port}`);
+  if (!app.externalApp){
+      console.log(`     ➜ ${app.name.padEnd(25)} http://localhost:${app.port}`); 
+  }
+  else if (app.url) {
+     console.log(`     ➜ ${app.name.padEnd(25)} ${app.url}`); 
+  }
+  else{
+    console.log("What we got here: "+app.name);
+  }
 });
-/*
-console.log('     ➜ Portal:                   http://localhost:5170');
-console.log('     ➜ Bible Reader:             http://localhost:5173');
-console.log('     ➜ Biblical Lexeme Explorer: http://localhost:5174');
-console.log('     ➜ Ancient Corpora Reader:   http://localhost:5175\n');
-*/
 
-const envURLS=apps.reduce
+
+
 const devEnv = {
   ...process.env,
-  ...Object.assign({}, ...apps.map(app => ({ [app.env]: app.url })))
+  ...Object.assign({}, ...appsRunningLocally.map(app => ({ [app.env]: app.url })))
 };
 
-const devEnvold = {
-  ...process.env,
-  PUBLIC_BIBLE_APP_URL: process.env.PUBLIC_BIBLE_APP_URL || 'http://localhost:5173',
-  PUBLIC_LEXEMES_APP_URL: process.env.PUBLIC_LEXEMES_APP_URL || 'http://localhost:5174',
-  PUBLIC_CORPORA_APP_URL: process.env.PUBLIC_CORPORA_APP_URL || 'http://localhost:5175'
-};
 
-const procs = apps.map(app => {
+const procs = appsRunningLocally.map(app => {
   const p = spawn(app.command, app.args, {
     stdio: ['inherit', 'pipe', 'pipe'],
     env: devEnv

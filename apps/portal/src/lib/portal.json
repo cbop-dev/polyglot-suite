@@ -8,7 +8,7 @@
   "appsInfo": {
      "polyglot-bible-reader": {
       "title": "Polyglot Bible Reader",
-      "description": "A Polyglot Bible Reader, allowing for viewing various ancient and modern versions of the entire bible, with cross-tradition verse alignment, LSJ & BDB lexicon entries, lemma statistics and concordance lookup, and lexeme highlighting. Includes a distraction-free 'Meditation Mode'.",
+      "description": "A Bible reader which places various ancient and modern versions/languages side-by-side (or in a grid),  with lemma information including LSJ (Greek) & BDB (Hebrew) lexicon entries, word usage statistics, concordance lookup, and lexeme highlighting. Includes a distraction-free 'Meditation Mode'.",
       "tags": [
         "Hebrew MT (WLC)",
         "Greek LXX",
@@ -18,18 +18,21 @@
         "KJV", "WEB", "Brenton's English LXX"
       
       ],
-      "slug": "bible"
+      "slug": "bible",
+      "externalApp":false
     }, 
     "biblical-lexeme-explorer": {
+
       "title": "Biblical Lexeme Explorer",
-      "description": "Lexical exploration tool for biblical languages, providing detailed information on lexemes, their occurrences across various corpora, and related linguistic data.",
+      "description": "Lexical exploration tool for biblical languages, providing detailed information on lexemes, their occurrences in a Bible version, and related linguistic data.",
       "tags": [
         "Lexical Analysis",
         "Hebrew Lexicon",
         "Greek Lexicon",
         "Biblical Studies"
       ],
-      "slug": "lexemes"
+      "slug": "lexemes",
+      "externalApp":false
     },
    
     "ancient-corpora-reader": {
@@ -41,7 +44,8 @@
         "Flavius Josephus",
         "LSJ Lexicon"
       ],
-      "slug":"corpora"
+      "slug":"corpora",
+      "externalApp":false
     },
     "synoptic-viewer": {
       "title": "Synoptic Viewer",
@@ -51,7 +55,9 @@
         "Gospels,","Greek NT", "Synopsis", "Synopsis Quattuor Evangeliorum", "Kurt Aland"
         
       ],
-      "slug":"synopsis"
+      "slug":"synopsis",
+      "externalApp":true,
+      "url":"https://synopsis.texts.faith"
     }
   }
 

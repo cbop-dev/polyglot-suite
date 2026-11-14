@@ -186,7 +186,9 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`\n  🌍 Polyglot Suite Preview Server running at: http://localhost:${PORT}/`);
   Object.entries(appJsonObj.appsInfo).forEach(([appName, appInfo]) => {
-  console.log(`\n  ➜ ${appInfo.title?.padEnd(20, " ")}:\t http://localhost:${PORT}/${appInfo?.slug ?? ''}/`);  
+  
+  if(!appInfo.externalApp)  console.log(`\n  ➜ ${appInfo.title?.padEnd(20, " ")}:\t http://localhost:${PORT}/${appInfo?.slug ?? ''}/`);
+  else if (appInfo.url) console.log(`\n  ➜ ${appInfo.title?.padEnd(20, " ")}:\t ${appInfo?.url ?? ''}`);  
 
   });
   /*
