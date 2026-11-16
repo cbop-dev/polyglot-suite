@@ -56,13 +56,6 @@
 
 		readerState.setDivision(targetDiv, secNum);
 		readerState.isDivisionModalOpen = false;
-
-		setTimeout(() => {
-			const el = document.getElementById(`section-${secNum}`) ||
-				document.getElementById(`milestone-${secNum}`) ||
-				document.getElementById(`sec-${secNum}`);
-			el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-		}, 100);
 	}
 </script>
 

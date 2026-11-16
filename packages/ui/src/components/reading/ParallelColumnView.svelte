@@ -276,6 +276,41 @@
 		}
 	}
 
+
+
+	function getUnitsForSection(secKey: number | string): Record<string, TextUnitData> {
+		const res: Record<string, TextUnitData> = {};
+		for (const ver of resolvedTextVersions) {
+			const u = unitsByVersionAndSec.get(ver.versionId)?.get(secKey);
+			if (u) {
+				res[ver.versionId] = u;
+			}
+		}
+		return res;
+	}
+
+	function findSectionIndex(keys: (number | string)[], target: number | string | null | undefined): number {
+		if (target === undefined || target === null || target === '') return -1;
+		const targetStr = String(target).trim().toLowerCase();
+		// Try exact match on secKey
+		const exactIdx = keys.findIndex((k) => String(k).toLowerCase() === targetStr);
+		if (exactIdx >= 0) return exactIdx;
+
+		// Try matching against milestone_ref, niese_section, or mangey_ref
+		return keys.findIndex((k) => {
+			const units = getUnitsForSection(k);
+			for (const u of Object.values(units)) {
+				if (!u) continue;
+				const ms = getMilestoneRef(u);
+				if (ms && String(ms).trim().toLowerCase() === targetStr) return true;
+				if (u.niese_section !== undefined && String(u.niese_section).trim().toLowerCase() === targetStr) return true;
+				if (u.mangey_ref && String(u.mangey_ref).trim().toLowerCase() === targetStr) return true;
+				if (u.milestone_ref && String(u.milestone_ref).trim().toLowerCase() === targetStr) return true;
+			}
+			return false;
+		});
+	}
+
 	$effect(() => {
 		const keys = sectionKeys;
 		const target = targetSection;
@@ -283,7 +318,7 @@
 		if (keys.length > 0) {
 			untrack(() => {
 				if (target) {
-					const idx = keys.findIndex((k) => String(k) === String(target));
+					const idx = findSectionIndex(keys, target);
 					renderedCount = idx >= 0
 						? Math.min(keys.length, Math.max(INITIAL_BATCH_SIZE, idx + 15))
 						: INITIAL_BATCH_SIZE;
@@ -324,16 +359,7 @@
 		return () => observer.disconnect();
 	});
 
-	function getUnitsForSection(secKey: number | string): Record<string, TextUnitData> {
-		const res: Record<string, TextUnitData> = {};
-		for (const ver of resolvedTextVersions) {
-			const u = unitsByVersionAndSec.get(ver.versionId)?.get(secKey);
-			if (u) {
-				res[ver.versionId] = u;
-			}
-		}
-		return res;
-	}
+
 
 	function resolveCitationForUnits(secKey: number | string, units: Record<string, TextUnitData>): string {
 		if (getCitation) return getCitation(secKey, units);
@@ -414,7 +440,7 @@
 
 			<div
 				id={primaryId}
-				class="section-row group/sec {isStacked ? 'flex flex-col gap-4' : `grid ${gridColsClass} gap-6 sm:gap-8`} py-5 hover:bg-[var(--color-card-bg)]/60 rounded-xl transition-colors scroll-mt-20"
+				class="section-row group/sec {isStacked ? 'flex flex-col gap-4' : `grid ${gridColsClass} gap-6 sm:gap-8`} py-5 hover:bg-[var(--color-card-bg)]/60 rounded-xl transition-colors scroll-mt-28"
 				data-section={secKey}
 				data-milestone={milestone}
 			>
@@ -550,7 +576,7 @@
 <style>
 	.section-row {
 		content-visibility: auto;
-		contain-intrinsic-size: auto 120px;
+		contain-intrinsic-size: auto 450px;
 	}
 	.column-version {
   /* Scale font-size and line-height proportionally based on the CSS variable */

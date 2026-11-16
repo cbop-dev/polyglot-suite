@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import CorpusHeader from './CorpusHeader.svelte';
 	import CorpusColumnView from './CorpusColumnView.svelte';
 	import CorpusSidePanel from './CorpusSidePanel.svelte';
@@ -113,17 +114,8 @@
 			// Phase 1: Rapid First Paint (only text_units, completes in <150ms)
 			const res = await fetchDivisionSections(corpus, work, division);
 			textVersions = res.textVersions;
+			wasJustLoaded = true;
 			loading = false;
-
-			if (readerState.currentSection) {
-				const s = readerState.currentSection;
-				setTimeout(() => {
-					const el = document.getElementById(`section-${s}`) ||
-						document.getElementById(`milestone-${s}`) ||
-						document.getElementById(`sec-${s}`);
-					el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-				}, 120);
-			}
 
 			// Phase 2: Progressive Token Hydration in background
 			const unitIdsToHydrate: number[] = [];
@@ -174,16 +166,81 @@
 		}
 	}
 
-	// Smooth scroll to target section when selected
+	let wasJustLoaded = false;
+	let isNavigatingToSection = false;
+
+	async function scrollToTargetSection(target: string | number | null, isInitialLoad: boolean = false) {
+		if (target === null || target === undefined || typeof window === 'undefined') return;
+		if (isNavigatingToSection && !isInitialLoad) return;
+		isNavigatingToSection = true;
+
+		try {
+			// Wait for Svelte reactivity to propagate targetSection to ParallelColumnView
+			// and mount the target batch
+			await tick();
+
+			const findElement = () =>
+				document.getElementById(`section-${target}`) ||
+				document.getElementById(`milestone-${target}`) ||
+				document.getElementById(`sec-${target}`);
+
+			let el = findElement();
+
+			// If element is not yet in DOM, give batch rendering a frame to mount
+			if (!el) {
+				await new Promise((resolve) => requestAnimationFrame(resolve));
+				await tick();
+				el = findElement();
+			}
+
+			if (!el) return;
+
+			// Layer 1: Target Normalization - ensure we target the container section row,
+			// not an inner invisible 1px <span class="sr-only"> milestone
+			const row = (el.closest('.section-row') as HTMLElement) || el;
+
+			// Layer 3: Dynamic Header Measurement
+			const headerEl = document.querySelector('header.page-header');
+			const headerBottom = headerEl ? headerEl.getBoundingClientRect().bottom : 60;
+			const targetOffset = headerBottom + 20; // 20px comfortable clearance below bottom of header
+
+			// Distance-aware scroll:
+			const rect = row.getBoundingClientRect();
+			const dist = Math.abs(rect.top - targetOffset);
+			const isNearby = !isInitialLoad && dist <= 1800;
+
+			if (isNearby) {
+				row.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			} else {
+				// Instant jump prevents content-visibility under-scrolling on large distances
+				row.scrollIntoView({ behavior: 'auto', block: 'start' });
+
+				// Fine-tune offset in next frame after browser computes exact layout
+				requestAnimationFrame(() => {
+					const r = row.getBoundingClientRect();
+					if (Math.abs(r.top - targetOffset) > 10) {
+						window.scrollBy({ top: r.top - targetOffset, behavior: 'auto' });
+					}
+				});
+			}
+
+			// Arrival feedback highlight
+			row.classList.add('arrival-highlight');
+			setTimeout(() => {
+				row?.classList.remove('arrival-highlight');
+			}, 1200);
+		} finally {
+			isNavigatingToSection = false;
+		}
+	}
+
+	// Scroll to target section when selected or when data loads with target section
 	$effect(() => {
 		const s = readerState.currentSection;
 		if (s !== null && !loading) {
-			setTimeout(() => {
-				const el = document.getElementById(`section-${s}`) ||
-					document.getElementById(`milestone-${s}`) ||
-					document.getElementById(`sec-${s}`);
-				el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-			}, 60);
+			const isInitial = wasJustLoaded;
+			wasJustLoaded = false;
+			scrollToTargetSection(s, isInitial);
 		}
 	});
 
@@ -233,3 +290,17 @@
 	<AcademicCitationModalWrapper />
 	<HotkeyHelpModal />
 </div>
+
+<style>
+	:global(.section-row.arrival-highlight) {
+		animation: section-arrival-pulse 1.2s ease-out;
+	}
+	@keyframes section-arrival-pulse {
+		0% {
+			background-color: rgba(59, 130, 246, 0.22);
+		}
+		100% {
+			background-color: transparent;
+		}
+	}
+</style>
