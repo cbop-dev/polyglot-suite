@@ -2,9 +2,11 @@
 	import type { Snippet } from 'svelte';
 	import {
 		type AttestedForm,
+		type AttestedFormSort,
 		type InflectionFilterCriteria,
 		extractAvailableInflections,
 		filterAttestedForms,
+		sortAttestedForms,
 		isCriteriaActive
 	} from '../morphology.js';
 	import InflectionFilterBar from './InflectionFilterBar.svelte';
@@ -31,6 +33,7 @@
 		inflectionCriteria = $bindable({} as InflectionFilterCriteria),
 		isInflectionFilterOpen = $bindable(false),
 		onInflectionChange = () => {},
+		sortMode = $bindable<'count' | 'alpha'>('count'),
 		filterBar,
 		class: className = ''
 	}: {
@@ -55,17 +58,50 @@
 		inflectionCriteria?: InflectionFilterCriteria;
 		isInflectionFilterOpen?: boolean;
 		onInflectionChange?: (criteria: InflectionFilterCriteria, matchingForms: string[]) => void;
+		sortMode?: AttestedFormSort;
 		filterBar?: Snippet;
 		class?: string;
 	} = $props();
 
 	let availableInflections = $derived(extractAvailableInflections(attestedForms));
 	let isInflectionActive = $derived(isCriteriaActive(inflectionCriteria));
+	let hasInflectionOptions = $derived(
+		availableInflections.moods.length > 0 ||
+		availableInflections.tenses.length > 0 ||
+		availableInflections.voices.length > 0 ||
+		availableInflections.cases.length > 0 ||
+		availableInflections.genders.length > 0 ||
+		availableInflections.degrees.length > 0
+	);
 	let filteredForms = $derived(
 		enableInflectionFilter && isInflectionActive
 			? filterAttestedForms(attestedForms, inflectionCriteria)
 			: attestedForms
 	);
+
+	let collationLocale = $derived.by(() => {
+		switch (lang?.toLowerCase()) {
+			case 'greek':
+			case 'grc':
+			case 'el':
+				return 'el';
+			case 'hebrew':
+			case 'hbo':
+			case 'he':
+				return 'he';
+			case 'syriac':
+			case 'syr':
+				return 'syr';
+			case 'latin':
+			case 'lat':
+			case 'la':
+				return 'la';
+			default:
+				return undefined;
+		}
+	});
+
+	let sortedForms = $derived(sortAttestedForms(filteredForms, sortMode, collationLocale));
 
 	let justLoaded = $state(false);
 	let prevLoading = false;
@@ -163,7 +199,7 @@
 		<!-- Sibling slot for inflection filters (Goal 2) -->
 		{#if filterBar}
 			{@render filterBar()}
-		{:else if enableInflectionFilter && attestedForms.length > 0}
+		{:else if enableInflectionFilter && attestedForms.length > 0 && hasInflectionOptions}
 			<InflectionFilterBar
 				available={availableInflections}
 				bind:criteria={inflectionCriteria}
@@ -192,8 +228,36 @@
 		{:else if filteredForms.length === 0}
 			<div class="state-msg empty-msg">No forms match the active inflection filter.</div>
 		{:else}
+			{#if filteredForms.length > 1}
+				<div class="attested-toolbar">
+					<span class="toolbar-count">
+						{filteredForms.length} {filteredForms.length === 1 ? 'form' : 'forms'}
+					</span>
+					<div class="sort-toggle-group" role="group" aria-label="Sort forms">
+						<button
+							type="button"
+							class="sort-btn"
+							class:active={sortMode === 'count'}
+							onclick={() => (sortMode = 'count')}
+							title="Sort by number of occurrences (highest first)"
+						>
+							Count
+						</button>
+						<button
+							type="button"
+							class="sort-btn"
+							class:active={sortMode === 'alpha'}
+							onclick={() => (sortMode = 'alpha')}
+							title="Sort alphabetically"
+						>
+							A–Z
+						</button>
+					</div>
+				</div>
+			{/if}
+
 			<div class="chips-grid">
-				{#each filteredForms as f (f.form)}
+				{#each sortedForms as f (f.form)}
 					{@const isFActive = showHighlightAction && isFormHighlighted(f.form)}
 					{@const isFiltered = selectedFormFilter === f.form}
 					<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -231,9 +295,9 @@
 
 <style>
 	.attested-forms-section {
-		border: 1px solid var(--border, var(--color-rule, #d4d8d3));
+		border: 1px solid var(--color-rule, var(--border, #d4d8d3));
 		border-radius: 1rem;
-		background: var(--popup-bg, var(--color-page, #ffffff));
+		background: var(--color-card-bg, var(--popup-bg, #ffffff));
 		margin-bottom: 0;
 		overflow: hidden;
 		flex-shrink: 0;
@@ -249,8 +313,8 @@
 		box-sizing: border-box;
 		font-size: 0.875rem;
 		line-height: 1.4;
-		color: var(--accent, var(--color-ink, #1f6f7a));
-		background: var(--col-bg, var(--color-page-soft, #f5f6f2));
+		color: var(--color-ink, var(--text, #171a1c));
+		background: var(--color-page-soft, var(--col-bg, #f5f6f2));
 		cursor: pointer;
 		user-select: none;
 		list-style: none;
@@ -262,7 +326,7 @@
 	}
 
 	.attested-summary:hover {
-		background: var(--page-bg, var(--color-rule, #eceee7));
+		background: var(--color-rule, var(--page-bg, #eceee7));
 	}
 
 	.summary-left {
@@ -303,7 +367,7 @@
 	.filter-reset-btn {
 		font-size: 0.75rem;
 		font-weight: 600;
-		color: var(--accent, #2563eb);
+		color: var(--color-link, var(--accent, #1f4d8a));
 		cursor: pointer;
 		text-decoration: underline;
 		padding: 0.1rem 0.25rem;
@@ -317,6 +381,7 @@
 		width: 1rem;
 		height: 1rem;
 		opacity: 0.6;
+		color: var(--color-ink-soft, #64748b);
 		transition: transform 0.2s ease;
 	}
 
@@ -325,7 +390,7 @@
 	}
 
 	.count-badge {
-		background: var(--accent, #1f6f7a);
+		background: var(--color-link, var(--accent, #1f4d8a));
 		color: #ffffff;
 		font-size: 0.72rem;
 		font-weight: 700;
@@ -359,8 +424,8 @@
 		display: inline-block;
 		width: 13px;
 		height: 13px;
-		border: 2px solid rgba(31, 111, 122, 0.25);
-		border-top-color: var(--accent, #1f6f7a);
+		border: 2px solid rgba(31, 77, 138, 0.25);
+		border-top-color: var(--color-link, var(--accent, #1f4d8a));
 		border-radius: 50%;
 		animation: spin 0.75s linear infinite;
 		vertical-align: middle;
@@ -374,16 +439,83 @@
 
 	.attested-body {
 		padding: 0.75rem;
-		background: var(--popup-bg, var(--color-page, #ffffff));
+		background: var(--color-card-bg, var(--popup-bg, #ffffff));
+	}
+
+	.attested-body > :global(.inflection-filter-section) {
+		margin-bottom: 0.65rem;
+	}
+
+	.attested-toolbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 0.5rem;
+		padding: 0 0.15rem;
+	}
+
+	.toolbar-count {
+		font-size: 0.72rem;
+		color: var(--color-ink-soft, var(--text-mid, #545b5c));
+		font-weight: 500;
+	}
+
+	.sort-toggle-group {
+		display: inline-flex;
+		background: var(--color-page-soft, var(--page-bg, #eceee7));
+		border: 1px solid var(--color-rule, var(--border, #d4d8d3));
+		border-radius: 6px;
+		padding: 1px;
+		gap: 1px;
+	}
+
+	.sort-btn {
+		appearance: none;
+		border: none;
+		background: transparent;
+		padding: 0.15rem 0.45rem;
+		font-size: 0.68rem;
+		font-weight: 600;
+		color: var(--color-ink-soft, var(--text-mid, #545b5c));
+		border-radius: 4px;
+		cursor: pointer;
+		transition: all 0.12s ease;
+		line-height: 1.3;
+	}
+
+	.sort-btn:hover {
+		color: var(--color-ink, var(--text, #171a1c));
+	}
+
+	.sort-btn.active {
+		background: var(--color-link, var(--accent, #1f4d8a));
+		color: #ffffff;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 	}
 
 	.state-msg {
 		font-size: 0.85rem;
-		color: var(--text-mid, var(--color-ink-soft, #545b5c));
+		color: var(--color-ink-soft, var(--text-mid, #545b5c));
 		padding: 0.5rem 0;
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+	}
+
+	.retry-btn {
+		appearance: none;
+		background: var(--color-page-soft, var(--page-bg, #eceee7));
+		border: 1px solid var(--color-rule, var(--border, #d4d8d3));
+		border-radius: 4px;
+		padding: 0.15rem 0.45rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--color-link, var(--accent, #1f4d8a));
+		cursor: pointer;
+	}
+
+	.retry-btn:hover {
+		background: var(--color-card-bg, var(--col-bg, #ffffff));
 	}
 
 	.chips-grid {
@@ -399,8 +531,8 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.35rem;
-		background: var(--page-bg, var(--color-page-soft, #eceee7));
-		border: 1px solid var(--border, var(--color-rule, #d4d8d3));
+		background: var(--color-page-soft, var(--page-bg, #eceee7));
+		border: 1px solid var(--color-rule, var(--border, #d4d8d3));
 		border-radius: 16px;
 		padding: 0.15rem 0.5rem 0.15rem 0.65rem;
 		cursor: pointer;
@@ -409,13 +541,13 @@
 	}
 
 	.chip-pill:hover {
-		border-color: var(--accent, #1f6f7a);
-		background: var(--col-bg, #ffffff);
+		border-color: var(--color-link, var(--accent, #1f4d8a));
+		background: var(--color-card-bg, var(--col-bg, #ffffff));
 	}
 
 	.chip-pill.filter-active {
-		background-color: var(--accent, #1f6f7a) !important;
-		border-color: var(--accent, #1f6f7a) !important;
+		background-color: var(--color-link, var(--accent, #1f4d8a)) !important;
+		border-color: var(--color-link, var(--accent, #1f4d8a)) !important;
 	}
 
 	.chip-pill.filter-active .chip-text,
@@ -426,14 +558,14 @@
 
 	.chip-text {
 		font-size: 0.95rem;
-		color: var(--text, var(--color-ink, #171a1c));
+		color: var(--color-ink, var(--text, #171a1c));
 	}
 
 	.chip-count {
 		font-size: 0.72rem;
 		font-family: monospace;
 		opacity: 0.75;
-		color: var(--text-mid, var(--color-ink-soft, #545b5c));
+		color: var(--color-ink-soft, var(--text-mid, #545b5c));
 	}
 
 	.chip-hl-badge {
@@ -445,7 +577,7 @@
 		height: 17px;
 		font-size: 0.7rem;
 		font-weight: 700;
-		color: var(--text-mid, #545b5c);
+		color: var(--color-ink-soft, var(--text-mid, #545b5c));
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -457,7 +589,7 @@
 	}
 
 	.chip-hl-badge:hover {
-		background: var(--accent, #1f6f7a);
+		background: var(--color-link, var(--accent, #1f4d8a));
 		color: #ffffff;
 	}
 
@@ -468,34 +600,78 @@
 
 	:global(.dark) .attested-forms-section,
 	:global([data-theme="dark"]) .attested-forms-section {
-		border-color: var(--border, var(--color-rule, #334155));
-		background: var(--popup-bg, var(--color-page, #0f172a));
+		border-color: var(--color-rule, #334155);
+		background: var(--color-card-bg, #1e293b);
 	}
 
 	:global(.dark) .attested-summary,
 	:global([data-theme="dark"]) .attested-summary {
-		background: var(--col-bg, var(--color-page-soft, #1e293b));
-		color: var(--accent, var(--color-ink, #38bdf8));
+		background: var(--color-page-soft, #1e293b);
+		color: var(--color-ink, #f8fafc);
+	}
+
+	:global(.dark) .attested-summary:hover,
+	:global([data-theme="dark"]) .attested-summary:hover {
+		background: var(--color-rule, #334155);
 	}
 
 	:global(.dark) .attested-body,
 	:global([data-theme="dark"]) .attested-body {
-		background: var(--popup-bg, var(--color-page, #0f172a));
+		background: var(--color-card-bg, #1e293b);
 	}
 
 	:global(.dark) .chip-pill,
 	:global([data-theme="dark"]) .chip-pill {
-		background: var(--page-bg, #1e293b);
-		border-color: var(--border, #334155);
+		background: var(--color-page-soft, #1e293b);
+		border-color: var(--color-rule, #334155);
+	}
+
+	:global(.dark) .chip-pill:hover,
+	:global([data-theme="dark"]) .chip-pill:hover {
+		background: var(--color-rule, #334155);
+		border-color: var(--color-link, #7ab0e8);
 	}
 
 	:global(.dark) .chip-text,
 	:global([data-theme="dark"]) .chip-text {
-		color: var(--text, #f1f5f9);
+		color: var(--color-ink, #f8fafc);
 	}
 
 	:global(.dark) .chip-count,
 	:global([data-theme="dark"]) .chip-count {
-		color: var(--text-mid, #94a3b8);
+		color: var(--color-ink-soft, #94a3b8);
+	}
+
+	:global(.dark) .toolbar-count,
+	:global([data-theme="dark"]) .toolbar-count {
+		color: var(--color-ink-soft, #94a3b8);
+	}
+
+	:global(.dark) .sort-toggle-group,
+	:global([data-theme="dark"]) .sort-toggle-group {
+		background: var(--color-page-soft, #1e293b);
+		border-color: var(--color-rule, #334155);
+	}
+
+	:global(.dark) .sort-btn,
+	:global([data-theme="dark"]) .sort-btn {
+		color: var(--color-ink-soft, #94a3b8);
+	}
+
+	:global(.dark) .sort-btn:hover,
+	:global([data-theme="dark"]) .sort-btn:hover {
+		color: var(--color-ink, #f8fafc);
+	}
+
+	:global(.dark) .sort-btn.active,
+	:global([data-theme="dark"]) .sort-btn.active {
+		background: var(--color-link, #7ab0e8);
+		color: #ffffff;
+	}
+
+	:global(.dark) .chip-hl-badge,
+	:global([data-theme="dark"]) .chip-hl-badge {
+		background: rgba(255, 255, 255, 0.12);
+		color: var(--color-ink-soft, #94a3b8);
 	}
 </style>

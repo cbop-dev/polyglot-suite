@@ -41,6 +41,7 @@ import {
 	buildAttestedForms,
 	extractAvailableInflections,
 	filterAttestedForms,
+	sortAttestedForms,
 	isCriteriaActive,
 	countActiveFilters,
 	stripPunctuation,
@@ -594,6 +595,71 @@ describe('@polyglot/ancient-languages', () => {
 			expect(attested[0].form).toBe('λέγων');
 			expect(attested[0].form).not.toContain('·');
 			expect(attested[0].form).not.toContain('·');
+		});
+
+		describe('sortAttestedForms', () => {
+			const sampleForms = [
+				{ form: 'λόγου', count: 15, analyses: [] },
+				{ form: 'λόγος', count: 50, analyses: [] },
+				{ form: 'λόγον', count: 30, analyses: [] },
+				{ form: 'λόγοις', count: 15, analyses: [] },
+				{ form: 'λόγοι', count: 20, analyses: [] }
+			];
+
+			it('sorts by count descending by default, breaking ties alphabetically', () => {
+				const sorted = sortAttestedForms(sampleForms, 'count', 'el');
+				expect(sorted.map((f) => f.form)).toEqual([
+					'λόγος',  // 50
+					'λόγον',  // 30
+					'λόγοι',  // 20
+					'λόγοις', // 15 (alphabetically before λόγου)
+					'λόγου'   // 15
+				]);
+				// Verify original array was not mutated
+				expect(sampleForms[0].form).toBe('λόγου');
+			});
+
+			it('sorts alphabetically ascending when sortMode is alpha, breaking ties by count descending', () => {
+				const sorted = sortAttestedForms(sampleForms, 'alpha', 'el');
+				expect(sorted.map((f) => f.form)).toEqual([
+					'λόγοι',
+					'λόγοις',
+					'λόγον',
+					'λόγος',
+					'λόγου'
+				]);
+			});
+
+			it('handles Hebrew alphabetical collation properly', () => {
+				const hebrewForms = [
+					{ form: 'בְּרֵאשִׁית', count: 5, analyses: [] },
+					{ form: 'אֱלֹהִים', count: 25, analyses: [] },
+					{ form: 'בָּרָא', count: 10, analyses: [] },
+					{ form: 'אֵת', count: 50, analyses: [] }
+				];
+
+				const countSorted = sortAttestedForms(hebrewForms, 'count', 'he');
+				expect(countSorted.map((f) => f.form)).toEqual([
+					'אֵת',        // 50
+					'אֱלֹהִים',    // 25
+					'בָּרָא',      // 10
+					'בְּרֵאשִׁית'   // 5
+				]);
+
+				const alphaSorted = sortAttestedForms(hebrewForms, 'alpha', 'he');
+				expect(alphaSorted.map((f) => f.form)).toEqual([
+					'אֱלֹהִים',
+					'אֵת',
+					'בָּרָא',
+					'בְּרֵאשִׁית'
+				]);
+			});
+
+			it('safely handles empty or single-item lists', () => {
+				expect(sortAttestedForms([])).toEqual([]);
+				const single = [{ form: 'λόγος', count: 1, analyses: [] }];
+				expect(sortAttestedForms(single, 'alpha')).toEqual(single);
+			});
 		});
 	});
 });

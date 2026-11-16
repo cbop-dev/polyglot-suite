@@ -13,7 +13,7 @@ export type {
   LemmaSearchResult,
   ExtraTab
 } from './components/LexemeSidePanel.svelte';
-export type { AttestedForm } from '@polyglot/ancient-languages';
+export type { AttestedForm, AttestedFormSort } from '@polyglot/ancient-languages';
 
 // Re-export general UI controls, charts, icons, and layout from @polyglot/ui
 export {

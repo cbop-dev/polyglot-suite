@@ -765,6 +765,28 @@ export interface AttestedForm {
 	analyses: MorphAnalysis[];
 }
 
+export type AttestedFormSort = 'count' | 'alpha';
+
+/**
+ * Sorts attested forms either by occurrence count (descending) or alphabetically (ascending),
+ * breaking ties predictably.
+ */
+export function sortAttestedForms(
+	forms: AttestedForm[],
+	sortMode: AttestedFormSort = 'count',
+	locale?: string
+): AttestedForm[] {
+	const list = [...forms];
+	if (sortMode === 'alpha') {
+		return list.sort(
+			(a, b) => a.form.localeCompare(b.form, locale) || b.count - a.count
+		);
+	}
+	return list.sort(
+		(a, b) => b.count - a.count || a.form.localeCompare(b.form, locale)
+	);
+}
+
 /**
  * Parses PROIEL POS and 8-character morphological analysis into a structured MorphAnalysis.
  */

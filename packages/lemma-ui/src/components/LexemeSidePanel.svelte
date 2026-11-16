@@ -3,19 +3,14 @@
 	import HighlightColorPicker from '@polyglot/ancient-languages/HighlightColorPicker.svelte';
 	import KwicSnippet from '@polyglot/ancient-languages/KwicSnippet.svelte';
 	import AttestedFormsSection from '@polyglot/ancient-languages/AttestedFormsSection.svelte';
-	import InflectionFilterBar from '@polyglot/ancient-languages/InflectionFilterBar.svelte';
 	import {
 		decodeMorph,
 		latinToGreek,
 		isFormFilterMatch,
-		filterAttestedForms,
-		extractAvailableInflections,
-		isCriteriaActive,
 		getLanguageFontClass,
 		normalizeLanguage,
 		type InflectionFilterCriteria,
-		type AttestedForm,
-		type AvailableInflections
+		type AttestedForm
 	} from '@polyglot/ancient-languages';
 	import type { Snippet } from 'svelte';
 
@@ -242,19 +237,6 @@
 	let inflectionCriteria = $state<InflectionFilterCriteria>({});
 	let isInflectionFilterOpen = $state<boolean>(false);
 	let selectedFormFilter = $state<string | null>(null);
-
-	let availableInflections = $derived(extractAvailableInflections(attestedForms));
-
-	let filteredAttestedForms = $derived.by(() => {
-		let list = attestedForms;
-		if (isCriteriaActive(inflectionCriteria)) {
-			list = filterAttestedForms(list, inflectionCriteria);
-		}
-		if (selectedFormFilter) {
-			list = list.filter((f) => f.form === selectedFormFilter);
-		}
-		return list;
-	});
 
 	function clearFormFilter() {
 		if (!selectedFormFilter) return;
@@ -812,7 +794,7 @@
 				type="button"
 				onclick={() => setTab('lexeme')}
 				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 {currentTab === 'lexeme'
-					? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold'
+					?  'border-1 font-bold'
 					: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)]'}"
 			>
 				<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -829,8 +811,9 @@
 			<button
 				type="button"
 				onclick={() => setTab('search')}
-				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 {currentTab === 'search'
-					? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold'
+				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 
+				{currentTab === 'search'
+					? 'border-1 font-bold'
 					: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)]'}"
 			>
 				<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -844,12 +827,14 @@
 					type="button"
 					onclick={() => setTab(extraTab.id)}
 					class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 {currentTab === extraTab.id
-						? 'bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 font-bold'
+						? 'border-1 font-bold'
 						: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)]'}"
 				>
 					<span>{extraTab.label}</span>
 					{#if extraTab.count !== undefined}
-						<span class="rounded bg-amber-200/80 dark:bg-amber-800/60 text-amber-900 dark:text-amber-100 px-1 py-0.2 text-[10px] font-mono font-bold">
+						<span 
+						class="rounded bg-amber-200/80 dark:bg-amber-800/60 text-amber-900 dark:text-amber-100 px-1 py-0.2 text-[10px] 
+						font-mono font-bold">
 							{extraTab.count}
 						</span>
 					{/if}
@@ -860,7 +845,7 @@
 				type="button"
 				onclick={() => setTab('highlights')}
 				class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer shrink-0 {currentTab === 'highlights'
-					? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold'
+					? 'border-1 font-bold '
 					: 'text-[var(--color-ink-soft)] hover:bg-[var(--color-rule)] hover:text-[var(--color-ink)]'}"
 			>
 				<span class="h-2.5 w-2.5 rounded-full bg-amber-400"></span>
@@ -1024,44 +1009,29 @@
 
 					<!-- Brief Gloss -->
 					{#if lexEntry?.gloss}
-						<div class="mt-3 p-2.5 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900/50">
-							<div class="text-[10px] uppercase font-bold text-[var(--color-ink-soft)] tracking-wider">Gloss</div>
-							<div class="text-sm font-semibold text-blue-700 dark:text-blue-300 italic">{lexEntry.gloss}</div>
+						<div class="mt-3 p-2.5  rounded-xl border text-[var(--color-ink-soft)]">
+							<div class="text-[10px] uppercase font-bold  tracking-wider">Gloss</div>
+							<div class="text-sm font-semibold italic">{lexEntry.gloss}</div>
 						</div>
 					{/if}
 				</div>
 
-				<!-- Section: Inflection Filter Bar (if attested forms exist) -->
-				{#if availableInflections.tenses.length > 0 || availableInflections.moods.length > 0 || availableInflections.cases.length > 0}
-					<InflectionFilterBar
-						class="shrink-0"
-						available={availableInflections}
-						bind:criteria={inflectionCriteria}
-						bind:isOpen={isInflectionFilterOpen}
-						totalFormsCount={attestedForms.length}
-						filteredFormsCount={filteredAttestedForms.length}
-						loading={isAttestedFormsLoading}
-						error={attestedFormsError}
-						onRetry={() => loadAttestedForms(currentLemma)}
-						onToggleOpen={(open) => {
-							if (open && !attestedFormsLoaded && !isAttestedFormsLoading && currentLemma) {
-								loadAttestedForms(currentLemma);
-							}
-						}}
-					/>
-				{/if}
-
 				<!-- Section 1: Attested Word Forms -->
 				<AttestedFormsSection
 					class="shrink-0"
-					attestedForms={filteredAttestedForms}
+					attestedForms={attestedForms}
 					totalCount={attestedForms.length}
 					selectedFormFilter={selectedFormFilter}
 					lemmaDisplay={currentLemma}
 					{corpusTitle}
+					lang={activeLanguage}
+					fontClass={langFontClass}
 					loading={isAttestedFormsLoading}
 					bind:isOpen={isAttestedFormsOpen}
 					error={attestedFormsError}
+					enableInflectionFilter={true}
+					bind:inflectionCriteria={inflectionCriteria}
+					bind:isInflectionFilterOpen={isInflectionFilterOpen}
 					onRetry={() => loadAttestedForms(currentLemma)}
 					onToggleOpen={(open) => {
 						if (open && !attestedFormsLoaded && !isAttestedFormsLoading && currentLemma) {
