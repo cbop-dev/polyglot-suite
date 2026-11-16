@@ -108,6 +108,10 @@ CREATE TABLE concordance_refs (
 CREATE INDEX idx_concordance_paged ON concordance_refs(
     corpus_id, lemma, work_code, book, chapter, section
 );
+
+CREATE INDEX idx_concordance_refs_form ON concordance_refs(
+    corpus_id, lemma, matched_form, work_unit_id
+);
 ```
 
 ### 2.6 `lexicon_entries` & Shared Lexicons Architecture
