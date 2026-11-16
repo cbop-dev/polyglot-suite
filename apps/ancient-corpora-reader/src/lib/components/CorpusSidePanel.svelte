@@ -38,8 +38,8 @@
 	{highlightStore}
 	fetchLexiconEntry={(lemma) => fetchLexiconEntry(readerState.currentCorpus, lemma)}
 	fetchLemmaStats={(lemma) => fetchLemmaStats(readerState.currentCorpus, lemma)}
-	fetchConcordancePage={(lemma, offset, size, totalCount) => fetchConcordancePage(readerState.currentCorpus, lemma, offset, size, totalCount)}
-	fetchConcordance={(lemma) => fetchConcordance(readerState.currentCorpus, lemma)}
+	fetchConcordancePage={(lemma, offset, size, totalCount, formFilter) => fetchConcordancePage(readerState.currentCorpus, lemma, offset, size, totalCount, formFilter)}
+	fetchConcordance={(lemma, formFilter) => fetchConcordance(readerState.currentCorpus, lemma, formFilter)}
 	fetchSectionText={(ref) => fetchSectionText(readerState.currentCorpus, ref.work_unit_id ?? ref.id)}
 	fetchSectionsTextBatch={(ids) => fetchSectionsTextBatch(readerState.currentCorpus, ids)}
 	fetchAttestedForms={(lemma) => fetchAttestedForms(readerState.currentCorpus, lemma)}

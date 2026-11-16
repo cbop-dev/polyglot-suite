@@ -96,8 +96,14 @@
 		// Data fetching
 		fetchLexiconEntry?: (lemma: string) => Promise<LexiconEntry | null>;
 		fetchLemmaStats?: (lemma: string) => Promise<LemmaStat | null>;
-		fetchConcordance?: (lemma: string) => Promise<ConcordanceRef[]>;
-		fetchConcordancePage?: (lemma: string, offset: number, pageSize: number, totalCount?: number) => Promise<PaginatedConcordance>;
+		fetchConcordance?: (lemma: string, formFilter?: string | null) => Promise<ConcordanceRef[]>;
+		fetchConcordancePage?: (
+			lemma: string,
+			offset: number,
+			pageSize: number,
+			totalCount?: number,
+			formFilter?: string | null
+		) => Promise<PaginatedConcordance>;
 		concordancePageSize?: number;
 		fetchSectionText?: (ref: ConcordanceRef) => Promise<string>;
 		fetchSectionsTextBatch?: (workUnitIds: number[]) => Promise<Record<number, string>>;
@@ -249,11 +255,34 @@
 		return list;
 	});
 
+	function clearFormFilter() {
+		if (!selectedFormFilter) return;
+		selectedFormFilter = null;
+		concordancePage = 1;
+		expandedCardIds = new Set();
+		if (baseConcordanceCache.has(1)) {
+			concordancePageCache = new Map(baseConcordanceCache);
+			concordanceTotalCount = baseConcordanceTotalCount;
+			concordance = concordancePageCache.get(1) || [];
+			concordanceLoaded = true;
+		} else if (currentLemma) {
+			loadConcordance(currentLemma, null);
+		}
+	}
+
 	function selectForm(form: string) {
 		if (selectedFormFilter === form) {
-			selectedFormFilter = null;
+			clearFormFilter();
 		} else {
 			selectedFormFilter = form;
+			concordancePage = 1;
+			expandedCardIds = new Set();
+			if (!isConcordanceOpen) {
+				isConcordanceOpen = true;
+			}
+			if (currentLemma) {
+				loadConcordance(currentLemma, form);
+			}
 		}
 	}
 
@@ -281,6 +310,8 @@
 
 	let isPageNavigating = $state<boolean>(false);
 	let concordancePageCache = new Map<number, ConcordanceRef[]>();
+	let baseConcordanceCache = new Map<number, ConcordanceRef[]>();
+	let baseConcordanceTotalCount = 0;
 	let concordanceScrollContainer = $state<HTMLElement | null>(null);
 	let stats = $state<LemmaStat | null>(null);
 	let isConcordanceLoading = $state<boolean>(false);
@@ -337,15 +368,7 @@
 		return items;
 	});
 
-	let filteredConcordance = $derived.by(() => {
-		const filter = selectedFormFilter;
-		if (!filter) return concordance;
-		return concordance.filter((ref) => {
-			if (ref.matched_word && ref.matched_word === filter) return true;
-			if (ref.text_content && ref.text_content.includes(filter)) return true;
-			return false;
-		});
-	});
+	let filteredConcordance = $derived(concordance);
 
 	// Collapse sub-sections whenever the panel is closed or token is cleared
 	$effect(() => {
@@ -393,6 +416,8 @@
 
 		concordance = [];
 		concordancePageCache.clear();
+		baseConcordanceCache.clear();
+		baseConcordanceTotalCount = 0;
 		concordanceTotalCount = 0;
 		concordancePage = 1;
 		isPageNavigating = false;
@@ -560,7 +585,7 @@
 		if (concordancePageCache.has(nextPage)) return;
 
 		const offset = (nextPage - 1) * currentPageSize;
-		fetchConcordancePage(lemma, offset, currentPageSize, concordanceTotalCount)
+		fetchConcordancePage(lemma, offset, currentPageSize, concordanceTotalCount, selectedFormFilter)
 			.then((pageData) => {
 				if (queryId === concordanceQueryId && currentLemma === lemma && pageData?.refs) {
 					concordancePageCache.set(nextPage, pageData.refs);
@@ -598,7 +623,7 @@
 
 		try {
 			const offset = (page - 1) * currentPageSize;
-			const pageData = await fetchConcordancePage(lemma, offset, currentPageSize, concordanceTotalCount);
+			const pageData = await fetchConcordancePage(lemma, offset, currentPageSize, concordanceTotalCount, selectedFormFilter);
 			if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
 
 			const refs = pageData.refs || [];
@@ -627,7 +652,7 @@
 		}
 	}
 
-	async function loadConcordance(lemma: string) {
+	async function loadConcordance(lemma: string, formFilter: string | null = selectedFormFilter) {
 		if (!lemma || (!fetchConcordance && !fetchConcordancePage)) return;
 		const queryId = ++concordanceQueryId;
 		isConcordanceLoading = true;
@@ -636,10 +661,32 @@
 		concordancePage = 1;
 
 		try {
-			if (fetchConcordancePage) {
+			if (formFilter) {
+				// Specific attested form filter: fetch all occurrences for that form
+				let refs: ConcordanceRef[] = [];
+				if (fetchConcordance) {
+					refs = await fetchConcordance(lemma, formFilter);
+				} else if (fetchConcordancePage) {
+					const pageData = await fetchConcordancePage(lemma, 0, 1000, undefined, formFilter);
+					refs = pageData.refs || [];
+				}
+				if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
+
+				concordanceTotalCount = refs.length;
+				for (let i = 0; i < refs.length; i += currentPageSize) {
+					const p = Math.floor(i / currentPageSize) + 1;
+					concordancePageCache.set(p, refs.slice(i, i + currentPageSize));
+				}
+				concordance = concordancePageCache.get(1) || [];
+				concordancePage = 1;
+				concordanceLoaded = true;
+				if (!isKwic && fetchSectionText) {
+					ensureFullTextLoaded(concordance);
+				}
+			} else if (fetchConcordancePage) {
 				const knownTotal = stats?.concordance_count ?? stats?.total_count ?? (concordanceTotalCount > 0 ? concordanceTotalCount : undefined);
 				const [pageData, s] = await Promise.all([
-					fetchConcordancePage(lemma, 0, currentPageSize, knownTotal),
+					fetchConcordancePage(lemma, 0, currentPageSize, knownTotal, null),
 					stats ? Promise.resolve(stats) : (fetchLemmaStats ? fetchLemmaStats(lemma) : Promise.resolve(null))
 				]);
 				if (queryId !== concordanceQueryId || currentLemma !== lemma) return;
@@ -648,6 +695,10 @@
 				concordance = refs;
 				concordanceTotalCount = pageData.totalCount ?? knownTotal ?? (refs.length || 0);
 				concordancePage = 1;
+
+				baseConcordanceCache = new Map(concordancePageCache);
+				baseConcordanceTotalCount = concordanceTotalCount;
+
 				if (!stats) stats = s;
 				concordanceLoaded = true;
 				prefetchNextPage(1, lemma, queryId);
@@ -668,6 +719,10 @@
 				}
 				concordance = concordancePageCache.get(1) || [];
 				concordancePage = 1;
+
+				baseConcordanceCache = new Map(concordancePageCache);
+				baseConcordanceTotalCount = concordanceTotalCount;
+
 				if (!stats) stats = s;
 				concordanceLoaded = true;
 				if (!isKwic && fetchSectionText) {
@@ -1013,7 +1068,7 @@
 						}
 					}}
 					onToggleFilter={selectForm}
-					onResetFilter={() => (selectedFormFilter = null)}
+					onResetFilter={clearFormFilter}
 				/>
 
 				<!-- Section 2: Full Lexicon Article -->
@@ -1167,10 +1222,13 @@
 
 								<div class="flex items-center justify-between pb-2 mb-2 border-b border-[var(--color-rule)] gap-2 flex-wrap">
 									<span class="text-[11px] text-[var(--color-ink-soft)] font-medium">
-										{#if fetchConcordancePage && concordanceTotalCount > 0}
+										{#if concordanceTotalCount > 0}
 											Showing {concordanceStartIdx}–{concordanceEndIdx} of {concordanceTotalCount} {concordanceTotalCount === 1 ? 'occurrence' : 'occurrences'}
+											{#if selectedFormFilter}
+												<span class="text-blue-600 dark:text-blue-400 font-semibold">(filtered)</span>
+											{/if}
 										{:else}
-											{filteredConcordance.length} {filteredConcordance.length === 1 ? 'occurrence' : 'occurrences'}
+											0 occurrences
 										{/if}
 									</span>
 
@@ -1231,7 +1289,7 @@
 									{#if filteredConcordance.length === 0}
 										<div class="py-8 text-center text-xs text-[var(--color-ink-soft)] space-y-2">
 											{#if selectedFormFilter}
-												<p>No occurrences matching "{selectedFormFilter}" on page {concordancePage}.</p>
+												<p>No occurrences matching "{selectedFormFilter}".</p>
 											{:else}
 												<p>No occurrences found on page {concordancePage}.</p>
 											{/if}

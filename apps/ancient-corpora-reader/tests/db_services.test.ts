@@ -174,4 +174,42 @@ describe('Multi-Corpus Database Service Layer', () => {
 
 		db.close();
 	});
+
+	it('executes attested form filtered query using idx_concordance_refs_form', () => {
+		const afDbPath = path.resolve(BUILD_DB_DIR, 'af.sqlite3');
+		if (!existsSync(afDbPath)) return;
+
+		const db = new DatabaseSync(afDbPath, { readOnly: true });
+
+		// Verify query plan uses idx_concordance_refs_form
+		const explainSql = `
+			EXPLAIN QUERY PLAN
+			SELECT display_citation, work_unit_id, work_code, 
+			       book, chapter, section, niese_section, 
+			       matched_form, kwic_snippet
+			FROM concordance_refs
+			WHERE corpus_id = ? AND lemma = ? AND matched_form = ?
+			ORDER BY work_unit_id ASC
+			LIMIT ? OFFSET ?;
+		`;
+		const plan = db.prepare(explainSql).all('lake_grc', 'λέγω', 'λέγει', 10, 0) as any[];
+		const planDetail = plan.map((p) => p.detail || '').join(' ');
+		expect(planDetail).toContain('idx_concordance_refs_form');
+
+		// Query results
+		const pagedSql = `
+			SELECT display_citation, work_unit_id, matched_form, kwic_snippet
+			FROM concordance_refs
+			WHERE corpus_id = ? AND lemma = ? AND matched_form = ?
+			ORDER BY work_unit_id ASC
+			LIMIT ? OFFSET ?;
+		`;
+		const rows = db.prepare(pagedSql).all('lake_grc', 'λέγω', 'λέγει', 10, 0) as any[];
+		expect(rows.length).toBeGreaterThan(0);
+		for (const r of rows) {
+			expect(r.matched_form).toBe('λέγει');
+		}
+
+		db.close();
+	});
 });

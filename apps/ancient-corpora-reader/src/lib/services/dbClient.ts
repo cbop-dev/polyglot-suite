@@ -460,6 +460,24 @@ export async function fetchLemmaStats(corpusId: AncientCorpusId, lemma: string):
 }
 
 /**
+ * Helper to expand surface forms with potential movable nu or punctuation
+ */
+function expandFormVariants(form: string): string[] {
+	const trimmed = form.trim();
+	const variants = new Set<string>();
+	variants.add(trimmed);
+	if (trimmed.includes('(ν)')) {
+		variants.add(trimmed.replace(/\(ν\)/g, ''));
+		variants.add(trimmed.replace(/\(ν\)/g, 'ν'));
+	}
+	if (trimmed.includes('(n)')) {
+		variants.add(trimmed.replace(/\(n\)/g, ''));
+		variants.add(trimmed.replace(/\(n\)/g, 'n'));
+	}
+	return Array.from(variants);
+}
+
+/**
  * Fetch paginated concordance occurrences using single-lemma index pushdown
  */
 export async function fetchConcordancePage(
@@ -467,7 +485,8 @@ export async function fetchConcordancePage(
 	lemma: string,
 	offset: number = 0,
 	pageSize: number = 50,
-	knownTotalCount?: number
+	knownTotalCount?: number,
+	formFilter?: string | null
 ): Promise<PaginatedConcordance> {
 	if (!lemma) {
 		return { refs: [], totalCount: 0, hasMore: false, nextOffset: 0 };
@@ -476,9 +495,10 @@ export async function fetchConcordancePage(
 	const worker = await getDbWorker(corpusId);
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
 	const targetCorpus = getPrimaryVersionId(corpusId);
+	const formVariants = formFilter ? expandFormVariants(formFilter) : null;
 
 	let targetLemma = clean;
-	let totalCount = knownTotalCount;
+	let totalCount = formVariants ? undefined : knownTotalCount;
 
 	// Step 1: Resolve exact target lemma from lemma_stats (or normalized fallback)
 	// ONLY if totalCount was not already supplied by the caller
@@ -491,8 +511,10 @@ export async function fetchConcordancePage(
 
 		if (statRows && statRows.length > 0) {
 			targetLemma = getRowVal<string>(statRows[0], 'lemma', 0) || clean;
-			const cCount = getRowVal<number | undefined>(statRows[0], 'concordance_count', 1);
-			totalCount = cCount !== undefined && cCount !== null ? cCount : getRowVal<number>(statRows[0], 'total_count', 2, 0);
+			if (!formVariants) {
+				const cCount = getRowVal<number | undefined>(statRows[0], 'concordance_count', 1);
+				totalCount = cCount !== undefined && cCount !== null ? cCount : getRowVal<number>(statRows[0], 'total_count', 2, 0);
+			}
 		} else {
 			const stripped = stripGreekAccents(clean);
 			const normRows = (await worker.db.query(
@@ -504,9 +526,11 @@ export async function fetchConcordancePage(
 
 			if (normRows && normRows.length > 0) {
 				targetLemma = getRowVal<string>(normRows[0], 'lemma', 0) || clean;
-				const cCount = getRowVal<number | undefined>(normRows[0], 'concordance_count', 1);
-				totalCount = cCount !== undefined && cCount !== null ? cCount : getRowVal<number>(normRows[0], 'total_count', 2, 0);
-			} else {
+				if (!formVariants) {
+					const cCount = getRowVal<number | undefined>(normRows[0], 'concordance_count', 1);
+					totalCount = cCount !== undefined && cCount !== null ? cCount : getRowVal<number>(normRows[0], 'total_count', 2, 0);
+				}
+			} else if (!formVariants) {
 				// Fast fallback count directly from covering table
 				const countRows = await worker.db.query(
 					`SELECT COUNT(*) AS total FROM concordance_refs WHERE corpus_id = ? AND lemma = ?`,
@@ -517,24 +541,55 @@ export async function fetchConcordancePage(
 		}
 	}
 
+	// If formVariants are specified, compute the form-specific total count
+	if (formVariants) {
+		const placeholders = formVariants.map(() => '?').join(', ');
+		const countRows = await worker.db.query(
+			`SELECT COUNT(*) AS total FROM concordance_refs WHERE corpus_id = ? AND lemma = ? AND matched_form IN (${placeholders})`,
+			[targetCorpus, targetLemma, ...formVariants]
+		);
+		totalCount = countRows && (countRows as any[]).length > 0 ? getRowVal<number>((countRows as any[])[0], 'total', 0) : 0;
+	}
+
+	if (totalCount === undefined) {
+		totalCount = 0;
+	}
+
 	if (totalCount === 0 || offset >= totalCount) {
 		return { refs: [], totalCount, hasMore: false, nextOffset: offset };
 	}
 
 	// Step 2: Direct Covering Query from concordance_refs (ZERO JOINS, ZERO TEMP B-TREE SORT)
-	// Because PRIMARY KEY starts with (corpus_id, lemma, work_unit_id), rows for a fixed lemma
-	// are ALREADY physically ordered by work_unit_id ASC in SQLite's B-Tree.
-	const sql = `
-		SELECT 
-			display_citation, work_unit_id, work_code, 
-			book, chapter, section, niese_section, 
-			matched_form, kwic_snippet
-		FROM concordance_refs
-		WHERE corpus_id = ? AND lemma = ?
-		ORDER BY work_unit_id ASC
-		LIMIT ? OFFSET ?
-	`;
-	const rows = await worker.db.query(sql, [targetCorpus, targetLemma, pageSize, offset]);
+	let sql: string;
+	let params: any[];
+	if (formVariants) {
+		const placeholders = formVariants.map(() => '?').join(', ');
+		sql = `
+			SELECT 
+				display_citation, work_unit_id, work_code, 
+				book, chapter, section, niese_section, 
+				matched_form, kwic_snippet
+			FROM concordance_refs
+			WHERE corpus_id = ? AND lemma = ? AND matched_form IN (${placeholders})
+			ORDER BY work_unit_id ASC
+			LIMIT ? OFFSET ?
+		`;
+		params = [targetCorpus, targetLemma, ...formVariants, pageSize, offset];
+	} else {
+		sql = `
+			SELECT 
+				display_citation, work_unit_id, work_code, 
+				book, chapter, section, niese_section, 
+				matched_form, kwic_snippet
+			FROM concordance_refs
+			WHERE corpus_id = ? AND lemma = ?
+			ORDER BY work_unit_id ASC
+			LIMIT ? OFFSET ?
+		`;
+		params = [targetCorpus, targetLemma, pageSize, offset];
+	}
+
+	const rows = await worker.db.query(sql, params);
 	const pagedRefs: ConcordanceRef[] = (rows as any[]).map((r) => {
 		const matchedWord = getRowVal<string>(r, 'matched_form', 7) || clean;
 		const sec = getRowVal<number>(r, 'section', 5);
@@ -567,10 +622,15 @@ export async function fetchConcordancePage(
 }
 
 /**
- * Legacy single-request concordance fetcher (defaults to initial page of results)
+ * Single-request concordance fetcher (defaults to initial page of results, or all occurrences for a specific form)
  */
-export async function fetchConcordance(corpusId: AncientCorpusId, lemma: string): Promise<ConcordanceRef[]> {
-	const result = await fetchConcordancePage(corpusId, lemma, 0, 100);
+export async function fetchConcordance(
+	corpusId: AncientCorpusId,
+	lemma: string,
+	formFilter?: string | null
+): Promise<ConcordanceRef[]> {
+	const limit = formFilter ? 1000 : 100;
+	const result = await fetchConcordancePage(corpusId, lemma, 0, limit, undefined, formFilter);
 	return result.refs as ConcordanceRef[];
 }
 

@@ -236,6 +236,9 @@ def build_covering_concordance(
 	CREATE INDEX IF NOT EXISTS idx_concordance_paged ON concordance_refs(
 		corpus_id, lemma, work_code, book, chapter, section
 	);
+	CREATE INDEX IF NOT EXISTS idx_concordance_refs_form ON concordance_refs(
+		corpus_id, lemma, matched_form, work_unit_id
+	);
 	""")
 	print(f"  ✓ Processed {total_units:,} text units into {len(seen_keys):,} covering concordance refs.")
 
@@ -704,6 +707,7 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 
 	# 11. Final Optimization & Vacuum
 	print("  → Optimizing and vacuuming target database...")
+	tgt_cur.execute("ANALYZE;")
 	tgt_cur.execute("PRAGMA optimize;")
 	tgt_cur.execute("VACUUM;")
 	tgt_conn.commit()

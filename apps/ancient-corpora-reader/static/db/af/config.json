@@ -3,8 +3,8 @@
   "serverMode": "chunked",
   "requestChunkSize": 16384,
   "urlPrefix": "af.db.",
-  "serverChunkSize": 5242880,
-  "databaseLengthBytes": 43253760,
+  "serverChunkSize": 1048576,
+  "databaseLengthBytes": 45449216,
   "suffixLength": 2,
-  "cacheBust": "v1793906492"
+  "cacheBust": "v1794837922"
 }
