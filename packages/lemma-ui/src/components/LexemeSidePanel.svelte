@@ -12,6 +12,7 @@
 		extractAvailableInflections,
 		isCriteriaActive,
 		getLanguageFontClass,
+		normalizeLanguage,
 		type InflectionFilterCriteria,
 		type AttestedForm,
 		type AvailableInflections
@@ -162,7 +163,7 @@
 	);
 
 	let activeLanguage = $derived(
-		language || selectedToken?.lang || 'greek'
+		normalizeLanguage(language || selectedToken?.lang) || 'greek'
 	);
 	let langFontClass = $derived(
 		getLanguageFontClass(activeLanguage)
@@ -1352,9 +1353,10 @@
 														<div class="mt-1 text-xs text-[var(--color-ink)] {langFontClass}">
 															<KwicSnippet
 																text={ref.text_content || ''}
-																matchWord={selectedFormFilter || ref.matched_word || currentLemma}
+																matchWord={ref.matched_word || (selectedFormFilter ? selectedFormFilter.replace(/\([νn]\)/g, '') : currentLemma)}
 																lang={activeLanguage}
 																radius={48}
+																wrap={true}
 																class="w-full"
 															/>
 														</div>

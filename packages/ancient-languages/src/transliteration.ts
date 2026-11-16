@@ -10,6 +10,13 @@
  * - Accurate diacritic-insensitive text matching and KWIC snippet generation
  */
 
+import {
+	isGreekLanguage,
+	isHebrewLanguage,
+	isSyriacLanguage,
+	isLatinLanguage
+} from './languages.js';
+
 // Greek single-character Beta Code mapping
 export const LATIN_TO_GREEK_MAP: Record<string, string> = {
 	a: 'α', A: 'Α',
@@ -378,12 +385,12 @@ export function toPlainSyriac(syriac: string): string {
 /**
  * Transliterates input based on language: 'greek' | 'hebrew' | 'syriac'.
  */
-export function transliterate(input: string, lang: 'greek' | 'hebrew' | 'syriac'): string {
-	if (lang === 'greek') {
+export function transliterate(input: string, lang: 'greek' | 'hebrew' | 'syriac' | string): string {
+	if (isGreekLanguage(lang)) {
 		return latinToGreek(input);
-	} else if (lang === 'hebrew') {
+	} else if (isHebrewLanguage(lang)) {
 		return latinToHebrew(input);
-	} else if (lang === 'syriac') {
+	} else if (isSyriacLanguage(lang)) {
 		return latinToSyriac(input);
 	}
 	return input;
@@ -417,11 +424,14 @@ export function findAllMatchesInText(
 	if (!text || !query) return [];
 
 	let q = query;
-	const isGreek = lang === 'greek' || (!lang && /[\u0370-\u03ff\u1f00-\u1fff]/.test(text));
-	const isHebrew = lang === 'hebrew' || (!lang && /[\u0590-\u05ff]/.test(text));
-	const isSyriac = lang === 'syriac' || (!lang && /[\u0700-\u074f]/.test(text));
+	const isGreek = isGreekLanguage(lang) || (!lang && /[\u0370-\u03ff\u1f00-\u1fff]/.test(text));
+	const isHebrew = isHebrewLanguage(lang) || (!lang && /[\u0590-\u05ff]/.test(text));
+	const isSyriac = isSyriacLanguage(lang) || (!lang && /[\u0700-\u074f]/.test(text));
+	const isLatin = isLatinLanguage(lang);
 
-	if (!normQ && /[a-zA-Z]/.test(query)) {
+	// Only transliterate Latin characters into target script if the text itself is NOT in Latin script
+	const textHasLatin = /[a-zA-Z]{2,}/.test(text);
+	if (!normQ && !isLatin && !textHasLatin && /[a-zA-Z]/.test(query)) {
 		if (isGreek) {
 			q = transliterateLatinToGreek(query);
 		} else if (isHebrew) {
@@ -539,6 +549,16 @@ export function getKwicSnippet(
 
 	const matchRange = findMatchInText(text, query, normQ, lang);
 	if (!matchRange) {
+		// If text is already a short precomputed context snippet, don't chop it into halves
+		if (text.length <= radius * 2.5) {
+			return {
+				before: text,
+				match: '',
+				after: '',
+				start: -1,
+				end: -1
+			};
+		}
 		return {
 			before: text.slice(0, radius),
 			match: '',

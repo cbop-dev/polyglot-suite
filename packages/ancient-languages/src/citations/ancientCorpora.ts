@@ -1,3 +1,5 @@
+import { getLanguageIsoCode } from '../languages.js';
+
 export type AncientCorpusId = 'af' | 'philo' | 'josephus';
 
 /**
@@ -45,6 +47,10 @@ export function getCorpusPrimaryLanguage(corpusId: string): string {
 export function getDefaultDictionary(langOrCorpus: string): string {
 	if (langOrCorpus in CORPUS_DEFAULT_DICTIONARIES) {
 		return CORPUS_DEFAULT_DICTIONARIES[langOrCorpus];
+	}
+	const iso = getLanguageIsoCode(langOrCorpus);
+	if (iso && iso in LANGUAGE_DEFAULT_DICTIONARIES) {
+		return LANGUAGE_DEFAULT_DICTIONARIES[iso];
 	}
 	return LANGUAGE_DEFAULT_DICTIONARIES[langOrCorpus] || 'lsj';
 }

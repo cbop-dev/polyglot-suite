@@ -2,6 +2,14 @@
  * Ancient language font and direction styling utilities.
  */
 
+import {
+	normalizeLanguage,
+	isHebrewLanguage,
+	isSyriacLanguage,
+	isLatinLanguage,
+	isEnglishLanguage
+} from './languages.js';
+
 export type SupportedLanguage = 'hebrew' | 'greek' | 'syriac' | 'latin' | 'english' | string;
 
 /**
@@ -28,7 +36,9 @@ export const LANGUAGE_FONT_FAMILIES: Record<string, string> = {
 export function getLanguageFontFamily(langOrCorpus?: string): string {
 	if (!langOrCorpus) return LANGUAGE_FONT_FAMILIES.grc;
 	const key = langOrCorpus.toLowerCase().trim();
-	return LANGUAGE_FONT_FAMILIES[key] || LANGUAGE_FONT_FAMILIES.grc;
+	if (LANGUAGE_FONT_FAMILIES[key]) return LANGUAGE_FONT_FAMILIES[key];
+	const norm = normalizeLanguage(key);
+	return norm ? (LANGUAGE_FONT_FAMILIES[norm] || LANGUAGE_FONT_FAMILIES.grc) : LANGUAGE_FONT_FAMILIES.grc;
 }
 
 /**
@@ -42,16 +52,16 @@ export function getLanguageFontClass(lang?: string, dbAbbrev?: string): string {
 	const l = (lang || '').toLowerCase().trim();
 	const db = (dbAbbrev || '').toLowerCase().trim();
 
-	if (l === 'hebrew' || l === 'heb' || l === 'hbo' || db === 'bhs' || db === 'wlc') {
+	if (isHebrewLanguage(l) || db === 'bhs' || db === 'wlc') {
 		return 'font-hebrew hebrew';
 	}
-	if (l === 'syriac' || l === 'syr' || db === 'peshitta') {
+	if (isSyriacLanguage(l) || db === 'peshitta') {
 		return 'font-syriac syriac';
 	}
-	if (l === 'latin' || l === 'lat' || db === 'vulgate') {
+	if (isLatinLanguage(l) || db === 'vulgate') {
 		return 'font-latin latin latin-font';
 	}
-	if (l === 'english' || l === 'eng' || db === 'kjv' || db === 'web') {
+	if (isEnglishLanguage(l) || db === 'kjv' || db === 'web') {
 		return 'font-english';
 	}
 	return 'font-greek greek greek-font';
@@ -64,7 +74,7 @@ export function isRtlLanguage(lang?: string, dbAbbrev?: string): boolean {
     const l = (lang || '').toLowerCase().trim();
     const db = (dbAbbrev || '').toLowerCase().trim();
 
-    return l === 'hebrew' || l === 'syriac' || db === 'bhs' || db === 'wlc' || db === 'peshitta';
+    return isHebrewLanguage(l) || isSyriacLanguage(l) || db === 'bhs' || db === 'wlc' || db === 'peshitta';
 }
 
 /**

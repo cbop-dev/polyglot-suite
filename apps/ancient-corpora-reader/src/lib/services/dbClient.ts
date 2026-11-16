@@ -10,6 +10,9 @@ import {
 	buildAttestedForms,
 	getDefaultDictionary,
 	getLanguageFontClass,
+	isGreekLanguage,
+	isLatinLanguage,
+	isEnglishLanguage,
 	type AttestedForm,
 	type AncientCorpusId
 } from '@polyglot/ancient-languages';
@@ -242,11 +245,12 @@ export async function fetchDivisionSections(
 		unitsByVersion.get(versionId)!.push(unit);
 
 		// Backwards-compatibility bridge for Phase 3 components:
-		if (versionId.endsWith('_grc') || versionId === 'grc') {
+		const langTag = versionId.split('_').pop();
+		if (isGreekLanguage(langTag)) {
 			greek.push(unit);
-		} else if (versionId.endsWith('_eng') || versionId === 'eng') {
+		} else if (isEnglishLanguage(langTag)) {
 			english.push(unit);
-		} else if (versionId.endsWith('_lat') || versionId === 'lat') {
+		} else if (isLatinLanguage(langTag)) {
 			latin.push(unit);
 		}
 	}
@@ -473,6 +477,13 @@ function expandFormVariants(form: string): string[] {
 	if (trimmed.includes('(n)')) {
 		variants.add(trimmed.replace(/\(n\)/g, ''));
 		variants.add(trimmed.replace(/\(n\)/g, 'n'));
+	}
+	// Also expand acute <-> grave accent on final syllable for Greek forms
+	for (const v of Array.from(variants)) {
+		const grave = v.normalize('NFD').replace(/\u0301/g, '\u0300').normalize('NFC');
+		const acute = v.normalize('NFD').replace(/\u0300/g, '\u0301').normalize('NFC');
+		variants.add(grave);
+		variants.add(acute);
 	}
 	return Array.from(variants);
 }

@@ -1,5 +1,6 @@
 import hebrewDictData from './data/hebrew_morph_dict.json';
 import { stripPunctuation } from './punctuation.js';
+import { isGreekLanguage, isHebrewLanguage } from './languages.js';
 
 const hebrewDict = hebrewDictData as Record<string, string>;
 
@@ -719,10 +720,10 @@ export function decodeHebrewMorph(code: string): string[] {
  */
 export function formatMorphBadges(morph: string, lang = 'greek'): string[] {
 	if (!morph) return [];
-	if (lang === 'hebrew') {
+	if (isHebrewLanguage(lang)) {
 		return decodeHebrewMorph(morph);
 	}
-	if (lang === 'greek') {
+	if (isGreekLanguage(lang)) {
 		return decodeGreekMorph(morph);
 	}
 	// Auto-detection fallback when lang is ambiguous
@@ -1197,7 +1198,7 @@ export function buildAttestedForms(
 	options: { canonicalize?: boolean; lang?: string } = {}
 ): AttestedForm[] {
 	const canonicalize = options.canonicalize ?? true;
-	const isGreek = (options.lang || 'greek') === 'greek';
+	const isGreek = isGreekLanguage(options.lang ?? 'greek');
 
 	const formMap = new Map<
 		string,

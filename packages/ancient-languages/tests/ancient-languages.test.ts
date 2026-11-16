@@ -28,6 +28,12 @@ import {
 	parseProielMorph,
 	parsePerseusMorph,
 	parseGreekMorph,
+	normalizeLanguage,
+	isGreekLanguage,
+	isHebrewLanguage,
+	isSyriacLanguage,
+	isLatinLanguage,
+	Languages,
 	parseHebrewMorph,
 	getCanonicalForm,
 	getCanonicalAttestedForms,
@@ -105,6 +111,44 @@ describe('@polyglot/ancient-languages', () => {
 			expect(snippets[1].match).toBe('λόγος');
 			expect(snippets[0].before).toContain('Ἐν ἀρχῇ');
 			expect(snippets[1].after).toContain('ἦν πρὸς τὸν');
+		});
+
+		it('finds match in text using lang="grc" with acute vs grave and sigma variants', () => {
+			const text = 'καὶ ὁ θεὸς ἦν ὁ λόγος';
+			const match = findMatchInText(text, 'θεός', undefined, 'grc');
+			expect(match).not.toBeNull();
+
+			const snippet = getKwicSnippet(text, 'θεός', { lang: 'grc' });
+			expect(snippet.match).toBe('θεὸς');
+			expect(snippet.before).toBe('καὶ ὁ ');
+			expect(snippet.after).toBe(' ἦν ὁ λόγος');
+		});
+
+		it('matches Latin words in ancient corpora without Greek transliteration corruption', () => {
+			const text = '… τὸ κατὰ τὸ εὐαγγέλιον μαρτύριον. EPILOGUS ALIUS E CODICE MOSQUIENSI DESCRIPTUS Ταῦτα …';
+			const snippet = getKwicSnippet(text, 'CODICE', { lang: 'grc' });
+			expect(snippet.match).toBe('CODICE');
+			expect(snippet.before).toContain('EPILOGUS ALIUS E ');
+			expect(snippet.after).toContain(' MOSQUIENSI');
+		});
+
+		it('normalizes language codes through the central language resolver', () => {
+			expect(normalizeLanguage('grc')).toBe('greek');
+			expect(normalizeLanguage('Greek')).toBe('greek');
+			expect(normalizeLanguage('hbo')).toBe('hebrew');
+			expect(normalizeLanguage('heb')).toBe('hebrew');
+			expect(normalizeLanguage('lat')).toBe('latin');
+			expect(normalizeLanguage('syr')).toBe('syriac');
+			expect(normalizeLanguage('eng')).toBe('english');
+
+			expect(isGreekLanguage('grc')).toBe(true);
+			expect(isGreekLanguage('greek')).toBe(true);
+			expect(isHebrewLanguage('hbo')).toBe(true);
+			expect(isLatinLanguage('lat')).toBe(true);
+			expect(isSyriacLanguage('syr')).toBe(true);
+
+			expect(Languages.getNameFromCode('grc')).toBe('Greek');
+			expect(Languages.getShortNameFromCode('grc')).toBe('Gk');
 		});
 
 		it('finds Hebrew words in pointed text ignoring vowels and accents', () => {

@@ -4,7 +4,8 @@ import {
 	HIGHLIGHT_PALETTE,
 	getNextPaletteColorIndex,
 	normalizeStrongsId,
-	getPaletteColor
+	getPaletteColor,
+	normalizeLanguage
 } from '@polyglot/ancient-languages';
 import { getLexemeById } from '$lib/services/dbClient';
 
@@ -96,9 +97,11 @@ export class HighlightStore {
 	 * Detects language from lemma string or corpus code.
 	 */
 	detectLanguage(lemma: string, langHint?: string): 'greek' | 'hebrew' | 'syriac' {
-		if (langHint === 'syriac' || langHint === 'peshitta' || langHint === 'syc') return 'syriac';
-		if (langHint === 'hebrew' || langHint === 'bhs' || langHint === 'wlc') return 'hebrew';
-		if (langHint === 'greek' || langHint === 'ognt' || langHint === 'swete_lxx' || langHint === 'lxx') return 'greek';
+		const norm = normalizeLanguage(langHint);
+		if (norm === 'syriac' || norm === 'hebrew' || norm === 'greek') return norm;
+		if (langHint === 'peshitta' || langHint === 'syc') return 'syriac';
+		if (langHint === 'bhs' || langHint === 'wlc') return 'hebrew';
+		if (langHint === 'ognt' || langHint === 'swete_lxx' || langHint === 'lxx') return 'greek';
 		// Check for Syriac Unicode block (\u0700 - \u074F)
 		if (/[\u0700-\u074F]/.test(lemma)) return 'syriac';
 		// Check for Hebrew Unicode block (\u0590 - \u05FF)
