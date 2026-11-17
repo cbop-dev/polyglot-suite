@@ -9,6 +9,7 @@ export type TextDirection = 'ltr' | 'rtl';
 export interface CorpusMetadata {
 	id: CorpusId;
 	version: string;
+	shortTitle: string;
 	title: string;
 	language: string;
 	languageName: string;
@@ -28,12 +29,15 @@ export interface CorpusMetadata {
 export const CANONICAL_CORPORA = [
   "bdb",
   "brenton-lxx",
+  "douay",
   "kjv",
   "lsj",
+  "luther1912",
   "ognt",
   "peshitta",
   "sblgnt",
   "swete_lxx",
+  "vamvas",
   "vulgate",
   "webbe",
   "wlc"
@@ -45,6 +49,7 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
   "bdb": {
     "id": "bdb",
     "version": "BDB",
+    "shortTitle": "BDB Hebrew Lexicon",
     "title": "Brown-Driver-Briggs Hebrew and English Lexicon",
     "language": "hbo",
     "languageName": "Hebrew",
@@ -68,6 +73,7 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
   "brenton-lxx": {
     "id": "brenton-lxx",
     "version": "Brenton",
+    "shortTitle": "Brenton LXX",
     "title": "The Septuagint with an English Translation (Sir L.C.L. Brenton, 1851)",
     "language": "eng",
     "languageName": "English",
@@ -89,9 +95,38 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
     "license": "Public Domain",
     "attribution": "Samuel Bagster & Sons / eBible.org"
   },
+  "douay": {
+    "id": "douay",
+    "version": "Douay",
+    "shortTitle": "Douay-Rheims",
+    "title": "Douay-Rheims Bible (Challoner Revision with Apocrypha)",
+    "language": "eng",
+    "languageName": "English",
+    "direction": "ltr",
+    "category": "bible",
+    "testament": "both",
+    "defaultScheme": "Vulgate",
+    "hasTokens": true,
+    "hasAudio": false,
+    "primaryDictionary": null,
+    "aliases": [
+      "douay",
+      "dra",
+      "douay-rheims"
+    ],
+    "searchNames": [
+      "Douay-Rheims Bible",
+      "Douay Rheims",
+      "DRA",
+      "Douay"
+    ],
+    "license": "Public Domain",
+    "attribution": "eBible.org / John Murphy Co."
+  },
   "kjv": {
     "id": "kjv",
     "version": "KJV",
+    "shortTitle": "King James",
     "title": "King James Version (with Apocrypha)",
     "language": "eng",
     "languageName": "English",
@@ -117,6 +152,7 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
   "lsj": {
     "id": "lsj",
     "version": "LSJ",
+    "shortTitle": "LSJ Greek Lexicon",
     "title": "Liddell-Scott-Jones Greek-English Lexicon (STEPBible Formatted)",
     "language": "grc",
     "languageName": "Greek",
@@ -137,9 +173,38 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
     "license": "CC BY",
     "attribution": "STEPBible.org / LSJ Lexicon"
   },
+  "luther1912": {
+    "id": "luther1912",
+    "version": "Luther1912",
+    "shortTitle": "Luther 1912",
+    "title": "Lutherbibel 1912 (mit den Apokryphen)",
+    "language": "deu",
+    "languageName": "German",
+    "direction": "ltr",
+    "category": "bible",
+    "testament": "both",
+    "defaultScheme": "German",
+    "hasTokens": true,
+    "hasAudio": false,
+    "primaryDictionary": null,
+    "aliases": [
+      "luther1912",
+      "luther",
+      "ger1912",
+      "deu1912"
+    ],
+    "searchNames": [
+      "Lutherbibel 1912",
+      "German Luther 1912",
+      "Luther 1912 mit Apokryphen"
+    ],
+    "license": "Public Domain",
+    "attribution": "eBible.org / Crosswire OSIS"
+  },
   "ognt": {
     "id": "ognt",
     "version": "OpenGNT",
+    "shortTitle": "Open GNT",
     "title": "Open Greek New Testament (NA28-aligned)",
     "language": "grc",
     "languageName": "Greek",
@@ -164,6 +229,7 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
   "peshitta": {
     "id": "peshitta",
     "version": "Peshitta",
+    "shortTitle": "Peshitta",
     "title": "The Syriac Peshitta (Leiden OT / SEDRA NT)",
     "language": "syc",
     "languageName": "Syriac",
@@ -188,6 +254,7 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
   "sblgnt": {
     "id": "sblgnt",
     "version": "SBLGNT",
+    "shortTitle": "SBL Greek NT",
     "title": "The Greek New Testament: SBL Edition",
     "language": "grc",
     "languageName": "Greek",
@@ -215,6 +282,7 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
   "swete_lxx": {
     "id": "swete_lxx",
     "version": "LXX",
+    "shortTitle": "Swete LXX",
     "title": "The Old Testament in Greek according to the Septuagint (H.B. Swete, 1930)",
     "language": "grc",
     "languageName": "Greek",
@@ -239,9 +307,39 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
     "license": "Public Domain / CC BY-NC-SA 4.0",
     "attribution": "Swete Septuagint & Biblical Data Pipeline Lemmatization"
   },
+  "vamvas": {
+    "id": "vamvas",
+    "version": "Vamvas",
+    "shortTitle": "Vamvas Greek 1850",
+    "title": "Modern Greek Bible (Neophytos Vamvas 1850)",
+    "language": "ell",
+    "languageName": "Modern Greek",
+    "direction": "ltr",
+    "category": "bible",
+    "testament": "both",
+    "defaultScheme": "ENG",
+    "hasTokens": false,
+    "hasAudio": false,
+    "primaryDictionary": null,
+    "aliases": [
+      "vamvas",
+      "grevamvas",
+      "ell1850",
+      "greek-modern"
+    ],
+    "searchNames": [
+      "Modern Greek Bible",
+      "Vamvas Bible",
+      "Neophytos Vamvas",
+      "\u039d\u03b5\u03cc\u03c6\u03c5\u03c4\u03bf\u03c2 \u0392\u03ac\u03bc\u03b2\u03b1\u03c2"
+    ],
+    "license": "Public Domain",
+    "attribution": "scrollmapper/bible_databases"
+  },
   "vulgate": {
     "id": "vulgate",
     "version": "Vulgate",
+    "shortTitle": "Clementine Vulgate",
     "title": "Biblia Sacra Vulgata (Clementine Vulgate 1592/1598)",
     "language": "lat",
     "languageName": "Latin",
@@ -267,6 +365,7 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
   "webbe": {
     "id": "webbe",
     "version": "WEB",
+    "shortTitle": "World English Bible",
     "title": "World English Bible (British Edition with Apocrypha)",
     "language": "eng",
     "languageName": "English",
@@ -290,6 +389,7 @@ export const CORPORA_METADATA: Record<CorpusId, CorpusMetadata> = {
   "wlc": {
     "id": "wlc",
     "version": "BHS",
+    "shortTitle": "Leningrad WLC",
     "title": "Westminster Leningrad Codex (Hebrew Old Testament)",
     "language": "hbo",
     "languageName": "Hebrew",
@@ -324,11 +424,20 @@ export const VERSION_TO_CORPUS_ID: Record<string, CorpusId> = {
   "Brenton": "brenton-lxx",
   "brenton": "brenton-lxx",
   "brenton-lxx": "brenton-lxx",
+  "Douay": "douay",
+  "douay": "douay",
+  "dra": "douay",
+  "douay-rheims": "douay",
   "KJV": "kjv",
   "kjv": "kjv",
   "av": "kjv",
   "LSJ": "lsj",
   "lsj": "lsj",
+  "Luther1912": "luther1912",
+  "luther1912": "luther1912",
+  "luther": "luther1912",
+  "ger1912": "luther1912",
+  "deu1912": "luther1912",
   "OpenGNT": "ognt",
   "opengnt": "ognt",
   "ognt": "ognt",
@@ -344,6 +453,11 @@ export const VERSION_TO_CORPUS_ID: Record<string, CorpusId> = {
   "swete_lxx": "swete_lxx",
   "swete": "swete_lxx",
   "swete-lxx": "swete_lxx",
+  "Vamvas": "vamvas",
+  "vamvas": "vamvas",
+  "grevamvas": "vamvas",
+  "ell1850": "vamvas",
+  "greek-modern": "vamvas",
   "Vulgate": "vulgate",
   "vulgate": "vulgate",
   "vulgate-clementine": "vulgate",
@@ -355,7 +469,8 @@ export const VERSION_TO_CORPUS_ID: Record<string, CorpusId> = {
   "wlc": "wlc",
   "WLC": "wlc",
   "OGNT": "ognt",
-  "AV": "kjv"
+  "AV": "kjv",
+  "DRA": "douay"
 };
 
 /**
@@ -364,12 +479,15 @@ export const VERSION_TO_CORPUS_ID: Record<string, CorpusId> = {
 export const CORPUS_ID_TO_VERSION: Record<CorpusId, string> = {
   "bdb": "BDB",
   "brenton-lxx": "Brenton",
+  "douay": "Douay",
   "kjv": "KJV",
   "lsj": "LSJ",
+  "luther1912": "Luther1912",
   "ognt": "OpenGNT",
   "peshitta": "Peshitta",
   "sblgnt": "SBLGNT",
   "swete_lxx": "LXX",
+  "vamvas": "Vamvas",
   "vulgate": "Vulgate",
   "webbe": "WEB",
   "wlc": "BHS"
@@ -385,6 +503,9 @@ export const WORK_ID_TO_CORPUS_ID: Record<number, CorpusId> = {
   "6": "webbe",
   "7": "brenton-lxx",
   "8": "peshitta",
+  "9": "douay",
+  "10": "luther1912",
+  "11": "vamvas",
   "24": "swete_lxx",
   "40": "ognt",
   "41": "sblgnt",
@@ -399,6 +520,9 @@ export const CORPUS_ID_TO_WORK_ID: Record<CorpusId, number> = {
   "webbe": 6,
   "brenton-lxx": 7,
   "peshitta": 8,
+  "douay": 9,
+  "luther1912": 10,
+  "vamvas": 11,
   "swete_lxx": 24,
   "ognt": 40,
   "sblgnt": 41,
@@ -440,8 +564,21 @@ export const VERSION_GROUPS: { language: string; versions: string[] }[] = [
     "language": "English",
     "versions": [
       "Brenton",
+      "Douay",
       "KJV",
       "WEB"
+    ]
+  },
+  {
+    "language": "German",
+    "versions": [
+      "Luther1912"
+    ]
+  },
+  {
+    "language": "Modern Greek",
+    "versions": [
+      "Vamvas"
     ]
   }
 ];

@@ -28,6 +28,9 @@ from .adapters import (
     WEBBEAdapter,
     BrentonAdapter,
     PeshittaAdapter,
+    Luther1912Adapter,
+    DouayAdapter,
+    VamvasAdapter,
     BDBAdapter,
     LSJAdapter,
 )
@@ -38,6 +41,7 @@ SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS corpora (
     id TEXT PRIMARY KEY,
     version TEXT NOT NULL,
+    short_title TEXT NOT NULL DEFAULT '',
     title TEXT NOT NULL,
     language TEXT NOT NULL,
     language_name TEXT NOT NULL,
@@ -268,10 +272,16 @@ class DatabaseBuilder:
 
     def populate_corpora(self, conn: sqlite3.Connection):
         print("Populating corpora metadata...")
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(corpora)").fetchall()]
+        if "short_title" not in cols:
+            conn.execute("ALTER TABLE corpora ADD COLUMN short_title TEXT DEFAULT ''")
+            conn.commit()
+
         corpora_records = [
             (
                 "vulgate",
                 "Vulgate",
+                "Clementine Vulgate",
                 "Biblia Sacra Vulgata (Clementine Vulgate 1592/1598)",
                 "lat",
                 "Latin",
@@ -290,6 +300,7 @@ class DatabaseBuilder:
             (
                 "wlc",
                 "BHS",
+                "Leningrad WLC",
                 "Westminster Leningrad Codex (Hebrew Old Testament)",
                 "hbo",
                 "Hebrew",
@@ -308,6 +319,7 @@ class DatabaseBuilder:
             (
                 "swete_lxx",
                 "LXX",
+                "Swete LXX",
                 "The Old Testament in Greek according to the Septuagint (H.B. Swete, 1930)",
                 "grc",
                 "Greek",
@@ -326,6 +338,7 @@ class DatabaseBuilder:
             (
                 "ognt",
                 "OpenGNT",
+                "Open GNT",
                 "Open Greek New Testament (NA28-aligned)",
                 "grc",
                 "Greek",
@@ -344,6 +357,7 @@ class DatabaseBuilder:
             (
                 "sblgnt",
                 "SBLGNT",
+                "SBL Greek NT",
                 "The Greek New Testament: SBL Edition",
                 "grc",
                 "Greek",
@@ -362,6 +376,7 @@ class DatabaseBuilder:
             (
                 "kjv",
                 "KJV",
+                "King James",
                 "King James Version (with Apocrypha)",
                 "eng",
                 "English",
@@ -380,6 +395,7 @@ class DatabaseBuilder:
             (
                 "webbe",
                 "WEB",
+                "World English Bible",
                 "World English Bible (British Edition with Apocrypha)",
                 "eng",
                 "English",
@@ -398,6 +414,7 @@ class DatabaseBuilder:
             (
                 "brenton-lxx",
                 "Brenton",
+                "Brenton LXX",
                 "The Septuagint with an English Translation (Sir L.C.L. Brenton, 1851)",
                 "eng",
                 "English",
@@ -416,6 +433,7 @@ class DatabaseBuilder:
             (
                 "peshitta",
                 "Peshitta",
+                "Peshitta",
                 "The Syriac Peshitta (Leiden OT / SEDRA NT)",
                 "syc",
                 "Syriac",
@@ -432,8 +450,66 @@ class DatabaseBuilder:
                 "Peshitta Institute Leiden / George A. Kiraz (SEDRA) / ETCBC",
             ),
             (
+                "douay",
+                "Douay",
+                "Douay-Rheims",
+                "Douay-Rheims Bible (Challoner Revision with Apocrypha)",
+                "eng",
+                "English",
+                "ltr",
+                "bible",
+                "both",
+                "Vulgate",
+                1,
+                0,
+                None,
+                "douay,dra,douay-rheims",
+                '["Douay-Rheims Bible", "Douay Rheims", "DRA", "Douay"]',
+                "Public Domain",
+                "eBible.org / John Murphy Co.",
+            ),
+            (
+                "luther1912",
+                "Luther1912",
+                "Luther 1912",
+                "Lutherbibel 1912 (mit den Apokryphen)",
+                "deu",
+                "German",
+                "ltr",
+                "bible",
+                "both",
+                "German",
+                1,
+                0,
+                None,
+                "luther1912,luther,ger1912,deu1912",
+                '["Lutherbibel 1912", "German Luther 1912", "Luther 1912 mit Apokryphen"]',
+                "Public Domain",
+                "eBible.org / Crosswire OSIS",
+            ),
+            (
+                "vamvas",
+                "Vamvas",
+                "Vamvas Greek 1850",
+                "Modern Greek Bible (Neophytos Vamvas 1850)",
+                "ell",
+                "Modern Greek",
+                "ltr",
+                "bible",
+                "both",
+                "ENG",
+                0,
+                0,
+                None,
+                "vamvas,grevamvas,ell1850,greek-modern",
+                '["Modern Greek Bible", "Vamvas Bible", "Neophytos Vamvas", "Νεόφυτος Βάμβας"]',
+                "Public Domain",
+                "scrollmapper/bible_databases",
+            ),
+            (
                 "bdb",
                 "BDB",
+                "BDB Hebrew Lexicon",
                 "Brown-Driver-Briggs Hebrew and English Lexicon",
                 "hbo",
                 "Hebrew",
@@ -452,6 +528,7 @@ class DatabaseBuilder:
             (
                 "lsj",
                 "LSJ",
+                "LSJ Greek Lexicon",
                 "Liddell-Scott-Jones Greek-English Lexicon (STEPBible Formatted)",
                 "grc",
                 "Greek",
@@ -471,8 +548,8 @@ class DatabaseBuilder:
         conn.executemany(
             """
             INSERT OR REPLACE INTO corpora 
-            (id, version, title, language, language_name, direction, category, testament, default_scheme, has_tokens, has_audio, primary_dictionary, aliases, search_names, license, attribution)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, version, short_title, title, language, language_name, direction, category, testament, default_scheme, has_tokens, has_audio, primary_dictionary, aliases, search_names, license, attribution)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             corpora_records,
         )
@@ -624,6 +701,9 @@ class DatabaseBuilder:
                 WEBBEAdapter(tvtms=self.tvtms),
                 BrentonAdapter(tvtms=self.tvtms),
                 PeshittaAdapter(tvtms=self.tvtms),
+                DouayAdapter(tvtms=self.tvtms),
+                Luther1912Adapter(tvtms=self.tvtms),
+                VamvasAdapter(tvtms=self.tvtms),
             ]
 
             for adapter in adapters:
@@ -713,6 +793,12 @@ class DatabaseBuilder:
                 adapter = BrentonAdapter(tvtms=self.tvtms)
             elif c_clean == "peshitta":
                 adapter = PeshittaAdapter(tvtms=self.tvtms)
+            elif c_clean in ("douay", "dra", "douay-rheims"):
+                adapter = DouayAdapter(tvtms=self.tvtms)
+            elif c_clean in ("luther1912", "luther", "ger1912", "deu1912"):
+                adapter = Luther1912Adapter(tvtms=self.tvtms)
+            elif c_clean in ("vamvas", "grevamvas"):
+                adapter = VamvasAdapter(tvtms=self.tvtms)
             else:
                 raise ValueError(f"Unknown corpus: {corpus_id}")
 

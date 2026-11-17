@@ -36,6 +36,9 @@ CORPUS_WORK_IDS = {
     "webbe": 6,
     "brenton-lxx": 7,
     "peshitta": 8,
+    "douay": 9,
+    "luther1912": 10,
+    "vamvas": 11,
 }
 
 SYRIAC_PUNCT_DIACRITICS = re.compile(r'[\u0730-\u074F\u0300-\u036F\.\,\;\:\?\!\(\)\[\]]')

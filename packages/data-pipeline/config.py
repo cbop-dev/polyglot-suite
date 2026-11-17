@@ -128,6 +128,29 @@ UPSTREAM_SOURCES = {
         "filename": "sblgnt-master.zip",
         "description": "MorphGNT SBLGNT (Holmes 2010 text with Tauber 11-char morphology)",
     },
+    # 12. German Luther 1912 (eBible USFM with Strong's + OSIS Apocrypha)
+    "luther1912_usfm": {
+        "url": "https://ebible.org/Scriptures/deu1912_usfm.zip",
+        "filename": "deu1912_usfm.zip",
+        "description": "German Luther 1912 USFM with Strong's Numbers (66 books)",
+    },
+    "luther1912_apocrypha": {
+        "url": "https://github.com/gratis-bible/bible/raw/refs/heads/master/de/luth1912ap.xml",
+        "filename": "luth1912ap.xml",
+        "description": "Luther 1912 with Apocrypha (OSIS XML for Deuterocanonical books)",
+    },
+    # 13. English Douay-Rheims (eBible USFM 73-book Catholic Canon)
+    "douay_usfm": {
+        "url": "https://ebible.org/Scriptures/engDRA_usfm.zip",
+        "filename": "engDRA_usfm.zip",
+        "description": "Douay-Rheims Challoner Revision USFM (73 books, Vulgate versification)",
+    },
+    # 14. Modern Greek Neophytos Vamvas 1850 (scrollmapper JSON)
+    "vamvas": {
+        "url": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/GreVamvas.json",
+        "filename": "GreVamvas.json",
+        "description": "Neophytos Vamvas 1850 Modern Greek Bible (66 books, accented, clean punctuation)",
+    },
 }
 
 # Exhaustive Canonical Books Specification (USFM 3-letter codes)

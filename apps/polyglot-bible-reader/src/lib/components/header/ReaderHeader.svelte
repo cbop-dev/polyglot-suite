@@ -416,50 +416,63 @@ gap-2 sm:gap-4 -mx-3 px-1 sm:-mx-4 sm:px-4 md:-mx-8 md:px-3">
         </button>
         
         {#if readerState.versionDropdownOpen}
-          <button 
-            type="button" 
-            class="fixed inset-0 z-40 cursor-default bg-transparent border-0 p-0 m-0 w-full h-full" 
-            onclick={() => readerState.versionDropdownOpen = false} 
-            aria-label="Close version menu" 
-            tabindex="-1"
-          ></button>
-          <div class="absolute top-full left-0 mt-1 bg-page border border-rule rounded-md shadow-lg z-50 overflow-hidden min-w-[9rem] sm:min-w-[11rem] w-36 sm:w-44 py-1">
-            <div class="px-2 py-1 border-b border-rule">
-              <input
-                type="text"
-                bind:value={versionSearch}
-                use:autofocus
-                placeholder="Filter..."
-                class="w-full text-xs px-2 py-1 rounded bg-base-200/50 border border-rule focus:outline-none focus:ring-1 focus:ring-link text-ink"
-                onkeydown={handleVersionKeydown}
-              />
-            </div>
-            <div class="max-h-60 overflow-y-auto">
-              {#if filteredVersionGroups.length > 0}
-                {#each filteredVersionGroups as group, gIdx}
-                  {#if gIdx > 0}
-                    <div class="border-t border-rule my-1"></div>
-                  {/if}
-                  <div class="px-2.5 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-ink-soft select-none">
-                    {group.language}
-                  </div>
-                  {#each group.versions as v}
-                    <button 
-                      type="button"
-                      class="w-full text-left px-3 py-1.5 text-xs sm:text-sm hover:bg-rule flex items-center justify-between cursor-pointer {v === readerState.selectedVersion ? 'bg-blue-500 text-white hover:bg-blue-600 font-semibold' : 'text-ink'}"
-                      onclick={() => { readerState.selectVersion(v); readerState.versionDropdownOpen = false; }}
-                      title={formatVersionLabel(v)}
-                    >
-                      <span>{v}</span>
-                      {#if v === readerState.selectedVersion}
-                        <span class="text-xs">✓</span>
-                      {/if}
-                    </button>
+          <div 
+            class="fixed inset-0 bg-black/20 z-40 flex items-center justify-center p-4" 
+            onclick={() => readerState.versionDropdownOpen = false}
+          >
+            <div 
+              class="bg-page border border-rule rounded-lg shadow-xl p-4 z-50 max-h-[80vh] flex flex-col w-full max-w-3xl" 
+              onclick={(e) => e.stopPropagation()}
+            >
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2 border-b border-rule">
+                <h3 class="font-bold text-lg">Select Bible Version</h3>
+                <input
+                  type="text"
+                  bind:value={versionSearch}
+                  use:autofocus
+                  placeholder="Filter versions (e.g. Douay, Greek, King James)..."
+                  class="text-sm px-3 py-1.5 rounded-md bg-base-200/50 border border-rule focus:outline-none focus:ring-1 focus:ring-link w-full sm:w-64 text-ink"
+                  onkeydown={handleVersionKeydown}
+                />
+              </div>
+
+              <div class="overflow-y-auto space-y-4 pr-1">
+                {#if filteredVersionGroups.length > 0}
+                  {#each filteredVersionGroups as group}
+                    <div>
+                      <div class="text-xs font-bold uppercase tracking-wider text-ink-soft mb-2 select-none border-b-1 border-rule py-1 border-(--color-rule)">
+                        {group.language}
+                      </div>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                        {#each group.versions as v}
+                          {@const meta = resolveCorpus(v)}
+                          <button 
+                            type="button"
+                            class="p-2.5 text-left rounded-lg border transition-all cursor-pointer flex flex-col justify-between {v === readerState.selectedVersion ? 'bg-blue-500 text-white border-blue-600 font-semibold shadow-sm' : 'bg-page border-rule hover:border-link hover:bg-rule/40 text-ink'}"
+                            onclick={() => { readerState.selectVersion(v); readerState.versionDropdownOpen = false; }}
+                            title={meta?.title || v}
+                          >
+                            <div class="flex items-center justify-between">
+                              <span class="font-semibold text-sm">{meta?.shortTitle || v}</span>
+                              {#if v === readerState.selectedVersion}
+                                <span class="text-xs ml-1 shrink-0">✓</span>
+                              {/if}
+                            </div>
+                            {#if meta?.title && meta.title !== meta.shortTitle}
+                              <span class="text-[11px] {v === readerState.selectedVersion ? 'text-white/80' : 'text-ink-soft'} line-clamp-1 mt-0.5">
+                                {meta.title}
+                              </span>
+                            {/if}
+                          </button>
+                        {/each}
+                      </div>
+                      
+                    </div>
                   {/each}
-                {/each}
-              {:else}
-                <div class="p-3 text-center text-xs text-ink-soft">No versions match</div>
-              {/if}
+                {:else}
+                  <p class="text-center text-sm text-ink-soft py-8">No versions matching "{versionSearch}"</p>
+                {/if}
+              </div>
             </div>
           </div>
         {/if}

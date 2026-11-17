@@ -14,7 +14,10 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from .config import BUILD_DIR
+try:
+    from .config import BUILD_DIR
+except (ImportError, ValueError):
+    from config import BUILD_DIR
 
 
 class DatabaseValidator:
@@ -40,6 +43,7 @@ class DatabaseValidator:
             success &= self.test_psalm_50_51_alignment(conn)
             success &= self.test_webbe_and_brenton_integrity(conn)
             success &= self.test_peshitta_integrity(conn)
+            success &= self.test_new_corpora_integrity(conn)
             success &= self.test_lexicons(conn)
             success &= self.test_token_json_samples(conn)
             success &= self.test_lemma_stats_and_concordance(conn)
@@ -65,8 +69,8 @@ class DatabaseValidator:
 
         # corpora
         corpora_count = cur.execute("SELECT COUNT(*) FROM corpora").fetchone()[0]
-        print(f"  corpora: {corpora_count} (Expected: >= 9)")
-        assert corpora_count >= 9, f"Expected >= 9 corpora, got {corpora_count}"
+        print(f"  corpora: {corpora_count} (Expected: >= 12)")
+        assert corpora_count >= 12, f"Expected >= 12 corpora, got {corpora_count}"
 
         # lexicon_entries
         lex_count = cur.execute("SELECT COUNT(*) FROM lexicon_entries").fetchone()[0]
@@ -79,7 +83,7 @@ class DatabaseValidator:
         # text_units
         tu_count = cur.execute("SELECT COUNT(*) FROM text_units").fetchone()[0]
         print(f"  text_units: {tu_count:,} total verses")
-        assert tu_count >= 160000, f"Expected >= 160,000 text units, got {tu_count}"
+        assert tu_count >= 250000, f"Expected >= 250,000 text units, got {tu_count}"
 
         return True
 
@@ -183,6 +187,9 @@ class DatabaseValidator:
         assert "kjv" in traditions, "Missing English KJV at PSA 51:1"
         assert "webbe" in traditions, "Missing English WEBBE at PSA 51:1"
         assert "brenton-lxx" in traditions, "Missing English Brenton at PSA 51:1"
+        assert "douay" in traditions, "Missing English Douay at PSA 51:1"
+        assert "luther1912" in traditions, "Missing German Luther 1912 at PSA 51:1"
+        assert "vamvas" in traditions, "Missing Modern Greek Vamvas at PSA 51:1"
 
         # Assert native citations match historical reality
         assert "51:3" in traditions["wlc"]["native_citation"], f"Expected Hebrew native Ps 51:3, got {traditions['wlc']['native_citation']}"
@@ -191,6 +198,9 @@ class DatabaseValidator:
         assert "51:1" in traditions["kjv"]["native_citation"], f"Expected KJV native Ps 51:1, got {traditions['kjv']['native_citation']}"
         assert "51:1" in traditions["webbe"]["native_citation"], f"Expected WEBBE native Ps 51:1, got {traditions['webbe']['native_citation']}"
         assert "50:1" in traditions["brenton-lxx"]["native_citation"] or "50:3" in traditions["brenton-lxx"]["native_citation"], f"Expected Brenton native Ps 50, got {traditions['brenton-lxx']['native_citation']}"
+        assert "50:3" in traditions["douay"]["native_citation"], f"Expected Douay native Ps 50:3, got {traditions['douay']['native_citation']}"
+        assert "51:3" in traditions["luther1912"]["native_citation"], f"Expected Luther1912 native Ps 51:3, got {traditions['luther1912']['native_citation']}"
+        assert "51:1" in traditions["vamvas"]["native_citation"], f"Expected Vamvas native Ps 51:1, got {traditions['vamvas']['native_citation']}"
 
         print("  Multi-tradition alignment check: PASSED!")
         return True
@@ -271,6 +281,69 @@ class DatabaseValidator:
         assert sample_token and sample_token["tokens_json"], "Missing tokens_json for Peshitta 2PE 1:1"
 
         print("  Peshitta verification: PASSED!")
+        return True
+
+    def test_new_corpora_integrity(self, conn: sqlite3.Connection) -> bool:
+        print("\n[Test 4d] Douay, Luther 1912, and Vamvas Integrity Verification...")
+        cur = conn.cursor()
+
+        # 1. Douay-Rheims checks
+        douay_count = cur.execute("SELECT COUNT(*) FROM text_units WHERE corpus_id = 'douay'").fetchone()[0]
+        douay_books = cur.execute("SELECT COUNT(DISTINCT std_book) FROM text_units WHERE corpus_id = 'douay'").fetchone()[0]
+        print(f"  Douay verses: {douay_count:,} across {douay_books} books (Expected: >= 35,000 verses, >= 73 books)")
+        assert douay_count >= 35000, f"Expected >= 35,000 Douay verses, got {douay_count}"
+        assert douay_books >= 73, f"Expected >= 73 Douay books, got {douay_books}"
+
+        douay_gen1 = cur.execute("""
+            SELECT text_content, tokens_json FROM text_units
+            WHERE corpus_id = 'douay' AND std_book = 'GEN' AND std_chapter = 1 AND std_verse = 1
+        """).fetchone()
+        assert douay_gen1 and "In the beginning God created" in douay_gen1["text_content"], "Douay Gen 1:1 check failed"
+        assert douay_gen1["tokens_json"] and len(douay_gen1["tokens_json"]) > 10, "Douay Gen 1:1 tokens missing"
+
+        douay_tob1 = cur.execute("""
+            SELECT text_content FROM text_units
+            WHERE corpus_id = 'douay' AND std_book = 'TOB' AND std_chapter = 1 AND std_verse = 1
+        """).fetchone()
+        assert douay_tob1 and "Tobias" in douay_tob1["text_content"], "Douay Tobit 1:1 check failed"
+
+        # 2. Luther 1912 checks
+        luther_count = cur.execute("SELECT COUNT(*) FROM text_units WHERE corpus_id = 'luther1912'").fetchone()[0]
+        luther_books = cur.execute("SELECT COUNT(DISTINCT std_book) FROM text_units WHERE corpus_id = 'luther1912'").fetchone()[0]
+        print(f"  Luther 1912 verses: {luther_count:,} across {luther_books} books (Expected: >= 35,000 verses, >= 76 books)")
+        assert luther_count >= 35000, f"Expected >= 35,000 Luther 1912 verses, got {luther_count}"
+        assert luther_books >= 76, f"Expected >= 76 Luther 1912 books, got {luther_books}"
+
+        luther_gen1 = cur.execute("""
+            SELECT text_content, tokens_json FROM text_units
+            WHERE corpus_id = 'luther1912' AND std_book = 'GEN' AND std_chapter = 1 AND std_verse = 1
+        """).fetchone()
+        assert luther_gen1 and "Am Anfang schuf Gott" in luther_gen1["text_content"], "Luther Gen 1:1 check failed"
+        assert luther_gen1["tokens_json"] and len(luther_gen1["tokens_json"]) > 10, "Luther Gen 1:1 tokens missing"
+
+        luther_tob1 = cur.execute("""
+            SELECT text_content FROM text_units
+            WHERE corpus_id = 'luther1912' AND std_book = 'TOB' AND std_chapter = 1 AND std_verse = 1
+        """).fetchone()
+        assert luther_tob1 and "Tobias" in luther_tob1["text_content"], "Luther Tobit 1:1 check failed"
+
+        # 3. Vamvas Modern Greek checks
+        vamvas_count = cur.execute("SELECT COUNT(*) FROM text_units WHERE corpus_id = 'vamvas'").fetchone()[0]
+        vamvas_books = cur.execute("SELECT COUNT(DISTINCT std_book) FROM text_units WHERE corpus_id = 'vamvas'").fetchone()[0]
+        print(f"  Vamvas verses: {vamvas_count:,} across {vamvas_books} books (Expected: >= 31,000 verses, 66 books)")
+        assert vamvas_count >= 31000, f"Expected >= 31,000 Vamvas verses, got {vamvas_count}"
+        assert vamvas_books == 66, f"Expected 66 Vamvas books, got {vamvas_books}"
+
+        vamvas_gen1 = cur.execute("""
+            SELECT text_content FROM text_units
+            WHERE corpus_id = 'vamvas' AND std_book = 'GEN' AND std_chapter = 1 AND std_verse = 1
+        """).fetchone()
+        assert vamvas_gen1 and "Εν αρχή εποίησεν" in vamvas_gen1["text_content"], "Vamvas Gen 1:1 check failed"
+        # Check accents and clean text
+        assert "ά" in vamvas_gen1["text_content"] or "ή" in vamvas_gen1["text_content"] or "ός" in vamvas_gen1["text_content"], "Vamvas missing Greek accents"
+        assert "?" not in vamvas_gen1["text_content"], "Vamvas text has corrupt question marks"
+
+        print("  Douay, Luther 1912, and Vamvas verification: PASSED!")
         return True
 
     def test_lexicons(self, conn: sqlite3.Connection) -> bool:

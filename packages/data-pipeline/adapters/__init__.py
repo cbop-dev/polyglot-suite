@@ -9,6 +9,9 @@ from .webbe import WEBBEAdapter
 from .brenton import BrentonAdapter
 from .peshitta import PeshittaAdapter
 from .sblgnt import SBLGNTAdapter
+from .luther1912 import Luther1912Adapter
+from .douay import DouayAdapter
+from .vamvas import VamvasAdapter
 from .bdb import BDBAdapter
 from .lsj import LSJAdapter
 
@@ -25,6 +28,9 @@ __all__ = [
     "WEBBEAdapter",
     "BrentonAdapter",
     "PeshittaAdapter",
+    "Luther1912Adapter",
+    "DouayAdapter",
+    "VamvasAdapter",
     "BDBAdapter",
     "LSJAdapter",
 ]

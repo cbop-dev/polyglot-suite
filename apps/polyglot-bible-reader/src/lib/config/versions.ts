@@ -23,11 +23,6 @@ export {
   resolveCorpus
 };
 
-export const biblesByLanguage = {
-  english: ['KJV', 'Brenton'],
-  greek: ['LXX', 'OpenGNT', 'SBLGNT']
-};
-
 export type TextDirection = 'ltr' | 'rtl';
 
 export class Dataset {
@@ -49,23 +44,12 @@ export class Dataset {
 }
 
 /**
- * Static dictionary maintained for backwards compatibility, populated from CORPORA_METADATA.
+ * Dictionary populated dynamically from CORPORA_METADATA (Single Source of Truth).
  */
-export const datasetsDict: Record<string, { language: string; testament: string; lemmas: boolean; direction: TextDirection }> = {
-  'KJV': { language: 'English', testament: 'both', lemmas: false, direction: 'ltr' },
-  'Vulgate': { language: 'Latin', testament: 'both', lemmas: false, direction: 'ltr' },
-  'WEB': { language: 'English', testament: 'both', lemmas: false, direction: 'ltr' },
-  'Brenton': { language: 'English', testament: 'ot', lemmas: false, direction: 'ltr' },
-  'BHS': { language: 'Hebrew', testament: 'ot', lemmas: true, direction: 'rtl' },
-  'LXX': { language: 'Greek', testament: 'ot', lemmas: true, direction: 'ltr' },
-  'OpenGNT': { language: 'Greek', testament: 'nt', lemmas: true, direction: 'ltr' },
-  'SBLGNT': { language: 'Greek', testament: 'nt', lemmas: true, direction: 'ltr' },
-  'Peshitta': { language: 'Syriac', testament: 'both', lemmas: true, direction: 'rtl' }
-};
+export const datasetsDict: Record<string, { language: string; testament: string; lemmas: boolean; direction: TextDirection }> = {};
 
-// Also enrich with any new corpora defined dynamically
 for (const meta of Object.values(CORPORA_METADATA)) {
-  if (meta.category === 'bible' && !datasetsDict[meta.version]) {
+  if (meta.category === 'bible') {
     datasetsDict[meta.version] = {
       language: meta.languageName,
       testament: meta.testament,
@@ -148,28 +132,15 @@ export function getVersionLanguage(version: string): string {
 
 export const allVersions: string[] = ALL_BIBLE_VERSIONS;
 
-export function formatVersionLabel(opt: string, short=false): string {
-  if (short){
-    return opt
+export function formatVersionLabel(opt: string, short = false): string {
+  const meta = resolveCorpus(opt);
+  if (short) {
+    return meta?.version || opt;
   }
-  else{
-    const ds = myDataSets.lookup(opt);
-
-    return ds ? `${ds.language} (${ds?.abbrev})` : opt;
-  }
-  
+  return meta?.shortTitle || meta?.title || opt;
 }
 
 import { VERSION_AVAILABLE_BOOKS, getCanonicalBookChapters } from './canonicalBooks.generated.js';
-
-export const bhsBooks = VERSION_AVAILABLE_BOOKS['BHS'] || [];
-export const lxxBooks = VERSION_AVAILABLE_BOOKS['LXX'] || [];
-export const ntBooks = VERSION_AVAILABLE_BOOKS['OpenGNT'] || [];
-export const sblgntBooks = VERSION_AVAILABLE_BOOKS['SBLGNT'] || [];
-export const kjvBooks = VERSION_AVAILABLE_BOOKS['KJV'] || [];
-export const vulgateBooks = VERSION_AVAILABLE_BOOKS['Vulgate'] || [];
-export const webBooks = VERSION_AVAILABLE_BOOKS['WEB'] || [];
-export const brentonBooks = VERSION_AVAILABLE_BOOKS['Brenton'] || [];
 
 export function getVersionBooks(version: string): string[] {
   if (!version) return VERSION_AVAILABLE_BOOKS['OpenGNT'] || [];
