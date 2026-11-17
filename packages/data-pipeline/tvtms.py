@@ -7,11 +7,15 @@ and vice-versa.
 """
 
 from __future__ import annotations
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple, Dict, List
-from .config import CACHE_DIR, BOOK_ALIASES, CANONICAL_BY_CODE
+try:
+    from .config import CACHE_DIR, BOOK_ALIASES, CANONICAL_BY_CODE, PIPELINE_DIR
+except (ImportError, ValueError):
+    from config import CACHE_DIR, BOOK_ALIASES, CANONICAL_BY_CODE, PIPELINE_DIR
 
 
 @dataclass(frozen=True)
@@ -194,6 +198,7 @@ class TVTMSResolver:
         """
         Resolves a native reference into Standard Hub coordinates.
         If no explicit mapping exists, identity mapping (std = native) is returned.
+        For German/Luther traditions, OT verses without explicit German rules fall back to Hebrew (MT).
         """
         s_key = scheme.upper()
         b_code = BOOK_ALIASES.get(book.lower(), book.upper())
@@ -203,11 +208,19 @@ class TVTMSResolver:
             if subverse and not res.subverse:
                 return Ref(book=res.book, chapter=res.chapter, verse=res.verse, subverse=subverse)
             return res
+
+        # German / Luther fallback logic: OT follows Hebrew (MT) tradition
+        if s_key in ("GERMAN", "LUTHER", "LUTHER1545"):
+            book_meta = CANONICAL_BY_CODE.get(b_code)
+            if book_meta and book_meta.get("testament") == "OT":
+                return self.resolve_to_standard("HEBREW", b_code, chapter, verse, subverse)
+
         return Ref(book=b_code, chapter=chapter, verse=verse, subverse=subverse)
 
     def resolve_to_native(self, scheme: str, std_book: str, std_chapter: int, std_verse: int, std_subverse: str = "") -> Ref:
         """
         Resolves a Standard Hub coordinate into the scheme's native citation.
+        For German/Luther traditions, OT verses without explicit German rules fall back to Hebrew (MT).
         """
         s_key = scheme.upper()
         b_code = BOOK_ALIASES.get(std_book.lower(), std_book.upper())
@@ -217,7 +230,56 @@ class TVTMSResolver:
         key_default = (s_key, b_code, std_chapter, std_verse, "")
         if key_default in self.std_to_native:
             return self.std_to_native[key_default]
+
+        # German / Luther fallback logic: OT follows Hebrew (MT) tradition
+        if s_key in ("GERMAN", "LUTHER", "LUTHER1545"):
+            book_meta = CANONICAL_BY_CODE.get(b_code)
+            if book_meta and book_meta.get("testament") == "OT":
+                return self.resolve_to_native("HEBREW", b_code, std_chapter, std_verse, std_subverse)
+
         return Ref(book=b_code, chapter=std_chapter, verse=std_verse)
+
+    def load_overrides(self, overrides_dir: Optional[Path] = None):
+        """
+        Loads custom per-version / per-scheme versification overrides from data/versification-overrides/*.json.
+        Supports both point mappings ("TOB 5:1": "TOB 5:2") and range shifts ("TOB 5:1-22": "TOB 5:2-23").
+        """
+        if overrides_dir is None:
+            overrides_dir = PIPELINE_DIR / "data" / "versification-overrides"
+
+        if not overrides_dir.exists():
+            return
+
+        def flatten_pairs(d: dict) -> List[Tuple[str, str]]:
+            pairs = []
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    pairs.extend(flatten_pairs(v))
+                elif isinstance(v, str) and not k.lower().startswith("comment"):
+                    pairs.append((k, v))
+            return pairs
+
+        total_loaded = 0
+        for json_path in sorted(overrides_dir.glob("*.json")):
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                scheme = (data.get("scheme") or json_path.stem).upper()
+                mappings = data.get("mappings", {})
+                pairs_to_load = flatten_pairs(mappings)
+
+                loaded = 0
+                for nat_str, std_str in pairs_to_load:
+                    pairs = expand_range_pair(std_str, nat_str)
+                    for std_ref, native_ref in pairs:
+                        self.add_mapping(scheme, std_ref, native_ref)
+                        loaded += 1
+
+                if loaded > 0:
+                    print(f"  [versification-override] Loaded {loaded} custom mappings for {scheme} from {json_path.name}")
+                    total_loaded += loaded
+            except Exception as e:
+                print(f"Warning: Failed to load versification override file {json_path}: {e}")
 
 
 def load_tvtms(tvtms_path: Optional[Path] = None) -> TVTMSResolver:
@@ -282,6 +344,9 @@ def load_tvtms(tvtms_path: Optional[Path] = None) -> TVTMSResolver:
                     "VULGATE": "Latin",
                     "GREEK": "Greek",
                     "LXX": "Greek",
+                    "GERMAN": "German",
+                    "LUTHER": "German",
+                    "LUTHER1545": "Luther1545",
                 }
 
                 for scheme_key, col_name in scheme_targets.items():
@@ -295,7 +360,11 @@ def load_tvtms(tvtms_path: Optional[Path] = None) -> TVTMSResolver:
                         resolver.add_mapping(scheme_key, std_ref, native_ref)
                         rule_count += 1
 
-    print(f"Loaded {rule_count:,} TVTMS alignment mappings across MT, LXX, and Vulgate traditions.")
+    print(f"Loaded {rule_count:,} TVTMS alignment mappings across MT, LXX, Vulgate, and German traditions.")
+
+    # Load custom modular overrides from data/versification-overrides/*.json
+    resolver.load_overrides()
+
     return resolver
 
 
@@ -307,10 +376,30 @@ if __name__ == "__main__":
     bhs_std = resolver.resolve_to_standard("HEBREW", "PSA", 51, 3)
     lxx_std = resolver.resolve_to_standard("LXX", "PSA", 50, 3)
     vulg_std = resolver.resolve_to_standard("VULGATE", "PSA", 50, 3)
+    douay_std = resolver.resolve_to_standard("VULGATE", "PSA", 50, 3)
 
-    print(f"BHS Ps 51:3  -> Standard: {bhs_std.to_citation()}")
-    print(f"LXX Ps 50:3  -> Standard: {lxx_std.to_citation()}")
+    print(f"BHS Ps 51:3     -> Standard: {bhs_std.to_citation()}")
+    print(f"LXX Ps 50:3     -> Standard: {lxx_std.to_citation()}")
     print(f"Vulgate Ps 50:3 -> Standard: {vulg_std.to_citation()}")
+    print(f"Douay Ps 50:3   -> Standard: {douay_std.to_citation()}")
 
-    assert bhs_std == lxx_std == vulg_std, "ERROR: Psalm 50/51 alignments do not match!"
-    print("SUCCESS: Hebrew Ps 51:3, LXX Ps 50:3, and Vulgate Ps 50:3 align perfectly to Standard PSA 51:1!")
+    assert bhs_std == lxx_std == vulg_std == douay_std, "ERROR: Psalm 50/51 alignments do not match!"
+    print("SUCCESS: Hebrew, LXX, Vulgate, and Douay Ps 50:3 align perfectly to Standard PSA 51:1!")
+
+    # Test German alignments (both TVTMS-explicit and MT fallback)
+    print("\n--- Verification: German Luther Versification Alignments ---")
+    # 1. Psalm 54 (explicit TVTMS German rule: Ps 54:1 is Title, 54:3 is KJV 54:1)
+    ger_ps54_v1 = resolver.resolve_to_standard("GERMAN", "PSA", 54, 1)
+    ger_ps54_v3 = resolver.resolve_to_standard("GERMAN", "PSA", 54, 3)
+    print(f"German Ps 54:1  -> Standard: {ger_ps54_v1.to_citation()}")
+    print(f"German Ps 54:3  -> Standard: {ger_ps54_v3.to_citation()}")
+    assert ger_ps54_v1.subverse.startswith("Title"), f"Expected Title, got {ger_ps54_v1}"
+
+    # 2. Psalm 55 (implicit MT fallback: Ps 55:1 is Title, 55:2 is KJV 55:1)
+    ger_ps55_v1 = resolver.resolve_to_standard("GERMAN", "PSA", 55, 1)
+    ger_ps55_v2 = resolver.resolve_to_standard("GERMAN", "PSA", 55, 2)
+    print(f"German Ps 55:1  -> Standard: {ger_ps55_v1.to_citation()}")
+    print(f"German Ps 55:2  -> Standard: {ger_ps55_v2.to_citation()}")
+    assert ger_ps55_v1.subverse.startswith("Title"), f"Expected Title, got {ger_ps55_v1}"
+    assert ger_ps55_v2.verse == 1, f"Expected verse 1, got {ger_ps55_v2}"
+    print("SUCCESS: German Luther versification correctly aligns explicit and MT-inherited rules!")

@@ -14,7 +14,12 @@ from __future__ import annotations
 import re
 from pathlib import Path
 from typing import Iterator, Tuple, Optional, List, Dict
-from ..config import BOOK_ALIASES, resolve_canonical_book
+try:
+    from .base import WordToken
+    from ..config import BOOK_ALIASES, resolve_canonical_book
+except (ImportError, ValueError):
+    from base import WordToken
+    from config import BOOK_ALIASES, resolve_canonical_book
 
 
 def clean_usfm_text(text: str) -> str:
@@ -41,11 +46,47 @@ def clean_usfm_text(text: str) -> str:
     return t
 
 
-def parse_usfm_file(file_path: Path) -> List[Tuple[str, int, int, str, str, str]]:
+def extract_usfm_tokens(text: str) -> Optional[List[WordToken]]:
+    """
+    Extracts word tokens with Strong's numbers from USFM \\w word|strong="ID"\\w* markup.
+    Returns None if the verse text does not contain any Strong's annotations.
+    """
+    # 1. Clean footnotes and cross-references
+    t = re.sub(r"\\f\b.*?(?:\\f\*|$)", "", text, flags=re.DOTALL)
+    t = re.sub(r"\\fe\b.*?(?:\\fe\*|$)", "", t, flags=re.DOTALL)
+    t = re.sub(r"\\x\b.*?(?:\\x\*|$)", "", t, flags=re.DOTALL)
+    t = re.sub(r"\\(?:s[0-9]?|ms[0-9]?|mr|r|d|sp|qa)\b[^\n\\]*", "", t)
+
+    # If no \w tags exist, return None
+    if "\\w" not in t:
+        return None
+
+    # Tokenizer matching either \w word|attributes\w* OR plain word
+    tok_re = re.compile(r'\\w\s+([^|]+?)(?:\|(?:[^\"\\]*?strong=\"([^\"]+?)\")?[^\\]*?)?\\w\*|(\S+)')
+    tokens: List[WordToken] = []
+
+    for m in tok_re.finditer(t):
+        w_tagged, strong_id, plain_word = m.groups()
+        if w_tagged is not None:
+            clean_word = w_tagged.strip()
+            if clean_word:
+                tokens.append(WordToken(word=clean_word, strongs=strong_id.strip() if strong_id else None))
+        elif plain_word is not None:
+            # Strip USFM character tags if attached (like \+wj, \nd, etc.)
+            clean_w = re.sub(r"\\[\+]?[a-z0-9]+\*?", "", plain_word).strip(".,;:!?\"'()[]{}«»")
+            if clean_w and not clean_w.startswith("\\"):
+                tokens.append(WordToken(word=clean_w))
+
+    return tokens if tokens else None
+
+
+def parse_usfm_file(file_path: Path, include_tokens: bool = False) -> List[Tuple]:
     """
     Parses a single USFM file.
-    Returns a list of tuples:
-      (book_code, chapter, verse, subverse, native_citation, verse_text)
+    If include_tokens=False (default):
+      returns List[Tuple[book_code, chapter, verse, subverse, native_citation, verse_text]]
+    If include_tokens=True:
+      returns List[Tuple[book_code, chapter, verse, subverse, native_citation, verse_text, tokens]]
     """
     with open(file_path, "r", encoding="utf-8", errors="replace") as f:
         content = f.read()
@@ -58,7 +99,7 @@ def parse_usfm_file(file_path: Path) -> List[Tuple[str, int, int, str, str, str]
     raw_book = m_id.group(1).strip()
     book_code = resolve_canonical_book(raw_book) or raw_book.upper()
 
-    results: List[Tuple[str, int, int, str, str, str]] = []
+    results: List[Tuple] = []
 
     # 2. Split content by chapters: \c <num>
     # Note: everything before the first \c is front matter
@@ -97,13 +138,25 @@ def parse_usfm_file(file_path: Path) -> List[Tuple[str, int, int, str, str, str]
 
             native_citation = f"{ch_num}:{raw_v_str}"
 
-            results.append((
-                book_code,
-                ch_num,
-                v_num,
-                subverse,
-                native_citation,
-                clean_text,
-            ))
+            if include_tokens:
+                tokens = extract_usfm_tokens(raw_v_text)
+                results.append((
+                    book_code,
+                    ch_num,
+                    v_num,
+                    subverse,
+                    native_citation,
+                    clean_text,
+                    tokens,
+                ))
+            else:
+                results.append((
+                    book_code,
+                    ch_num,
+                    v_num,
+                    subverse,
+                    native_citation,
+                    clean_text,
+                ))
 
     return results

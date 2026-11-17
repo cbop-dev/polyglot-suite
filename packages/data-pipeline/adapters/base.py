@@ -87,6 +87,8 @@ class BaseAdapter:
     """Abstract interface that all corpus adapters implement."""
 
     corpus_id: str
+    version: str
+    short_title: str = ""
     title: str
     language: str
     direction: str = "ltr"

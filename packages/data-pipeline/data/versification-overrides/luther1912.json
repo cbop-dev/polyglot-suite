@@ -1,0 +1,7 @@
+{
+  "scheme": "GERMAN",
+  "description": "Custom German Reformation versification overrides extending STEPBible TVTMS",
+  "mappings": {
+    "comment": "Format: 'Native_Ref': 'Standard_Ref'. Supports both point mappings ('TOB 5:1': 'TOB 5:2') and range shifts ('TOB 5:1-22': 'TOB 5:2-23')."
+  }
+}

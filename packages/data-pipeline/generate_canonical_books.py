@@ -599,8 +599,17 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
 
     cols = [r[1] for r in cur.execute("PRAGMA table_info(corpora)").fetchall()]
     has_enriched_cols = "version" in cols and "language_name" in cols
+    has_short_title = "short_title" in cols
 
-    if has_enriched_cols:
+    if has_enriched_cols and has_short_title:
+        cur.execute("""
+            SELECT id, version, short_title, title, language, language_name, direction, category, testament, default_scheme,
+                   has_tokens, has_audio, primary_dictionary, aliases, search_names, license, attribution
+            FROM corpora
+            ORDER BY id
+        """)
+        rows = cur.fetchall()
+    elif has_enriched_cols:
         cur.execute("""
             SELECT id, version, title, language, language_name, direction, category, testament, default_scheme,
                    has_tokens, has_audio, primary_dictionary, aliases, search_names, license, attribution
@@ -626,8 +635,13 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
 
     for r in rows:
         if has_enriched_cols:
-            (cid, ver, title, lang, lang_name, direction, cat, testament,
-             scheme, has_tok, has_aud, prim_dict, aliases_str, search_names_json, lic, attr) = r
+            if has_short_title:
+                (cid, ver, short_title, title, lang, lang_name, direction, cat, testament,
+                 scheme, has_tok, has_aud, prim_dict, aliases_str, search_names_json, lic, attr) = r
+            else:
+                (cid, ver, title, lang, lang_name, direction, cat, testament,
+                 scheme, has_tok, has_aud, prim_dict, aliases_str, search_names_json, lic, attr) = r
+                short_title = ver
             
             aliases_list = [a.strip() for a in (aliases_str or "").split(",") if a.strip()]
             try:
@@ -638,6 +652,7 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
             corpora_metadata[cid] = {
                 "id": cid,
                 "version": ver,
+                "shortTitle": short_title or ver,
                 "title": title,
                 "language": lang,
                 "languageName": lang_name,
@@ -693,6 +708,9 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
         "vulgate": "vulgate", "Vulgate": "vulgate", "vulgate-clementine": "vulgate",
         "webbe": "webbe", "web": "webbe", "WEB": "webbe",
         "brenton-lxx": "brenton-lxx", "brenton": "brenton-lxx", "Brenton": "brenton-lxx",
+        "douay": "douay", "Douay": "douay", "douay-rheims": "douay", "dra": "douay", "DRA": "douay",
+        "luther1912": "luther1912", "luther": "luther1912", "Luther1912": "luther1912",
+        "vamvas": "vamvas", "Vamvas": "vamvas", "grevamvas": "vamvas",
         "bdb": "bdb", "BDB": "bdb", "lsj": "lsj", "LSJ": "lsj",
     }
     for k, v in fallback_aliases.items():
@@ -706,6 +724,9 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
         6: "webbe",
         7: "brenton-lxx",
         8: "peshitta",
+        9: "douay",
+        10: "luther1912",
+        11: "vamvas",
         24: "swete_lxx",
         40: "ognt",
         41: "sblgnt",
@@ -716,7 +737,7 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
     corpus_to_work_id = {v: k for k, v in work_id_to_corpus.items()}
 
     # Compute VERSION_GROUPS dynamically by languageName for Bibles
-    lang_order = ["Hebrew", "Greek", "Latin", "Syriac", "English"]
+    lang_order = ["Hebrew", "Greek", "Latin", "Syriac", "English", "German", "Modern Greek"]
     groups_dict = {}
     for cid, meta in corpora_metadata.items():
         if meta.get("category") == "bible":
@@ -742,6 +763,7 @@ def generate_corpora_definitions(conn: sqlite3.Connection):
         "export interface CorpusMetadata {",
         "	id: CorpusId;",
         "	version: string;",
+        "	shortTitle: string;",
         "	title: string;",
         "	language: string;",
         "	languageName: string;",

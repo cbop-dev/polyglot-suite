@@ -564,7 +564,7 @@ export class ReaderState {
 				const sameLang = unusedCompatible.find(
 					(v) => myDataSets.lookup(v)?.language === theVersionData?.language
 				);
-				const replacement = sameLang || unusedCompatible[0] || compatibleVersions[0] || 'KJV';
+				const replacement = sameLang || unusedCompatible.find((v) => v === 'KJV') || unusedCompatible[0] || compatibleVersions[0] || 'KJV';
 
 				currentVisible.delete(col);
 				currentVisible.add(replacement);
@@ -604,8 +604,16 @@ export class ReaderState {
 		return ret;
 	}
 
-	findCompatibleVersions(version:string): string[]{
-		return Array.from(new Set(availableBibles).difference(new Set(this.findIncompatibleVersions(version))));
+	findCompatibleVersions(version: string): string[] {
+		const theChosenDataset = myDataSets.lookup(version);
+		if (!theChosenDataset) return availableBibles;
+		return availableBibles.filter((ver) => {
+			const ds = myDataSets.lookup(ver);
+			if (!ds) return false;
+			if (theChosenDataset.testament === 'nt' && ds.testament === 'ot') return false;
+			if (theChosenDataset.testament === 'ot' && ds.testament === 'nt') return false;
+			return true;
+		});
 	}
 	/**
 	 * @description changes the version used. If the new version was not among the displayed ones, it replaces one of them.

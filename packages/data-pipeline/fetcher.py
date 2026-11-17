@@ -127,6 +127,32 @@ def fetch_source(source_key: str, force: bool = False) -> Path:
                         with zf.open(member) as src, open(target_file, "wb") as dst:
                             dst.write(src.read())
 
+    elif source_key == "luther1912_usfm":
+        luth_target = CACHE_DIR / "sources" / "deu1912_usfm"
+        if not luth_target.exists() or force:
+            print(f"  [unpacking] {dest.name} -> {luth_target}")
+            luth_target.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(dest, "r") as zf:
+                for member in zf.infolist():
+                    filename = Path(member.filename).name
+                    if filename.endswith(".usfm"):
+                        target_file = luth_target / filename
+                        with zf.open(member) as src, open(target_file, "wb") as dst:
+                            dst.write(src.read())
+
+    elif source_key == "douay_usfm":
+        dra_target = CACHE_DIR / "sources" / "engDRA_usfm"
+        if not dra_target.exists() or force:
+            print(f"  [unpacking] {dest.name} -> {dra_target}")
+            dra_target.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(dest, "r") as zf:
+                for member in zf.infolist():
+                    filename = Path(member.filename).name
+                    if filename.endswith(".usfm"):
+                        target_file = dra_target / filename
+                        with zf.open(member) as src, open(target_file, "wb") as dst:
+                            dst.write(src.read())
+
     return res
 
 
