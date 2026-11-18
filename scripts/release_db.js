@@ -87,13 +87,10 @@ Usage:
   npm run release:db <app> [bump-type] [options]
 
 Apps:
-  bible (or data)     Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
-  philo               Philo Reader database (tag: philo-db-vX.Y.Z)
-  fathers (or af)     Apostolic Fathers Reader database (tag: af-db-vX.Y.Z)
-  josephus (or jr)    Josephus Reader database (tag: josephus-db-vX.Y.Z)
-  corpora-af          Ancient Corpora - Apostolic Fathers (tag: corpora-af-db-vX.Y.Z)
-  corpora-philo       Ancient Corpora - Philo of Alexandria (tag: corpora-philo-db-vX.Y.Z)
-  corpora-josephus    Ancient Corpora - Flavius Josephus (tag: corpora-josephus-db-vX.Y.Z)
+  bible (or data, lex) Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
+  corpora-af           Ancient Corpora - Apostolic Fathers (tag: corpora-af-db-vX.Y.Z) [aliases: af, fathers]
+  corpora-philo        Ancient Corpora - Philo of Alexandria (tag: corpora-philo-db-vX.Y.Z) [alias: philo]
+  corpora-josephus     Ancient Corpora - Flavius Josephus (tag: corpora-josephus-db-vX.Y.Z) [aliases: josephus, jr]
 
 Bump Types:
   patch               Increment patch version (e.g. 1.0.0 -> 1.0.1) [default]

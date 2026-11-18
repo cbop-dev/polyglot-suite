@@ -13,7 +13,7 @@
 
 ## 1. Objective
 
-Refactor the database client service ([`dbClient.ts`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/src/lib/services/dbClient.ts)) and application state store ([`readerState.svelte.ts`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/src/lib/stores/readerState.svelte.ts)) to completely eliminate corpus-conditional queries, string-suffix sniffing, and language-specific boolean flags.
+Refactor the database client service ([`dbClient.ts`](../../../src/lib/services/dbClient.ts)) and application state store ([`readerState.svelte.ts`](../../../src/lib/stores/readerState.svelte.ts)) to completely eliminate corpus-conditional queries, string-suffix sniffing, and language-specific boolean flags.
 
 ---
 
@@ -61,7 +61,7 @@ Refactor the database client service ([`dbClient.ts`](file:///home/cbrannan/.gem
 * Parse the returned JSON directly into `AttestedForm[]`.
 
 ### Task 3.3: Reactive Visibility in `readerState.svelte.ts`
-* **File**: [`apps/ancient-corpora-reader/src/lib/stores/readerState.svelte.ts`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/src/lib/stores/readerState.svelte.ts)
+* **File**: [`apps/ancient-corpora-reader/src/lib/stores/readerState.svelte.ts`](../../../src/lib/stores/readerState.svelte.ts)
 * Remove `showGreek`, `showEnglish`, and `showLatin` getters.
 * Introduce reactive `visibleLanguages = $state<SvelteSet<string>>(new SvelteSet(['grc', 'eng']))`.
 * Implement reactive visibility helpers:
@@ -87,10 +87,10 @@ Refactor the database client service ([`dbClient.ts`](file:///home/cbrannan/.gem
 * Simplify `viewMode` to `'parallel' | 'stacked' | 'single'`.
 
 ### Task 3.4: Update Unit Tests
-* Update [`apps/ancient-corpora-reader/tests/readerState.test.ts`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/tests/readerState.test.ts):
+* Update [`apps/ancient-corpora-reader/tests/readerState.test.ts`](../../../tests/readerState.test.ts):
   - Test setting and toggling languages in `visibleLanguages`.
   - Assert that switching from `af` to `philo` updates default visible languages dynamically.
-* Update [`apps/ancient-corpora-reader/tests/db_services.test.ts`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/tests/db_services.test.ts):
+* Update [`apps/ancient-corpora-reader/tests/db_services.test.ts`](../../../tests/db_services.test.ts):
   - Assert that `fetchDivisionSections` returns `textVersions` array matching `CorpusConfig`.
 
 ---

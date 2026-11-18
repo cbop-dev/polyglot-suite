@@ -15,7 +15,7 @@
 
 The ACR data tier relies on static SQLite database chunks queried in the browser via `sql.js-httpvfs`. For client services (`dbClient.ts`) to be completely corpus-agnostic, the offline database build pipeline must compile raw source files into the exact canonical schema defined in **Design Document 02**.
 
-This specification defines the build-time contract for [`apps/ancient-corpora-reader/pipeline/`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/pipeline/), detailing how raw source texts from Apostolic Fathers, Philo, and Josephus are normalized, indexed, and chunked.
+This specification defines the build-time contract for [`apps/ancient-corpora-reader/pipeline/`](../../pipeline), detailing how raw source texts from Apostolic Fathers, Philo, and Josephus are normalized, indexed, and chunked.
 
 ---
 

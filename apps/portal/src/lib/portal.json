@@ -14,9 +14,14 @@
         "Greek LXX",
         "Greek SBLGNT",
         "Open Greek NT",
+        "Syriac Peshitta",
         "Latin Vulgate",
-        "KJV", "WEB", "Brenton's English LXX"
-      
+        "KJV",
+        "WEB",
+        "Brenton's English LXX",
+        "Douay-Rheims",
+        "Luther 1912",
+        "Vamvas Modern Greek 1850"
       ],
       "slug": "bible",
       "externalApp":false

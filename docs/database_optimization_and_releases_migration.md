@@ -145,7 +145,7 @@ On routine code commits, the cache hits in 0 seconds. When any database version 
 Even though the database files were untracked from `HEAD`, past commits still held ~700 MB of historical database blobs.
 
 ### Execution Steps:
-1. **Safety Backup**: Created a full mirror clone at `/home/cbrannan/dev/2-tmp/polyglot-suite.backup.git`.
+1. **Safety Backup**: Created a full mirror clone backup (`polyglot-suite.backup.git`).
 2. **History Filtering**: Ran `git-filter-repo` to excise `*/static/db/polyglot.db.*` across all branches and tags:
    ```bash
    git-filter-repo --path-glob '*/static/db/polyglot.db.*' --path-glob 'static/db/polyglot.db.*' --invert-paths --force

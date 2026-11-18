@@ -36,7 +36,7 @@ By restructuring queries (pushing `LIMIT` down before joins and removing `tokens
 ## 1. Concrete Root Cause Analysis by Application
 
 ### 1. Philo Reader (`apps/philo-reader`)
-* **Live Query** in [`dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/philo-reader/src/lib/services/dbClient.ts#L201-L215):
+* **Live Query** in [`dbClient.ts`](../../philo-reader/src/lib/services/dbClient.ts#L201-L215):
   ```sql
   SELECT c.display_citation, c.work_unit_id, t.work_code, t.chapter, t.section, t.text_content, t.tokens_json
   FROM concordance_refs c
@@ -61,7 +61,7 @@ By restructuring queries (pushing `LIMIT` down before joins and removing `tokens
 ---
 
 ### 2. Apostolic Fathers Reader (`apps/apostolic-fathers-reader`)
-* **Live Query** in [`dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/apostolic-fathers-reader/src/lib/services/dbClient.ts#L161-L174):
+* **Live Query** in [`dbClient.ts`](../../apostolic-fathers-reader/src/lib/services/dbClient.ts#L161-L174):
   ```sql
   SELECT c.display_citation, c.work_unit_id, t.work_code, t.chapter, t.section, t.text_content, t.tokens_json
   FROM concordance_refs c
@@ -85,7 +85,7 @@ By restructuring queries (pushing `LIMIT` down before joins and removing `tokens
 ---
 
 ### 3. Josephus Reader (`apps/josephus-reader`)
-* **Live Query** in [`dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/josephus-reader/src/lib/services/dbClient.ts#L194-L207):
+* **Live Query** in [`dbClient.ts`](../../josephus-reader/src/lib/services/dbClient.ts#L194-L207):
   ```sql
   SELECT c.display_citation, c.work_unit_id, t.work_code, t.book, t.section_num, t.niese_section, t.text_content, t.tokens_json
   FROM concordance_refs c
@@ -108,11 +108,11 @@ By restructuring queries (pushing `LIMIT` down before joins and removing `tokens
 ---
 
 ### 4. Polyglot Bible Reader (`apps/polyglot-bible-reader`)
-* **Live Query Call** in [`LemmaInfo.svelte:248`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/polyglot-bible-reader/src/lib/components/lexicon/LemmaInfo.svelte#L248):
+* **Live Query Call** in [`LemmaInfo.svelte:248`](../../polyglot-bible-reader/src/lib/components/lexicon/LemmaInfo.svelte#L248):
   ```ts
   const occs = await getConcordance(corpusId, lookupKey, 0, currentLemmaData?.strongs);
   ```
-  And [`dbClient.ts:1182-1201`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/polyglot-bible-reader/src/lib/services/dbClient.ts#L1182-L1201):
+  And [`dbClient.ts:1182-1201`](../../polyglot-bible-reader/src/lib/services/dbClient.ts#L1182-L1201):
   ```sql
   SELECT ref_label, ref_label AS display_label, work_unit_id
   FROM concordance_refs
@@ -122,7 +122,7 @@ By restructuring queries (pushing `LIMIT` down before joins and removing `tokens
   ```
 * **Audit Findings**:
   1. **Unbounded Occurrence Fetching**: When `limit <= 0`, no `LIMIT` is applied. In `swete_lxx`, G3588 ("ὁ") returns **25,334 rows**.
-  2. **Client-Side CPU Thrashing**: In [`TextsDisplay.svelte:87-160`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/packages/lemma-ui/src/components/TextsDisplay.svelte#L87-L160), all 25,334 items are synchronously `.map()`-ed, regex-parsed via `parseRef()`, and sorted on the browser UI thread.
+  2. **Client-Side CPU Thrashing**: In [`TextsDisplay.svelte:87-160`](../../../packages/lemma-ui/src/components/TextsDisplay.svelte#L87-L160), all 25,334 items are synchronously `.map()`-ed, regex-parsed via `parseRef()`, and sorted on the browser UI thread.
   3. **Overflow Pages in `lemma_forms`**: `fetchAttestedForms` loads `forms_json`. For G3588 in `swete_lxx`, `forms_json` is **406 KB** of JSON. In SQLite, a 406 KB field spans ~100 overflow pages chained via linked list pointers, requiring iterative Range requests.
   4. **Fallback Misuse**: In `dbClient.ts:1001` and `1097`, if `lemma_stats` has a cache miss (e.g. key formatting difference), it falls back to calling `getConcordance(..., 0)` to count or aggregate occurrences across 25,334 rows rather than using SQL aggregation (`SELECT count(*)`).
 
@@ -138,7 +138,7 @@ The `sql.js-httpvfs` library is designed around SQLite's virtual filesystem read
    - For **non-sequential page access** (such as jumping around rowids in `text_units`, or jumping across overflow pages), the read head resets to speed 1 (4 KB).
 2. **Connection Bottleneck**:
    - Browsers permit only 6 concurrent HTTP/1.1 connections per host. Even with HTTP/2 multiplexing, round-trip latency (e.g., 40–80 ms per round-trip) accumulates rapidly.
-   - In [`worker.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/packages/db-vfs/src/worker.ts#L40-L46), all queries are serialized in a promise queue.
+   - In [`worker.ts`](../../../packages/db-vfs/src/worker.ts#L40-L46), all queries are serialized in a promise queue.
    - Touching 2,000–6,000 distinct 4KB pages scattered across a 95–210 MB table forces hundreds of discrete HTTP requests, taking 30 to 60 seconds.
 
 ---
@@ -166,7 +166,7 @@ To resolve this across the entire suite without fighting against `sql.js-httpvfs
 These code-only optimizations in `dbClient.ts` immediately reduce 90% of the network load:
 
 1. **Fix Apostolic Fathers Full Table Scan**:
-   Add `corpus_id = 'grc'` (or the selected corpus) to the query in [`apps/apostolic-fathers-reader/src/lib/services/dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/apostolic-fathers-reader/src/lib/services/dbClient.ts#L170):
+   Add `corpus_id = 'grc'` (or the selected corpus) to the query in [`apps/apostolic-fathers-reader/src/lib/services/dbClient.ts`](../../apostolic-fathers-reader/src/lib/services/dbClient.ts#L170):
    ```sql
    WHERE c.corpus_id = ? AND c.lemma = ?
    ```
@@ -233,7 +233,7 @@ In `text_units`, `tokens_json` accounts for 85–90% of the table's disk footpri
 
 ### Tier 3: Frontend UI Lazy-Loading Flow
 
-In [`LexemeSidePanel.svelte`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/packages/lemma-ui/src/components/LexemeSidePanel.svelte) and [`TextsDisplay.svelte`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/packages/lemma-ui/src/components/TextsDisplay.svelte):
+In [`LexemeSidePanel.svelte`](../../../packages/lemma-ui/src/components/LexemeSidePanel.svelte) and [`TextsDisplay.svelte`](../../../packages/lemma-ui/src/components/TextsDisplay.svelte):
 1. **Two-Stage Loading**:
    - **Stage 1 (Immediate)**: Fetch concordance references (citations + matched forms) from the covering `concordance_refs` table. Render the list instantly (<100 ms).
    - **Stage 2 (On Demand)**: When the user toggles "Full Text" or scrolls into view, batch-fetch `text_content` for only the 10–25 visible items using `WHERE id IN (...)`.

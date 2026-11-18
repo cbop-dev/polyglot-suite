@@ -20,7 +20,7 @@ Complete the refactoring by generalizing SvelteKit application routes, rendering
 ## 2. Step-by-Step Implementation Tasks
 
 ### Task 5.1: Dynamic Landing Page (`routes/+page.svelte`)
-* **File**: [`apps/ancient-corpora-reader/src/routes/+page.svelte`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/src/routes/+page.svelte)
+* **File**: [`apps/ancient-corpora-reader/src/routes/+page.svelte`](../../../src/routes/+page.svelte)
 * Remove the hardcoded HTML cards and static strings for Apostolic Fathers, Philo, and Josephus.
 * Import `getAllCorpora` from `$lib/config/corpora.js` and `getCorpusWorks` from `$lib/config/corpora.data.js`.
 * Dynamically generate corpus selection cards:
@@ -72,7 +72,7 @@ Update the route param validators to dynamically validate against `CORPORA_CONFI
   - Update route loaders to validate against `CORPORA_CONFIG` dynamically without hardcoded whitelists.
 
 ### Task 5.3: Modernize Unit Test Suites
-Update test suites in [`apps/ancient-corpora-reader/tests/`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/tests/):
+Update test suites in [`apps/ancient-corpora-reader/tests/`](../../../tests):
 1. **`canonicalWorks.test.ts` -> `corporaConfig.test.ts`**:
    - Assert all corpus configurations declare valid text versions, languages, and works.
    - Assert lookup functions (`findWork`, `getCorpusWorks`) correctly resolve codes and slugs.

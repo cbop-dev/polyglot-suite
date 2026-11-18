@@ -37,7 +37,7 @@ flowchart TD
 ## Implemented Steps
 
 ### Step 1: Extend `ConcordanceRef` & `LexemeSidePanel` Props (`packages/lemma-ui`)
-- In [`packages/lemma-ui/src/components/LexemeSidePanel.svelte`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/packages/lemma-ui/src/components/LexemeSidePanel.svelte):
+- In [`packages/lemma-ui/src/components/LexemeSidePanel.svelte`](../../../packages/lemma-ui/src/components/LexemeSidePanel.svelte):
   - Added optional prop: `fetchSectionText?: (ref: ConcordanceRef) => Promise<string>`.
   - Added optional fields `work_unit_id?: number` and `full_text?: string` to `ConcordanceRef`.
   - Added reactive state `currentPageSize` tracking `concordancePageSize` (defaulting to `concordancePageSize || 50`).
@@ -59,9 +59,9 @@ flowchart TD
   - While loading, displays an inline spinner; when loaded, renders full Greek text.
 
 ### Step 4: Wire Up ACR Integration (`apps/ancient-corpora-reader`)
-- In [`apps/ancient-corpora-reader/src/lib/components/CorpusSidePanel.svelte`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader/src/lib/components/CorpusSidePanel.svelte):
+- In [`apps/ancient-corpora-reader/src/lib/components/CorpusSidePanel.svelte`](../src/lib/components/CorpusSidePanel.svelte):
   - Passed `fetchSectionText={(ref) => fetchSectionText(readerState.currentCorpus, ref.work_unit_id ?? ref.id)}` into `<LexemeSidePanel />`.
-- Added null safety checks in [`apps/ancient-corpora-reader/src/lib/services/dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader/src/lib/services/dbClient.ts).
+- Added null safety checks in [`apps/ancient-corpora-reader/src/lib/services/dbClient.ts`](../src/lib/services/dbClient.ts).
 
 ### Step 5: Verification & Quality Assurance
 - `svelte-check`: 0 errors.

@@ -42,11 +42,11 @@ flowchart TD
 
 | Phase | Title | Key Deliverables | Risk Level |
 | :--- | :--- | :--- | :---: |
-| **Phase 1** | [Configuration & Typography Groundwork](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/docs/design-v0.3/implement/phase_1_configuration_and_typography.md) | `config/corpora.ts`, `corpora.data.ts`, decouple `@polyglot/ancient-languages` | Low |
-| **Phase 2** | [Database Pipeline Standardization](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/docs/design-v0.3/implement/phase_2_database_pipeline_standardization.md) | Standardize `pipeline/db_builder.py`, precompute `lemma_forms`, re-chunk databases | Medium |
-| **Phase 3** | [Service Layer & State Generalization](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/docs/design-v0.3/implement/phase_3_service_layer_and_state.md) | Universal `dbClient.ts` queries, runes `ReaderState` with `visibleLanguages: Set<string>` | Medium |
-| **Phase 4** | [UI Components & Progressive Rendering](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/docs/design-v0.3/implement/phase_4_ui_components_and_progressive_rendering.md) | Refactor `@polyglot/ui/ParallelColumnView`, add Progressive Batch Rendering (< 50ms TBT) | High |
-| **Phase 5** | [Route Generalization, E2E Testing & Verification](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/docs/design-v0.3/implement/phase_5_routes_and_verification.md) | Dynamic landing page & routes, modernized Playwright E2E suite, unit test updates | Medium |
+| **Phase 1** | [Configuration & Typography Groundwork](../../../../../docs/design-v0.3/implement/phase_1_configuration_and_typography.md) | `config/corpora.ts`, `corpora.data.ts`, decouple `@polyglot/ancient-languages` | Low |
+| **Phase 2** | [Database Pipeline Standardization](../../../../../docs/design-v0.3/implement/phase_2_database_pipeline_standardization.md) | Standardize `pipeline/db_builder.py`, precompute `lemma_forms`, re-chunk databases | Medium |
+| **Phase 3** | [Service Layer & State Generalization](../../../../../docs/design-v0.3/implement/phase_3_service_layer_and_state.md) | Universal `dbClient.ts` queries, runes `ReaderState` with `visibleLanguages: Set<string>` | Medium |
+| **Phase 4** | [UI Components & Progressive Rendering](../../../../../docs/design-v0.3/implement/phase_4_ui_components_and_progressive_rendering.md) | Refactor `@polyglot/ui/ParallelColumnView`, add Progressive Batch Rendering (< 50ms TBT) | High |
+| **Phase 5** | [Route Generalization, E2E Testing & Verification](../../../../../docs/design-v0.3/implement/phase_5_routes_and_verification.md) | Dynamic landing page & routes, modernized Playwright E2E suite, unit test updates | Medium |
 
 ---
 

@@ -13,16 +13,16 @@
 
 ## 1. Objective
 
-Refactor the presentation tier across [`packages/ui`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/packages/ui) and [`apps/ancient-corpora-reader`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader). 
+Refactor the presentation tier across [`packages/ui`](../../../../../packages/ui) and [`apps/ancient-corpora-reader`](../../..). 
 
-Deliver a clean-sheet, language-agnostic [`ParallelColumnView.svelte`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/packages/ui/src/components/reading/ParallelColumnView.svelte) equipped with **Progressive Batch Rendering** to guarantee sub-50ms Time to First Interactive (TTFI) on large treatises (e.g. Philo).
+Deliver a clean-sheet, language-agnostic [`ParallelColumnView.svelte`](../../../../../packages/ui/src/components/reading/ParallelColumnView.svelte) equipped with **Progressive Batch Rendering** to guarantee sub-50ms Time to First Interactive (TTFI) on large treatises (e.g. Philo).
 
 ---
 
 ## 2. Step-by-Step Implementation Tasks
 
 ### Task 4.1: Clean-Sheet Refactor of `ParallelColumnView.svelte` (`@polyglot/ui`)
-* **File**: [`packages/ui/src/components/reading/ParallelColumnView.svelte`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/packages/ui/src/components/reading/ParallelColumnView.svelte)
+* **File**: [`packages/ui/src/components/reading/ParallelColumnView.svelte`](../../../../../packages/ui/src/components/reading/ParallelColumnView.svelte)
 * **Delete Deprecated Props**: Remove `greek`, `english`, `latin`, `showGreek`, `showEnglish`, `showLatin`, `customGreekColumn`, `customEnglishColumn`, `customLatinColumn`, `greekHeaderTitle`, `latinHeaderTitle`, `englishHeaderTitle`.
 * **Add Unified Props**:
   ```ts
@@ -56,7 +56,7 @@ Deliver a clean-sheet, language-agnostic [`ParallelColumnView.svelte`](file:///h
   - Wrap columns with `class={ver.fontClass}` and `dir={ver.direction}`.
 
 ### Task 4.2: Refactor `CorpusColumnView.svelte`
-* **File**: [`apps/ancient-corpora-reader/src/lib/components/CorpusColumnView.svelte`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/src/lib/components/CorpusColumnView.svelte)
+* **File**: [`apps/ancient-corpora-reader/src/lib/components/CorpusColumnView.svelte`](../../../src/lib/components/CorpusColumnView.svelte)
 * Simplify props to `{ textVersions: TextVersion[] }`.
 * Remove all hardcoded ternary switches on corpus codes (`readerState.currentCorpus === 'af' ? ...`).
 * Implement declarative milestone rendering:
@@ -79,7 +79,7 @@ Deliver a clean-sheet, language-agnostic [`ParallelColumnView.svelte`](file:///h
   ```
 
 ### Task 4.3: Refactor `AncientCorporaReader.svelte`
-* **File**: [`apps/ancient-corpora-reader/src/lib/components/AncientCorporaReader.svelte`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/src/lib/components/AncientCorporaReader.svelte)
+* **File**: [`apps/ancient-corpora-reader/src/lib/components/AncientCorporaReader.svelte`](../../../src/lib/components/AncientCorporaReader.svelte)
 * Replace three separate state arrays (`greekSections`, `englishSections`, `latinSections`) with a single reactive `textVersions = $state<TextVersion[]>([])`.
 * Pass `textVersions` directly to `<CorpusColumnView {textVersions} />`.
 * Update keyboard event handlers: remove hardcoded 'g' and 'e' view-mode setters; support generic parallel / stacked toggling.

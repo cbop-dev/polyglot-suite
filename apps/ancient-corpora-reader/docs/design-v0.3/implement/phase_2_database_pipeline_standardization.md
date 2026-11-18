@@ -13,7 +13,7 @@
 
 ## 1. Objective
 
-Standardize the Python database build pipeline in [`apps/ancient-corpora-reader/pipeline/`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/pipeline/) so that every generated SQLite database implements the exact same canonical relational schema contract from [Design Document 02](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/docs/design-v0.3/02_unified_database_schema.md).
+Standardize the Python database build pipeline in [`apps/ancient-corpora-reader/pipeline/`](../../../pipeline) so that every generated SQLite database implements the exact same canonical relational schema contract from [Design Document 02](../../../../../docs/design-v0.3/02_unified_database_schema.md).
 
 ---
 

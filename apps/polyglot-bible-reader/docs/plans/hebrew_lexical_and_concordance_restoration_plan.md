@@ -135,8 +135,8 @@ Run the self-contained pipeline to regenerate the reader database and static web
 
 ## 5. Artifact & Log References
 
-- **Conversation A Log:** `file:///home/cbrannan/.gemini/antigravity/brain/78339624-1e79-40a8-826f-89778bfab4d9/`
-- **Conversation B Log:** `file:///home/cbrannan/.gemini/antigravity/brain/e94c8c46-0477-4edc-9dc3-64fa6b23e783/`
+- **Conversation A ID:** `78339624-1e79-40a8-826f-89778bfab4d9`
+- **Conversation B ID:** `e94c8c46-0477-4edc-9dc3-64fa6b23e783`
 - **Errata Registry File:** `apps/polyglot-bible-reader/pipeline/data/hebrew_errata.json`
 - **BDB Adapter Script:** `apps/polyglot-bible-reader/pipeline/adapters/bdb.py`
 - **WLC Adapter Script:** `apps/polyglot-bible-reader/pipeline/adapters/wlc.py`

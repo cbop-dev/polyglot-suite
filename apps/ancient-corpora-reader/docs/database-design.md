@@ -369,7 +369,7 @@ To ensure smooth client-side execution over HTTP, the SQLite databases are compi
 
 ## 5. Client-Side Service Architecture (`dbClient.ts`)
 
-The ACR frontend interacts with the database through [`src/lib/services/dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader/src/lib/services/dbClient.ts) and [`src/lib/services/dbWorker.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader/src/lib/services/dbWorker.ts).
+The ACR frontend interacts with the database through [`src/lib/services/dbClient.ts`](../src/lib/services/dbClient.ts) and [`src/lib/services/dbWorker.ts`](../src/lib/services/dbWorker.ts).
 
 ### Key Subsystems:
 
@@ -421,7 +421,7 @@ python3 -m apps.ancient-corpora-reader.pipeline.build --corpus philo
 To add a new ancient language corpus (e.g., *Early Christian Apologists*, *Polybius*, or *Septuagint*):
 
 1. **Add Corpus Definition**:
-   Register the new corpus in [`pipeline/build.py`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader/pipeline/build.py#L33) with its source database path and target output directory.
+   Register the new corpus in [`pipeline/build.py`](../pipeline/build.py#L33) with its source database path and target output directory.
 2. **Source Data Requirements**:
    Ensure the source database provides:
    - `corpora` metadata.
@@ -432,4 +432,4 @@ To add a new ancient language corpus (e.g., *Early Christian Apologists*, *Polyb
 3. **Run Pipeline**:
    Execute `python3 -m apps.ancient-corpora-reader.pipeline.build --corpus <id>`.
 4. **Register in Frontend**:
-   Add the new corpus ID and metadata to `CORPUS_TITLES` in [`dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader/src/lib/services/dbClient.ts) and the corpus switcher dropdown in [`CorpusHeader.svelte`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader/src/lib/components/CorpusHeader.svelte).
+   Add the new corpus ID and metadata to `CORPUS_TITLES` in [`dbClient.ts`](../src/lib/services/dbClient.ts) and the corpus switcher dropdown in [`CorpusHeader.svelte`](../src/lib/components/CorpusHeader.svelte).

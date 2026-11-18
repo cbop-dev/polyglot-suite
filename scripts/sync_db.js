@@ -17,37 +17,13 @@ export const APPS = {
     title: 'Polyglot Bible & Lexeme Explorer SQLite Database',
     notes: 'Consolidated master SQLite database (5MB chunks) and unified lexemes for Polyglot Bible Reader and Biblical Lexeme Explorer.',
   },
-  philo: {
-    name: 'Philo Reader',
-    dir: path.join(REPO_ROOT, 'apps/philo-reader/static/db'),
-    pattern: 'philo.db.*',
-    defaultPrefix: 'philo-db-v',
-    title: 'Philo Reader SQLite Database',
-    notes: 'Pre-computed 5MB SQLite database chunks for Philo Reader.',
-  },
-  fathers: {
-    name: 'Apostolic Fathers Reader',
-    dir: path.join(REPO_ROOT, 'apps/apostolic-fathers-reader/static/db'),
-    pattern: 'af.db.*',
-    defaultPrefix: 'af-db-v',
-    title: 'Apostolic Fathers Reader SQLite Database',
-    notes: 'Pre-computed 5MB SQLite database chunks for Apostolic Fathers Reader.',
-  },
-  josephus: {
-    name: 'Josephus Reader',
-    dir: path.join(REPO_ROOT, 'apps/josephus-reader/static/db'),
-    pattern: 'josephus.db.*',
-    defaultPrefix: 'josephus-db-v',
-    title: 'Josephus Reader SQLite Database',
-    notes: 'Pre-computed 5MB SQLite database chunks for Josephus Reader.',
-  },
   'corpora-af': {
     name: 'Ancient Corpora: Apostolic Fathers',
     dir: path.join(REPO_ROOT, 'apps/ancient-corpora-reader/static/db/af'),
     pattern: 'af.db.*',
     defaultPrefix: 'corpora-af-db-v',
     title: 'Ancient Corpora - Apostolic Fathers SQLite Database',
-    notes: 'Pre-computed 5MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (AF).',
+    notes: 'Pre-computed 1MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (AF).',
   },
   'corpora-philo': {
     name: 'Ancient Corpora: Philo of Alexandria',
@@ -55,7 +31,7 @@ export const APPS = {
     pattern: 'philo.db.*',
     defaultPrefix: 'corpora-philo-db-v',
     title: 'Ancient Corpora - Philo SQLite Database',
-    notes: 'Pre-computed 5MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (Philo).',
+    notes: 'Pre-computed 1MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (Philo).',
   },
   'corpora-josephus': {
     name: 'Ancient Corpora: Flavius Josephus',
@@ -63,14 +39,20 @@ export const APPS = {
     pattern: 'josephus.db.*',
     defaultPrefix: 'corpora-josephus-db-v',
     title: 'Ancient Corpora - Josephus SQLite Database',
-    notes: 'Pre-computed 5MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (Josephus).',
+    notes: 'Pre-computed 1MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (Josephus).',
   },
 };
 APPS.data = APPS.bible;
 APPS['bible-data'] = APPS.bible;
 APPS.lex = APPS.bible;
-APPS.af = APPS.fathers;
-APPS.jr = APPS.josephus;
+
+// Aliases for Ancient Corpora Reader sub-databases (formerly standalone readers)
+APPS.af = APPS['corpora-af'];
+APPS.fathers = APPS['corpora-af'];
+APPS['corpora-fathers'] = APPS['corpora-af'];
+APPS.philo = APPS['corpora-philo'];
+APPS.josephus = APPS['corpora-josephus'];
+APPS.jr = APPS['corpora-josephus'];
 APPS['acr-af'] = APPS['corpora-af'];
 APPS['acr-philo'] = APPS['corpora-philo'];
 APPS['acr-josephus'] = APPS['corpora-josephus'];
@@ -171,15 +153,12 @@ Actions:
   --publish, publish   Upload local database chunks to GitHub Releases
 
 Apps:
-  all                  Sync all reader databases (bible, philo, fathers, josephus, corpora-af, corpora-philo, corpora-josephus) [default for pull]
-  bible (or data)      Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
-  philo                Philo Reader database (tag: philo-db-vX.Y.Z)
-  fathers (or af)      Apostolic Fathers Reader database (tag: af-db-vX.Y.Z)
-  josephus (or jr)     Josephus Reader database (tag: josephus-db-vX.Y.Z)
+  all                  Sync all reader databases (bible, corpora-af, corpora-philo, corpora-josephus) [default for pull]
+  bible (or data, lex) Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
   corpora (or acr)     All Ancient Corpora Reader databases (AF, Philo, Josephus)
-  corpora-af           Ancient Corpora - Apostolic Fathers database (tag: corpora-af-db-vX.Y.Z)
-  corpora-philo        Ancient Corpora - Philo database (tag: corpora-philo-db-vX.Y.Z)
-  corpora-josephus     Ancient Corpora - Josephus database (tag: corpora-josephus-db-vX.Y.Z)
+  corpora-af           Ancient Corpora - Apostolic Fathers database (tag: corpora-af-db-vX.Y.Z) [aliases: af, fathers]
+  corpora-philo        Ancient Corpora - Philo database (tag: corpora-philo-db-vX.Y.Z) [alias: philo]
+  corpora-josephus     Ancient Corpora - Josephus database (tag: corpora-josephus-db-vX.Y.Z) [aliases: josephus, jr]
 
 Options:
   --help, -h, help     Show this help message

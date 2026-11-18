@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **AI-Generated Documentation Notice**  
+> **Human Review Status:** `To be reviewed`  
+> This documentation was generated with AI assistance and may contain inaccuracies. Please verify with the codebase and primary sources.
+
 # greek-morphology
 
 High-performance Ancient and Hellenistic Greek lemmatization and morphological parsing engine.

@@ -1,43 +1,43 @@
 # Ancient Corpora Reader
 
-An interactive, high-performance web application—deployable as a 100% static client-side site—for comparative reading, linguistic exploration, and morphological study of major Hellenistic and early Christian/Jewish Greek literature.
+An interactive web application for comparative reading, linguistic exploration, and morphological study of major Hellenistic and early Christian/Jewish Greek literature.
 
-The **Ancient Corpora Reader** unifies three core corpora into a single coherent interface:
+> [!IMPORTANT]
+> **AI-Generated Documentation Notice**  
+> **Human Review Status:** `To be reviewed`  
+> This documentation was generated with AI assistance and may contain inaccuracies. Please verify with the codebase and primary sources.
+
+The **Ancient Corpora Reader** unifies three major historical corpora into a single interface:
 1. **Apostolic Fathers** (*Clement of Rome, Ignatius of Antioch, Polycarp, Didache, Shepherd of Hermas, Barnabas, Papias, etc.*)
 2. **Philo of Alexandria** (*All 31 surviving continuous Greek treatises*)
 3. **Flavius Josephus** (*The Jewish War, Antiquities of the Jews, Life, and Against Apion*)
-
-> [!NOTE]
-> **AI Generation Notice**: Developed and documented with the assistance of **Antigravity 2.26.0** (Engine: **Gemini 3.8 Flash**). Code developed under human supervision. This README.md was almost entirely AI-generated.
 
 ---
 
 ## Key Features
 
-- **Consolidated Multi-Corpus Reader**:
-  - Seamlessly switch between Apostolic Fathers, Philo, and Josephus from a unified header selector or command palette.
-  - Deep-linkable dynamic routing: `/[corpus]/[work]/[division]` (e.g. `/af/1-clem/1`, `/philo/opif/1`, `/josephus/ant/1.1`).
+- **Unified Multi-Corpus Reader**:
+  - Switch between Apostolic Fathers, Philo, and Josephus from the top header or keyboard command palette.
+  - Deep-linkable routing: `/[corpus]/[work]/[division]` (e.g., `/af/1-clem/1`, `/philo/opif/1`, `/josephus/ant/1.1`).
 - **Parallel Multilingual Columns**:
   - Synchronized Greek source text with English translation.
-  - Specialized parallel Latin column for Apostolic Fathers where Latin manuscript witnesses are preserved (e.g., Shepherd of Hermas).
-- **Interactive Lemma & Morphology Inspection**:
-  - Click any Greek word to inspect lemma, part of speech, and inflected forms.
-  - Unabridged **STEPBible Tyndale Fellowship LSJ (Liddell-Scott-Jones)** Greek dictionary integration.
-- **High-Performance Paginated Concordance**:
-  - CTE pushdown pagination (50 items/page) with "Load More" controls.
-  - Eliminates range-request freezes and memory bloat on ultra-high-frequency lemmas (e.g., `ὁ`, `καί`).
-  - Monotonic transaction ID tracking prevents async race conditions.
-- **Corpus-Specific Scholarly Apparatuses**:
-  - **Philo**: Embedded Scripture Citations & Allusions Explorer tab (Genesis through the Prophets and Writings), plus Cohn-Wendland and Mangey milestone citations.
-  - **Josephus**: Benedikt Niese sectioning and William Whiston reference cross-mapping.
-  - **Apostolic Fathers**: Kirsopp Lake Loeb Greek/English alignment and Latin fragments.
-- **Academic Citation Generator**:
-  - Formats standard scholarly citations in one click for papers and bibliographies.
-- **Contrast-Invariant Adaptive Themes**:
-  - Powered by `@polyglot/theme` with smooth piecewise color-stop interpolation across Light, Dark, and Sepia palettes with continuous warmth tuning.
-- **Zero-Backend Static Architecture**:
-  - Powered by `@polyglot/db-vfs` (`sql.js-httpvfs`) querying range-requested SQLite database chunks in WebAssembly.
-  - Multi-VFS database architecture: each corpus maintains a distinct modular database chunk pool in `static/db/{af,philo,josephus}/`, loading zero bytes until a corpus is viewed.
+  - Parallel Latin column for Apostolic Fathers works preserving Latin manuscript witnesses (e.g., Shepherd of Hermas).
+- **Interactive Morphology & Lexicons**:
+  - Click any Greek word to inspect its lemma, part of speech, and attested grammatical forms.
+  - Integrated unabridged **STEPBible LSJ (Liddell-Scott-Jones)** Greek lexicon.
+- **Fast Paginated Concordance**:
+  - CTE pushdown pagination (50 results per page) with "Load More" controls.
+  - Dedicated covering index (`idx_concordance_refs_form`) enables fast searches without loading full text pages.
+- **Scholarly Apparatus & Citations**:
+  - **Philo**: Scripture Citations & Allusions Explorer tab (OT references), plus Cohn-Wendland and Mangey milestone citations.
+  - **Josephus**: Benedikt Niese sectioning and William Whiston cross-references.
+  - **Apostolic Fathers**: Kirsopp Lake Loeb alignment and Latin fragments.
+  - One-click scholarly citation copying for papers and bibliographies.
+- **Continuous Reading Themes**:
+  - Powered by `@polyglot/theme` with smooth piecewise color-stop interpolation across Light, Dark, and Sepia palettes.
+- **Zero-Backend Client Architecture**:
+  - Powered by `@polyglot/db-vfs` (`sql.js-httpvfs`) querying pre-chunked SQLite databases in WebAssembly via HTTP range requests.
+  - **1MB Chunking**: Each corpus database (`af`, `philo`, `josephus`) is sliced into lightweight 1MB chunks, minimizing data transfer on mobile connections.
 
 ---
 
@@ -51,22 +51,15 @@ The **Ancient Corpora Reader** unifies three core corpora into a single coherent
 
 ---
 
-## Project Architecture
+## Project Structure
 
 ```
 apps/ancient-corpora-reader/
 ├── docs/                        # Architecture specs, performance audits, and optimization plans
-│   ├── ancient_corpora_reader_implementation_plan.md
-│   ├── concordance_performance_audit.md
-│   ├── database-design.md
-│   ├── tier1_performance_optimization_plan.md
-│   ├── tier2_performance_optimization_plan.md
-│   ├── tier2_6_schema_normalization_plan.md
-│   └── tier3_performance_optimization_plan.md
 ├── pipeline/                    # Offline Python database compilation & chunking pipeline
 │   ├── build.py                 # CLI entry point for building and chunking SQLite databases
 │   ├── config.py                # Corpus source paths and normalization rules
-│   ├── db_builder.py            # SQLite schema builder and indexing
+│   ├── db_builder.py            # SQLite schema builder, covering concordance & indexing
 │   └── snippet_builder.py       # Concordance snippet generator
 ├── src/
 │   ├── lib/
@@ -76,83 +69,66 @@ apps/ancient-corpora-reader/
 │   │   └── stores/              # Reactive reader & highlight stores ($state runes)
 │   └── routes/                  # Dynamic SvelteKit routing (/[corpus]/[work]/[division])
 ├── static/
-│   ├── db/                      # HTTP-VFS database chunks and config.json per corpus
-│   │   ├── af/
-│   │   ├── josephus/
-│   │   └── philo/
+│   ├── db/                      # HTTP-VFS database chunks (1MB each) and config.json
+│   │   ├── af/                  # Apostolic Fathers database chunks
+│   │   ├── josephus/            # Flavius Josephus database chunks
+│   │   └── philo/               # Philo of Alexandria database chunks
 │   └── sqlite/                  # sql.js WASM binaries and worker scripts
-└── tests/                       # Vitest unit & integration test suites
+└── tests/                       # Vitest unit test suites
 ```
 
 ---
 
-## Developer Guide
+## Development Guide
 
-### Prerequisites
-
-- **Node.js**: `v20+`
-- **npm**: `v10+` (Workspace mode)
-- **Python**: `3.10+` (only needed if running the offline database pipeline in `pipeline/`)
-
-### Setup & Local Development
+### 1. Local Development
 
 Run commands from the repository root:
-
 ```bash
-# Install workspace dependencies
-npm install
-
-# Start development server for Ancient Corpora Reader
+# Start development server (port 5173)
 npm run dev:corpora
-# or:
-npm --workspace=ancient-corpora-reader run dev
-```
 
-The application runs locally with Vite hot-module reload at `http://localhost:5173`.
-
-### Diagnostics & Testing
-
-```bash
-# Run Svelte and TypeScript type checking
+# Run type checks
 npm run check:corpora
 
-# Run unit tests (Vitest)
+# Run unit tests
 npm run test:corpora
 ```
 
-### Static Build & Suite Integration
+### 2. Database Management
+
+The pre-computed SQLite databases are hosted on GitHub Releases and tracked locally via `config.json` in `static/db/{af,philo,josephus}/`.
 
 ```bash
-# Build standalone static site (output in apps/ancient-corpora-reader/build/www)
-npm --workspace=ancient-corpora-reader run build:www
+# Check status of local chunks against remote GitHub Releases
+npm run status:db:gh corpora
 
-# Build suite distribution (output in dist/corpora with /polyglot-suite/corpora base path)
-npm run build:www:corpora
+# Download all Ancient Corpora database chunks
+npm run pull:db:corpora
 
-# Preview static distribution
-npm run preview:corpora
+# Or download a specific corpus database
+npm run pull:db:corpora:af
+npm run pull:db:corpora:philo
+npm run pull:db:corpora:josephus
 ```
 
----
+### 3. Compiling Databases from Source (`pipeline/`)
 
-## Data Pipeline (`pipeline/`)
-
-The offline Python pipeline builds and normalizes SQLite databases from upstream XML/JSON sources, pre-generates concordance snippet indexes, and splits databases into 5MB chunks for HTTP-VFS:
+To compile the normalized SQLite databases and slice them into 1MB HTTP-VFS chunks from raw upstream files:
 
 ```bash
-cd apps/ancient-corpora-reader
+# Build and chunk all three corpora
+python3 apps/ancient-corpora-reader/pipeline/build.py --all
 
-# Build SQLite databases
-python3 pipeline/build.py --build
-
-# Split databases into HTTP-VFS chunks
-python3 pipeline/build.py --chunk
+# Or build/chunk individually
+python3 apps/ancient-corpora-reader/pipeline/build.py --build af
+python3 apps/ancient-corpora-reader/pipeline/build.py --chunk af
 ```
 
 ---
 
 ## Licensing & Scholarly Use
 
-- **Source Code**: Dual-licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** as part of the Polyglot Suite monorepo.
+- **Source Code**: Licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** as part of the Polyglot Suite monorepo.
 - **Texts & Linguistic Data**: Derived from public-domain critical editions and CC BY-SA 4.0 open datasets (Perseus Digital Library, First1KGreek, Giuseppe Celano Lemmatized Ancient Greek XML, STEPBible TFLSJ).
 - **Academic Citation**: While texts are curated from critical editions, automated tokenization and lemmatization may contain occasional discrepancies. Check quotations against standard printed critical editions for published academic work.

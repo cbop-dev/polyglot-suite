@@ -17,7 +17,7 @@ This project consolidates them into a unified, high-performance application: **`
 
 ### Core Objectives
 1. **Unified Application**: Provide a single reader interface serving all three corpora under clean, shareable routes (`/[corpus]/[work]/[...section]`).
-2. **Lemma-Results Pagination**: Replace legacy `LIMIT 200` query bottlenecks with cursor/offset pagination in both the DB service layer and [`LexemeSidePanel.svelte`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/packages/lemma-ui/src/components/LexemeSidePanel.svelte), allowing readers to browse unlimited occurrences of frequent lemmas without exhausting HTTP-VFS byte transfers.
+2. **Lemma-Results Pagination**: Replace legacy `LIMIT 200` query bottlenecks with cursor/offset pagination in both the DB service layer and [`LexemeSidePanel.svelte`](../../../packages/lemma-ui/src/components/LexemeSidePanel.svelte), allowing readers to browse unlimited occurrences of frequent lemmas without exhausting HTTP-VFS byte transfers.
 3. **Corpus-Specific Feature Preservation**: Maintain full fidelity of corpus-specific apparatuses (Philo's Mangey milestones & LXX index, Josephus's Whiston cross-references & PDF export, and AF's parallel Latin column).
 4. **Non-Disruptive Transition**: Maintain existing standalone apps and databases during development, utilizing existing database chunk assets before deciding on database consolidation.
 
@@ -84,7 +84,7 @@ flowchart TD
 
 #### Multi-VFS DB Client Architecture
 Rather than immediately requiring a risky ~371 MB database merge during UI consolidation:
-- **Phase A (Multi-VFS Worker Multiplexer)**: The client service [`dbManager.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader/src/lib/services/dbManager.ts) maintains a lazy connection map:
+- **Phase A (Multi-VFS Worker Multiplexer)**: The client service [`dbManager.ts`](../src/lib/services/dbManager.ts) maintains a lazy connection map:
   ```typescript
   type CorpusId = 'af' | 'philo' | 'josephus';
   const workerPool = new Map<CorpusId, Promise<SqlJsVfsWorker>>();
@@ -102,7 +102,7 @@ The recent performance audit demonstrated that:
 3. The CTE pushdown pattern (`WITH top_refs AS (...) SELECT ... JOIN text_units`) eliminated full table scans and avoided deserializing bulky `tokens_json`.
 
 #### Paginated Service Signature
-We extend [`dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/packages/lemma-ui/src/types.ts) and the app layer with a paginated query interface:
+We extend [`dbClient.ts`](../../../packages/lemma-ui/src/types.ts) and the app layer with a paginated query interface:
 
 ```typescript
 export interface PaginatedConcordance {
@@ -206,11 +206,11 @@ flowchart LR
 ```
 
 ### Phase 1: Shared Package Enhancements
-1. **Extend [`@polyglot/lemma-ui`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/packages/lemma-ui/)**:
-   - Update [`LexemeSidePanel.svelte`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/packages/lemma-ui/src/components/LexemeSidePanel.svelte) to accept `fetchConcordancePage?: (lemma: string, offset: number, pageSize: number) => Promise<PaginatedConcordance>`.
+1. **Extend [`@polyglot/lemma-ui`](../../../packages/lemma-ui)**:
+   - Update [`LexemeSidePanel.svelte`](../../../packages/lemma-ui/src/components/LexemeSidePanel.svelte) to accept `fetchConcordancePage?: (lemma: string, offset: number, pageSize: number) => Promise<PaginatedConcordance>`.
    - Maintain backward compatibility with legacy `fetchConcordance?: (lemma: string) => Promise<ConcordanceRef[]>`.
    - Add "Load More" controls and result count badge.
-2. **Extend [`@polyglot/ancient-languages`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/packages/ancient-languages/)**:
+2. **Extend [`@polyglot/ancient-languages`](../../../packages/ancient-languages)**:
    - Add unified citation helpers and cross-corpus citation parser (`"1 Clem. 5:1"`, `"Opif. 15"`, `"Ant. 1.25"`).
 
 ### Phase 2: App Scaffolding (`apps/ancient-corpora-reader`)

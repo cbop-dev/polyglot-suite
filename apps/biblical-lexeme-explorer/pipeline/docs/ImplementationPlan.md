@@ -18,7 +18,7 @@ Consolidating these entries directly unites splintered word counts, improves voc
 
 ### Pipeline Stage 8 & Lexical Rules
 
-#### [NEW] [pipeline/swete_morphology/lemma_consolidator.py](file:///home/cbrannan/dev/2-tmp/lxx-vocab-web-2.0/biblical-lexeme-explorer/pipeline/swete_morphology/lemma_consolidator.py)
+#### [NEW] `pipeline/swete_morphology/lemma_consolidator.py`
 Create a standalone, tested module defining canonical lemma mapping:
 - **`EXPLICIT_CONSOLIDATIONS`**:
   - Relics and typos: `ΛΟΓΟΣ` $\to$ `λόγος`, `ΠΑΣΑ` $\to$ `πᾶς`, `ἀάρω` $\to$ `Ἀαρών`, `Ελογέω` $\to$ `εὐλογέω`.
@@ -31,7 +31,7 @@ Create a standalone, tested module defining canonical lemma mapping:
 - **`canonicalize_lemma(lemma, pos, dynamic_map)`**:
   - Applies explicit and dynamic mappings to return the single authoritative lemma for any token.
 
-#### [MODIFY] [pipeline/swete_morphology/stage8_emit.py](file:///home/cbrannan/dev/2-tmp/lxx-vocab-web-2.0/biblical-lexeme-explorer/pipeline/swete_morphology/stage8_emit.py)
+#### [MODIFY] `pipeline/swete_morphology/stage8_emit.py`
 - Import `lemma_consolidator`.
 - Apply `canonicalize_lemma()` across all tokens before frequency counting, node creation, and concordance generation.
 - Re-emit all client data (`static/data/lxx/`, `src/lib/lxx/`, `build/www/`).
@@ -43,7 +43,7 @@ Create a standalone, tested module defining canonical lemma mapping:
 ### Automated Verification
 1. Run pipeline emission:
    ```bash
-   /home/cbrannan/dev/2-tmp/josephus-reader/.venv/bin/python -m pipeline.swete_morphology.stage8_emit
+   python -m pipeline.swete_morphology.stage8_emit
    ```
 2. Verify test suites:
    ```bash

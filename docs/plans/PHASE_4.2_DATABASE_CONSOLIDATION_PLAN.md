@@ -161,7 +161,7 @@ flowchart LR
 1. **Phase 4.2.1: Lemma & Corpus Inventory Audit** *(COMPLETED)*
    - Run Python audit comparing distinct lemmas in PBV's `lemma_stats`/`lexicon_entries` vs BLE's `lxx`, `bhs`, and `sblgnt` datasets.
    - Identified and documented root causes: 797 conflated Hebrew lemmas, 9,852 unaccented LXX pseudo-lemmas in PBV, Oxia vs. Tonos encoding discrepancies, and 75% missing Strong's numbers in LXX.
-   - **Artifacts**: [`scripts/audit_lemma_inventory.py`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/scripts/audit_lemma_inventory.py) and [`docs/reports/PHASE_4.2.1_LEMMA_INVENTORY_AUDIT.md`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/docs/reports/PHASE_4.2.1_LEMMA_INVENTORY_AUDIT.md).
+   - **Artifacts**: [`scripts/audit_lemma_inventory.py`](../../scripts/audit_lemma_inventory.py) and [`docs/reports/PHASE_4.2.1_LEMMA_INVENTORY_AUDIT.md`](../reports/PHASE_4.2.1_LEMMA_INVENTORY_AUDIT.md).
 
 2. **Phase 4.2.2: Master `lexemes` Schema & Migration** *(COMPLETED)*
    - Implemented master `lexemes` table with auto-incrementing integer IDs in `polyglot-working.sqlite3` (74,200 total lemmas: 20,449 Greek, 8,091 Hebrew, 45,660 Syriac).
@@ -169,10 +169,10 @@ flowchart LR
    - Created `corpus_lemma_stats` table for multi-corpus distribution.
    - Linked `lexeme_id` foreign keys into `lexicon_entries`, `lemma_stats`, `concordance_refs`, and `lemma_forms`.
    - Updated `db_builder.py` and added self-bootstrapping CLI + `npm run chunk:bible`.
-   - **Artifact**: [`scripts/migrate_phase4_2_lexemes.py`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/scripts/migrate_phase4_2_lexemes.py).
+   - **Artifact**: [`scripts/migrate_phase4_2_lexemes.py`](../../scripts/migrate_phase4_2_lexemes.py).
 
 3. **Phase 4.2.3: Build-Time Manifest Generator** *(COMPLETED)*
-   - Created build script ([`scripts/export_ble_manifests.py`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/scripts/export_ble_manifests.py)) to extract optimized, lightweight JSON manifests directly from the master SQLite database:
+   - Created build script ([`scripts/export_ble_manifests.py`](../../scripts/export_ble_manifests.py)) to extract optimized, lightweight JSON manifests directly from the master SQLite database:
      - `apps/biblical-lexeme-explorer/static/data/{lxx, bhs, sblgnt}/lexemes.json`
      - `apps/biblical-lexeme-explorer/static/data/{lxx, bhs, sblgnt}/concordance.json`
      - `apps/biblical-lexeme-explorer/static/data/{lxx, bhs, sblgnt}/sections.json`

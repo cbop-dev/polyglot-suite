@@ -7,8 +7,8 @@
 
 > [!IMPORTANT]
 > **Complete Workspace Isolation**: All Tier-2 changes, database pipeline scripts, compilation artifacts, and database chunks happen **STRICTLY within `apps/ancient-corpora-reader/`**.
-> * The standalone applications ([`apps/philo-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/philo-reader), [`apps/josephus-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/josephus-reader), [`apps/apostolic-fathers-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/apostolic-fathers-reader)) and their existing compiled databases/chunks are **100% untouched and preserved**.
-> * The current symlinks in [`apps/ancient-corpora-reader/static/db/`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader/static/db) (`af`, `josephus`, `philo`) will be removed and replaced with ACR's **own independent, optimized database chunks**.
+> * The standalone applications ([`apps/philo-reader`](../../philo-reader), [`apps/josephus-reader`](../../josephus-reader), [`apps/apostolic-fathers-reader`](../../apostolic-fathers-reader)) and their existing compiled databases/chunks are **100% untouched and preserved**.
+> * The current symlinks in [`apps/ancient-corpora-reader/static/db/`](../static/db) (`af`, `josephus`, `philo`) will be removed and replaced with ACR's **own independent, optimized database chunks**.
 
 ---
 
@@ -148,7 +148,7 @@ All compilation runs strictly within ACR:
 
 ## 4. ACR Service Layer Modernization
 
-**File**: [`apps/ancient-corpora-reader/src/lib/services/dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader/src/lib/services/dbClient.ts)
+**File**: [`apps/ancient-corpora-reader/src/lib/services/dbClient.ts`](../src/lib/services/dbClient.ts)
 
 ### 4.1 Zero-Join Paginated Concordance Query
 Replace the CTE subquery that joins `text_units` with a direct select from the covering `concordance_refs`:

@@ -275,7 +275,7 @@ export interface CorpusWork {
 ## 5. Decoupling `@polyglot/ancient-languages`
 
 ### 5.1 Removal of Redundant Work Catalogs
-* Delete `ANCIENT_CORPORA_WORKS` from [`packages/ancient-languages/src/citations/ancientCorpora.ts`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/packages/ancient-languages/src/citations/ancientCorpora.ts).
+* Delete `ANCIENT_CORPORA_WORKS` from [`packages/ancient-languages/src/citations/ancientCorpora.ts`](../../../../packages/ancient-languages/src/citations/ancientCorpora.ts).
 * Work metadata belongs exclusively in ACR configuration.
 
 ### 5.2 Refactoring `formatAncientCorpusCitation`

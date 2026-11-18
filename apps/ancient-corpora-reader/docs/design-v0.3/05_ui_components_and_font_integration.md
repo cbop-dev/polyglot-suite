@@ -259,8 +259,8 @@ $effect(() => {
 
 ### 4.1 Integration with `@polyglot/ancient-languages`
 Instead of duplicating font classes in `app.css`, ACR utilizes `@polyglot/ancient-languages/fonts.ts`:
-* [`getLanguageFontClass(language)`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/packages/ancient-languages/src/fonts.ts#L41-L58): Returns standard CSS utility classes (e.g. `'font-greek greek'`, `'font-latin latin'`, `'font-hebrew hebrew'`, `'font-syriac syriac'`).
-* [`isRtlLanguage(language)`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/packages/ancient-languages/src/fonts.ts#L63-L69): Dynamically assigns text direction (`'rtl'` vs `'ltr'`).
+* [`getLanguageFontClass(language)`](../../../../packages/ancient-languages/src/fonts.ts#L41-L58): Returns standard CSS utility classes (e.g. `'font-greek greek'`, `'font-latin latin'`, `'font-hebrew hebrew'`, `'font-syriac syriac'`).
+* [`isRtlLanguage(language)`](../../../../packages/ancient-languages/src/fonts.ts#L63-L69): Dynamically assigns text direction (`'rtl'` vs `'ltr'`).
 
 ### 4.2 Cleaned `src/app.css`
 Delete hardcoded `.greek-font` and `.latin-font` rules from `app.css`. Rely on the font family variables exported by `@polyglot/ancient-languages` and the design token system in `@polyglot/theme`.

@@ -20,7 +20,7 @@ Establish the single source of truth for all corpus metadata, editions, and cano
 ## 2. Step-by-Step Implementation Tasks
 
 ### Task 1.1: Author Master Configuration (`src/lib/config/corpora.ts`)
-* Create `apps/ancient-corpora-reader/src/lib/config/corpora.ts` conforming to [Design Document 03](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/docs/design-v0.3/03_corpus_configuration_architecture.md).
+* Create `apps/ancient-corpora-reader/src/lib/config/corpora.ts` conforming to [Design Document 03](../../../../../docs/design-v0.3/03_corpus_configuration_architecture.md).
 * Export types: `TextVersionConfig`, `MilestoneSchemeConfig`, `CorpusConfig`.
 * Define `CORPORA_CONFIG: Record<string, CorpusConfig>` with complete definitions for:
   - `af` (Apostolic Fathers, with Lake Greek, English, and Latin witness).
@@ -61,9 +61,9 @@ Establish the single source of truth for all corpus metadata, editions, and cano
 * Export lookup helpers: `getCorpusWorks(corpusId: string)`, `findWork(corpusId: string, codeOrSlug: string)`.
 
 ### Task 1.3: Decouple `@polyglot/ancient-languages` Citation Helpers
-* **File**: [`packages/ancient-languages/src/citations/ancientCorpora.ts`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/packages/ancient-languages/src/citations/ancientCorpora.ts)
+* **File**: [`packages/ancient-languages/src/citations/ancientCorpora.ts`](../../../../../packages/ancient-languages/src/citations/ancientCorpora.ts)
 * Remove the hardcoded `ANCIENT_CORPORA_WORKS` lookup dictionary.
-* Refactor [`formatAncientCorpusCitation`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/packages/ancient-languages/src/citations/ancientCorpora.ts#L144-L165) to receive work metadata directly:
+* Refactor [`formatAncientCorpusCitation`](../../../../../packages/ancient-languages/src/citations/ancientCorpora.ts#L144-L165) to receive work metadata directly:
   ```ts
   export function formatAncientCorpusCitation(params: {
       work: { abbrev: string; divisionLabel?: string };
@@ -72,10 +72,10 @@ Establish the single source of truth for all corpus metadata, editions, and cano
       milestone?: string;
   }): string;
   ```
-* Update unit tests in [`packages/ancient-languages/tests/ancientCorpora.test.ts`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/packages/ancient-languages/tests/ancientCorpora.test.ts) to pass work parameters directly.
+* Update unit tests in [`packages/ancient-languages/tests/ancientCorpora.test.ts`](../../../../../packages/ancient-languages/tests/ancientCorpora.test.ts) to pass work parameters directly.
 
 ### Task 1.4: Typography Cleanup in `app.css`
-* **File**: [`apps/ancient-corpora-reader/src/app.css`](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/src/app.css)
+* **File**: [`apps/ancient-corpora-reader/src/app.css`](../../../src/app.css)
 * Remove duplicate `.greek-font`, `.latin-font` font family rules.
 * Ensure font styling is driven by `@polyglot/ancient-languages/fonts.ts` via utility classes (`font-greek`, `font-latin`, `font-hebrew`, `font-syriac`).
 

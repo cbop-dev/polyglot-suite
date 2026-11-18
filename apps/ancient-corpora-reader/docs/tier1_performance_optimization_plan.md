@@ -25,7 +25,7 @@ This Tier-1 plan eliminates the 30–60 second query freezes and hundreds of HTT
 ## Detailed Step-by-Step Implementation
 
 ### Step 1: Optimize Apostolic Fathers Reader
-**File**: [`apps/apostolic-fathers-reader/src/lib/services/dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/apostolic-fathers-reader/src/lib/services/dbClient.ts)
+**File**: [`apps/apostolic-fathers-reader/src/lib/services/dbClient.ts`](../../apostolic-fathers-reader/src/lib/services/dbClient.ts)
 
 1. **Add `corpus_id` to index lookup**:
    Replace the unindexed query with a CTE/subquery that includes `corpus_id = 'grc'`.
@@ -53,7 +53,7 @@ JOIN text_units t ON t.id = r.work_unit_id;
 ---
 
 ### Step 2: Optimize Philo Reader
-**File**: [`apps/philo-reader/src/lib/services/dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/philo-reader/src/lib/services/dbClient.ts)
+**File**: [`apps/philo-reader/src/lib/services/dbClient.ts`](../../philo-reader/src/lib/services/dbClient.ts)
 
 1. **Subquery Pushdown**:
    Push down `LIMIT 200` to `concordance_refs` before joining `text_units`.
@@ -79,7 +79,7 @@ JOIN text_units t ON t.id = r.work_unit_id;
 ---
 
 ### Step 3: Optimize Josephus Reader
-**File**: [`apps/josephus-reader/src/lib/services/dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/josephus-reader/src/lib/services/dbClient.ts)
+**File**: [`apps/josephus-reader/src/lib/services/dbClient.ts`](../../josephus-reader/src/lib/services/dbClient.ts)
 
 1. **Subquery Pushdown**:
    Push down `LIMIT 200` before joining `text_units`.
@@ -106,7 +106,7 @@ JOIN text_units t ON t.id = r.work_unit_id;
 
 ### Step 4: Optimize Polyglot Bible Reader (PBR) Without Truncation
 **Files**:
-- [`apps/polyglot-bible-reader/src/lib/services/dbClient.ts`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/polyglot-bible-reader/src/lib/services/dbClient.ts)
+- [`apps/polyglot-bible-reader/src/lib/services/dbClient.ts`](../../polyglot-bible-reader/src/lib/services/dbClient.ts)
 
 1. **Preserve 100% Full Reference Searches**:
    Do **NOT** impose an arbitrary `LIMIT 250` on `getConcordance`. Unlike Philo/AF/JR, PBR's `concordance_refs` does *not* join `text_units` or load `tokens_json`—it only fetches `(ref_label, work_unit_id)`. For words with hundreds or a couple thousand occurrences (e.g. "θεός", "λόγος", "κύριος"), loading the full reference set is essential so that users can filter by inflection and search across all biblical books (Prophets, Gospels, Epistles) without losing later books.

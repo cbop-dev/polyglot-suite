@@ -13,12 +13,8 @@ const TAG_STYLE = 'dot';
 const TARGETS = {
   suite: { name: 'polyglot-suite', file: 'package.json', tagPrefix: 'suite' },
   bible: { name: 'polyglot-bible-reader', file: 'apps/polyglot-bible-reader/package.json', tagPrefix: 'bible' },
-  philo: { name: 'philo-reader', file: 'apps/philo-reader/package.json', tagPrefix: 'philo' },
   lex: { name: 'biblical-lexeme-explorer', file: 'apps/biblical-lexeme-explorer/package.json', tagPrefix: 'lex' },
   lexeme: { name: 'biblical-lexeme-explorer', file: 'apps/biblical-lexeme-explorer/package.json', tagPrefix: 'lex' },
-  fathers: { name: 'apostolic-fathers-reader', file: 'apps/apostolic-fathers-reader/package.json', tagPrefix: 'af' },
-  af: { name: 'apostolic-fathers-reader', file: 'apps/apostolic-fathers-reader/package.json', tagPrefix: 'af' },
-  josephus: { name: 'josephus-reader', file: 'apps/josephus-reader/package.json', tagPrefix: 'josephus' },
   corpora: { 
     name: 'ancient-corpora-reader', 
     file: 'apps/ancient-corpora-reader/package.json', 
@@ -29,6 +25,7 @@ const TARGETS = {
     file: 'apps/ancient-corpora-reader/package.json', 
     tagPrefix: 'corpora' 
   },
+  portal: { name: 'portal', file: 'apps/portal/package.json', tagPrefix: 'portal' },
   ui: { name: '@polyglot/ui', file: 'packages/ui/package.json', tagPrefix: 'ui' },
   theme: { name: '@polyglot/theme', file: 'packages/theme/package.json', tagPrefix: 'theme' },
   'db-vfs': { name: '@polyglot/db-vfs', file: 'packages/db-vfs/package.json', tagPrefix: 'db-vfs' },
@@ -39,7 +36,6 @@ const TARGETS = {
   pipeline: { name: '@polyglot/pipeline-core', file: 'packages/pipeline-core/package.json', tagPrefix: 'pipeline' },
   'data-pipeline': { name: '@polyglot/data-pipeline', file: 'packages/data-pipeline/package.json', tagPrefix: 'data-pipeline' },
   'biblical-data': { name: '@biblical-data/corpora', file: 'packages/biblical-data/package.json', tagPrefix: 'biblical-data' },
-
 };
 
 function formatTag(prefix, version) {
@@ -237,11 +233,9 @@ export function commitAndTag(message, { dryRun = false, push = false, stageAll =
     const lockCandidates = [
       'package-lock.json',
       'apps/polyglot-bible-reader/package-lock.json',
-      'apps/josephus-reader/package-lock.json',
-      'apps/josephus-reader/app/package-lock.json',
-      'apps/philo-reader/package-lock.json',
-      'apps/apostolic-fathers-reader/package-lock.json',
-      'apps/biblical-lexeme-explorer/package-lock.json'
+      'apps/ancient-corpora-reader/package-lock.json',
+      'apps/biblical-lexeme-explorer/package-lock.json',
+      'apps/portal/package-lock.json'
     ];
     for (const lf of lockCandidates) {
       if (fs.existsSync(path.join(REPO_ROOT, lf))) {

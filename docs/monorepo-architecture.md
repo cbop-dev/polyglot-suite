@@ -1,31 +1,34 @@
 # Polyglot Suite: Monorepo Architecture & Technical Design
 
-An architectural blueprint and developer guide for the **Polyglot Suite** monorepo—an ecosystem of static, client-side digital readers, lexical engines, and comparative textual tooling for Biblical, Classical, and Hellenistic literature.
+An architectural blueprint and technical guide for the **Polyglot Suite** monorepo—an ecosystem of static, client-side digital readers, lexical search engines, and comparative textual tooling for Biblical, Classical, and Hellenistic literature.
 
-> [!NOTE]
-> **AI Generation Notice**: Documented with the assistance of **Antigravity 2.26.0** (Engine: **Gemini 3.8 Flash**). Code and architecture developed under human direction.
+> [!IMPORTANT]
+> **AI-Generated Documentation Notice**  
+> **Human Review Status:** `Reviewed Part 1. Others: to be reviewed`  
+> This documentation was generated with AI assistance and may contain inaccuracies. Please verify against the active codebase and primary sources.
 
 ---
 
-## 1. Architectural Philosophy & Principles
+## 1. Architectural Principles
 
 The Polyglot Suite operates under four governing technical principles:
 
 1. **100% Static & Client-Side Execution**:
-   - The entire platform builds into standard static HTML, CSS, JavaScript, and WebAssembly assets (`dist/`).
-   - There are **no server-side daemons**, no Node.js backend processes, and no dynamic SQL database servers (PostgreSQL/MySQL).
-   - Any static web server, object storage bucket, or CDN (such as **GitHub Pages**) can host the platform with zero runtime operational overhead.
+   
+   - The platform builds into static HTML, CSS, JavaScript, and WebAssembly assets (`dist/`).
+   - There are **no server-side daemons**, Node.js runtime processes, or dynamic SQL database servers (PostgreSQL/MySQL) required for reader operation. Instead, the client uses an `sql.js-httpvfs`  worker (SQLite compiled to WebAssembly with an HTTP Virtual File System), issuing standard **HTTP Range Requests** to fetch only the specific ([B-Tree](https://www.geeksforgeeks.org/dsa/introduction-of-b-tree-2/)) pages required for active chapters, verses, or concordance queries.
+   - Any static hosting environment, CDN, or object store (such as GitHub Pages or Nginx) can host the entire suite with minimal infrastructure cost.
 
-2. **Zero-Backend Database Virtualization (`sql.js-httpvfs`)**:
-   - Scholarly corpora and unabridged lexicons (LSJ, BDB) require hundreds of megabytes of relational data. Downloading these monolithic databases on page load would create unacceptable network latency and mobile memory crashes.
-   - Using **`sql.js-httpvfs`** (SQLite compiled to WebAssembly with an HTTP Virtual File System), the client issues standard **HTTP Range Requests** to read only the specific 4KB B-Tree pages required for the active chapter, verse, or concordance query.
-
-3. **Modular Packages over Code Duplication**:
-   - Common linguistic logic (orthography, morphology, citation formatting), UI components (modal pickers, reader headers), lemma sidepanels, and theme systems are extracted into shared workspace packages under `packages/*`.
-
-4. **Progressive Consolidation with Historical Continuity**:
-   - Closely related corpora (e.g., the Hellenistic Greek readers: Apostolic Fathers, Philo of Alexandria, and Flavius Josephus) are unified into a consolidated reader application (`ancient-corpora-reader`).
-   - Standalone app workspaces are preserved in the monorepo to maintain upstream Git subtree commit histories and dedicated testing sandboxes without deploying them as redundant standalone sites.
+2. **Modular Packages over Code Duplication**:
+   
+   - Common linguistic parsing (orthography, morphology, citation formatting), UI components (modal pickers, reader headers), lemma panels, and theme systems are extracted into shared workspace packages under `packages/*`
+     
+     > [!IMPORTANT]
+     > Much code-refactoring still needs to be done. The apps were originally developed indepentendly and the integration into one monorepo is still on-going.
+3. **Consolidated Unified Readers**:
+   - Non-biblical literature is unified into one multi-corpus reader, [`apps/ancient-corpora-reader`](../apps/ancient-corpora-reader). Currently, this reader has three corpora: Apostolic Fathers, Philo of Alexandria, and Flavius Josephus. But it build to be extensible to other ancient texts/corpora.
+4- **Submodule and External App Integration**:
+   - Other tools can be integrated, either as modular external apps or submodules. Currently, the Greek NT Synoptic Viewer is set up as a submodule in [`apps/synoptic-viewer`](../apps/synoptic-viewer), but deployed in the portal as a link to an external app.
 
 ---
 
@@ -33,166 +36,181 @@ The Polyglot Suite operates under four governing technical principles:
 
 ```mermaid
 flowchart TD
-    subgraph Data Layer ["1. Offline Data Pipelines (Python)"]
-        Raw["Raw Critical Texts<br/>(TEI XML, JSON, CSV)"] --> Build["SQLite Compilers<br/>(Normalizers, Snippet Indexes)"]
-        Build --> Chunk["vfs_chunker<br/>(5MB .db.XX Chunks)"]
-        Chunk --> GHRelease["GitHub Releases Storage<br/>(e.g., bible-data-v*, corpora-*-db-v*)"]
+    subgraph DataLayer ["1. Offline Data Pipelines (Python)"]
+        Raw["Raw Critical Texts & Lexicons<br/>(TEI XML, Text-Fabric, USFM, CSV)"]
+        BiblePipeline["packages/data-pipeline<br/>(TVTMS Aligner, SQLite Builder)"]
+        ACRPipeline["apps/ancient-corpora-reader/pipeline<br/>(Covering Concordance, Token Slicer)"]
+        Chunker["DatabaseChunker (pipeline-core)<br/>(5MB Bible / 1MB ACR Chunks)"]
+        GHReleases["GitHub Releases Storage<br/>(bible-data-v*, corpora-*-db-v*)"]
+
+        Raw --> BiblePipeline
+        Raw --> ACRPipeline
+        BiblePipeline --> Chunker
+        ACRPipeline --> Chunker
+        Chunker --> GHReleases
     end
 
-    subgraph Package Layer ["2. Shared Monorepo Packages (packages/*)"]
-        AncientLang["@polyglot/ancient-languages<br/>(Morphology, Citations, Filters)"]
-        UI["@polyglot/ui<br/>(Headers, Modals, Pickers, Layouts)"]
-        LemmaUI["@polyglot/lemma-ui<br/>(LexemeSidePanel, LSJ/BDB, Paginated Concordance)"]
+    subgraph PackageLayer ["2. Shared Monorepo Packages (packages/*)"]
+        DataPipeline["@polyglot/data-pipeline<br/>(Bible ETL & SQLite Compilation)"]
+        AncientLang["@polyglot/ancient-languages<br/>(Morphology, Diacritics, Citations)"]
+        BibData["@biblical-data/corpora<br/>(Canon Schemas & Readers)"]
+        GreekMorph["greek-morphology<br/>(Stanza NLP & Lemmatizer)"]
+        DBVFS["@polyglot/db-vfs<br/>(WASM HTTP-VFS Worker Bridge)"]
+        LemmaUI["@polyglot/lemma-ui<br/>(LexemeSidePanel, LSJ/BDB, Concordance)"]
         Theme["@polyglot/theme<br/>(Contrast-Invariant Color Engine)"]
-        DBVFS["@polyglot/db-vfs<br/>(WebWorker Manager & HTTP-VFS Bridge)"]
+        UI["@polyglot/ui<br/>(Headers, Modals, Pickers, Buttons)"]
+        PipeCore["pipeline-core<br/>(VFS Chunker, LSJ Adapters)"]
     end
 
-    subgraph App Layer ["3. Web Applications (apps/*)"]
-        PBR["Polyglot Bible Reader<br/>(Multi-tradition aligned reader)"]
-        BLE["Biblical Lexeme Explorer<br/>(Vocabulary analytics & word clouds)"]
-        ACR["Ancient Corpora Reader<br/>(Consolidated AF, Philo, Josephus)"]
-        Legacy["Standalone Legacy Workspaces<br/>(Preserved for Git Subtree/History)"]
+    subgraph AppLayer ["3. Applications Layer (apps/*)"]
+        Portal["apps/portal<br/>(Suite directory & routing hub)"]
+        PBR["apps/polyglot-bible-reader<br/>(12 versions, TVTMS alignment)"]
+        BLE["apps/biblical-lexeme-explorer<br/>(Vocabulary analytics & manifests)"]
+        ACR["apps/ancient-corpora-reader<br/>(Consolidated AF, Philo, Josephus)"]
+        Synoptic["apps/synoptic-viewer<br/>(Gospel Synopsis Submodule / External App)"]
     end
 
-    subgraph Deploy Layer ["4. Build & Distribution Layer (scripts/*)"]
-        BuildScript["npm run build:gh / build:vps"]
-        Dist["dist/ Static Workspace Output"]
-        Portal["dist/index.html Portal"]
-        Redirects["dist/{philo,fathers,josephus}<br/>Static HTML Forwarders"]
-        GH["GitHub Pages / Production Web Host"]
+    subgraph DeployLayer ["4. Build & Distribution Layer (scripts/*)"]
+        BuildScript["npm run build:www<br/>(build:gh / build:vps)"]
+        Dist["dist/ Static Workspace Output<br/>(dist/{bible,lexemes,corpora})"]
+        PortalDist["dist/index.html Portal Entry<br/>(Built from apps/portal)"]
+        Redirects["dist/{philo,fathers,josephus}/index.html<br/>(Static Redirects to /corpora/...)"]
+        DeployPortal["scripts/deploy_portal.sh<br/>(Promote / Staging / Rollback)"]
     end
 
-    DataLayer -->|"gh release download via npm run pull:db"| AppLayer
+    GHReleases -->|"pull chunks via scripts/sync_db.js"| AppLayer
     PackageLayer --> AppLayer
     AppLayer --> BuildScript
     BuildScript --> Dist
-    Dist --> Portal
+    Dist --> PortalDist
     Dist --> Redirects
-    Dist --> GH
+    Dist --> DeployPortal
 ```
 
 ---
 
 ## 3. Monorepo Topology & Boundaries
 
-The repository is structured as an **npm workspace** with clear boundaries between user-facing apps and reusable packages:
+The repository is configured as an **npm workspace** with explicit separation between user applications and shared packages:
 
 ```
 polyglot-suite/
-├── apps/                               # Web applications & corpus-specific pipelines
-│   ├── polyglot-bible-reader/          # [Active] SvelteKit 5 Biblical reader
-│   ├── biblical-lexeme-explorer/       # [Active] SvelteKit 5 analytical vocabulary tool
-│   ├── ancient-corpora-reader/         # [Active] SvelteKit 2 + Svelte 5 consolidated reader
-│   ├── apostolic-fathers-reader/       # [Preserved] Standalone AF reader
-│   ├── philo-reader/                   # [Preserved] Standalone Philo reader
-│   └── josephus-reader/                # [Preserved] Standalone Josephus reader
+├── apps/                               # User-facing applications
+│   ├── ancient-corpora-reader/         # [Active] Consolidated AF, Philo, and Josephus reader
+│   ├── biblical-lexeme-explorer/       # [Active] Analytical vocabulary tool & lexical charts
+│   ├── polyglot-bible-reader/          # [Active] Multi-version parallel biblical reader
+│   ├── portal/                         # [Active] SvelteKit suite entry portal & landing directory
+│   └── synoptic-viewer/                # [Active] Gospel synopsis viewer (submodule / external app)
 ├── packages/                           # Shared cross-app libraries
-│   ├── ancient-languages/              # Linguistic parsing, diacritics, citation models
-│   ├── biblical-data/                  # Biblical canon definitions & book registries
-│   ├── db-vfs/                         # WASM SQLite HTTP-VFS client worker bridge
-│   ├── greek-morphology/               # Lemmatization & morphological solvers
-│   ├── lemma-ui/                       # Lexeme sidepanel, lexicon cards, concordance list
-│   ├── pipeline-core/                  # Python utilities for database chunking
-│   ├── theme/                          # Continuous contrast-invariant theme engine
+│   ├── ancient-languages/              # Linguistic parsing, diacritics, citation models, highlight store
+│   ├── biblical-data/                  # Biblical canon schemas & client reader interfaces
+│   ├── data-pipeline/                  # Offline Bible data ingestion, TVTMS alignment & SQLite builder
+│   ├── db-vfs/                         # WASM SQLite HTTP-VFS client worker bridge & row parsers
+│   ├── greek-morphology/               # Lemmatization, morphological solvers & Stanza NLP bridge
+│   ├── lemma-ui/                       # Lexeme sidepanel, lexicon cards, paginated concordance
+│   ├── pipeline-core/                  # Shared Python utilities for database chunking & LSJ adapters
+│   ├── theme/                          # Continuous contrast-invariant theme engine & UI controls
 │   └── ui/                             # Buttons, modals, toolbars, reader headers
-├── scripts/                            # Monorepo orchestration & CI/CD scripts
+├── scripts/                            # Monorepo orchestration & release tooling
 │   ├── build_gh.js                     # GitHub Pages suite builder
 │   ├── build_vps.js                    # Production VPS suite builder
-│   ├── generate_portal.js              # Portal generator & legacy redirect builder
+│   ├── deploy_portal.sh                # Portal staging, promotion, and rollback automation
+│   ├── dev.js                          # Multi-app local development server runner
+│   ├── export_ble_manifests.py         # Build-time JSON manifest exporter for BLE
 │   ├── preview.js                      # Local HTTP-VFS byte-range preview server
+│   ├── release.js                      # Monorepo package/app semver bumper and tagger
 │   ├── release_db.js                   # Database semver bumper & GitHub Release publisher
 │   ├── status_db.js                    # Local vs remote database release inspector
-│   └── sync_db.js                      # GitHub Release asset downloader/uploader
-├── templates/                          # Static portal templates
-│   └── portal.html                     # Main entry portal template
+│   └── sync_db.js                      # GitHub Release database chunk asset synchronizer
 ├── .github/workflows/                  # GitHub Actions CI/CD workflows
-│   └── deploy.yml                      # Automated test, cache, build & deploy pipeline
+│   └── deploy.yml                      # Automated build, cache, and deployment pipeline
 └── package.json                        # Monorepo workspace configuration & root scripts
 ```
 
-### 3.1 Active Applications vs. Preserved Workspaces
+### 3.1 Application Portfolio
 
-| Application | Path | Status | Target Scope |
-| :--- | :--- | :--- | :--- |
-| **Polyglot Bible Reader** | [`apps/polyglot-bible-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/polyglot-bible-reader) | **Active** (Deployed) | Hebrew MT, Greek LXX, SBLGNT, Latin Vulgate, English translations with Tyndale House TVTMS verse alignment. |
-| **Biblical Lexeme Explorer** | [`apps/biblical-lexeme-explorer`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/biblical-lexeme-explorer) | **Active** (Deployed) | Vocabulary acquisition, morphological filtering, D3 word clouds, and frequency distributions. |
-| **Ancient Corpora Reader** | [`apps/ancient-corpora-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader) | **Active** (Deployed) | Consolidated parallel Greek/English/Latin reader for **Apostolic Fathers**, **Philo of Alexandria**, and **Flavius Josephus**. |
-| **Apostolic Fathers Reader** | [`apps/apostolic-fathers-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/apostolic-fathers-reader) | **Preserved** | Retained for upstream subtree history; consolidated into `ancient-corpora-reader`. |
-| **Philo Reader** | [`apps/philo-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/philo-reader) | **Preserved** | Retained for upstream subtree history; consolidated into `ancient-corpora-reader`. |
-| **Josephus Reader** | [`apps/josephus-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/josephus-reader) | **Preserved** | Retained for upstream subtree history; consolidated into `ancient-corpora-reader`. |
+| Application                  | Path                                                                | Framework              | Deployment Target    | Description                                                                                                                                                                                                                |
+|:---------------------------- |:------------------------------------------------------------------- |:---------------------- |:-------------------- |:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Polyglot Bible Reader**    | [`apps/polyglot-bible-reader`](../apps/polyglot-bible-reader)       | SvelteKit 2 + Svelte 5 | `dist/bible/`        | Multi-corpus biblical reader (WLC Hebrew, Swete LXX, SBLGNT, Open Greek NT, Syriac Peshitta, Clementine Vulgate, KJV, WEB, Brenton LXX, Douay-Rheims, Luther 1912, Vamvas 1850) with TVTMS alignment and LSJ/BDB lexicons. |
+| **Biblical Lexeme Explorer** | [`apps/biblical-lexeme-explorer`](../apps/biblical-lexeme-explorer) | SvelteKit 2 + Svelte 5 | `dist/lexemes/`      | Vocabulary exploration, frequency distributions, concordance searches, and word clouds powered by build-time manifests generated from the master DB.                                                                       |
+| **Ancient Corpora Reader**   | [`apps/ancient-corpora-reader`](../apps/ancient-corpora-reader)     | SvelteKit 2 + Svelte 5 | `dist/corpora/`      | Consolidated parallel reader for Apostolic Fathers, Philo of Alexandria, and Flavius Josephus with 1MB chunked HTTP-VFS databases, covering concordances, and milestone citations.                                         |
+| **Suite Portal**             | [`apps/portal`](../apps/portal)                                     | SvelteKit 2 + Svelte 5 | `dist/index.html`    | Central suite navigation hub. Serves backward-compatible redirect pages (`dist/{philo,fathers,josephus}/`) and handles environment-based URL overrides.                                                                    |
+| **Synoptic Viewer**          | [`apps/synoptic-viewer`](../apps/synoptic-viewer)                   | SvelteKit 2 + Svelte 5 | Submodule / External | Comparative synopsis of NT Gospel parallels according to Kurt Aland's outline. Deployed independently at `https://synopsis.texts.faith`.                                                                                   |
 
 ---
 
 ## 4. Client-Side Database & HTTP-VFS Architecture
 
-### 4.1 How WebAssembly HTTP-VFS Operates
+### 4.1 WebAssembly HTTP-VFS Mechanics
 
-Traditional web applications query a server-side database over REST or GraphQL. Polyglot Suite eliminates the backend server by placing a SQLite engine directly inside a browser Web Worker:
+Applications eliminate dynamic backend database servers by hosting an SQLite query engine inside a Web Worker:
 
 ```
 [Browser UI Thread]
        │
        │  postMessage({ action: "query", sql: "SELECT ... LIMIT 50" })
        ▼
-[Web Worker: sql.js-httpvfs]
+[Web Worker: @polyglot/db-vfs (sql.js-httpvfs)]
        │
-       │  Translates B-Tree page requests to HTTP byte offsets
+       │  Translates SQLite B-Tree page requests into byte offsets
        ▼
 [HTTP Range Requests (GET bytes 20480-24576)]
        │
        ▼
-[Static Web Host (e.g. GitHub Pages / S3 / Nginx)]
+[Static Web Server / CDN (GitHub Pages / Nginx)]
 ```
 
 ### 4.2 Single-VFS vs. Multi-VFS Architectural Patterns
 
-The monorepo uses two distinct VFS deployment patterns:
-
 1. **Single-VFS Pattern (`polyglot-bible-reader`, `biblical-lexeme-explorer`)**:
-   - Both applications read from a single consolidated database (`polyglot.db.*`), allowing cross-corpus queries between the Hebrew Old Testament, Greek Septuagint, Greek New Testament, and unabridged lexicons.
+   
+   - Both applications read from a single consolidated database (`polyglot.db.*`, ~857 MB).
+   - **Chunk Configuration**: 5MB server chunks (`serverChunkSize: 5242880`), 4KB request chunks (`requestChunkSize: 4096`).
+   - Cross-corpus queries (e.g., comparing Hebrew WLC against Greek LXX and SBLGNT) execute over unified `text_units`, `lexemes`, and `concordance_refs` tables.
+
 2. **Multi-VFS Modular Pattern (`ancient-corpora-reader`)**:
-   - Manages an isolated worker pool with three independent databases:
-     - `static/db/af/` (~42MB)
-     - `static/db/philo/` (~284MB)
-     - `static/db/josephus/` (~185MB)
-   - **Advantage**: Zero bytes are downloaded for a corpus until a user explicitly navigates to it. Furthermore, any corpus database can be rebuilt, optimized, or patched independently without invalidating cache assets for the others.
+   
+   - Manages an isolated worker pool across three independent corpus databases:
+     - `static/db/af/` (~43MB, 44 chunks)
+     - `static/db/philo/` (~223MB, 224 chunks)
+     - `static/db/josephus/` (~193MB, 194 chunks)
+   - **Chunk Configuration**: 1MB server chunks (`serverChunkSize: 1048576`), 16KB request chunks (`requestChunkSize: 16384`).
+   - **Advantage**: Zero bytes are downloaded for a corpus until a user explicitly navigates to it. Smaller 1MB chunks reduce transfer latency on sporadic searches and mobile devices.
 
-### 4.3 Query Performance Rules for HTTP-VFS
+### 4.3 Query Performance & Indexing Strategies
 
-Because HTTP-VFS incurs network latency on page misses, queries must adhere to strict performance rules:
-- **CTE Pushdown Pagination**: Never execute `JOIN text_units` across thousands of matches prior to applying `LIMIT`. Instead, use Common Table Expressions (CTEs) to find matching primary keys first, sort, limit to the current page (e.g., 50 items), and join only the paginated slice.
-- **Precomputed Snippets**: Concordance snippet tables (`tokens_snippet`) store short contextual window strings, avoiding the need to deserialize multi-megabyte `tokens_json` structures during search.
-- **Monotonic Transaction IDs**: Fast typing or rapid pagination requests in the UI must tag queries with monotonic incrementing IDs so slow asynchronous page resolutions do not interleave with newer user queries.
+HTTP-VFS queries incur latency on page misses. The database schemas are engineered to minimize round-trips:
+
+- **CTE Pushdown Pagination**: Queries never perform heavy table joins before applying pagination limits. Common Table Expressions (CTEs) isolate matching primary keys first, paginate to 50 rows, and join full text and metadata on the paginated slice only.
+- **Covering Concordance Indexes**: In ACR, `concordance_refs` includes `matched_form`, `kwic_snippet`, `milestone_ref`, and `niese_section`, backed by index `idx_concordance_refs_form (corpus_id, lemma, matched_form, work_unit_id)`. Searches resolve directly from index pages without touching base text records.
+- **Decoupled Token Blobs**: Word token structures in ACR are segregated into `text_unit_tokens(work_unit_id, tokens_json BLOB)` with zlib compression, keeping the core `text_units` table lean for rapid scanning.
+- **Monotonic Query IDs**: Rapid typing in lemma and concordance panels assigns incrementing integer transaction IDs to each query. Stale asynchronous responses are discarded to prevent race conditions.
 
 ---
 
 ## 5. Database Release Lifecycle & Asset Management
 
-### 5.1 Why Databases are Not in Git
+### 5.1 Storage Decoupling
 
-Compiled SQLite databases and chunk files (`*.db.*`) are strictly `.gitignore`d. Checking 500MB+ of binary databases into Git creates repository bloat, inflates clone times, and degrades Git operations.
-
-### 5.2 Release Flow via GitHub Releases
-
-Databases are managed through automated semver release tags on GitHub Releases:
+Compiled SQLite databases and chunks (`*.db.*`) are strictly `.gitignore`d to prevent Git repository bloat. Chunk assets are hosted on **GitHub Releases** and version-locked via `static/db/config.json`:
 
 ```bash
 # Check status of local chunks against remote GitHub Releases
 npm run status:db:gh
 
-# Publish a new database version (creates tag, uploads 5MB chunks via gh CLI):
+# Publish a new database version (creates tag, uploads chunks via gh CLI):
 npm run release:db:bible 1.0.0
-npm run release:db corpora-af 1.0.0
-npm run release:db corpora-philo 1.0.0
-npm run release:db corpora-josephus 1.0.0
+npm run release:db:corpora:af 1.2.4
+npm run release:db:corpora:philo 1.2.3
+npm run release:db:corpora:josephus 1.2.3
 ```
 
-### 5.3 Automated CI/CD Caching & Pulling
+### 5.2 Automated CI/CD Caching
 
-During automated GitHub Actions deployment ([`.github/workflows/deploy.yml`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/.github/workflows/deploy.yml)):
-1. **Cache Verification**: GitHub Actions checks `actions/cache@v5` using a hash of all `config.json` files as the cache key.
-2. **On-Demand Fetch**: On cache misses, `npm run pull:db` runs `scripts/sync_db.js`, which reads the `"databaseVersion"` tag from each `config.json` and pulls chunk assets via `gh release download`.
-3. **Zero Waste**: Only active applications are included in the default `all` target; archived standalone chunks are not downloaded during CI.
+During GitHub Actions deployment ([`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml)):
+
+1. **Cache Verification**: `actions/cache@v5` checks for cached chunk directories using a hash of all `config.json` files as the cache key.
+2. **Automated Pull**: On a cache miss, `npm run pull:db` runs `scripts/sync_db.js`, which reads the `databaseVersion` tag from each `config.json` and fetches chunk assets via `gh release download`.
 
 ---
 
@@ -200,61 +218,54 @@ During automated GitHub Actions deployment ([`.github/workflows/deploy.yml`](fil
 
 ### 6.1 Multi-Target Static Builds
 
-The root build pipeline builds all active applications into subdirectories of `dist/`:
+The production build script generates the complete static workspace in `dist/`:
 
 ```bash
-# Complete production build
 npm run build:www
 ```
 
-- `dist/bible/` &larr; Built from `apps/polyglot-bible-reader`
-- `dist/lexemes/` &larr; Built from `apps/biblical-lexeme-explorer`
-- `dist/corpora/` &larr; Built from `apps/ancient-corpora-reader`
-- `dist/index.html` &larr; Generated from `templates/portal.html`
+Outputs:
 
-### 6.2 Legacy URL Forwarders
+- `dist/bible/` &larr; Built from `apps/polyglot-bible-reader` (Base path: `/bible`)
+- `dist/lexemes/` &larr; Built from `apps/biblical-lexeme-explorer` (Base path: `/lexemes`)
+- `dist/corpora/` &larr; Built from `apps/ancient-corpora-reader` (Base path: `/corpora`)
+- `dist/index.html` &larr; Built from `apps/portal`
+- `dist/{philo,fathers,josephus}/index.html` &larr; Copied from `apps/portal/static/` to redirect legacy URLs
 
-To maintain seamless backward compatibility with existing bookmarks and external citations, `scripts/generate_portal.js` automatically creates zero-byte static redirect pages:
+### 6.2 Portal Deployment Automation (`scripts/deploy_portal.sh`)
 
-- `dist/josephus/index.html` &rarr; `<meta http-equiv="refresh" content="0; url=../corpora/josephus/war/1">`
-- `dist/fathers/index.html` &rarr; `<meta http-equiv="refresh" content="0; url=../corpora/af/1-clem/1">`
-- `dist/philo/index.html` &rarr; `<meta http-equiv="refresh" content="0; url=../corpora/philo/opif/1">`
+For VPS and production deployments, `scripts/deploy_portal.sh` provides staged rollouts:
 
-Users visiting legacy URLs are forwarded instantly to the unified reader with zero 404 errors.
-
-### 6.3 Local Byte-Range Preview Server
-
-Standard HTTP development servers (such as `vite preview` or `python -m http.server`) often lack proper support for HTTP `Range: bytes=X-Y` headers and `206 Partial Content` responses required by `sql.js-httpvfs`.
-
-The monorepo provides a dedicated preview server:
-
-```bash
-# Launch preview server with full HTTP Range request and CORS support
-npm run preview:gh
-```
-Available at `http://localhost:5000/polyglot-suite/`.
+- **Deploy Staging**: `./scripts/deploy_portal.sh` builds and deploys to a timestamped staging release.
+- **Promote to Production**: `./scripts/deploy_portal.sh --promote` (`npm run dpp`) atomically switches the active web symlink.
+- **Rollback**: `./scripts/deploy_portal.sh --rollback` rolls back to the previous release.
+- **Release History**: `./scripts/deploy_portal.sh --history` lists historical deployment snapshots.
 
 ---
 
-## 7. Developer Onboarding & Contribution Guide
+## 7. Developer Onboarding & Code Placement Rules
 
-### 7.1 Workspace Commands
+### 7.1 Key Commands
 
-| Task | Command | Scope |
-| :--- | :--- | :--- |
-| **Install Monorepo** | `npm install` | Root & all workspaces |
-| **Dev: Bible** | `npm run dev:bible` | `apps/polyglot-bible-reader` |
-| **Dev: Lexemes** | `npm run dev:lexeme` | `apps/biblical-lexeme-explorer` |
-| **Dev: Corpora** | `npm run dev:corpora` | `apps/ancient-corpora-reader` |
-| **Type Checking** | `npm run check:corpora` (or `check:bible`) | SvelteKit & TypeScript diagnostics |
-| **Unit Testing** | `npm run test:corpora` (or `test:bible`) | Vitest test suites |
-| **Check Databases** | `npm run status:db:gh` | Remote vs local chunk comparison |
-| **Download Databases**| `npm run pull:db` | Pulls required chunks from GitHub |
+| Task                         | Command                                      | Target / Scope                                     |
+|:---------------------------- |:-------------------------------------------- |:-------------------------------------------------- |
+| **Install Monorepo**         | `npm install`                                | Workspace root and all packages                    |
+| **Run All Dev Servers**      | `npm run dev`                                | Starts portal and all local reader apps            |
+| **Dev: Portal**              | `npm run dev:portal`                         | `apps/portal` (Port 5170)                          |
+| **Dev: Bible**               | `npm run dev:bible`                          | `apps/polyglot-bible-reader` (Port 5171)           |
+| **Dev: Lexemes**             | `npm run dev:lexeme`                         | `apps/biblical-lexeme-explorer` (Port 5172)        |
+| **Dev: Corpora**             | `npm run dev:corpora`                        | `apps/ancient-corpora-reader` (Port 5173)          |
+| **Package Unit Tests**       | `npm run test:packages`                      | Vitest suites for `ancient-languages` and `db-vfs` |
+| **Application Typecheck**    | `npm run check:bible`, `check:corpora`, etc. | SvelteKit and TypeScript verification              |
+| **Check Database Status**    | `npm run status:db:gh`                       | Compares local chunks to GitHub Releases           |
+| **Download Database Chunks** | `npm run pull:db`                            | Pulls chunk assets for all databases               |
 
-### 7.2 Rules for Code Placement
+### 7.2 Code Placement Conventions
 
-- **Place in `packages/ancient-languages`**: If logic deals with Greek/Hebrew text manipulation, accents, diacritics, grammatical parsing, or academic citation formats.
-- **Place in `packages/lemma-ui`**: If a component renders vocabulary statistics, word definitions, or concordance search results.
-- **Place in `packages/ui`**: If a component is a generic UI element (modals, buttons, headers, layouts) with no language-specific business logic.
-- **Place in `packages/theme`**: If code relates to palettes, color interpolation, contrast calculations, or theme persistence.
-- **Place in `apps/<app-name>`**: If logic relates strictly to route orchestration, page state, or corpus-specific navigation.
+- **`packages/ancient-languages`**: Linguistic utilities, Greek/Hebrew text cleaners, diacritic stripping, academic citation formatters, and highlight store logic.
+- **`packages/data-pipeline`**: Offline Python ETL pipelines, versification mapping (TVTMS), and SQLite master database compilation for biblical corpora.
+- **`packages/db-vfs`**: Web Worker bridge, `sql.js-httpvfs` wrappers, range-request error recovery, and SQLite row serialization.
+- **`packages/lemma-ui`**: Reusable lexical UI components (dockable sidepanels, LSJ/BDB dictionary cards, paginated concordance displays).
+- **`packages/theme`**: Contrast-invariant continuous theme slider, color palette interpolation, and theme persistence.
+- **`packages/ui`**: Application-agnostic UI controls (buttons, headers, modals, search dropdowns).
+- **`apps/<app-name>`**: Application routing, page state runes, route layouts, and corpus navigation bars.

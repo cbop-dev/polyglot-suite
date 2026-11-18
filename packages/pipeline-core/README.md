@@ -1,13 +1,18 @@
+> [!IMPORTANT]
+> **AI-Generated Documentation Notice**  
+> **Human Review Status:** `To be reviewed`  
+> This documentation was generated with AI assistance and may contain inaccuracies. Please verify with the codebase and primary sources.
+
 # Polyglot Suite — Pipeline Core (`pipeline_core`)
 
-Shared Python data pipeline utilities for ancient text readers in the `polyglot-suite` monorepo. Powers data ingestion, SQLite compilation, dictionary resolution, and static HTTP-VFS database slicing across **Philo Reader**, **Apostolic Fathers Reader**, and **Polyglot Bible Reader**.
+Shared Python data pipeline utilities for ancient text readers in the `polyglot-suite` monorepo. Powers data ingestion, SQLite compilation, dictionary resolution, and static HTTP-VFS database slicing across **Ancient Corpora Reader** (`apps/ancient-corpora-reader/pipeline`) and **Polyglot Bible Reader** (`packages/data-pipeline`).
 
 ---
 
 ## Modules
 
 ### 1. `pipeline_core.vfs_chunker.DatabaseChunker`
-Slices a compiled SQLite database into byte-range chunks (default 5MB) for static web hosting via `sql.js-httpvfs` / `@polyglot/db-vfs`, and automatically writes the client `config.json` manifest.
+Slices a compiled SQLite database into byte-range chunks for static web hosting via `sql.js-httpvfs` / `@polyglot/db-vfs`, and automatically writes the client `config.json` manifest. Standard chunk sizes are **1MB** (`1048576` bytes) for Ancient Corpora Reader (reducing initial mobile latency) and **5MB** (`5242880` bytes) for Polyglot Bible Reader.
 
 ```python
 from pipeline_core import DatabaseChunker
@@ -16,7 +21,7 @@ chunker = DatabaseChunker(
     db_path="pipeline/build/corpus.sqlite3",
     output_dir="static/db",
     chunk_prefix="corpus.db",
-    chunk_size=5 * 1024 * 1024,  # 5MB
+    chunk_size=1 * 1024 * 1024,  # 1MB for corpora, 5MB for bible
 )
 config = chunker.chunk()
 ```

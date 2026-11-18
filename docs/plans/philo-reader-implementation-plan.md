@@ -121,7 +121,7 @@ Philo Corpus (31 Treatises, ~600,000 Greek Words)
 
 ### Decision 2: Morphology Schema Alignment
 - Celano uses Perseus/Mate tagger codes (e.g. `l-p---mg-`, `v3saia---`).
-- The monorepo’s [`packages/ancient-languages`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/packages/ancient-languages) expects structured attributes:
+- The monorepo’s [`packages/ancient-languages`](../../packages/ancient-languages) expects structured attributes:
   - `pos`, `person`, `number`, `tense`, `mood`, `voice`, `gender`, `case`, `degree`.
 - **Pipeline Decision**: The ingestion pipeline will convert Celano's raw codes into the standard `@polyglot/ancient-languages` schema using an automated mapping adapter, supplemented by our neural Stanza / CLTK pipeline for ambiguous tokens.
 

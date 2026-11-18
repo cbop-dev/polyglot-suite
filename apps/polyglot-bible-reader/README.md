@@ -1,156 +1,126 @@
 # Polyglot Bible Reader
 
-An interactive, high-performance web application--deployable as a static HTML/Javascript site--for side-by-side reading, comparative analysis, and morphological study across various publicly available ancient and modern versions of the Bible, including **Hebrew Bible (BHS/WLC)**, **Septuagint (Swete's LXX)**, and **Greek New Testament (OpenGNT)**, the **Vulgate** and a few English translations, complete with versification mapping, instant lexical and morphological lookups, and customizable reading themes.
-
+An interactive web application for side-by-side reading, comparative textual study, and morphological exploration across ancient and modern biblical versions. 
 
 > [!IMPORTANT]
-> *This is still a work in progress. Some of the following features, especially the lemma and morphology information, may be inaccurate.* **Always check with a reliable scholarly source when doing academic/scholarly work!**
+> **AI-Generated Documentation Notice**  
+> **Human Review Status:** `To be reviewed`  
+> This documentation was generated with AI assistance and may contain inaccuracies. Please verify with the codebase and primary sources.
+
+> [!NOTE]
+> *This application is an ongoing scholarly tool. Some lexical and morphological parsing data may contain edge-case inaccuracies.* **Always consult critical print editions for authoritative citation.**
 
 ---
 
 ## Features
 
-- **Multilingual Side-by-Side Reading**: Synchronized parallel display of OT or NT books, aligning correctly difference chapter/verse schemes (e.g., BHS Ps 51 = LXX/Vulgate Ps 50, etc.)
-- **Versification Alignment (TVTMS)**: Cross-tradition verse synchronization powered by the STEPBible Tyndale Versification Mapping System.
-- **Deep Lexical & Morphological Inspection**: Interactive word clicking with modal display of lemmas, glosses, part-of-speech, and grammatical analysis.
-- **Adaptive Reading Themes**: Smooth, contrast-invariant piecewise color stop interpolation theme slider adapted from OpenScriptorium.
-- **Fast Static Performance**: Pre-rendered static data pipeline optimized for instant client-side navigation.
+- **Side-by-Side Multilingual Reading**: Synchronized parallel column and grid reading across Old and New Testament traditions.
+- **Cross-Tradition Versification Alignment (TVTMS)**: Chapter and verse numbers are automatically aligned across diverging numbering traditions (e.g., Hebrew Ps 51 = Septuagint/Vulgate Ps 50) using the Tyndale Versification Mapping System.
+- **Lexical & Morphological Inspection**: Click any Greek or Hebrew word to view dictionary definitions, grammatical parsing, frequency statistics, and concordance occurrences.
+- **Unabridged Scholarly Lexicons**: Integrated Liddell-Scott-Jones (LSJ) for Greek and Brown-Driver-Briggs (BDB) for Hebrew.
+- **Adaptive Reading Themes**: Continuous, contrast-invariant theme slider with Light, Dark, and Sepia palettes adapted from OpenScriptorium.
+- **Zero-Backend Client Execution**: Powered by WebAssembly SQLite (`sql.js-httpvfs`) querying pre-chunked database files via HTTP range requests. No server-side database daemon required.
 
 ---
 
-## Inspiration
+## Available Versions
 
-This project was inspired by other parallel Bible readers online, such as [Parabible](https://parabible.com) and [OpenScriptorium](https://openscriptorium.org/). (Special thanks to the developer of OpenScriptorium for his ideas and correspondence.)
+The reader includes 12 biblical editions and 2 unabridged lexicons:
 
-## Data Provenance & Licensing
+| Corpus ID | Version Title | Language | Testament |
+| :--- | :--- | :--- | :--- |
+| `wlc` | Westminster Leningrad Codex (BHS) | Hebrew / Aramaic (`hbo`) | OT |
+| `swete_lxx` | The Old Testament in Greek according to the Septuagint (H.B. Swete, 1930) | Ancient Greek (`grc`) | OT |
+| `sblgnt` | The Greek New Testament: SBL Edition (Michael W. Holmes, 2010) | Ancient Greek (`grc`) | NT |
+| `ognt` | Open Greek New Testament (NA28-aligned) | Ancient Greek (`grc`) | NT |
+| `peshitta` | The Syriac Peshitta (Leiden OT / SEDRA III NT) | Classical Syriac (`syc`) | Both |
+| `vulgate` | Biblia Sacra Vulgata (Clementine Vulgate 1592/1598) | Latin (`lat`) | Both |
+| `kjv` | King James Version (1611 with Apocrypha) | English (`eng`) | Both |
+| `webbe` | World English Bible (British Edition with Apocrypha) | English (`eng`) | Both |
+| `brenton-lxx`| The Septuagint with an English Translation (Sir L.C.L. Brenton, 1851) | English (`eng`) | OT |
+| `douay` | Douay-Rheims Bible (Challoner Revision with Apocrypha) | English (`eng`) | Both |
+| `luther1912` | Lutherbibel 1912 (mit den Apokryphen) | German (`deu`) | Both |
+| `vamvas` | Modern Greek Bible (Neophytos Vamvas 1850) | Modern Greek (`ell`) | Both |
+| `bdb` | Brown-Driver-Briggs Hebrew and English Lexicon | Hebrew (`hbo`) | Lexicon |
+| `lsj` | Liddell-Scott-Jones Greek-English Lexicon (STEPBible Formatted) | Greek (`grc`) | Lexicon |
 
-All data assets in this repository are derived from datasets with various types of open licenses which allow (minimally) for non-commercial use. For complete details, see the [LICENSES.md page](LICENSES.md).
+---
+
+## Data Provenance & Sources
+
+All textual assets are derived from open datasets that permit non-commercial research use. For complete details, see [LICENSES.md](LICENSES.md).
 
 > [!IMPORTANT]
-> **Non-Commercial Data Notice (BHS)**:
-> The Hebrew Bible text, lemma, and morphological dataset is derived from the **ETCBC / Text-Fabric BHSA** dataset and **Eliran Wong's BHS-morphology** package, and is licensed under **[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)**, which explicitly restricts usage to **Non-Commercial** purposes. Commercial use of these data assets is strictly prohibited.
+> **Non-Commercial Data Notice (Hebrew OT)**:
+> The Hebrew Bible text, lemma, and morphological dataset is derived from the **ETCBC / Text-Fabric BHSA** dataset and **Eliran Wong's BHS-morphology** package, licensed under **[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)** (commercial use prohibited).
 
-### Upstream Sources & Credits
-
-- **Latin Vulgate (Biblia Sacra Vulgata)**:
-  - St. Jerome's Latin translation (c. 405 A.D.) and Clementine Vulgate (1592); sourced from [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases) (Public Domain worldwide).
-- **King James Version (KJV)**:
-  - Authorized King James Version (1611) with Apocrypha; sourced from [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases) (Public Domain worldwide).
-- **World English Bible (WEB)**:
-  - Produced by Rainbow Missions, Inc. / Michael Paul Johnson; sourced via [eBible.org](https://ebible.org) (Public Domain worldwide).
-- **Hebrew Bible (BHS)**:
-  - Developed by the [Eep Talstra Centre for Bible and Computer](https://etcbc.nl) (Vrije Universiteit Amsterdam); source: [ETCBC/bhsa on GitHub](https://github.com/ETCBC/bhsa).
-  - Morphology package curated by Eliran Wong: [eliranwong/BHS-morphology on GitHub](https://github.com/eliranwong/BHS-morphology).
-  - License: [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/) (Commercial use prohibited).
-- **Septuagint (LXX)**:
-  - Base text: Henry Barclay Swete, *The Old Testament in Greek according to the Septuagint* (Cambridge: Cambridge University Press, 3 vols., 1887–1912, reprint 1930; Public Domain worldwide).
-  - Digital transcription curated by Eliran Wong and collaborators ([eliranwong/LXX-Swete-1930](https://github.com/eliranwong/LXX-Swete-1930), Public Domain).
-- **Greek New Testament (SBLGNT)**:
-  - Edited by Michael W. Holmes, Copyright 2010 Society of Biblical Literature and Logos Bible Software ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)).
-  - Morphological parsing: MorphGNT by James Tauber ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)).
-- **Versification Alignment (TVTMS)**:
-  - Tyndale Versification Mapping System provided by STEPBible.org and Tyndale House, Cambridge ([STEPBible-Data](https://github.com/STEPBible/STEPBible-Data)).
-  - License: [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/deed.en).
-- **Lexica & Dictionaries**:
-  - Liddell-Scott-Jones (LSJ) & Middle Liddell: Public Domain.
-  - Brown-Driver-Briggs (BDB): Public Domain.
-- **UI Architecture**:
-  - OpenScriptorium reading theme selector and contrast-invariant color stop interpolation pattern (ISC License).
-- **AI Engineering & Development**:
-  - The application developer used Google DeepMind's Antigravity 2.0 with Google's Gemini and Anthropic's Sonnet models in the development of this project.
-
----
-
-## Licensing Terms
-
-This project utilizes a dual-licensing structure to clearly separate application software from data assets:
-
-- **Application Software**: Licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE). Covers all source code, SvelteKit components, user interface logic, build scripts, and test suites.
-- **Data Assets & Transformations**: 
-  - General static datasets and transformations are licensed under the [Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)](LICENSE-DATA).
-  - BHS Hebrew Bible data (text, lemma, morphology) are licensed under the [Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/) (**Commercial use prohibited**).
-
-For full details, see [LICENSES.md](LICENSES.md).
+- **Latin Vulgate**: Clementine Vulgate (1592); sourced from [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases) (Public Domain).
+- **King James Version (KJV)**: Authorized Version (1611 with Apocrypha); sourced from [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases) (Public Domain).
+- **World English Bible (WEB)**: Produced by Rainbow Missions / Michael Paul Johnson via [eBible.org](https://ebible.org) (Public Domain).
+- **Hebrew Bible (WLC/BHS)**: Curated by the Eep Talstra Centre for Bible and Computer ([ETCBC/bhsa](https://github.com/ETCBC/bhsa)) and Eliran Wong ([BHS-morphology](https://github.com/eliranwong/BHS-morphology)) (CC BY-NC 4.0).
+- **Septuagint (LXX)**: H.B. Swete edition (Cambridge, 1887–1912, reprint 1930), transcribed by Eliran Wong and collaborators ([LXX-Swete-1930](https://github.com/eliranwong/LXX-Swete-1930)) (Public Domain).
+- **Greek New Testament (SBLGNT)**: Edited by Michael W. Holmes, Copyright 2010 Society of Biblical Literature and Logos Bible Software ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). MorphGNT parsing by James Tauber (CC BY 4.0).
+- **Open Greek New Testament (OpenGNT)**: NA28-aligned open text and parsing curated by Eliran Wong (CC BY 4.0).
+- **Syriac Peshitta**: Leiden Peshitta Institute OT and SEDRA III NT digital datasets curated by George Kiraz (Beth Mardutho) (CC BY-SA 3.0 / Public Domain).
+- **Douay-Rheims Bible**: Challoner Revision (1749–1752); sourced via [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases) (Public Domain).
+- **Lutherbibel 1912**: 1912 revision of Martin Luther's translation with Apocrypha (Public Domain worldwide).
+- **Vamvas Modern Greek Bible**: Translation by Neophytos Vamvas (1850) (Public Domain worldwide).
+- **Versification Alignment (TVTMS)**: Tyndale Versification Mapping System provided by STEPBible.org and Tyndale House, Cambridge ([STEPBible-Data](https://github.com/STEPBible/STEPBible-Data)) (CC BY 4.0).
+- **Lexicons**: Liddell-Scott-Jones (LSJ) and Brown-Driver-Briggs (BDB) (Public Domain).
 
 ---
 
 ## Development & Building
 
-There are two build phases: 
+### 1. Web Application Development
 
-1. [Phase 1: Data build (python pipeline)](#data-pipeline)
-2. [Phrase 2: Web application build (sveltekit)](#web-build)
+The frontend is built with SvelteKit 2 and Svelte 5. It reads pre-compiled database chunks directly from `static/db/`.
 
-By default, stage (1) need not be run, because its results are pre-packaged in the chunked database files commited to the repository (and thus all releases). One need only run stage 1 if there have been changes to the underlying datasets or pipeline, and/or the the sqlite3 database needs to be re-built. This can be done as follows. Otherwise, skip to [stage 2 below](#web-build).
-
-### <a id="data-pipeline">1. Data Pipeline & Database Production (`pipeline/`)</a>
-
-The data pipeline is an offline Python build system that fetches upstream ancient and modern texts, resolves cross-tradition versification alignments (TVTMS), indexes lemmas and concordances, validates data integrity, and produces the 5MB SQLite chunks in `static/db/`.
-
-#### Prerequisites
-
-- Python 3.10+
-- (Optional, only needed if re-running neural Greek NLP lemmatization): `pip install -r pipeline/requirements-morphology.txt`
-
-#### Running the Pipeline
-
+Run commands from the repository root:
 ```bash
-# Run the complete pipeline end-to-end (fetch -> build DB -> validate -> chunk -> generate TS config):
-python3 -m pipeline.build --all
+# Start local development server (port 5171)
+npm run dev:bible
 
-# Or run individual pipeline stages:
-python3 -m pipeline.build --fetch      # Download upstream texts & lexicons to pipeline/cache/
-python3 -m pipeline.build --build      # Compile pipeline/build/polyglot-working.sqlite3
-python3 -m pipeline.build --validate   # Run integrity and cross-tradition alignment test suite
-python3 -m pipeline.build --chunk      # Split SQLite database into 5MB chunks in static/db/
-python3 pipeline/generate_canonical_books.py  # Synchronize TypeScript book definitions
+# Run type checks
+npm run check:bible
 
-# (Optional) Re-run the 8-stage Swete Septuagint NLP morphology resolution engine:
-python3 -m pipeline.build --rebuild-lxx-morphology
+# Run unit tests
+npm run test:bible
+
+# Build static production bundle into dist/bible
+npm run build:www:bible
 ```
 
-#### Pipeline Stages & Architecture
+### 2. Database Chunks Management
 
-1. **Stage 1: Upstream Source Fetching (`pipeline/fetcher.py`)**:
-   - Downloads public datasets into `pipeline/cache/` (STEPBible TVTMS crosswalk, Clementine Vulgate, OpenGNT with NA28 morphology, MorphHB Hebrew OT, BDB Hebrew Lexicon, STEPBible LSJ Greek Lexicons, Swete 1930 Septuagint, KJV, WEB-BE, and Brenton LXX). Existing cached files are reused automatically unless `--force` is specified.
-2. **Sub-Pipeline: Swete LXX Morphology & Lemmatization (`pipeline/swete_morphology/`)**:
-   - 8-stage NLP pipeline using Stanza (`grc_proiel`), a proper-name gazetteer, and constraint resolution to resolve lemmas and morphological codes. Pre-resolved token archives are bundled in `pipeline/data/lxx.tar.gz`.
-3. **Stage 2: Database Construction (`pipeline/db_builder.py`)**:
-   - Builds `pipeline/build/polyglot-working.sqlite3`.
-   - Ingests BDB and LSJ unabridged lexicons into `lexicon_entries`.
-   - Ingests all 7 biblical corpora (`vulgate`, `wlc`, `swete_lxx`, `ognt`, `kjv`, `webbe`, `brenton-lxx`).
-   - Aligns distinct chapter/verse schemes across traditions to the Universal Standard Hub using the Tyndale Versification Mapping System (`pipeline/tvtms.py`).
-   - Pre-computes $O(1)$ lemma distributions and concordance indexes (`lemma_stats`, `concordance_refs`, `corpus_book_stats`) via `pipeline/lemma_indexer.py`.
-4. **Stage 3: Validation Suite (`pipeline/validate.py`)**:
-   - Automated test suite verifying table counts, zero data loss (e.g., all 176 verses of Vulgate Psalm 118 preserved), multi-tradition verse synchronization (Psalm 50/51 alignment), and lexical referential integrity.
-5. **Stage 4: HTTP-VFS Chunking (`pipeline/chunker.py`)**:
-   - Slices the SQLite database into 5MB chunk files in `static/db/` (`polyglot.db.00`, `polyglot.db.01`, ...) and generates `static/db/config.json` with cache-busting tokens for `sql.js-httpvfs`.
-6. **Stage 5: TypeScript Definition Generation (`pipeline/generate_canonical_books.py`)**:
-   - Queries `canonical_books` from SQLite and emits `src/lib/config/canonicalBooks.generated.ts` to ensure 100% parity with the frontend.
+The compiled SQLite database (~857 MB) is split into 5MB chunks (`polyglot.db.00`, `polyglot.db.01`, ...) hosted on GitHub Releases. Chunks are not checked into Git.
 
----
-
-
-### <a id="web-build">2. Web Application (SvelteKit)</a>
-
-The web frontend is built as a static client application that loads the pre-chunked SQLite database from `static/db/` via client-side WebAssembly (`sql.js-httpvfs`). Web builds (`npm run build`, `npm run build:gh`) do **not** run the Python pipeline or require Python on deployment servers (e.g., GitHub Pages).
-
+To download chunks from GitHub Releases to local `static/db/`:
 ```bash
-# Install frontend dependencies
-npm install
+npm run pull:db:bible
+```
 
-# Run development server
-npm run dev
+To check database synchronization status:
+```bash
+npm run status:db:gh bible
+```
 
-# Build production bundle (Node adapter)
-npm run build
+### 3. Data Pipeline (`packages/data-pipeline`)
 
-# Build static bundle for GitHub Pages
-npm run build:gh
+The offline Python ETL pipeline that fetches texts, aligns versification (TVTMS), and compiles the SQLite database is located in the shared package [`packages/data-pipeline`](../../packages/data-pipeline).
 
-# Preview production build locally
-npm run preview
+Run pipeline tasks from the repository root:
+```bash
+# Fetch raw source texts and lexicons into cache/
+npm run fetch:db
 
-# build for apache2/httpd web server deployment:
-npm run build:www
+# Compile the master SQLite database (packages/data-pipeline/build/polyglot-working.sqlite3)
+# and automatically export BLE manifests
+npm run build:db
+
+# Slice the database into 5MB chunks in apps/polyglot-bible-reader/static/db/
+npm run chunk:db
+
+# Run full end-to-end pipeline (fetch -> build -> validate -> chunk -> manifests)
+npm run data:all
 ```

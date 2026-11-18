@@ -192,15 +192,12 @@ Usage:
   npm run status:db [app]
 
 Apps:
-  all                  Check all reader databases (bible, philo, fathers, josephus, corpora-af, corpora-philo, corpora-josephus) [default]
+  all                  Check all reader databases (bible, corpora-af, corpora-philo, corpora-josephus) [default]
   bible (or lex, data) Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
-  philo                Philo Reader database (tag: philo-db-vX.Y.Z)
-  fathers (or af)      Apostolic Fathers Reader database (tag: af-db-vX.Y.Z)
-  josephus (or jr)     Josephus Reader database (tag: josephus-db-vX.Y.Z)
   corpora (or acr)     All Ancient Corpora Reader databases (AF, Philo, Josephus)
-  corpora-af           Ancient Corpora - Apostolic Fathers database (tag: corpora-af-db-vX.Y.Z)
-  corpora-philo        Ancient Corpora - Philo database (tag: corpora-philo-db-vX.Y.Z)
-  corpora-josephus     Ancient Corpora - Josephus database (tag: corpora-josephus-db-vX.Y.Z)
+  corpora-af           Ancient Corpora - Apostolic Fathers database (tag: corpora-af-db-vX.Y.Z) [aliases: af, fathers]
+  corpora-philo        Ancient Corpora - Philo database (tag: corpora-philo-db-vX.Y.Z) [alias: philo]
+  corpora-josephus     Ancient Corpora - Josephus database (tag: corpora-josephus-db-vX.Y.Z) [aliases: josephus, jr]
 
 Options:
   --help, -h           Show this help message

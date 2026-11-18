@@ -79,12 +79,12 @@ This design suite is organized into six targeted technical specifications:
 
 | Document | Title | Purpose |
 | :--- | :--- | :--- |
-| **01** | [Design Overview](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/docs/design-v0.3/01_design_overview.md) | Architectural manifesto, design goals, and document index. |
-| **02** | [Unified Database Schema](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/docs/design-v0.3/02_unified_database_schema.md) | DDL specification for the canonical SQLite contract across all corpora. |
-| **03** | [Corpus Configuration Architecture](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/docs/design-v0.3/03_corpus_configuration_architecture.md) | Specification for `config/corpora.ts`, `corpora.data.ts`, and canon definitions. |
-| **04** | [TypeScript Data Structures & State](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/docs/design-v0.3/04_typescript_data_structures_and_state.md) | Interfaces (`TextVersion`, `TextUnit`) and reactive `ReaderState` design. |
-| **05** | [UI Components & Font Integration](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/docs/design-v0.3/05_ui_components_and_font_integration.md) | Refactoring specifications for `CorpusColumnView`, `@polyglot/ui`, and font bindings. |
-| **06** | [Pipeline & Ingestion Build Contract](file:///home/cbrannan/.gemini/antigravity/worktrees/polyglot-suite/audit_acr_refactoring/apps/ancient-corpora-reader/docs/design-v0.3/06_pipeline_and_build_specification.md) | Python pipeline specification for compiling raw source texts into the canonical SQLite schema. |
+| **01** | [Design Overview](01_design_overview.md) | Architectural manifesto, design goals, and document index. |
+| **02** | [Unified Database Schema](02_unified_database_schema.md) | DDL specification for the canonical SQLite contract across all corpora. |
+| **03** | [Corpus Configuration Architecture](03_corpus_configuration_architecture.md) | Specification for `config/corpora.ts`, `corpora.data.ts`, and canon definitions. |
+| **04** | [TypeScript Data Structures & State](04_typescript_data_structures_and_state.md) | Interfaces (`TextVersion`, `TextUnit`) and reactive `ReaderState` design. |
+| **05** | [UI Components & Font Integration](05_ui_components_and_font_integration.md) | Refactoring specifications for `CorpusColumnView`, `@polyglot/ui`, and font bindings. |
+| **06** | [Pipeline & Ingestion Build Contract](06_pipeline_and_build_specification.md) | Python pipeline specification for compiling raw source texts into the canonical SQLite schema. |
 
 ---
 

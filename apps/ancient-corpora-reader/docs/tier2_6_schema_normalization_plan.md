@@ -44,8 +44,8 @@ flowchart LR
 
 > [!IMPORTANT]
 > **Zero Touch of Standalone Reader Databases**:
-> All schema normalization, migration mappings, and chunking run **strictly within [`apps/ancient-corpora-reader/`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/ancient-corpora-reader)**.
-> * [`apps/philo-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/philo-reader), [`apps/josephus-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/josephus-reader), and [`apps/apostolic-fathers-reader`](file:///home/cbrannan/dev/2-tmp/polyglot-suite/apps/apostolic-fathers-reader) remain 100% untouched.
+> All schema normalization, migration mappings, and chunking run **strictly within [`apps/ancient-corpora-reader/`](..)**.
+> * [`apps/philo-reader`](../../philo-reader), [`apps/josephus-reader`](../../josephus-reader), and [`apps/apostolic-fathers-reader`](../../apostolic-fathers-reader) remain 100% untouched.
 > * Source databases are treated as read-only inputs.
 
 ---
