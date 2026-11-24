@@ -23,7 +23,7 @@
 			
 			
 			<p class="subtitle">
-				Digital editions, lexical engines, and comparative textual readers for Biblical and related ancient literature.
+				Comparative readers and lexical tools for Biblical and related literature.
 			</p>
 			
 		</header>
