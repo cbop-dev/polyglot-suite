@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { execSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -82,9 +83,12 @@ function getLocalDatabaseInfo(app) {
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     const chunks = getMatchingChunks(app);
     let totalBytes = 0;
+    const chunkDigests = {};
     for (const chunk of chunks) {
       try {
-        totalBytes += fs.statSync(path.join(app.dir, chunk)).size;
+        const buf = fs.readFileSync(path.join(app.dir, chunk));
+        totalBytes += buf.length;
+        chunkDigests[chunk] = `sha256:${crypto.createHash('sha256').update(buf).digest('hex')}`;
       } catch {}
     }
     const sizeMb = (totalBytes / (1024 * 1024)).toFixed(1);
@@ -92,6 +96,7 @@ function getLocalDatabaseInfo(app) {
       version: config.databaseVersion || 'unknown',
       expectedBytes: typeof config.databaseLengthBytes === 'number' ? config.databaseLengthBytes : null,
       totalBytes,
+      chunkDigests,
       configPath,
       chunkCount: chunks.length,
       sizeMb,
@@ -104,7 +109,7 @@ function getLocalDatabaseInfo(app) {
 function fetchReleaseAssets(tag) {
   try {
     const raw = execSync(
-      `gh release view "${tag}" --repo ${REPO} --json assets`,
+      `gh api "repos/${REPO}/releases/tags/${tag}" --jq ".assets"`,
       {
         cwd: REPO_ROOT,
         env: ghEnv,
@@ -112,7 +117,7 @@ function fetchReleaseAssets(tag) {
         stdio: ['ignore', 'pipe', 'ignore'],
       }
     );
-    return JSON.parse(raw).assets || [];
+    return JSON.parse(raw) || [];
   } catch {
     return null;
   }
@@ -181,11 +186,16 @@ export function checkAppStatus(appKey, releases) {
       const assets = fetchReleaseAssets(local.version);
       const remoteChunks = assets ? assets.filter((a) => chunkRegex.test(a.name)) : null;
       const remoteBytes = remoteChunks ? remoteChunks.reduce((sum, a) => sum + (a.size || 0), 0) : null;
+      const hasDigestMismatch = remoteChunks
+        ? remoteChunks.some((a) => a.digest && local.chunkDigests[a.name] !== a.digest)
+        : false;
 
-      if (remoteChunks && (remoteChunks.length !== local.chunkCount || remoteBytes !== local.totalBytes)) {
+      if (remoteChunks && (remoteChunks.length !== local.chunkCount || remoteBytes !== local.totalBytes || hasDigestMismatch)) {
         status = 'LOCAL_MODIFIED_UNRELEASED';
         statusEmoji = '🔄';
-        message = `Local chunks (${local.chunkCount} files, ${local.totalBytes} B) differ from GitHub release "${local.version}" (${remoteChunks.length} files, ${remoteBytes} B).`;
+        message = hasDigestMismatch
+          ? `Local chunk SHA-256 digests differ from GitHub release "${local.version}".`
+          : `Local chunks (${local.chunkCount} files, ${local.totalBytes} B) differ from GitHub release "${local.version}" (${remoteChunks.length} files, ${remoteBytes} B).`;
         action = `npm run release:db ${appKey} patch`;
       } else {
         status = 'UP_TO_DATE';
