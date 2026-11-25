@@ -38,7 +38,8 @@ The **Ancient Corpora Reader** unifies major historical corpora into a single in
   - Powered by `@polyglot/theme` with smooth piecewise color-stop interpolation across Light, Dark, and Sepia palettes.
 - **Zero-Backend Client Architecture**:
   - Powered by `@polyglot/db-vfs` (`sql.js-httpvfs`) querying pre-chunked SQLite databases in WebAssembly via HTTP range requests.
-  - **1MB Chunking**: Each corpus database (`af`, `philo`, `josephus`) is sliced into lightweight 1MB chunks, minimizing data transfer on mobile connections.
+  - **Database Design & SSOT**: See [Database Design & Architecture](docs/database-design.md) for complete SQLite schema specifications, covering concordance tables, and manifest generation details.
+  - **Chunking**: Each corpus database (`af`, `philo`, `josephus`, `justin`) is sliced into lightweight 5MB chunks, minimizing data transfer on mobile connections.
 
 ---
 
@@ -58,23 +59,26 @@ The **Ancient Corpora Reader** unifies major historical corpora into a single in
 ```
 apps/ancient-corpora-reader/
 ├── docs/                        # Architecture specs, performance audits, and optimization plans
+│   └── database-design.md       # Canonical SQLite database schema & SSOT manifest architecture
 ├── pipeline/                    # Offline Python database compilation & chunking pipeline
 │   ├── build.py                 # CLI entry point for building and chunking SQLite databases
-│   ├── config.py                # Corpus source paths and normalization rules
+│   ├── config.py                # Master bibliographic catalog and normalization rules
 │   ├── db_builder.py            # SQLite schema builder, covering concordance & indexing
+│   ├── export_canonical_manifests.py # Exporter generating *.generated.ts from SQLite databases
 │   └── snippet_builder.py       # Concordance snippet generator
 ├── src/
 │   ├── lib/
 │   │   ├── components/          # Svelte 5 UI components (Reader, Columns, Headers, Modals)
-│   │   ├── config/              # Canonical works registry, aliases, and citation metadata
+│   │   ├── config/              # Manifests (corpusVersions.generated.ts, canonicalWorks.generated.ts)
 │   │   ├── services/            # Multi-VFS DB client & Web Worker management
 │   │   └── stores/              # Reactive reader & highlight stores ($state runes)
 │   └── routes/                  # Dynamic SvelteKit routing (/[corpus]/[work]/[division])
 ├── static/
-│   ├── db/                      # HTTP-VFS database chunks (1MB each) and config.json
+│   ├── db/                      # HTTP-VFS database chunks (5MB each) and config.json
 │   │   ├── af/                  # Apostolic Fathers database chunks
 │   │   ├── josephus/            # Flavius Josephus database chunks
-│   │   └── philo/               # Philo of Alexandria database chunks
+│   │   ├── philo/               # Philo of Alexandria database chunks
+│   │   └── justin/              # Justin Martyr database chunks
 │   └── sqlite/                  # sql.js WASM binaries and worker scripts
 └── tests/                       # Vitest unit test suites
 ```

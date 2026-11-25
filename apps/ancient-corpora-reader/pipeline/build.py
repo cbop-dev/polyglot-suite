@@ -26,6 +26,7 @@ from .config import (
 	CHUNK_SIZE,
 )
 from .db_builder import build_optimized_corpus_db
+from .export_canonical_manifests import export_canonical_manifests
 
 
 CORPORA = [
@@ -109,12 +110,16 @@ def build_all(corpora_filter: list[str] | None = None):
 		chunker.chunk()
 		print(f"✓ Completed {c['name']} ({cid}).")
 
-	print("\n✓ All target corpora compiled and chunked successfully in ACR!")
+	# 4. Export canonical manifests from compiled databases to TypeScript
+	print("\n>>> Exporting canonical manifests to TypeScript...")
+	export_canonical_manifests()
+
+	print("\n✓ All target corpora compiled, chunked, and manifests exported successfully in ACR!")
 
 
 def main():
 	parser = argparse.ArgumentParser(description="ACR Tier-2 Database Compiler and Chunker")
-	parser.add_argument("--corpus", choices=["af", "josephus", "philo"], help="Build only specific corpus")
+	parser.add_argument("--corpus", choices=["af", "josephus", "philo", "justin"], help="Build only specific corpus")
 	args = parser.parse_args()
 
 	filter_list = [args.corpus] if args.corpus else None

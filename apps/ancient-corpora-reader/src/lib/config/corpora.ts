@@ -1,4 +1,6 @@
 import * as CorpusTypes from "@polyglot/ancient-languages/corpora-types";
+import { CANONICAL_CORPUS_VERSIONS } from "./corpusVersions.generated.js";
+
 export const CORPORA_CONFIG: Record<string, CorpusTypes.CorpusConfig> = {
 	af: {
 		id: 'af',
@@ -31,35 +33,7 @@ export const CORPORA_CONFIG: Record<string, CorpusTypes.CorpusConfig> = {
 				{ label: 'Greek & English', source: 'Kirsopp Lake, The Apostolic Fathers (LCL, 1912–1913)', license: 'Public Domain' }
 			]
 		},
-		textVersions: [
-			{
-				id: 'lake_grc',
-				language: 'grc',
-				title: 'Kirsopp Lake Greek Critical Text (1912)',
-				shortTitle: 'Lake Greek (1912)',
-				direction: 'ltr',
-				isDefaultVisible: true,
-				order: 1
-			},
-			{
-				id: 'lake_lat',
-				language: 'lat',
-				title: 'Latin Witness (Where Extant)',
-				shortTitle: 'Latin Text',
-				direction: 'ltr',
-				isDefaultVisible: true,
-				order: 2
-			},
-			{
-				id: 'lake_eng',
-				language: 'eng',
-				title: 'Kirsopp Lake English Translation (1912)',
-				shortTitle: 'English (Lake)',
-				direction: 'ltr',
-				isDefaultVisible: true,
-				order: 3
-			}
-		]
+		textVersions: CANONICAL_CORPUS_VERSIONS['af'] || []
 	},
 
 	philo: {
@@ -100,26 +74,7 @@ export const CORPORA_CONFIG: Record<string, CorpusTypes.CorpusConfig> = {
 				{ label: 'English Translation', source: 'C. D. Yonge (1854–1855)', license: 'Public Domain' }
 			]
 		},
-		textVersions: [
-			{
-				id: 'grc',
-				language: 'grc',
-				title: 'Cohn-Wendland Greek Critical Text',
-				shortTitle: 'Cohn-Wendland Greek',
-				direction: 'ltr',
-				isDefaultVisible: true,
-				order: 1
-			},
-			{
-				id: 'eng',
-				language: 'eng',
-				title: 'C. D. Yonge English Translation',
-				shortTitle: 'Yonge English',
-				direction: 'ltr',
-				isDefaultVisible: true,
-				order: 2
-			}
-		]
+		textVersions: CANONICAL_CORPUS_VERSIONS['philo'] || []
 	},
 
 	josephus: {
@@ -160,26 +115,7 @@ export const CORPORA_CONFIG: Record<string, CorpusTypes.CorpusConfig> = {
 				{ label: 'English Translation', source: 'H. St. J. Thackeray / William Whiston', license: 'Public Domain' }
 			]
 		},
-		textVersions: [
-			{
-				id: 'josephus_grc',
-				language: 'grc',
-				title: 'Benedikt Niese Greek Critical Text (1885–1895)',
-				shortTitle: 'Niese Greek',
-				direction: 'ltr',
-				isDefaultVisible: true,
-				order: 1
-			},
-			{
-				id: 'josephus_eng',
-				language: 'eng',
-				title: 'H. St. J. Thackeray & William Whiston English Translation',
-				shortTitle: 'English Translation',
-				direction: 'ltr',
-				isDefaultVisible: true,
-				order: 2
-			}
-		]
+		textVersions: CANONICAL_CORPUS_VERSIONS['josephus'] || []
 	},
 
 	justin: {
@@ -225,26 +161,7 @@ export const CORPORA_CONFIG: Record<string, CorpusTypes.CorpusConfig> = {
 				}
 			]
 		},
-		textVersions: [
-			{
-				id: 'justin_grc',
-				language: 'grc',
-				title: 'Greek Critical Text (First1KGreek / Celano Lemmatized)',
-				shortTitle: 'Greek Text',
-				direction: 'ltr',
-				isDefaultVisible: true,
-				order: 1
-			},
-			{
-				id: 'justin_eng',
-				language: 'eng',
-				title: 'Roberts & Donaldson English Translation (ANF Vol. 1)',
-				shortTitle: 'English (ANF)',
-				direction: 'ltr',
-				isDefaultVisible: true,
-				order: 2
-			}
-		]
+		textVersions: CANONICAL_CORPUS_VERSIONS['justin'] || []
 	}
 };
 

@@ -12,15 +12,15 @@ const BUILD_DB_DIR = path.resolve(__dirname, '../build/db');
 
 describe('Multi-Corpus Database Service Layer', () => {
 	it('maps primary Greek corpus IDs correctly for all three corpora', () => {
-		expect(PRIMARY_GREEK_CORPUS_IDS.af).toBe('lake_grc');
-		expect(PRIMARY_GREEK_CORPUS_IDS.philo).toBe('grc');
-		expect(PRIMARY_GREEK_CORPUS_IDS.josephus).toBe('josephus_grc');
+		expect(PRIMARY_GREEK_CORPUS_IDS.af).toBe('af_lake_grc');
+		expect(PRIMARY_GREEK_CORPUS_IDS.philo).toBe('philo_cw_grc');
+		expect(PRIMARY_GREEK_CORPUS_IDS.josephus).toBe('josephus_niese_grc');
 	});
 
 	it('resolves primary version IDs dynamically via getPrimaryVersionId', () => {
-		expect(getPrimaryVersionId('af')).toBe('lake_grc');
-		expect(getPrimaryVersionId('philo')).toBe('grc');
-		expect(getPrimaryVersionId('josephus')).toBe('josephus_grc');
+		expect(getPrimaryVersionId('af')).toBe('af_lake_grc');
+		expect(getPrimaryVersionId('philo')).toBe('philo_cw_grc');
+		expect(getPrimaryVersionId('josephus')).toBe('josephus_niese_grc');
 	});
 
 	it('executes universal division query against canonical SQLite database', () => {
@@ -42,8 +42,8 @@ describe('Multi-Corpus Database Service Layer', () => {
 
 		// Group by version_id
 		const versions = new Set(rows.map((r) => r.version_id));
-		expect(versions.has('lake_grc')).toBe(true);
-		expect(versions.has('lake_eng')).toBe(true);
+		expect(versions.has('af_lake_grc')).toBe(true);
+		expect(versions.has('af_lake_eng')).toBe(true);
 
 		db.close();
 	});
@@ -84,7 +84,7 @@ describe('Multi-Corpus Database Service Layer', () => {
 			FROM concordance_refs
 			WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
 		`;
-		const countRow = db.prepare(countSql).get('josephus_grc', 'λόγος', 'λογος') as any;
+		const countRow = db.prepare(countSql).get('josephus_niese_grc', 'λόγος', 'λογος') as any;
 		expect(countRow.total).toBeGreaterThan(100);
 
 		// Verify direct covering query on concordance_refs
@@ -97,12 +97,12 @@ describe('Multi-Corpus Database Service Layer', () => {
 			ORDER BY work_unit_id ASC
 			LIMIT ? OFFSET ?
 		`;
-		const page1 = db.prepare(pagedSql).all('josephus_grc', 'λόγος', 'λογος', 50, 0) as any[];
+		const page1 = db.prepare(pagedSql).all('josephus_niese_grc', 'λόγος', 'λογος', 50, 0) as any[];
 		expect(page1.length).toBe(50);
 		expect(page1[0].display_citation).toBeDefined();
 		expect(page1[0].kwic_snippet).toBeDefined();
 
-		const page2 = db.prepare(pagedSql).all('josephus_grc', 'λόγος', 'λογος', 50, 50) as any[];
+		const page2 = db.prepare(pagedSql).all('josephus_niese_grc', 'λόγος', 'λογος', 50, 50) as any[];
 		expect(page2.length).toBe(50);
 		expect(page2[0].work_unit_id).toBeGreaterThan(page1[page1.length - 1].work_unit_id);
 
@@ -120,7 +120,7 @@ describe('Multi-Corpus Database Service Layer', () => {
 			FROM concordance_refs
 			WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
 		`;
-		const countRow = db.prepare(countSql).get('grc', 'θεός', 'θεος') as any;
+		const countRow = db.prepare(countSql).get('philo_cw_grc', 'θεός', 'θεος') as any;
 		expect(countRow.total).toBeGreaterThan(200);
 
 		const pagedSql = `
@@ -132,12 +132,12 @@ describe('Multi-Corpus Database Service Layer', () => {
 			ORDER BY work_unit_id ASC
 			LIMIT ? OFFSET ?
 		`;
-		const page1 = db.prepare(pagedSql).all('grc', 'θεός', 'θεος', 50, 0) as any[];
+		const page1 = db.prepare(pagedSql).all('philo_cw_grc', 'θεός', 'θεος', 50, 0) as any[];
 		expect(page1.length).toBe(50);
 		expect(page1[0].display_citation).toBeDefined();
 		expect(page1[0].kwic_snippet).toBeDefined();
 
-		const page2 = db.prepare(pagedSql).all('grc', 'θεός', 'θεος', 50, 50) as any[];
+		const page2 = db.prepare(pagedSql).all('philo_cw_grc', 'θεός', 'θεος', 50, 50) as any[];
 		expect(page2.length).toBe(50);
 		expect(page2[0].work_unit_id).toBeGreaterThan(page1[page1.length - 1].work_unit_id);
 
@@ -155,7 +155,7 @@ describe('Multi-Corpus Database Service Layer', () => {
 			FROM concordance_refs
 			WHERE corpus_id = ? AND (lemma = ? OR lemma = ?)
 		`;
-		const countRow = db.prepare(countSql).get('lake_grc', 'θεός', 'θεος') as any;
+		const countRow = db.prepare(countSql).get('af_lake_grc', 'θεός', 'θεος') as any;
 		expect(countRow.total).toBeGreaterThan(50);
 
 		const pagedSql = `
@@ -167,7 +167,7 @@ describe('Multi-Corpus Database Service Layer', () => {
 			ORDER BY work_unit_id ASC
 			LIMIT ? OFFSET ?
 		`;
-		const page1 = db.prepare(pagedSql).all('lake_grc', 'θεός', 'θεος', 25, 0) as any[];
+		const page1 = db.prepare(pagedSql).all('af_lake_grc', 'θεός', 'θεος', 25, 0) as any[];
 		expect(page1.length).toBe(25);
 		expect(page1[0].display_citation).toBeDefined();
 		expect(page1[0].kwic_snippet).toBeDefined();
@@ -192,7 +192,7 @@ describe('Multi-Corpus Database Service Layer', () => {
 			ORDER BY work_unit_id ASC
 			LIMIT ? OFFSET ?;
 		`;
-		const plan = db.prepare(explainSql).all('lake_grc', 'λέγω', 'λέγει', 10, 0) as any[];
+		const plan = db.prepare(explainSql).all('af_lake_grc', 'λέγω', 'λέγει', 10, 0) as any[];
 		const planDetail = plan.map((p) => p.detail || '').join(' ');
 		expect(planDetail).toContain('idx_concordance_refs_form');
 
@@ -204,7 +204,7 @@ describe('Multi-Corpus Database Service Layer', () => {
 			ORDER BY work_unit_id ASC
 			LIMIT ? OFFSET ?;
 		`;
-		const rows = db.prepare(pagedSql).all('lake_grc', 'λέγω', 'λέγει', 10, 0) as any[];
+		const rows = db.prepare(pagedSql).all('af_lake_grc', 'λέγω', 'λέγει', 10, 0) as any[];
 		expect(rows.length).toBeGreaterThan(0);
 		for (const r of rows) {
 			expect(r.matched_form).toBe('λέγει');

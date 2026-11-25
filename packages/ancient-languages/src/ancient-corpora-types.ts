@@ -9,16 +9,36 @@
 export type TextDirection = 'ltr' | 'rtl';
 
 /**
+ * Bibliographic metadata for a specific textual edition or translation.
+ */
+export interface VersionBibliographicConfig {
+	role: 'critical_edition' | 'translation' | 'ancient_witness';
+	editor?: string;
+	translator?: string;
+	booktitle: string;
+	series?: string;
+	publisher: string;
+	address?: string;
+	year: string;
+	volume?: string;
+	sblQualifier?: string;
+	applicableWorks?: string[];
+}
+
+/**
  * Declares a specific textual witness or translation available within a corpus.
  */
 export interface TextVersionConfig {
-	id: string;              // Unique DB/version ID (e.g. 'lake_grc', 'yonge_eng', 'af_lat')
+	id: string;              // Standardized DB/version ID (e.g. 'af_lake_grc', 'philo_cw_grc')
 	language: string;        // Language code: 'grc', 'eng', 'lat', 'hbo', 'syr'
 	title: string;           // Full title (e.g. 'Kirsopp Lake Greek Critical Text (1912)')
 	shortTitle: string;      // Short header label (e.g. 'Lake Greek (1912)')
+	versionLabel?: string;   // Short badge label / year (e.g. 'Lake 1912', 'Niese 1895')
 	direction?: TextDirection; // Defaults to 'ltr'
 	isDefaultVisible: boolean; // True if column should display on initial load
 	order: number;           // Left-to-right display order
+	bibliographic?: VersionBibliographicConfig;
+	applicableWorks?: string[]; // Work codes where this version is extant (undefined = all works)
 }
 
 /**

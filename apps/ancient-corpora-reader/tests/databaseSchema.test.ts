@@ -6,7 +6,11 @@ import { existsSync } from 'node:fs';
 const BUILD_DB_DIR = resolve(__dirname, '../build/db');
 
 const REQUIRED_TABLES: Record<string, string[]> = {
-	corpus_versions: ['id', 'language', 'title', 'version_label', 'direction', 'order_index'],
+	corpus_versions: [
+		'id', 'language', 'title', 'version_label', 'direction', 'order_index',
+		'role', 'editor', 'translator', 'booktitle', 'series', 'publisher',
+		'address', 'year', 'volume', 'sbl_qualifier', 'applicable_works'
+	],
 	corpus_works: ['code', 'slug', 'order_index', 'category', 'abbrev', 'title_english', 'total_divisions', 'division_label'],
 	text_units: ['id', 'version_id', 'work_code', 'book', 'chapter', 'section', 'display_citation', 'milestone_ref', 'text_content'],
 	text_unit_tokens: ['work_unit_id', 'tokens_json'],
@@ -16,7 +20,7 @@ const REQUIRED_TABLES: Record<string, string[]> = {
 };
 
 describe('Database Schema Conformance', () => {
-	const corpora = ['af', 'josephus', 'philo'];
+	const corpora = ['af', 'josephus', 'philo', 'justin'];
 
 	for (const corpus of corpora) {
 		describe(`Corpus Database: ${corpus}`, () => {
