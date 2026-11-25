@@ -8,8 +8,9 @@ Builds and chunks optimized Tier-2 SQLite databases strictly within Ancient Corp
 
 from __future__ import annotations
 import argparse
+import importlib
+import json
 import sys
-import shutil
 from pathlib import Path
 
 # Add pipeline-core to sys.path
@@ -20,6 +21,7 @@ if str(PIPELINE_CORE_DIR) not in sys.path:
 from pipeline_core import DatabaseChunker
 
 from .config import (
+	ACR_DIR,
 	BUILD_DIR,
 	STATIC_DB_DIR,
 	get_source_db,
@@ -29,36 +31,41 @@ from .db_builder import build_optimized_corpus_db
 from .export_canonical_manifests import export_canonical_manifests
 
 
-CORPORA = [
-	{
-		"id": "af",
-		"name": "Apostolic Fathers",
-		"target": BUILD_DIR / "af.sqlite3",
-		"chunk_dir": STATIC_DB_DIR / "af",
-		"chunk_prefix": "af.db",
-	},
-	{
-		"id": "josephus",
-		"name": "Flavius Josephus",
-		"target": BUILD_DIR / "josephus.sqlite3",
-		"chunk_dir": STATIC_DB_DIR / "josephus",
-		"chunk_prefix": "josephus.db",
-	},
-	{
-		"id": "philo",
-		"name": "Philo of Alexandria",
-		"target": BUILD_DIR / "philo.sqlite3",
-		"chunk_dir": STATIC_DB_DIR / "philo",
-		"chunk_prefix": "philo.db",
-	},
-	{
-		"id": "justin",
-		"name": "Justin Martyr",
-		"target": BUILD_DIR / "justin.sqlite3",
-		"chunk_dir": STATIC_DB_DIR / "justin",
-		"chunk_prefix": "justin.db",
-	},
-]
+def load_corpora_from_manifest() -> list[dict]:
+	"""Loads corpus build targets from apps/ancient-corpora-reader/corpora.manifest.json."""
+	manifest_path = ACR_DIR / "corpora.manifest.json"
+	with open(manifest_path, "r", encoding="utf-8") as f:
+		data = json.load(f)
+	entries = []
+	for entry in data.get("corpora", []):
+		cid = entry["id"]
+		pipe = entry.get("pipeline", {})
+		entries.append({
+			"id": cid,
+			"name": entry["name"],
+			"target": BUILD_DIR / f"{cid}.sqlite3",
+			"chunk_dir": STATIC_DB_DIR / cid,
+			"chunk_prefix": pipe.get("chunkPrefix", f"{cid}.db"),
+			"db_tag_prefix": pipe.get("dbTagPrefix", f"corpora-{cid}-db-v"),
+		})
+	return entries
+
+
+CORPORA = load_corpora_from_manifest()
+
+
+def _maybe_run_ingestor(cid: str):
+	"""Runs pipeline.ingestors.<cid> if <cid>.raw.sqlite3 does not yet exist."""
+	raw_path = BUILD_DIR / f"{cid}.raw.sqlite3"
+	if raw_path.exists():
+		return
+	try:
+		mod = importlib.import_module(f".ingestors.{cid}", package=__package__)
+	except ModuleNotFoundError:
+		return
+	builder_fn = getattr(mod, f"build_{cid}_raw_db", None) or getattr(mod, "build_raw_db", None)
+	if callable(builder_fn):
+		builder_fn()
 
 
 def build_all(corpora_filter: list[str] | None = None):
@@ -74,11 +81,7 @@ def build_all(corpora_filter: list[str] | None = None):
 		print(f">>> Processing {c['name']} ({cid})")
 		print(f"========================================================")
 
-		if cid == "justin":
-			raw_justin = BUILD_DIR / "justin.raw.sqlite3"
-			if not raw_justin.exists():
-				from .ingestors.justin import build_justin_raw_db
-				build_justin_raw_db()
+		_maybe_run_ingestor(cid)
 
 		src_db = get_source_db(cid)
 
@@ -106,6 +109,7 @@ def build_all(corpora_filter: list[str] | None = None):
 			output_dir=chunk_dest,
 			chunk_prefix=c["chunk_prefix"],
 			chunk_size=CHUNK_SIZE,
+			default_database_version=f"{c['db_tag_prefix']}0.0.0",
 		)
 		chunker.chunk()
 		print(f"✓ Completed {c['name']} ({cid}).")

@@ -24,11 +24,13 @@ class DatabaseChunker:
         output_dir: Path | str,
         chunk_prefix: str,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
+        default_database_version: Optional[str] = None,
     ):
         self.db_path = Path(db_path).resolve()
         self.output_dir = Path(output_dir).resolve()
         self.chunk_prefix = chunk_prefix
         self.chunk_size = chunk_size
+        self.default_database_version = default_database_version
 
     def chunk(self) -> Dict[str, Any]:
         """Executes database chunking and writes config.json.
@@ -106,9 +108,10 @@ class DatabaseChunker:
         cache_bust = f"v{int(time.time())}"
         url_prefix = self.chunk_prefix if self.chunk_prefix.endswith(".") else f"{self.chunk_prefix}."
         
+        version_to_write = existing_version or self.default_database_version
         config: Dict[str, Any] = {}
-        if existing_version:
-            config["databaseVersion"] = existing_version
+        if version_to_write:
+            config["databaseVersion"] = version_to_write
 
         config.update({
             "serverMode": "chunked",
@@ -125,5 +128,5 @@ class DatabaseChunker:
 
         elapsed = time.time() - t0
         print(f"✓ Created {len(chunk_files)} chunks in {elapsed:.2f}s")
-        print(f"✓ Config written to: {config_path} (databaseVersion: {existing_version or 'not set'})")
+        print(f"✓ Config written to: {config_path} (databaseVersion: {version_to_write or 'not set'})")
         return config

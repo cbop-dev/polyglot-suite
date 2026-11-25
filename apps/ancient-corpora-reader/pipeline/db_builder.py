@@ -774,6 +774,28 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 	# 8. Build Universal Precomputed lemma_forms
 	build_lemma_forms(src_conn, tgt_conn, corpus_type)
 
+	# 8.1 Write db_metadata (schema & build provenance)
+	from datetime import datetime, timezone
+	tgt_cur.execute("""
+	CREATE TABLE IF NOT EXISTS db_metadata (
+		key TEXT PRIMARY KEY,
+		value TEXT NOT NULL
+	);
+	""")
+	meta_map: Dict[str, str] = {}
+	src_cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='db_metadata'")
+	if src_cur.fetchone():
+		src_cur.execute("SELECT key, value FROM db_metadata")
+		for k, v in src_cur.fetchall():
+			meta_map[k] = v
+	meta_map.setdefault("schema_version", "2")
+	meta_map["corpus_id"] = corpus_type
+	meta_map["compiled_at"] = datetime.now(timezone.utc).isoformat()
+	tgt_cur.executemany(
+		"INSERT OR REPLACE INTO db_metadata (key, value) VALUES (?, ?)",
+		list(meta_map.items()),
+	)
+
 	# 9. Commit before verification
 	tgt_conn.commit()
 
