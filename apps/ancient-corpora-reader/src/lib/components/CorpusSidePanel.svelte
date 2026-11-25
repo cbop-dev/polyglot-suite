@@ -32,11 +32,11 @@
 	onTabChange={(tab) => (readerState.activeSidePanelTab = tab)}
 	selectedToken={readerState.selectedToken}
 	{corpusTitle}
-	language={getCorpusPrimaryLanguage(readerState.currentCorpus)}
+	language={readerState.selectedToken?.lang || readerState.currentCorpusConfig.primaryLanguage || getCorpusPrimaryLanguage(readerState.currentCorpus)}
 	top="53px"
 	ariaLabel="Lexicon & Study Panel"
 	{highlightStore}
-	fetchLexiconEntry={(lemma) => fetchLexiconEntry(readerState.currentCorpus, lemma)}
+	fetchLexiconEntry={(lemma) => fetchLexiconEntry(readerState.currentCorpus, lemma, readerState.selectedToken?.lang)}
 	fetchLemmaStats={(lemma) => fetchLemmaStats(readerState.currentCorpus, lemma)}
 	fetchConcordancePage={(lemma, offset, size, totalCount, formFilter) => fetchConcordancePage(readerState.currentCorpus, lemma, offset, size, totalCount, formFilter)}
 	fetchConcordance={(lemma, formFilter) => fetchConcordance(readerState.currentCorpus, lemma, formFilter)}
@@ -45,7 +45,16 @@
 	fetchAttestedForms={(lemma) => fetchAttestedForms(readerState.currentCorpus, lemma)}
 	searchLemmas={(query) => searchLemmas(readerState.currentCorpus, query)}
 	onSelectToken={(t) =>
-		readerState.openToken({ w: t.w || '', l: t.l || '', m: t.m, p: t.p, lang: 'grc' }, '')}
+		readerState.openToken(
+			{
+				w: t.w || '',
+				l: t.l || '',
+				m: t.m,
+				p: t.p,
+				lang: readerState.currentCorpusConfig.primaryLanguage || 'grc'
+			},
+			''
+		)}
 	onNavigateToRef={handleNavigateToRef}
 	extraTabs={readerState.currentCorpus === 'philo' ? [{ id: 'scripture', label: 'Scripture' }] : []}
 >

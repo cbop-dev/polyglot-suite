@@ -46,21 +46,23 @@
 	>
 		<footer
 			id="footer-panel"
-			class="relative py-2 px-4 pr-12 sm:pr-14 text-xs max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4"
+			class="relative py-2 px-4 pr-12 sm:pr-14 text-xs max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4"
 		>
 			<!-- Left: Copyright & License links -->
-			<div class="footer-links text-center md:text-left space-x-1 sm:space-x-1.5 opacity-85">
+			<div class="footer-links text-center space-x-1 sm:space-x-1.5 opacity-85">
 				<span>Web app © Fr. Christopher Brannan, O.P., 2026.</span>
 				<span class="opacity-40">|</span>
-				<span>Code: <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener noreferrer" class="link">AGPL v3</a></span>
-				<span class="opacity-40">•</span>
-				<span>Data: <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer" class="link">CC BY-SA 4.0</a>
-				/ <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener noreferrer" class="link"> BY-NC 4.0 (BHS)</a>
-				</span>
-				<span class="opacity-40">|</span>
+				<!--
+					<span>Code: <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener noreferrer" class="link">AGPL v3</a></span>
+					<span class="opacity-40">•</span>
+					<span>Data: <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer" class="link">CC BY-SA 4.0</a>
+					/ <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener noreferrer" class="link"> BY-NC 4.0 (BHS)</a>
+					</span>
+					<span class="opacity-40">|</span>
+				-->
 				<a href="{base}/sources-and-licenses" class="link font-semibold">Sources &amp; Licenses</a>
 				<span class="opacity-40">•</span>
-				<span>AI-assisted with <a href="{base}/sources-and-licenses#ai-attribution" class="link">Antigravity 2.0 &amp; Gemini</a></span>
+				<span><a href="{base}/sources-and-licenses#ai-attribution" class="link">AI-assisted</a></span>
 				<span class="opacity-40">•</span>
 				<a href="{APP_REPO}" target="_blank" rel="noopener noreferrer" class="link">GitHub</a>
 			</div>

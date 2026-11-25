@@ -41,6 +41,14 @@ export const APPS = {
     title: 'Ancient Corpora - Josephus SQLite Database',
     notes: 'Pre-computed 1MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (Josephus).',
   },
+  'corpora-justin': {
+    name: 'Ancient Corpora: Justin Martyr',
+    dir: path.join(REPO_ROOT, 'apps/ancient-corpora-reader/static/db/justin'),
+    pattern: 'justin.db.*',
+    defaultPrefix: 'corpora-justin-db-v',
+    title: 'Ancient Corpora - Justin Martyr SQLite Database',
+    notes: 'Pre-computed normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (Justin Martyr).',
+  },
 };
 APPS.data = APPS.bible;
 APPS['bible-data'] = APPS.bible;
@@ -53,10 +61,12 @@ APPS['corpora-fathers'] = APPS['corpora-af'];
 APPS.philo = APPS['corpora-philo'];
 APPS.josephus = APPS['corpora-josephus'];
 APPS.jr = APPS['corpora-josephus'];
+APPS.justin = APPS['corpora-justin'];
 APPS['acr-af'] = APPS['corpora-af'];
 APPS['acr-philo'] = APPS['corpora-philo'];
 APPS['acr-josephus'] = APPS['corpora-josephus'];
 APPS['acr-jr'] = APPS['corpora-josephus'];
+APPS['acr-justin'] = APPS['corpora-justin'];
 
 export function getGhEnv() {
   const env = { ...process.env };
@@ -153,12 +163,13 @@ Actions:
   --publish, publish   Upload local database chunks to GitHub Releases
 
 Apps:
-  all                  Sync all reader databases (bible, corpora-af, corpora-philo, corpora-josephus) [default for pull]
+  all                  Sync all reader databases (bible, corpora-af, corpora-philo, corpora-josephus, corpora-justin) [default for pull]
   bible (or data, lex) Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
-  corpora (or acr)     All Ancient Corpora Reader databases (AF, Philo, Josephus)
+  corpora (or acr)     All Ancient Corpora Reader databases (AF, Philo, Josephus, Justin)
   corpora-af           Ancient Corpora - Apostolic Fathers database (tag: corpora-af-db-vX.Y.Z) [aliases: af, fathers]
   corpora-philo        Ancient Corpora - Philo database (tag: corpora-philo-db-vX.Y.Z) [alias: philo]
   corpora-josephus     Ancient Corpora - Josephus database (tag: corpora-josephus-db-vX.Y.Z) [aliases: josephus, jr]
+  corpora-justin       Ancient Corpora - Justin Martyr database (tag: corpora-justin-db-vX.Y.Z) [alias: justin]
 
 Options:
   --help, -h, help     Show this help message
@@ -188,11 +199,11 @@ if (isMain) {
 
   let targets;
   if (targetApp === 'all') {
-    targets = ['bible', 'corpora-af', 'corpora-philo', 'corpora-josephus'];
+    targets = ['bible', 'corpora-af', 'corpora-philo', 'corpora-josephus', 'corpora-justin'];
   } else if (targetApp === 'legacy') {
     targets = ['philo', 'fathers', 'josephus'];
   } else if (targetApp === 'corpora' || targetApp === 'acr') {
-    targets = ['corpora-af', 'corpora-philo', 'corpora-josephus'];
+    targets = ['corpora-af', 'corpora-philo', 'corpora-josephus', 'corpora-justin'];
   } else {
     targets = [targetApp];
   }

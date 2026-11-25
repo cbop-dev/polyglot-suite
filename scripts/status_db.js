@@ -192,12 +192,13 @@ Usage:
   npm run status:db [app]
 
 Apps:
-  all                  Check all reader databases (bible, corpora-af, corpora-philo, corpora-josephus) [default]
+  all                  Check all reader databases (bible, corpora-af, corpora-philo, corpora-josephus, corpora-justin) [default]
   bible (or lex, data) Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
-  corpora (or acr)     All Ancient Corpora Reader databases (AF, Philo, Josephus)
+  corpora (or acr)     All Ancient Corpora Reader databases (AF, Philo, Josephus, Justin)
   corpora-af           Ancient Corpora - Apostolic Fathers database (tag: corpora-af-db-vX.Y.Z) [aliases: af, fathers]
   corpora-philo        Ancient Corpora - Philo database (tag: corpora-philo-db-vX.Y.Z) [alias: philo]
   corpora-josephus     Ancient Corpora - Josephus database (tag: corpora-josephus-db-vX.Y.Z) [aliases: josephus, jr]
+  corpora-justin       Ancient Corpora - Justin Martyr database (tag: corpora-justin-db-vX.Y.Z) [alias: justin]
 
 Options:
   --help, -h           Show this help message
@@ -222,11 +223,11 @@ function main() {
   const targetArg = positional[0] || 'all';
   let targetKeys;
   if (targetArg === 'all') {
-    targetKeys = ['bible', 'corpora-af', 'corpora-philo', 'corpora-josephus'];
+    targetKeys = ['bible', 'corpora-af', 'corpora-philo', 'corpora-josephus', 'corpora-justin'];
   } else if (targetArg === 'legacy') {
     targetKeys = ['philo', 'fathers', 'josephus'];
   } else if (targetArg === 'corpora' || targetArg === 'acr') {
-    targetKeys = ['corpora-af', 'corpora-philo', 'corpora-josephus'];
+    targetKeys = ['corpora-af', 'corpora-philo', 'corpora-josephus', 'corpora-justin'];
   } else {
     targetKeys = [targetArg];
   }

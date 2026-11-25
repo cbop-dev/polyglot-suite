@@ -7,10 +7,11 @@ An interactive web application for comparative reading, linguistic exploration, 
 > **Human Review Status:** `To be reviewed`  
 > This documentation was generated with AI assistance and may contain inaccuracies. Please verify with the codebase and primary sources.
 
-The **Ancient Corpora Reader** unifies three major historical corpora into a single interface:
+The **Ancient Corpora Reader** unifies major historical corpora into a single interface:
 1. **Apostolic Fathers** (*Clement of Rome, Ignatius of Antioch, Polycarp, Didache, Shepherd of Hermas, Barnabas, Papias, etc.*)
 2. **Philo of Alexandria** (*All 31 surviving continuous Greek treatises*)
 3. **Flavius Josephus** (*The Jewish War, Antiquities of the Jews, Life, and Against Apion*)
+4. **Justin Martyr** (*First Apology, Second Apology, and Dialogue with Trypho*)
 
 ---
 
@@ -48,6 +49,7 @@ The **Ancient Corpora Reader** unifies three major historical corpora into a sin
 | **Apostolic Fathers** | 15 canonical works | Kirsopp Lake (Loeb Classical Library, 1912–1913) | Kirsopp Lake English; Latin manuscript witnesses | Multi-column trilingual layout |
 | **Philo of Alexandria** | 31 Greek treatises | Leopold Cohn & Paul Wendland (*Editio Maior*, 1896–1915) | Charles Duke Yonge (1854–1855) | Mangey citations & Scripture index |
 | **Flavius Josephus** | 4 complete works | Benedikt Niese (*Flavii Iosephi Opera*, 1885–1890) | William Whiston (1737 / 1856) | Niese sections & Whiston mapping |
+| **Justin Martyr** | 3 authentic works | *First1KGreek* (`tlg0645`) / Giuseppe Celano *LemmatizedAncientGreekXML* | Roberts & Donaldson (*Ante-Nicene Fathers* Vol. 1, CCEL) | Pre-lemmatized Greek (`CC BY-NC 4.0`) + Public Domain English |
 
 ---
 
@@ -130,5 +132,5 @@ python3 apps/ancient-corpora-reader/pipeline/build.py --chunk af
 ## Licensing & Scholarly Use
 
 - **Source Code**: Licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** as part of the Polyglot Suite monorepo.
-- **Texts & Linguistic Data**: Derived from public-domain critical editions and CC BY-SA 4.0 open datasets (Perseus Digital Library, First1KGreek, Giuseppe Celano Lemmatized Ancient Greek XML, STEPBible TFLSJ).
+- **Texts & Linguistic Data**: Derived from public-domain critical editions, `CC BY-SA 4.0` open datasets (Perseus Digital Library, First1KGreek, STEPBible TFLSJ), and `CC BY-NC 4.0` pre-lemmatized texts (Giuseppe Celano’s *LemmatizedAncientGreekXML* used for Philo and Justin Martyr; see `/sources-and-licenses` in the app for per-corpus details).
 - **Academic Citation**: While texts are curated from critical editions, automated tokenization and lemmatization may contain occasional discrepancies. Check quotations against standard printed critical editions for published academic work.

@@ -26,9 +26,10 @@
 		profile?: 'standard' | 'josephus' | 'all';
 		align?: 'left' | 'right' | 'center';
 		placement?: 'bottom' | 'top';
-		variant?: 'popover' | 'inline';
+		variant?: 'popover' | 'inline' | 'panel';
 		enableFontSizeSlider?: boolean;
-		isOpen?:boolean
+		isOpen?: boolean;
+		onTrigger?: () => void;
 	}
 
 	let {
@@ -41,7 +42,8 @@
 		placement = 'bottom',
 		variant = 'popover',
 		enableFontSizeSlider=true,
-		isOpen=$bindable(false)
+		isOpen=$bindable(false),
+		onTrigger
 		
 	}: Props = $props();
 	let fontSizeValue = $state<number>(100); // 100%
@@ -83,6 +85,10 @@
 	}
 
 	function toggleOpen() {
+		if (onTrigger) {
+			onTrigger();
+			return;
+		}
 		isOpen = !isOpen;
 		if (isOpen) {
 			updatePosition();
@@ -105,13 +111,13 @@
 	}
 
 	function handleKeyDown(e: KeyboardEvent) {
-		if (e.key === 'Escape' && isOpen) {
+		if (!onTrigger && e.key === 'Escape' && isOpen) {
 			isOpen = false;
 		}
 	}
 
 	function handlePointerDown(e: PointerEvent) {
-		if (isOpen && containerEl && !containerEl.contains(e.target as Node)) {
+		if (!onTrigger && isOpen && containerEl && !containerEl.contains(e.target as Node)) {
 			isOpen = false;
 		}
 	}
@@ -127,6 +133,14 @@
 			updatePosition();
 		}
 	}
+	function handleThemeSync(e: Event) {
+		const detail = (e as CustomEvent).detail;
+		if (!detail || detail.storageKey !== storageKey) return;
+		sliderValue = detail.sliderValue;
+		warmthValue = detail.warmthValue;
+		fontSizeValue = detail.fontSizeValue;
+	}
+
 	onMount(() => {
 		sliderValue = initReadingTheme(options);
 		warmthValue = initReadingWarmth(options);
@@ -135,6 +149,7 @@
 		
 
 		window.addEventListener('cycle-theme', handleCycleTheme);
+		window.addEventListener('reading-theme-sync', handleThemeSync);
 		window.addEventListener('keydown', handleKeyDown);
 		document.addEventListener('pointerdown', handlePointerDown);
 		window.addEventListener('resize', handleResize);
@@ -142,6 +157,7 @@
 
 		return () => {
 			window.removeEventListener('cycle-theme', handleCycleTheme);
+			window.removeEventListener('reading-theme-sync', handleThemeSync);
 			window.removeEventListener('keydown', handleKeyDown);
 			document.removeEventListener('pointerdown', handlePointerDown);
 			window.removeEventListener('resize', handleResize);
@@ -169,6 +185,11 @@
 			saveReadingTheme(sliderValue, storageKey);
 			saveReadingWarmth(warmthValue, warmthStorageKey);
 			saveReadingFontSize(fontSizeValue, fontSizeStorageKey);
+			window.dispatchEvent(
+				new CustomEvent('reading-theme-sync', {
+					detail: { sliderValue, warmthValue, fontSizeValue, storageKey }
+				})
+			);
 			
 		});
 	}
@@ -302,6 +323,10 @@
 		{@render fontSizeSlider()}
 		{/if}
 	</div>
+{:else if variant === 'panel'}
+	<div class="theme-slider-panel-inline">
+		{@render panelContent()}
+	</div>
 {:else}
 	<div class="theme-slider-container" bind:this={containerEl}>
 		<!-- Trigger Button -->
@@ -326,14 +351,21 @@
 			{/if}
 		</button>
 
-		{#if isOpen}
+		{#if isOpen && !onTrigger}
 			<!-- Popover Panel -->
 			<div
 				class="theme-slider-panel {align === 'left' ? 'align-left' : align === 'center' ? 'align-center' : 'align-right'} {placement === 'top' ? 'placement-top' : ''}"
 				style={panelStyle}
 			>
+				{@render panelContent()}
+			</div>
+		{/if}
+	</div>
+{/if}
+
+{#snippet panelContent()}
 				<div class="panel-header">
-					<span class="panel-title">Reading Comfort</span>
+					<span class="panel-title">{variant === 'panel' ? 'Theme Mode' : 'Reading Comfort'}</span>
 					<span class="panel-label">{getThemeLabel(sliderValue)}</span>
 				</div>
 
@@ -436,10 +468,7 @@
 					<button type="button" class="btn text-sm preset-btn" onclick={resetFontSize} >Reset</button>
 					{@render fontSizeSlider()}
 				{/if}
-			</div>
-		{/if}
-	</div>
-{/if}
+{/snippet}
 
 <style>
 	@reference 'tailwindcss';
@@ -481,6 +510,11 @@
 
 	.sun-icon {
 		color: #f59e0b;
+	}
+
+	.theme-slider-panel-inline {
+		padding: 0.5rem 0.25rem 0.75rem;
+		box-sizing: border-box;
 	}
 
 	.theme-slider-panel {
@@ -535,7 +569,12 @@
 			box-sizing: border-box;
 		}
 
-		.theme-slider-panel {
+		.theme-slider-panel-inline {
+		padding: 0.5rem 0.25rem 0.75rem;
+		box-sizing: border-box;
+	}
+
+	.theme-slider-panel {
 			top: calc(env(safe-area-inset-top, 0px) + 3.75rem);
 			bottom: auto;
 		}

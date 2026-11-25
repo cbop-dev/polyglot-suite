@@ -1,6 +1,7 @@
 import { getLanguageIsoCode } from '../languages.js';
+import type { CitationStyle } from '../ancient-corpora-types.js';
 
-export type AncientCorpusId = 'af' | 'philo' | 'josephus';
+export type AncientCorpusId = string;
 
 /**
  * Canonical default dictionary / lexicon identifiers by language code.
@@ -77,8 +78,9 @@ export interface ParsedAncientCitation {
 	rawCitation: string;
 }
 
-export interface FormatAncientCitationParams {
+export interface FormatAncientCorpusCitationParams {
 	corpusId?: string;
+	citationStyle?: CitationStyle;
 	workCode?: string;
 	work?: { abbrev: string; divisionLabel?: string };
 	book?: number | string;
@@ -89,23 +91,28 @@ export interface FormatAncientCitationParams {
 	milestone?: string;
 }
 
+export type FormatAncientCitationParams = FormatAncientCorpusCitationParams;
+
 /**
- * Format an ancient corpus citation based on its conventions:
- * - AF: `1 Clem. 1:2` (chapter:section) or `Barn. 4:1`
- * - Philo: `Opif. 15` (section) or `Leg. 1.25` (book.section)
- * - Josephus: `Ant. 1.15` (book.section) or `Life 10`
+ * Format an ancient corpus citation based on citationStyle or corpus conventions:
+ * - 'chapter_section' (e.g. AF, Justin): `1 Clem. 1:2`, `1 Apol. 1:1`
+ * - 'book_section' / 'division_section' (e.g. Philo, Josephus): `Opif. 15`, `Ant. 1.15`
  */
-export function formatAncientCorpusCitation(params: FormatAncientCitationParams): string {
-	const { corpusId, workCode, work, book, chapter, division, section, customAbbrev, milestone } = params;
+export function formatAncientCorpusCitation(params: FormatAncientCorpusCitationParams): string {
+	const { corpusId, citationStyle, workCode, work, book, chapter, division, section, customAbbrev, milestone } = params;
 	const abbrev = customAbbrev || work?.abbrev || workCode || '';
 
 	if (milestone) {
 		return abbrev ? `${abbrev} ${milestone}` : String(milestone);
 	}
 
-	const div = division !== undefined ? division : (corpusId === 'af' ? chapter : (book !== undefined ? book : chapter));
+	const style: CitationStyle | undefined =
+		citationStyle ??
+		(corpusId === 'af' ? 'chapter_section' : corpusId === 'josephus' ? 'book_section' : corpusId === 'philo' ? 'division_section' : undefined);
 
-	if (corpusId === 'af') {
+	const div = division !== undefined ? division : (style === 'chapter_section' ? chapter : (book !== undefined ? book : chapter));
+
+	if (style === 'chapter_section') {
 		const c = chapter !== undefined ? chapter : division;
 		if (c !== undefined && section !== undefined) return abbrev ? `${abbrev} ${c}:${section}` : `${c}:${section}`;
 		if (c !== undefined) return abbrev ? `${abbrev} ${c}` : `${c}`;
@@ -113,7 +120,7 @@ export function formatAncientCorpusCitation(params: FormatAncientCitationParams)
 		return abbrev;
 	}
 
-	if (corpusId === 'philo') {
+	if (style === 'division_section') {
 		if (book !== undefined && section !== undefined) return abbrev ? `${abbrev} ${book}.${section}` : `${book}.${section}`;
 		if (division !== undefined && section !== undefined) return abbrev ? `${abbrev} ${division}.${section}` : `${division}.${section}`;
 		if (section !== undefined) return abbrev ? `${abbrev} ${section}` : `${section}`;
@@ -122,7 +129,7 @@ export function formatAncientCorpusCitation(params: FormatAncientCitationParams)
 		return abbrev;
 	}
 
-	if (corpusId === 'josephus') {
+	if (style === 'book_section') {
 		if (book !== undefined && section !== undefined) return abbrev ? `${abbrev} ${book}.${section}` : `${book}.${section}`;
 		if (division !== undefined && section !== undefined) return abbrev ? `${abbrev} ${division}.${section}` : `${division}.${section}`;
 		if (section !== undefined) return abbrev ? `${abbrev} ${section}` : `${section}`;

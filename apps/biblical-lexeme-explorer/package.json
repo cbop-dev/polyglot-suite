@@ -1,8 +1,8 @@
 {
   "name": "biblical-lexeme-explorer",
-  "version": "2.3.11",
+  "version": "2.3.12",
   "private": true,
-  "repository": "https://github.com/cbop-dev/biblical-lexeme-explorer",
+  "repository": "https://github.com/cbop-dev/polyglot-suite/tree/main/apps/biblical-lexeme-explorer",
   "type": "module",
   "scripts": {
     "prebuild": "node scripts/apply-hebrew-errata.js",

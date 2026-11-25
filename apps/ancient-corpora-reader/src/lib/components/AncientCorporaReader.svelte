@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import {resolve} from '$app/paths';
 	import CorpusHeader from './CorpusHeader.svelte';
+	import Footer from './Footer.svelte';
 	import CorpusColumnView from './CorpusColumnView.svelte';
 	import CorpusSidePanel from './CorpusSidePanel.svelte';
 	import CorpusPickerModalWrapper from './CorpusPickerModalWrapper.svelte';
@@ -17,8 +19,9 @@
 		type TextVersion
 	} from '../services/dbClient.js';
 	import type { AncientCorpusId } from '@polyglot/ancient-languages';
-	import { Loading } from '@polyglot/ui';
-
+	import { Loading, Modal2 } from '@polyglot/ui';
+	import ThemeSlider from '@polyglot/theme/ThemeSlider.svelte';
+	
 	interface Props {
 		initialCorpus?: AncientCorpusId;
 		initialWork?: string;
@@ -283,12 +286,30 @@
 	<!-- Dockable Side Panel -->
 	<CorpusSidePanel />
 
+	<!-- Footer -->
+	<Footer />
+
 	<!-- Modals -->
 	<CorpusPickerModalWrapper />
 	<WorkPickerModalWrapper />
 	<DivisionPickerModalWrapper sectionsCount={maxSectionCount} />
 	<AcademicCitationModalWrapper />
 	<HotkeyHelpModal />
+	<Modal2
+		bind:showModal={readerState.showThemeSlider}
+		title="Reading Comfort"
+		maxWidth="!max-w-[340px] !p-5 sm:!p-6"
+		showMaximize={false}
+		onclose={() => (readerState.showThemeSlider = false)}
+	>
+		<ThemeSlider
+			variant="panel"
+			storageKey="ne-reading-theme"
+			warmthStorageKey="ne-reading-warmth"
+			enableFontSizeSlider={true}
+			profile="standard"
+		/>
+	</Modal2>
 </div>
 
 <style>
