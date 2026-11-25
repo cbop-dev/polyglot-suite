@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { APPS, ghEnv } from './sync_db.js';
+import { APPS, CORPORA_KEYS, ghEnv } from './sync_db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -90,12 +90,31 @@ function getLocalDatabaseInfo(app) {
     const sizeMb = (totalBytes / (1024 * 1024)).toFixed(1);
     return {
       version: config.databaseVersion || 'unknown',
+      expectedBytes: typeof config.databaseLengthBytes === 'number' ? config.databaseLengthBytes : null,
+      totalBytes,
       configPath,
       chunkCount: chunks.length,
       sizeMb,
     };
   } catch (err) {
     return { error: `Failed to read config.json: ${err.message}` };
+  }
+}
+
+function fetchReleaseAssets(tag) {
+  try {
+    const raw = execSync(
+      `gh release view "${tag}" --repo ${REPO} --json assets`,
+      {
+        cwd: REPO_ROOT,
+        env: ghEnv,
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }
+    );
+    return JSON.parse(raw).assets || [];
+  } catch {
+    return null;
   }
 }
 
@@ -145,6 +164,11 @@ export function checkAppStatus(appKey, releases) {
     statusEmoji = '⚠️';
     message = `Local version "${local.version}" is NOT published to GitHub Releases (Latest on GitHub: ${latestRemoteTag}).`;
     action = `npm run release:db ${appKey}`;
+  } else if (local.expectedBytes !== null && local.chunkCount > 0 && local.totalBytes !== local.expectedBytes) {
+    status = 'LOCAL_CHUNKS_CORRUPT';
+    statusEmoji = '❌';
+    message = `Local chunk byte sum (${local.totalBytes} B) does not match config.json databaseLengthBytes (${local.expectedBytes} B).`;
+    action = `Re-chunk database or run: npm run pull:db ${appKey}`;
   } else if (local.version === latestRemoteTag) {
     if (local.chunkCount === 0) {
       status = 'RELEASED_CHUNKS_MISSING';
@@ -152,10 +176,23 @@ export function checkAppStatus(appKey, releases) {
       message = `Release "${local.version}" is live on GitHub, but local chunk files are missing from ${path.relative(REPO_ROOT, app.dir)}.`;
       action = `npm run pull:db ${appKey}`;
     } else {
-      status = 'UP_TO_DATE';
-      statusEmoji = '✅';
-      message = `Local config matches the latest GitHub release (${latestRemoteTag}) and has ${local.chunkCount} local chunk files (${local.sizeMb} MB).`;
-      action = 'No action needed. Up to date.';
+      const app = APPS[appKey];
+      const chunkRegex = new RegExp('^' + app.pattern.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$');
+      const assets = fetchReleaseAssets(local.version);
+      const remoteChunks = assets ? assets.filter((a) => chunkRegex.test(a.name)) : null;
+      const remoteBytes = remoteChunks ? remoteChunks.reduce((sum, a) => sum + (a.size || 0), 0) : null;
+
+      if (remoteChunks && (remoteChunks.length !== local.chunkCount || remoteBytes !== local.totalBytes)) {
+        status = 'LOCAL_MODIFIED_UNRELEASED';
+        statusEmoji = '🔄';
+        message = `Local chunks (${local.chunkCount} files, ${local.totalBytes} B) differ from GitHub release "${local.version}" (${remoteChunks.length} files, ${remoteBytes} B).`;
+        action = `npm run release:db ${appKey} patch`;
+      } else {
+        status = 'UP_TO_DATE';
+        statusEmoji = '✅';
+        message = `Local config matches the latest GitHub release (${latestRemoteTag}) and has ${local.chunkCount} local chunk files (${local.sizeMb} MB).`;
+        action = 'No action needed. Up to date.';
+      }
     }
   } else {
     // Local version is published, but a newer version exists on GitHub
@@ -223,11 +260,11 @@ function main() {
   const targetArg = positional[0] || 'all';
   let targetKeys;
   if (targetArg === 'all') {
-    targetKeys = ['bible', 'corpora-af', 'corpora-philo', 'corpora-josephus', 'corpora-justin'];
+    targetKeys = ['bible', ...CORPORA_KEYS];
   } else if (targetArg === 'legacy') {
     targetKeys = ['philo', 'fathers', 'josephus'];
   } else if (targetArg === 'corpora' || targetArg === 'acr') {
-    targetKeys = ['corpora-af', 'corpora-philo', 'corpora-josephus', 'corpora-justin'];
+    targetKeys = [...CORPORA_KEYS];
   } else {
     targetKeys = [targetArg];
   }

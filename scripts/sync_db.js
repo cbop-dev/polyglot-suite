@@ -17,56 +17,38 @@ export const APPS = {
     title: 'Polyglot Bible & Lexeme Explorer SQLite Database',
     notes: 'Consolidated master SQLite database (5MB chunks) and unified lexemes for Polyglot Bible Reader and Biblical Lexeme Explorer.',
   },
-  'corpora-af': {
-    name: 'Ancient Corpora: Apostolic Fathers',
-    dir: path.join(REPO_ROOT, 'apps/ancient-corpora-reader/static/db/af'),
-    pattern: 'af.db.*',
-    defaultPrefix: 'corpora-af-db-v',
-    title: 'Ancient Corpora - Apostolic Fathers SQLite Database',
-    notes: 'Pre-computed 1MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (AF).',
-  },
-  'corpora-philo': {
-    name: 'Ancient Corpora: Philo of Alexandria',
-    dir: path.join(REPO_ROOT, 'apps/ancient-corpora-reader/static/db/philo'),
-    pattern: 'philo.db.*',
-    defaultPrefix: 'corpora-philo-db-v',
-    title: 'Ancient Corpora - Philo SQLite Database',
-    notes: 'Pre-computed 1MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (Philo).',
-  },
-  'corpora-josephus': {
-    name: 'Ancient Corpora: Flavius Josephus',
-    dir: path.join(REPO_ROOT, 'apps/ancient-corpora-reader/static/db/josephus'),
-    pattern: 'josephus.db.*',
-    defaultPrefix: 'corpora-josephus-db-v',
-    title: 'Ancient Corpora - Josephus SQLite Database',
-    notes: 'Pre-computed 1MB normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (Josephus).',
-  },
-  'corpora-justin': {
-    name: 'Ancient Corpora: Justin Martyr',
-    dir: path.join(REPO_ROOT, 'apps/ancient-corpora-reader/static/db/justin'),
-    pattern: 'justin.db.*',
-    defaultPrefix: 'corpora-justin-db-v',
-    title: 'Ancient Corpora - Justin Martyr SQLite Database',
-    notes: 'Pre-computed normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (Justin Martyr).',
-  },
 };
 APPS.data = APPS.bible;
 APPS['bible-data'] = APPS.bible;
 APPS.lex = APPS.bible;
 
-// Aliases for Ancient Corpora Reader sub-databases (formerly standalone readers)
-APPS.af = APPS['corpora-af'];
-APPS.fathers = APPS['corpora-af'];
-APPS['corpora-fathers'] = APPS['corpora-af'];
-APPS.philo = APPS['corpora-philo'];
-APPS.josephus = APPS['corpora-josephus'];
-APPS.jr = APPS['corpora-josephus'];
-APPS.justin = APPS['corpora-justin'];
-APPS['acr-af'] = APPS['corpora-af'];
-APPS['acr-philo'] = APPS['corpora-philo'];
-APPS['acr-josephus'] = APPS['corpora-josephus'];
-APPS['acr-jr'] = APPS['corpora-josephus'];
-APPS['acr-justin'] = APPS['corpora-justin'];
+export const CORPORA_KEYS = [];
+
+function registerCorporaFromManifest() {
+  const manifestPath = path.join(REPO_ROOT, 'apps/ancient-corpora-reader/corpora.manifest.json');
+  if (!fs.existsSync(manifestPath)) return;
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+  for (const entry of manifest.corpora || []) {
+    const id = entry.id;
+    const key = `corpora-${id}`;
+    const pipe = entry.pipeline || {};
+    const chunkPrefix = pipe.chunkPrefix || `${id}.db`;
+    APPS[key] = {
+      name: `Ancient Corpora: ${entry.name}`,
+      dir: path.join(REPO_ROOT, `apps/ancient-corpora-reader/static/db/${id}`),
+      pattern: `${chunkPrefix}.*`,
+      defaultPrefix: pipe.dbTagPrefix || `corpora-${id}-db-v`,
+      title: `Ancient Corpora - ${entry.name} SQLite Database`,
+      notes: `Pre-computed normalized SQLite chunks with snippet indexes for Ancient Corpora Reader (${entry.name}).`,
+    };
+    CORPORA_KEYS.push(key);
+    for (const alias of pipe.aliases || [id]) {
+      APPS[alias] = APPS[key];
+    }
+  }
+}
+
+registerCorporaFromManifest();
 
 export function getGhEnv() {
   const env = { ...process.env };
@@ -199,11 +181,11 @@ if (isMain) {
 
   let targets;
   if (targetApp === 'all') {
-    targets = ['bible', 'corpora-af', 'corpora-philo', 'corpora-josephus', 'corpora-justin'];
+    targets = ['bible', ...CORPORA_KEYS];
   } else if (targetApp === 'legacy') {
     targets = ['philo', 'fathers', 'josephus'];
   } else if (targetApp === 'corpora' || targetApp === 'acr') {
-    targets = ['corpora-af', 'corpora-philo', 'corpora-josephus', 'corpora-justin'];
+    targets = [...CORPORA_KEYS];
   } else {
     targets = [targetApp];
   }
