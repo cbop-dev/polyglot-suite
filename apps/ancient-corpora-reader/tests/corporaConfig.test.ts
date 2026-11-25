@@ -2,7 +2,11 @@ import { describe, it, expect } from 'vitest';
 import {
 	CORPORA_CONFIG,
 	getCorpusConfig,
-	getAllCorpora
+	getAllCorpora,
+	getActiveCorpora,
+	getRegisteredCorpora,
+	isCorpusInstalled,
+	isCorpusEnabled
 } from '../src/lib/config/corpora.js';
 import {
 	ALL_CORPUS_WORKS,
@@ -12,9 +16,19 @@ import {
 } from '../src/lib/config/corpora.data.js';
 
 describe('Corpora Configuration & Catalog', () => {
-	it('defines all three corpora in CORPORA_CONFIG and resolves them via getCorpusConfig', () => {
-		const corpora = getAllCorpora();
-		expect(corpora.map((c) => c.id)).toEqual(['af', 'philo', 'josephus']);
+	it('defines all registered corpora in CORPORA_CONFIG and resolves active corpora via getAllCorpora/getActiveCorpora', () => {
+		const registered = getRegisteredCorpora();
+		expect(registered.map((c) => c.id)).toEqual(['af', 'philo', 'josephus', 'justin']);
+
+		const active = getActiveCorpora();
+		expect(getAllCorpora().map((c) => c.id)).toEqual(active.map((c) => c.id));
+		expect(isCorpusEnabled('justin')).toBe(true);
+		expect(isCorpusInstalled('justin')).toBe(true);
+
+		const justinConfig = getCorpusConfig('justin');
+		expect(justinConfig.name).toBe('Justin Martyr');
+		expect(justinConfig.citationStyle).toBe('chapter_section');
+		expect(justinConfig.license?.name).toContain('CC BY-NC 4.0');
 
 		const afConfig = getCorpusConfig('af');
 		expect(afConfig.name).toBe('Apostolic Fathers');
@@ -55,6 +69,12 @@ describe('Corpora Configuration & Catalog', () => {
 		expect(findWork('josephus', 'war')?.code).toBe('War');
 		expect(findWork('josephus', 'life')?.code).toBe('Life');
 		expect(findWork('josephus', 'apion')?.code).toBe('Apion');
+
+		const justinWorks = getCorpusWorks('justin');
+		expect(justinWorks.length).toBe(3);
+		expect(justinWorks.map((w) => w.code)).toEqual(['1APOL', '2APOL', 'DIAL']);
+		expect(findWork('justin', '1-apology')?.totalDivisions).toBe(68);
+		expect(findWork('justin', 'dialogue-with-trypho')?.totalDivisions).toBe(142);
 	});
 
 	it('resolves division coordinates correctly without hardcoding in components', () => {

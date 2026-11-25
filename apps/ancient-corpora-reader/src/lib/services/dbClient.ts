@@ -1,10 +1,11 @@
 import { getDbWorker } from './dbWorker.js';
 import { findWork, resolveDivisionCoordinates } from '../config/corpora.data.js';
 import {
+	CORPORA_CONFIG,
 	getCorpusConfig,
-	getAllCorpora,
-	type TextDirection
+	getAllCorpora
 } from '../config/corpora.js';
+import type { TextDirection } from '@polyglot/ancient-languages/corpora-types';
 import {
 	stripGreekAccents,
 	buildAttestedForms,
@@ -141,11 +142,9 @@ export function getPrimaryVersionId(corpusId: AncientCorpusId): string {
 	return primary ? primary.id : corpusId;
 }
 
-export const PRIMARY_GREEK_CORPUS_IDS: Record<AncientCorpusId, string> = {
-	af: 'lake_grc',
-	philo: 'grc',
-	josephus: 'josephus_grc'
-};
+export const PRIMARY_GREEK_CORPUS_IDS: Record<AncientCorpusId, string> = Object.fromEntries(
+	Object.keys(CORPORA_CONFIG).map((id) => [id, getPrimaryVersionId(id)])
+);
 
 export interface DivisionResult {
 	corpusId?: AncientCorpusId;
@@ -368,11 +367,18 @@ export async function fetchAvailableDivisions(corpusId: AncientCorpusId, workCod
 /**
  * Fetch lexicon entry for a lemma using leading indexed columns (dictionary, lemma)
  */
-export async function fetchLexiconEntry(corpusId: AncientCorpusId, lemma: string): Promise<LexiconEntry | null> {
+export async function fetchLexiconEntry(
+	corpusId: AncientCorpusId,
+	lemma: string,
+	language?: string
+): Promise<LexiconEntry | null> {
 	if (!lemma) return null;
 	const worker = await getDbWorker(corpusId);
 	const clean = lemma.trim().replace(/[.,;:·]/g, '');
-	const dict = getDefaultDictionary(corpusId);
+	const cfg = getCorpusConfig(corpusId);
+	const dict = language
+		? getDefaultDictionary(language)
+		: cfg.defaultDictionary || getDefaultDictionary(cfg.primaryLanguage || corpusId);
 	const dictAlt = dict === dict.toLowerCase() ? dict.toUpperCase() : dict.toLowerCase();
 
 	// Step 1: Direct indexed seek on idx_lexicon_exact (dictionary, lemma)

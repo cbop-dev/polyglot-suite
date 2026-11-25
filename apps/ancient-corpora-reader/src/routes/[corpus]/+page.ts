@@ -1,14 +1,10 @@
-import type { PageLoad,EntryGenerator } from './$types';
+import type { PageLoad, EntryGenerator } from './$types';
 import type { AncientCorpusId } from '@polyglot/ancient-languages';
-import { CORPORA_CONFIG } from '$lib/config/corpora.js';
+import { CORPORA_CONFIG, getActiveCorpora } from '$lib/config/corpora.js';
 //export const prerender = true;
 
 export const entries: EntryGenerator = () => {
-	return [
-		{ corpus: 'af' },
-		{ corpus: 'philo' },
-		{ corpus: 'josephus' }
-	];
+	return getActiveCorpora().map((c) => ({ corpus: c.id }));
 };
 export const load: PageLoad = ({ params }) => {
 	const raw = params.corpus?.toLowerCase();

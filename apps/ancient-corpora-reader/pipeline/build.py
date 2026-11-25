@@ -50,6 +50,13 @@ CORPORA = [
 		"chunk_dir": STATIC_DB_DIR / "philo",
 		"chunk_prefix": "philo.db",
 	},
+	{
+		"id": "justin",
+		"name": "Justin Martyr",
+		"target": BUILD_DIR / "justin.sqlite3",
+		"chunk_dir": STATIC_DB_DIR / "justin",
+		"chunk_prefix": "justin.db",
+	},
 ]
 
 
@@ -65,6 +72,12 @@ def build_all(corpora_filter: list[str] | None = None):
 		print(f"\n========================================================")
 		print(f">>> Processing {c['name']} ({cid})")
 		print(f"========================================================")
+
+		if cid == "justin":
+			raw_justin = BUILD_DIR / "justin.raw.sqlite3"
+			if not raw_justin.exists():
+				from .ingestors.justin import build_justin_raw_db
+				build_justin_raw_db()
 
 		src_db = get_source_db(cid)
 

@@ -232,7 +232,7 @@ def build_covering_concordance(
 		""", batch_rows)
 		batch_rows.clear()
 
-	tgt_cur.execute("""
+	tgt_cur.executescript("""
 	CREATE INDEX IF NOT EXISTS idx_concordance_paged ON concordance_refs(
 		corpus_id, lemma, work_code, book, chapter, section
 	);
@@ -312,15 +312,19 @@ def build_lemma_forms(src_conn: sqlite3.Connection, tgt_conn: sqlite3.Connection
 			norm_lem = strip_accents(lem)
 			rows_to_insert.append(("josephus_grc", lem, norm_lem, forms_json))
 
-	else:  # af
-		# Apostolic Fathers: Precompute from text_unit_tokens at build time
+	else:  # af, justin, and generic division_both corpora
+		# Precompute from text_unit_tokens at build time, keyed by (u.version_id, lemma)
 		src_cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='text_unit_tokens'")
 		if src_cur.fetchone():
-			src_cur.execute("SELECT tokens_json FROM text_unit_tokens")
+			src_cur.execute("""
+				SELECT u.version_id, tok.tokens_json
+				FROM text_unit_tokens tok
+				JOIN text_units u ON u.id = tok.work_unit_id
+			""")
 		else:
-			src_cur.execute("SELECT tokens_json FROM text_units WHERE tokens_json IS NOT NULL")
-		lemma_group: Dict[str, Dict[str, Any]] = {}
-		for (raw_toks,) in src_cur.fetchall():
+			src_cur.execute("SELECT version_id, tokens_json FROM text_units WHERE tokens_json IS NOT NULL")
+		lemma_group: Dict[tuple, Dict[str, Any]] = {}
+		for version_id, raw_toks in src_cur.fetchall():
 			if not raw_toks:
 				continue
 			try:
@@ -339,17 +343,18 @@ def build_lemma_forms(src_conn: sqlite3.Connection, tgt_conn: sqlite3.Connection
 				pos = tok.get("p", "")
 				morph = tok.get("m", "")
 
-				if clean_lemma not in lemma_group:
-					lemma_group[clean_lemma] = {}
-				if clean_word not in lemma_group[clean_lemma]:
-					lemma_group[clean_lemma][clean_word] = {
+				g_key = (version_id, clean_lemma)
+				if g_key not in lemma_group:
+					lemma_group[g_key] = {}
+				if clean_word not in lemma_group[g_key]:
+					lemma_group[g_key][clean_word] = {
 						"form": clean_word,
 						"canonicalForm": clean_word,
 						"rawForms": set(),
 						"count": 0,
 						"analyses_map": {}
 					}
-				entry = lemma_group[clean_lemma][clean_word]
+				entry = lemma_group[g_key][clean_word]
 				entry["rawForms"].add(word)
 				entry["count"] += 1
 				if morph or pos:
@@ -359,7 +364,7 @@ def build_lemma_forms(src_conn: sqlite3.Connection, tgt_conn: sqlite3.Connection
 						"summary": f"{pos} {morph}".strip()
 					}
 
-		for lem, forms_dict in lemma_group.items():
+		for (version_id, lem), forms_dict in lemma_group.items():
 			forms_list = []
 			for word, data in forms_dict.items():
 				forms_list.append({
@@ -372,7 +377,7 @@ def build_lemma_forms(src_conn: sqlite3.Connection, tgt_conn: sqlite3.Connection
 			forms_list.sort(key=lambda x: x["count"], reverse=True)
 			forms_json = json.dumps({"forms": forms_list}, ensure_ascii=False)
 			norm_lem = strip_accents(lem)
-			rows_to_insert.append(("lake_grc", lem, norm_lem, forms_json))
+			rows_to_insert.append((version_id, lem, norm_lem, forms_json))
 
 	tgt_cur.executemany("""
 		INSERT INTO lemma_forms (corpus_id, lemma_key, normalized_lemma, forms_json)
@@ -422,12 +427,17 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 	""")
 
 	src_cur = src_conn.cursor()
-	src_cur.execute("SELECT id, title, language, direction FROM corpora")
-	src_versions = src_cur.fetchall()
-	norm_versions = [
-		(r[0], r[2], r[1], r[1], r[3] or 'ltr', idx + 1)
-		for idx, r in enumerate(src_versions)
-	]
+	src_cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='corpus_versions'")
+	if src_cur.fetchone():
+		src_cur.execute("SELECT id, language, title, version_label, direction, order_index FROM corpus_versions")
+		norm_versions = src_cur.fetchall()
+	else:
+		src_cur.execute("SELECT id, title, language, direction FROM corpora")
+		src_versions = src_cur.fetchall()
+		norm_versions = [
+			(r[0], r[2], r[1], r[1], r[3] or 'ltr', idx + 1)
+			for idx, r in enumerate(src_versions)
+		]
 	tgt_cur.executemany("INSERT INTO corpus_versions VALUES (?, ?, ?, ?, ?, ?)", norm_versions)
 
 	# 2. Compile corpus_works (+ backward compatibility view 'canonical_works')
@@ -457,47 +467,57 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 	FROM corpus_works;
 	""")
 
-	src_cur.execute("PRAGMA table_info(canonical_works)")
-	w_cols = [r[1] for r in src_cur.fetchall()]
-	w_col_idx = {name: i for i, name in enumerate(w_cols)}
+	src_cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='corpus_works'")
+	if src_cur.fetchone():
+		src_cur.execute("""
+			SELECT code, slug, order_index, category, abbrev, tlg_id,
+			       title_english, title_primary, title_secondary,
+			       total_divisions, min_division, division_label
+			FROM corpus_works
+		""")
+		norm_works = src_cur.fetchall()
+	else:
+		src_cur.execute("PRAGMA table_info(canonical_works)")
+		w_cols = [r[1] for r in src_cur.fetchall()]
+		w_col_idx = {name: i for i, name in enumerate(w_cols)}
 
-	src_cur.execute("SELECT * FROM canonical_works")
-	norm_works = []
-	for r in src_cur.fetchall():
-		code = r[w_col_idx["code"]]
-		order_idx = r[w_col_idx["order_index"]]
-		category = r[w_col_idx["category"]]
-		abbrev = r[w_col_idx["abbrev"]] if "abbrev" in w_col_idx and r[w_col_idx["abbrev"]] else code
-		tlg_id = r[w_col_idx["tlg_id"]] if "tlg_id" in w_col_idx else None
-		title_eng = r[w_col_idx["title_english"]]
-		title_pri = r[w_col_idx["title_greek"]] if "title_greek" in w_col_idx else None
-		title_sec = r[w_col_idx["title_latin"]] if "title_latin" in w_col_idx else None
-		tot_books = r[w_col_idx["total_books"]] if "total_books" in w_col_idx else 0
-		tot_chaps = r[w_col_idx["total_chapters"]] if "total_chapters" in w_col_idx else 0
-		tot_secs = r[w_col_idx["total_sections"]] if "total_sections" in w_col_idx else 0
+		src_cur.execute("SELECT * FROM canonical_works")
+		norm_works = []
+		for r in src_cur.fetchall():
+			code = r[w_col_idx["code"]]
+			order_idx = r[w_col_idx["order_index"]]
+			category = r[w_col_idx["category"]]
+			abbrev = r[w_col_idx["abbrev"]] if "abbrev" in w_col_idx and r[w_col_idx["abbrev"]] else code
+			tlg_id = r[w_col_idx["tlg_id"]] if "tlg_id" in w_col_idx else None
+			title_eng = r[w_col_idx["title_english"]]
+			title_pri = r[w_col_idx["title_greek"]] if "title_greek" in w_col_idx else None
+			title_sec = r[w_col_idx["title_latin"]] if "title_latin" in w_col_idx else None
+			tot_books = r[w_col_idx["total_books"]] if "total_books" in w_col_idx else 0
+			tot_chaps = r[w_col_idx["total_chapters"]] if "total_chapters" in w_col_idx else 0
+			tot_secs = r[w_col_idx["total_sections"]] if "total_sections" in w_col_idx else 0
 
-		slug = slugify(code)
-		if corpus_type == "josephus":
-			total_divs = tot_books or 1
-			div_label = "Book"
-			min_div = 1
-		elif corpus_type == "philo":
-			if (tot_books or 0) > 1:
-				total_divs = tot_books
+			slug = slugify(code)
+			if corpus_type == "josephus":
+				total_divs = tot_books or 1
 				div_label = "Book"
-			else:
+				min_div = 1
+			elif corpus_type == "philo":
+				if (tot_books or 0) > 1:
+					total_divs = tot_books
+					div_label = "Book"
+				else:
+					total_divs = tot_chaps or tot_secs or 1
+					div_label = "Chapter"
+				min_div = 1
+			else:  # af
 				total_divs = tot_chaps or tot_secs or 1
 				div_label = "Chapter"
-			min_div = 1
-		else:  # af
-			total_divs = tot_chaps or tot_secs or 1
-			div_label = "Chapter"
-			min_div = 0 if code in ("1CLE", "1-clem") else 1
+				min_div = 0 if code in ("1CLE", "1-clem") else 1
 
-		norm_works.append((
-			code, slug, order_idx, category, abbrev, tlg_id,
-			title_eng, title_pri, title_sec, total_divs, min_div, div_label
-		))
+			norm_works.append((
+				code, slug, order_idx, category, abbrev, tlg_id,
+				title_eng, title_pri, title_sec, total_divs, min_div, div_label
+			))
 
 	tgt_cur.executemany("""
 		INSERT INTO corpus_works VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

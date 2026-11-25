@@ -31,11 +31,28 @@ export interface MilestoneSchemeConfig {
 	badgeColorClass: string; // Tailwind color classes for pill
 }
 
+export type CitationStyle = 'chapter_section' | 'book_section' | 'division_section';
+
+export interface CorpusLicenseEdition {
+	label: string;
+	source: string;
+	license: string;
+	url?: string;
+}
+
+export interface CorpusLicenseConfig {
+	name: string;
+	url?: string;
+	notice?: string;
+	editions?: CorpusLicenseEdition[];
+}
+
 /**
  * Complete metadata contract for a corpus.
  */
 export interface CorpusConfig {
-	id: string;              // e.g. 'af', 'philo', 'josephus'
+	id: string;              // e.g. 'af', 'philo', 'josephus', 'justin'
+	enabled?: boolean;       // Defaults to true; false hides/disables corpus
 	name: string;            // e.g. 'Apostolic Fathers'
 	title?: string;          // Ergonomic alias for name
 	subtitle: string;        // e.g. 'Early Christian Greek writings (1st–2nd century CE)'
@@ -43,10 +60,12 @@ export interface CorpusConfig {
 	era: string;             // Historical period (e.g. '1st–2nd c. CE')
 	author: string;          // Author or collection designation
 	primaryLanguage: string; // 'grc', 'lat', 'hbo', etc.
+	defaultDictionary?: string; // e.g. 'lsj', 'lewis-short'
 	availableLanguages: string[]; // ['grc', 'eng', 'lat']
 	textVersions: TextVersionConfig[];
 	milestoneScheme?: MilestoneSchemeConfig;
 	coordinateScheme: 'book_only' | 'division_both';
+	citationStyle?: CitationStyle;
 	features: {
 		hasScriptureCitations: boolean;
 		hasTextualApparatus: boolean;
@@ -58,4 +77,5 @@ export interface CorpusConfig {
 		defaultYear: string;
 		publisher?: string;
 	};
+	license?: CorpusLicenseConfig;
 }

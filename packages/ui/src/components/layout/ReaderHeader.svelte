@@ -41,6 +41,7 @@
 		showThemeSlider?: boolean;
 		themeStorageKey?: string;
 		themeWarmthStorageKey?: string;
+		onOpenTheme?: () => void;
 
 		showCitation?: boolean;
 		onOpenCitation?: () => void;
@@ -91,6 +92,7 @@
 		showThemeSlider = $bindable(false),
 		themeStorageKey = 'polyglot_reader_theme',
 		themeWarmthStorageKey = 'polyglot_reader_warmth',
+		onOpenTheme,
 		showCitation = true,
 		onOpenCitation,
 		showSearch = true,
@@ -271,7 +273,7 @@
 						align="right"
 						{enableFontSizeSlider}
 						bind:isOpen={showThemeSlider}
-
+						onTrigger={onOpenTheme}
 					/>
 				
 
@@ -331,7 +333,7 @@
 							profile="standard"
 							align="right"
 							{enableFontSizeSlider}
-							
+							onTrigger={onOpenTheme}
 						/>
 					</div>
 				

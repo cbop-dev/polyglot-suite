@@ -717,10 +717,65 @@ export const JOSEPHUS_WORKS: CorpusWork[] = (RAW_JOSEPHUS_WORKS as any[]).map((w
 	coordinateScheme: 'book_only'
 }));
 
+export const JUSTIN_WORKS: CorpusWork[] = [
+	{
+		corpusId: 'justin',
+		code: '1APOL',
+		slug: '1-apology',
+		orderIndex: 1,
+		category: 'apology',
+		abbrev: '1 Apol.',
+		titleEnglish: 'First Apology',
+		titlePrimary: 'Ἀπολογία Α΄ ὑπὲρ Χριστιανῶν',
+		titleSecondary: 'Apologia Prima',
+		titleGreek: 'Ἀπολογία Α΄ ὑπὲρ Χριστιανῶν',
+		titleLatin: 'Apologia Prima',
+		totalDivisions: 68,
+		minDivision: 1,
+		divisionLabel: 'Chapter',
+		coordinateScheme: 'division_both'
+	},
+	{
+		corpusId: 'justin',
+		code: '2APOL',
+		slug: '2-apology',
+		orderIndex: 2,
+		category: 'apology',
+		abbrev: '2 Apol.',
+		titleEnglish: 'Second Apology',
+		titlePrimary: 'Ἀπολογία Β΄ ὑπὲρ Χριστιανῶν',
+		titleSecondary: 'Apologia Secunda',
+		titleGreek: 'Ἀπολογία Β΄ ὑπὲρ Χριστιανῶν',
+		titleLatin: 'Apologia Secunda',
+		totalDivisions: 15,
+		minDivision: 1,
+		divisionLabel: 'Chapter',
+		coordinateScheme: 'division_both'
+	},
+	{
+		corpusId: 'justin',
+		code: 'DIAL',
+		slug: 'dialogue-with-trypho',
+		orderIndex: 3,
+		category: 'dialogue',
+		abbrev: 'Dial.',
+		titleEnglish: 'Dialogue with Trypho',
+		titlePrimary: 'Διάλογος πρὸς Τρύφωνα Ἰουδαῖον',
+		titleSecondary: 'Dialogus cum Tryphone',
+		titleGreek: 'Διάλογος πρὸς Τρύφωνα Ἰουδαῖον',
+		titleLatin: 'Dialogus cum Tryphone',
+		totalDivisions: 142,
+		minDivision: 1,
+		divisionLabel: 'Chapter',
+		coordinateScheme: 'division_both'
+	}
+];
+
 export const ALL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
 	af: AF_WORKS,
 	philo: PHILO_WORKS,
-	josephus: JOSEPHUS_WORKS
+	josephus: JOSEPHUS_WORKS,
+	justin: JUSTIN_WORKS
 };
 
 // Backward-compatibility alias

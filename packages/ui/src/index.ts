@@ -51,3 +51,4 @@ export type { Props as ParallelColumnViewProps, TextToken, TextUnitData, TextVer
 export { default as BackToTopButton } from './components/layout/ScrollButtons/BackToTopButton.svelte';
 export { default as ToBottomButton } from './components/layout/ScrollButtons/ToBottomButton.svelte';
 export { default as DownButton } from './components/layout/ScrollButtons/DownButton.svelte';
+export {default as Footer} from './components/layout/Footer.svelte';

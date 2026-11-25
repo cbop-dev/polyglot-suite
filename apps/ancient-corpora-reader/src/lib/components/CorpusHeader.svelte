@@ -47,6 +47,9 @@
 	onOpenCitation={() => (readerState.showCitationModal = true)}
 	showHelp={true}
 	bind:showThemeSlider={readerState.showThemeSlider}
+	themeStorageKey="ne-reading-theme"
+	themeWarmthStorageKey="ne-reading-warmth"
+	onOpenTheme={() => readerState.toggleThemeSlider()}
 	onOpenHelp={() => (readerState.showHotkeyHelp = true)}
 	textVersions={readerState.currentCorpusConfig.textVersions}
 	bind:textVersionsVisible
