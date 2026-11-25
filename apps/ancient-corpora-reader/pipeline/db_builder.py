@@ -20,10 +20,15 @@ from pathlib import Path
 from typing import Dict, List, Set, Any, Optional
 
 from .snippet_builder import make_kwic_snippet
+from .config import VERSION_MAP, CORPUS_VERSIONS_CATALOG
 
 
 REQUIRED_TABLES = {
-	"corpus_versions": {"id", "language", "title", "version_label", "direction", "order_index"},
+	"corpus_versions": {
+		"id", "language", "title", "version_label", "direction", "order_index",
+		"role", "editor", "translator", "booktitle", "series", "publisher",
+		"address", "year", "volume", "sbl_qualifier", "applicable_works"
+	},
 	"corpus_works": {"code", "slug", "order_index", "category", "abbrev", "title_english", "total_divisions", "division_label"},
 	"text_units": {"id", "version_id", "work_code", "book", "chapter", "section", "display_citation", "milestone_ref", "text_content"},
 	"text_unit_tokens": {"work_unit_id", "tokens_json"},
@@ -194,13 +199,14 @@ def build_covering_concordance(
 			# Generate snippet for each distinct lemma and surface form
 			for lem, surfaces in lemma_surface_map.items():
 				for surf in surfaces:
-					key = (c_id, lem, u_id, surf)
+					mapped_c_id = VERSION_MAP.get(c_id, c_id)
+					key = (mapped_c_id, lem, u_id, surf)
 					if key in seen_keys:
 						continue
 					seen_keys.add(key)
 					snippet = make_kwic_snippet(text, surf, radius=45)
 					batch_rows.append((
-						c_id,
+						mapped_c_id,
 						lem,
 						u_id,
 						cit,
@@ -314,19 +320,31 @@ def build_lemma_forms(src_conn: sqlite3.Connection, tgt_conn: sqlite3.Connection
 
 	else:  # af, justin, and generic division_both corpora
 		# Precompute from text_unit_tokens at build time, keyed by (u.version_id, lemma)
+		src_cur.execute("PRAGMA table_info(text_units)")
+		tu_cols = [r[1] for r in src_cur.fetchall()]
+		vid_col = "version_id" if "version_id" in tu_cols else ("corpus_id" if "corpus_id" in tu_cols else "'grc'")
+
 		src_cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='text_unit_tokens'")
 		if src_cur.fetchone():
-			src_cur.execute("""
-				SELECT u.version_id, tok.tokens_json
+			src_cur.execute(f"""
+				SELECT u.{vid_col}, tok.tokens_json
 				FROM text_unit_tokens tok
 				JOIN text_units u ON u.id = tok.work_unit_id
 			""")
 		else:
-			src_cur.execute("SELECT version_id, tokens_json FROM text_units WHERE tokens_json IS NOT NULL")
+			src_cur.execute(f"SELECT {vid_col}, tokens_json FROM text_units WHERE tokens_json IS NOT NULL")
 		lemma_group: Dict[tuple, Dict[str, Any]] = {}
 		for version_id, raw_toks in src_cur.fetchall():
 			if not raw_toks:
 				continue
+			if isinstance(raw_toks, (bytes, bytearray)):
+				try:
+					if len(raw_toks) >= 2 and raw_toks[:2] == b'\x1f\x8b':
+						raw_toks = gzip.decompress(raw_toks).decode("utf-8")
+					else:
+						raw_toks = raw_toks.decode("utf-8")
+				except Exception:
+					continue
 			try:
 				tokens = json.loads(raw_toks)
 			except Exception:
@@ -343,7 +361,8 @@ def build_lemma_forms(src_conn: sqlite3.Connection, tgt_conn: sqlite3.Connection
 				pos = tok.get("p", "")
 				morph = tok.get("m", "")
 
-				g_key = (version_id, clean_lemma)
+				mapped_vid = VERSION_MAP.get(version_id, version_id)
+				g_key = (mapped_vid, clean_lemma)
 				if g_key not in lemma_group:
 					lemma_group[g_key] = {}
 				if clean_word not in lemma_group[g_key]:
@@ -364,7 +383,7 @@ def build_lemma_forms(src_conn: sqlite3.Connection, tgt_conn: sqlite3.Connection
 						"summary": f"{pos} {morph}".strip()
 					}
 
-		for (version_id, lem), forms_dict in lemma_group.items():
+		for (mapped_vid, lem), forms_dict in lemma_group.items():
 			forms_list = []
 			for word, data in forms_dict.items():
 				forms_list.append({
@@ -377,7 +396,7 @@ def build_lemma_forms(src_conn: sqlite3.Connection, tgt_conn: sqlite3.Connection
 			forms_list.sort(key=lambda x: x["count"], reverse=True)
 			forms_json = json.dumps({"forms": forms_list}, ensure_ascii=False)
 			norm_lem = strip_accents(lem)
-			rows_to_insert.append((version_id, lem, norm_lem, forms_json))
+			rows_to_insert.append((mapped_vid, lem, norm_lem, forms_json))
 
 	tgt_cur.executemany("""
 		INSERT INTO lemma_forms (corpus_id, lemma_key, normalized_lemma, forms_json)
@@ -405,6 +424,7 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 	tgt_conn = sqlite3.connect(tgt_path)
 
 	tgt_cur = tgt_conn.cursor()
+	src_cur = src_conn.cursor()
 	tgt_cur.execute("PRAGMA page_size = 16384;")
 	tgt_cur.execute("PRAGMA synchronous = OFF;")
 	tgt_cur.execute("PRAGMA journal_mode = MEMORY;")
@@ -418,7 +438,18 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 		title TEXT NOT NULL,
 		version_label TEXT,
 		direction TEXT DEFAULT 'ltr',
-		order_index INTEGER DEFAULT 0
+		order_index INTEGER DEFAULT 0,
+		role TEXT NOT NULL,
+		editor TEXT,
+		translator TEXT,
+		booktitle TEXT NOT NULL,
+		series TEXT,
+		publisher TEXT NOT NULL,
+		address TEXT,
+		year TEXT NOT NULL,
+		volume TEXT,
+		sbl_qualifier TEXT,
+		applicable_works TEXT
 	);
 
 	CREATE VIEW IF NOT EXISTS corpora AS
@@ -426,19 +457,24 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 	FROM corpus_versions;
 	""")
 
-	src_cur = src_conn.cursor()
-	src_cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='corpus_versions'")
-	if src_cur.fetchone():
-		src_cur.execute("SELECT id, language, title, version_label, direction, order_index FROM corpus_versions")
-		norm_versions = src_cur.fetchall()
-	else:
-		src_cur.execute("SELECT id, title, language, direction FROM corpora")
-		src_versions = src_cur.fetchall()
-		norm_versions = [
-			(r[0], r[2], r[1], r[1], r[3] or 'ltr', idx + 1)
-			for idx, r in enumerate(src_versions)
-		]
-	tgt_cur.executemany("INSERT INTO corpus_versions VALUES (?, ?, ?, ?, ?, ?)", norm_versions)
+	catalog_versions = CORPUS_VERSIONS_CATALOG.get(corpus_type, [])
+	norm_versions = [
+		(
+			v["id"], v["language"], v["title"], v.get("version_label") or v["title"],
+			v.get("direction") or "ltr", v.get("order_index") or (idx + 1),
+			v["role"], v.get("editor"), v.get("translator"), v["booktitle"],
+			v.get("series"), v["publisher"], v.get("address"), v["year"],
+			v.get("volume"), v.get("sbl_qualifier"), v.get("applicable_works")
+		)
+		for idx, v in enumerate(catalog_versions)
+	]
+	tgt_cur.executemany("""
+		INSERT INTO corpus_versions (
+			id, language, title, version_label, direction, order_index,
+			role, editor, translator, booktitle, series, publisher,
+			address, year, volume, sbl_qualifier, applicable_works
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	""", norm_versions)
 
 	# 2. Compile corpus_works (+ backward compatibility view 'canonical_works')
 	print("  → Compiling corpus_works...")
@@ -554,7 +590,7 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 		""")
 		norm_units = [
 			(
-				r[0], r[1], r[1], r[2], r[3], 0, r[4], str(r[4]), r[4],
+				r[0], VERSION_MAP.get(r[1], r[1]), VERSION_MAP.get(r[1], r[1]), r[2], r[3], 0, r[4], str(r[4]), r[4],
 				str(r[5] or ""), None, 0, r[6], str(r[5] or ""), r[7]
 			)
 			for r in src_cur.fetchall()
@@ -566,8 +602,20 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 		""")
 		norm_units = [
 			(
-				r[0], r[1], r[1], r[2], r[3], r[3], r[4], str(r[4]), r[4],
+				r[0], VERSION_MAP.get(r[1], r[1]), VERSION_MAP.get(r[1], r[1]), r[2], r[3], r[3], r[4], str(r[4]), r[4],
 				"", str(r[5] or ""), r[6] or 0, r[7], str(r[5] or ""), r[8]
+			)
+			for r in src_cur.fetchall()
+		]
+	elif corpus_type == "justin":
+		src_cur.execute("""
+			SELECT id, version_id, work_code, book, chapter, section, section_label, display_citation, milestone_ref, text_content
+			FROM text_units
+		""")
+		norm_units = [
+			(
+				r[0], VERSION_MAP.get(r[1], r[1]), VERSION_MAP.get(r[1], r[1]), r[2], r[3], r[4], r[5], str(r[6] or r[5]), r[5],
+				"", None, 0, r[7], str(r[8] or ""), r[9]
 			)
 			for r in src_cur.fetchall()
 		]
@@ -578,7 +626,7 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 		""")
 		norm_units = [
 			(
-				r[0], r[1], r[1], r[2], r[3], r[3], r[4], str(r[4]), r[4],
+				r[0], VERSION_MAP.get(r[1], r[1]), VERSION_MAP.get(r[1], r[1]), r[2], r[3], r[3], r[4], str(r[4]), r[4],
 				"", None, 0, r[5], "", r[6]
 			)
 			for r in src_cur.fetchall()
@@ -686,7 +734,14 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 		stat_cols_str = ", ".join(stat_cols)
 		stat_placeholders = ", ".join(["?"] * len(stat_cols))
 		src_cur.execute(f"SELECT {stat_cols_str} FROM lemma_stats")
-		tgt_cur.executemany(f"INSERT INTO lemma_stats ({stat_cols_str}) VALUES ({stat_placeholders})", src_cur.fetchall())
+		stat_rows = src_cur.fetchall()
+		cid_idx = stat_cols.index("corpus_id") if "corpus_id" in stat_cols else -1
+		if cid_idx >= 0:
+			stat_rows = [
+				tuple(VERSION_MAP.get(val, val) if i == cid_idx else val for i, val in enumerate(row))
+				for row in stat_rows
+			]
+		tgt_cur.executemany(f"INSERT INTO lemma_stats ({stat_cols_str}) VALUES ({stat_placeholders})", stat_rows)
 		if "concordance_count" not in stat_cols:
 			tgt_cur.execute("ALTER TABLE lemma_stats ADD COLUMN concordance_count INTEGER DEFAULT 0;")
 		tgt_cur.execute("CREATE INDEX IF NOT EXISTS idx_lemma_stats_norm ON lemma_stats(corpus_id, normalized_lemma);")
