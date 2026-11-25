@@ -63,7 +63,8 @@ class RawCorpusWriter:
 			year TEXT NOT NULL DEFAULT '',
 			volume TEXT,
 			sbl_qualifier TEXT,
-			applicable_works TEXT
+			applicable_works TEXT,
+			url TEXT
 		);
 		CREATE TABLE corpus_works (
 			code TEXT PRIMARY KEY,
@@ -148,6 +149,7 @@ class RawCorpusWriter:
 				v.get("volume"),
 				v.get("sbl_qualifier"),
 				v.get("applicable_works"),
+				v.get("url"),
 			)
 			for idx, v in enumerate(versions, 1)
 		]
@@ -156,8 +158,8 @@ class RawCorpusWriter:
 			INSERT INTO corpus_versions (
 				id, language, title, version_label, direction, order_index,
 				role, editor, translator, booktitle, series, publisher,
-				address, year, volume, sbl_qualifier, applicable_works
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				address, year, volume, sbl_qualifier, applicable_works, url
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			""",
 			rows,
 		)

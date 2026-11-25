@@ -63,6 +63,7 @@
 
 		// Actions
 		onWordClick?: (token: TextToken, citation: string, version: TextVersionData) => void;
+		onSwapVersion?: (oldVersionId: string, newVersionId: string) => void;
 		onBookmarkToggle?: (secKey: string, snippet: string) => void;
 		onCitationClick?: (secKey: number | string, unitsByVersion: Record<string, TextUnitData>) => void;
 		onBiblicalCitationClick?: (bookCode: string, chapter: number, verse: number, display: string, bookName?: string) => void;
@@ -107,6 +108,7 @@
 		rowId,
 
 		onWordClick,
+		onSwapVersion,
 		onBookmarkToggle,
 		onCitationClick,
 		onBiblicalCitationClick,
@@ -419,10 +421,28 @@
 	{#if !isStacked}
 		<div class="column-headers hidden {gridBreakpoint === 'md' ? 'md:grid' : 'lg:grid'} {gridColsClass} gap-6 sm:gap-8 border-b border-[var(--color-rule)] pb-2 text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)]">
 			{#each activeVersions as ver (ver.versionId)}
-				<div class="flex items-center justify-between">
-					<span>{ver.label}</span>
+				{@const swappableVersions = onSwapVersion
+					? resolvedTextVersions.filter(
+							(alt) => alt.versionId === ver.versionId || !activeVersions.some((a) => a.versionId === alt.versionId)
+						)
+					: []}
+				<div class="flex items-center justify-between gap-2">
+					{#if onSwapVersion && swappableVersions.length > 1}
+						<select
+							aria-label="Select text version for column {ver.label}"
+							value={ver.versionId}
+							onchange={(e) => onSwapVersion(ver.versionId, e.currentTarget.value)}
+							class="max-w-full truncate rounded border border-[var(--color-rule)] bg-[var(--color-card-bg)] px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--color-ink)] cursor-pointer hover:bg-[var(--color-rule)]/40"
+						>
+							{#each swappableVersions as opt (opt.versionId)}
+								<option value={opt.versionId}>{opt.label}</option>
+							{/each}
+						</select>
+					{:else}
+						<span>{ver.label}</span>
+					{/if}
 					{#if ver.shortLabel && ver.shortLabel !== ver.label}
-						<span class="text-[10px] font-normal normal-case text-[var(--color-ink-soft)]">{ver.shortLabel}</span>
+						<span class="text-[10px] font-normal normal-case text-[var(--color-ink-soft)] shrink-0">{ver.shortLabel}</span>
 					{/if}
 				</div>
 			{/each}

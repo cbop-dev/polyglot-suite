@@ -12,6 +12,7 @@ The **Ancient Corpora Reader** unifies major historical corpora into a single in
 2. **Philo of Alexandria** (*All 31 surviving continuous Greek treatises*)
 3. **Flavius Josephus** (*The Jewish War, Antiquities of the Jews, Life, and Against Apion*)
 4. **Justin Martyr** (*First Apology, Second Apology, and Dialogue with Trypho*)
+5. **Irenaeus of Lyons** (*Against Heresies, Books 1–5*)
 
 ---
 
@@ -51,6 +52,7 @@ The **Ancient Corpora Reader** unifies major historical corpora into a single in
 | **Philo of Alexandria** | 31 Greek treatises | Leopold Cohn & Paul Wendland (*Editio Maior*, 1896–1915) | Charles Duke Yonge (1854–1855) | Mangey citations & Scripture index |
 | **Flavius Josephus** | 4 complete works | Benedikt Niese (*Flavii Iosephi Opera*, 1885–1890) | William Whiston (1737 / 1856) | Niese sections & Whiston mapping |
 | **Justin Martyr** | 3 authentic works | *First1KGreek* (`tlg0645`) / Giuseppe Celano *LemmatizedAncientGreekXML* | Roberts & Donaldson (*Ante-Nicene Fathers* Vol. 1, CCEL) | Pre-lemmatized Greek (`CC BY-NC 4.0`) + Public Domain English |
+| **Irenaeus of Lyons** | *Against Heresies* (5 books) | *First1KGreek* (`tlg1447`) / Celano Greek fragments | Massuet / PG 7 Latin (Public Domain via Sabbatismus); Roberts & Rambaut (*ANF* Vol. 1, Public Domain) & Sabbatismus English (`CC BY-SA 4.0`) | 4 witnesses with per-column version switching |
 
 ---
 

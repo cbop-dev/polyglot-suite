@@ -29,6 +29,7 @@
 	gridBreakpoint="md"
 	{highlightStore}
 	onWordClick={(tok, citation) => readerState.openToken(tok as Token, citation)}
+	onSwapVersion={(oldId, newId) => readerState.swapVersion(oldId, newId)}
 	onBiblicalCitationClick={(bookCode, ch, v, disp, name) =>
 		readerState.openScriptureCitation(bookCode, ch, v, disp, name)}
 >

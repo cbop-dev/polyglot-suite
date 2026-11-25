@@ -202,5 +202,90 @@ export const CANONICAL_CORPUS_VERSIONS: Record<string, TextVersionConfig[]> = {
         "sblQualifier": "(ANF)"
       }
     }
+  ],
+  "irenaeus": [
+    {
+      "id": "irenaeus_celano_grc",
+      "language": "grc",
+      "title": "Greek Fragments (First1KGreek / Celano Lemmatized)",
+      "shortTitle": "Greek Fragments (Harvey / Celano)",
+      "versionLabel": "Greek Fragments (Harvey / Celano)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 1,
+      "bibliographic": {
+        "role": "critical_edition",
+        "booktitle": "Sancti Irenaei Libros quinque adversus haereses",
+        "publisher": "OpenGreekAndLatin",
+        "year": "1857",
+        "editor": "W. W. Harvey / Giuseppe Celano",
+        "series": "First1KGreek",
+        "address": "Cambridge",
+        "volume": "Vol. 1",
+        "sblQualifier": "(Greek)"
+      }
+    },
+    {
+      "id": "irenaeus_pg_lat",
+      "language": "lat",
+      "title": "Latin Text (Massuet 1710 / Migne PG 7)",
+      "shortTitle": "Latin (Massuet / PG 7)",
+      "versionLabel": "Latin (Massuet / PG 7)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 2,
+      "bibliographic": {
+        "role": "ancient_witness",
+        "booktitle": "Patrologia Graeca",
+        "publisher": "J.-P. Migne / Sabbatismus",
+        "year": "1857",
+        "editor": "René Massuet / J.-P. Migne",
+        "series": "Patrologia Graeca",
+        "address": "Paris",
+        "volume": "Vol. 7",
+        "sblQualifier": "(Latin)",
+        "url": "https://www.sabbatismus.com/en/san-ireneo-de-lyon/adversus-haereses/"
+      }
+    },
+    {
+      "id": "irenaeus_anf_eng",
+      "language": "eng",
+      "title": "Roberts & Rambaut English Translation (ANF Vol. 1)",
+      "shortTitle": "English (ANF)",
+      "versionLabel": "English (ANF)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 3,
+      "bibliographic": {
+        "role": "translation",
+        "booktitle": "The Ante-Nicene Fathers",
+        "publisher": "Christian Literature Publishing Co.",
+        "year": "1885",
+        "translator": "Alexander Roberts and William Rambaut",
+        "series": "Ante-Nicene Fathers",
+        "address": "Buffalo, NY",
+        "volume": "Vol. 1",
+        "sblQualifier": "(ANF)"
+      }
+    },
+    {
+      "id": "irenaeus_sab_eng",
+      "language": "eng",
+      "title": "Sabbatismus English Translation (CC BY-SA 4.0)",
+      "shortTitle": "English (Sabbatismus)",
+      "versionLabel": "English (Sabbatismus)",
+      "direction": "ltr",
+      "isDefaultVisible": false,
+      "order": 4,
+      "bibliographic": {
+        "role": "translation",
+        "booktitle": "Against Heresies",
+        "publisher": "Sabbatismus",
+        "year": "2025",
+        "translator": "Sabbatismus",
+        "sblQualifier": "(Sabbatismus)",
+        "url": "https://www.sabbatismus.com/en/san-ireneo-de-lyon/adversus-haereses/"
+      }
+    }
   ]
 };

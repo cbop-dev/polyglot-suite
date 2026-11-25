@@ -1632,5 +1632,31 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
         "142": 3
       }
     }
+  ],
+  "irenaeus": [
+    {
+      "corpusId": "irenaeus",
+      "code": "AH",
+      "slug": "against-heresies",
+      "orderIndex": 1,
+      "category": "treatise",
+      "abbrev": "Haer.",
+      "titleEnglish": "Against Heresies",
+      "titlePrimary": "Ἔλεγχος καὶ ἀνατροπὴ τῆς ψευδωνύμου γνώσεως",
+      "titleGreek": "Ἔλεγχος καὶ ἀνατροπὴ τῆς ψευδωνύμου γνώσεως",
+      "totalDivisions": 5,
+      "minDivision": 1,
+      "divisionLabel": "Book",
+      "coordinateScheme": "division_both",
+      "titleSecondary": "Adversus Haereses",
+      "titleLatin": "Adversus Haereses",
+      "sectionsByDivision": {
+        "1": 32,
+        "2": 36,
+        "3": 26,
+        "4": 42,
+        "5": 37
+      }
+    }
   ]
 };

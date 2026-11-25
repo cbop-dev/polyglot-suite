@@ -1,0 +1,10 @@
+{
+  "databaseVersion": "corpora-irenaeus-db-v0.0.1",
+  "serverMode": "chunked",
+  "requestChunkSize": 16384,
+  "urlPrefix": "irenaeus.db.",
+  "serverChunkSize": 5242880,
+  "databaseLengthBytes": 25083904,
+  "suffixLength": 2,
+  "cacheBust": "v1795636712"
+}

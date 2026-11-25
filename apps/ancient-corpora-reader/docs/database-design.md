@@ -216,7 +216,8 @@ CREATE TABLE corpus_versions (
     year TEXT NOT NULL,
     volume TEXT,
     sbl_qualifier TEXT,
-    applicable_works TEXT
+    applicable_works TEXT,
+    url TEXT
 );
 
 -- Backward compatibility view
