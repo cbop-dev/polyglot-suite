@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 import re
+import zipfile
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 
 def join_tokens(tokens: List[Dict[str, Any]]) -> str:
@@ -183,3 +184,68 @@ class TEIParser:
 					if txt:
 						chapters[ch_num][1] = txt
 		return chapters
+
+
+class SabbatismusEpubParser:
+	"""Parses Sabbatismus bilingual Latin/English EPUB files into {book: {chapter: [(lat, eng), ...]}}."""
+
+	ROMAN_MAP = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6}
+
+	@staticmethod
+	def _strip_ns(tag: str) -> str:
+		return tag.split("}", 1)[-1] if "}" in tag else tag
+
+	@classmethod
+	def _clean_text(cls, elem: ET.Element) -> str:
+		txt = "".join(elem.itertext())
+		return re.sub(r"\s+", " ", txt).strip()
+
+	@classmethod
+	def parse(cls, epub_path: Path) -> Dict[int, Dict[int, List[Tuple[str, str]]]]:
+		books: Dict[int, Dict[int, List[Tuple[str, str]]]] = defaultdict(dict)
+		current_book = 0
+
+		with zipfile.ZipFile(epub_path, "r") as z:
+			xhtml_names = sorted(n for n in z.namelist() if re.search(r"ch\d+\.xhtml$", n))
+			for name in xhtml_names:
+				raw = z.read(name).decode("utf-8", errors="replace")
+				root = ET.fromstring(raw)
+
+				title_el = next((el for el in root.iter() if cls._strip_ns(el.tag) == "title"), None)
+				h1_el = next((el for el in root.iter() if cls._strip_ns(el.tag) == "h1"), None)
+				title_txt = cls._clean_text(title_el) if title_el is not None else ""
+				h1_txt = cls._clean_text(h1_el) if h1_el is not None else ""
+
+				header = h1_txt or title_txt
+				book_m = re.match(r"^Book\s+([IVX]+)\b", header)
+				if book_m:
+					current_book = cls.ROMAN_MAP.get(book_m.group(1), current_book)
+
+				if current_book == 0:
+					continue
+
+				if "Preface" in header or "Preface" in title_txt:
+					ch_num = 0
+				else:
+					ch_m = re.search(r"\bChapter\s+(\d+)\b", title_txt) or re.search(r"\bChapter\s+(\d+)\b", h1_txt)
+					if not ch_m:
+						# Skip editorial notes (e.g. "Note from the library...")
+						continue
+					ch_num = int(ch_m.group(1))
+
+				pairs: List[Tuple[str, str]] = []
+				for div in root.iter():
+					if cls._strip_ns(div.tag) != "div" or div.attrib.get("class") != "pair":
+						continue
+					la_p = next((p for p in div if cls._strip_ns(p.tag) == "p" and p.attrib.get("class") == "la"), None)
+					tr_p = next((p for p in div if cls._strip_ns(p.tag) == "p" and p.attrib.get("class") == "tr"), None)
+					la_txt = cls._clean_text(la_p) if la_p is not None else ""
+					tr_txt = cls._clean_text(tr_p) if tr_p is not None else ""
+					if la_txt or tr_txt:
+						pairs.append((la_txt, tr_txt))
+
+				if pairs:
+					books[current_book][ch_num] = pairs
+
+		return books
+

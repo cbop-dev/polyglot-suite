@@ -33,6 +33,7 @@ export const AF_WORKS: CorpusWork[] = CANONICAL_CORPUS_WORKS['af'] || [];
 export const PHILO_WORKS: CorpusWork[] = CANONICAL_CORPUS_WORKS['philo'] || [];
 export const JOSEPHUS_WORKS: CorpusWork[] = CANONICAL_CORPUS_WORKS['josephus'] || [];
 export const JUSTIN_WORKS: CorpusWork[] = CANONICAL_CORPUS_WORKS['justin'] || [];
+export const IRENAEUS_WORKS: CorpusWork[] = CANONICAL_CORPUS_WORKS['irenaeus'] || [];
 
 export const ALL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = CANONICAL_CORPUS_WORKS;
 

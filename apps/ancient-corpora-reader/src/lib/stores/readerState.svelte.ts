@@ -73,6 +73,22 @@ export class ReaderState {
 		}
 	}
 
+	swapVersion(oldVersionId: string, newVersionId: string) {
+		if (!newVersionId || oldVersionId === newVersionId) return;
+		const cfg = this.currentCorpusConfig;
+		// Normalize any language-level keys to explicit version IDs before swapping
+		for (const v of cfg.textVersions) {
+			if (this.visibleLanguages.has(v.language)) {
+				this.visibleLanguages.delete(v.language);
+				if (v.isDefaultVisible) {
+					this.visibleLanguages.add(v.id);
+				}
+			}
+		}
+		this.visibleLanguages.delete(oldVersionId);
+		this.visibleLanguages.add(newVersionId);
+	}
+
 	// Backwards-compatibility bridge for Phase 3 components:
 	get showGreek(): boolean {
 		if (this.viewMode === 'greek') return true;
@@ -145,10 +161,14 @@ export class ReaderState {
 		//goto(resolve('/')+corpusId);
 		this.currentCorpus = corpusId;
 		const cfg = getCorpusConfig(corpusId);
-		const defaultLangs = cfg.textVersions
+		const defaultVersions = cfg.textVersions
 			.filter((v) => v.isDefaultVisible)
-			.map((v) => v.language);
-		this.setVisibleLanguages(defaultLangs.length > 0 ? Array.from(new Set(defaultLangs)) : [cfg.primaryLanguage]);
+			.map((v) => v.id);
+		this.setVisibleLanguages(
+			defaultVersions.length > 0
+				? Array.from(new Set(defaultVersions))
+				: [cfg.textVersions[0]?.id || cfg.primaryLanguage]
+		);
 
 		const works = getCorpusWorks(corpusId);
 		const targetWork = workCode ? (findWork(corpusId, workCode) || works[0]) : works[0];

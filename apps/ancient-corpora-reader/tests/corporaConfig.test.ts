@@ -18,12 +18,14 @@ import {
 describe('Corpora Configuration & Catalog', () => {
 	it('defines all registered corpora in CORPORA_CONFIG and resolves active corpora via getAllCorpora/getActiveCorpora', () => {
 		const registered = getRegisteredCorpora();
-		expect(registered.map((c) => c.id)).toEqual(['af', 'philo', 'josephus', 'justin']);
+		expect(registered.map((c) => c.id)).toEqual(['af', 'philo', 'josephus', 'justin', 'irenaeus']);
 
 		const active = getActiveCorpora();
 		expect(getAllCorpora().map((c) => c.id)).toEqual(active.map((c) => c.id));
 		expect(isCorpusEnabled('justin')).toBe(true);
 		expect(isCorpusInstalled('justin')).toBe(true);
+		expect(isCorpusEnabled('irenaeus')).toBe(true);
+		expect(isCorpusInstalled('irenaeus')).toBe(true);
 
 		const justinConfig = getCorpusConfig('justin');
 		expect(justinConfig.name).toBe('Justin Martyr');
@@ -75,6 +77,12 @@ describe('Corpora Configuration & Catalog', () => {
 		expect(justinWorks.map((w) => w.code)).toEqual(['1APOL', '2APOL', 'DIAL']);
 		expect(findWork('justin', '1-apology')?.totalDivisions).toBe(68);
 		expect(findWork('justin', 'dialogue-with-trypho')?.totalDivisions).toBe(142);
+
+		const irenaeusWorks = getCorpusWorks('irenaeus');
+		expect(irenaeusWorks.length).toBe(1);
+		expect(irenaeusWorks[0].code).toBe('AH');
+		expect(irenaeusWorks[0].totalDivisions).toBe(5);
+		expect(irenaeusWorks[0].divisionLabel).toBe('Book');
 	});
 
 	it('resolves division coordinates correctly without hardcoding in components', () => {

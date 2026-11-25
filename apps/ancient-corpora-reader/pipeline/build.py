@@ -123,7 +123,7 @@ def build_all(corpora_filter: list[str] | None = None):
 
 def main():
 	parser = argparse.ArgumentParser(description="ACR Tier-2 Database Compiler and Chunker")
-	parser.add_argument("--corpus", choices=["af", "josephus", "philo", "justin"], help="Build only specific corpus")
+	parser.add_argument("--corpus", choices=[c["id"] for c in CORPORA], help="Build only specific corpus")
 	args = parser.parse_args()
 
 	filter_list = [args.corpus] if args.corpus else None

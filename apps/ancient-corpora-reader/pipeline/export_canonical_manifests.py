@@ -12,13 +12,21 @@ import sqlite3
 from pathlib import Path
 from typing import Dict, Any, List
 
-from .config import BUILD_DIR, ACR_DIR
+from .config import BUILD_DIR, ACR_DIR, CORPUS_VERSIONS_CATALOG
 
 CONFIG_DIR = ACR_DIR / "src" / "lib" / "config"
 VERSIONS_TS_PATH = CONFIG_DIR / "corpusVersions.generated.ts"
 WORKS_TS_PATH = CONFIG_DIR / "canonicalWorks.generated.ts"
 
-CORPORA_IDS = ["af", "philo", "josephus", "justin"]
+
+def _load_corpora_ids() -> List[str]:
+	manifest_path = ACR_DIR / "corpora.manifest.json"
+	with open(manifest_path, "r", encoding="utf-8") as f:
+		data = json.load(f)
+	return [entry["id"] for entry in data.get("corpora", [])]
+
+
+CORPORA_IDS = _load_corpora_ids()
 
 
 def export_canonical_manifests():
@@ -60,6 +68,7 @@ def export_canonical_manifests():
 			year = str(r["year"]) if "year" in r.keys() and r["year"] else "Unknown"
 			volume = r["volume"] if "volume" in r.keys() else None
 			sbl_qualifier = r["sbl_qualifier"] if "sbl_qualifier" in r.keys() else None
+			url = r["url"] if "url" in r.keys() else None
 
 			bib_config = {
 				"role": role,
@@ -81,6 +90,14 @@ def export_canonical_manifests():
 				bib_config["sblQualifier"] = sbl_qualifier
 			if app_works:
 				bib_config["applicableWorks"] = app_works
+			if url:
+				bib_config["url"] = url
+
+			catalog_entry = next(
+				(c for c in CORPUS_VERSIONS_CATALOG.get(cid, []) if c["id"] == r["id"]),
+				None,
+			)
+			is_default_visible = catalog_entry.get("is_default_visible", True) if catalog_entry else True
 
 			v_entry: Dict[str, Any] = {
 				"id": r["id"],
@@ -89,7 +106,7 @@ def export_canonical_manifests():
 				"shortTitle": r["version_label"] if ("version_label" in r.keys() and r["version_label"]) else r["title"],
 				"versionLabel": r["version_label"] if ("version_label" in r.keys() and r["version_label"]) else None,
 				"direction": r["direction"] if ("direction" in r.keys() and r["direction"]) else "ltr",
-				"isDefaultVisible": True,
+				"isDefaultVisible": is_default_visible,
 				"order": r["order_index"],
 				"bibliographic": bib_config,
 			}

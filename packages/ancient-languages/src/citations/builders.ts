@@ -15,6 +15,7 @@ export function buildBibtexIncollection(params: {
 	series?: string;
 	chapter?: string;
 	note?: string;
+	url?: string;
 }): string {
 	const lines = [`@incollection{${params.key},`];
 	lines.push(`  author    = {${params.author}},`);
@@ -28,6 +29,7 @@ export function buildBibtexIncollection(params: {
 	lines.push(`  year      = {${params.year}},`);
 	if (params.chapter) lines.push(`  chapter   = {${params.chapter}},`);
 	if (params.note) lines.push(`  note      = {${params.note}},`);
+	if (params.url) lines.push(`  url       = {${params.url}},`);
 
 	// Remove trailing comma from last line before closing brace
 	const lastIdx = lines.length - 1;
@@ -88,15 +90,15 @@ export function formatVersionAcademicCitations(params: FormatVersionCitationsPar
 		if (bib.role === 'critical_edition') {
 			const titleWithOrig = work.titleGreek ? `${work.titleEnglish} (${work.titleGreek})` : work.titleEnglish;
 			const edPart = bib.editor ? `, ed. ${bib.editor}` : '';
-			chicagoText = `${author !== 'Early Christian Fathers' ? `${author}, ` : ''}*${titleWithOrig}*, in *${bib.booktitle}*${edPart}${seriesPart} (${imprint}), ${divSec}.`;
+			chicagoText = `${author !== 'Early Christian Fathers' ? `${author}, ` : ''}*${titleWithOrig}*, in *${bib.booktitle}*${edPart}${seriesPart} (${imprint}), ${divSec}.${bib.url ? ` ${bib.url}.` : ''}`;
 		} else if (bib.role === 'ancient_witness') {
 			const titleWithLat = work.titleLatin ? `${work.titleEnglish} (${work.titleLatin})` : work.titleEnglish;
 			const edPart = bib.editor ? `, ed. ${bib.editor}` : '';
-			chicagoText = `*${titleWithLat}*, in *${bib.booktitle}*${edPart}${seriesPart} (${imprint}), ${divSec}.`;
+			chicagoText = `*${titleWithLat}*, in *${bib.booktitle}*${edPart}${seriesPart} (${imprint}), ${divSec}.${bib.url ? ` ${bib.url}.` : ''}`;
 		} else {
 			// translation
 			const transPart = bib.translator ? `, trans. ${bib.translator}` : '';
-			chicagoText = `${author}, *${work.titleEnglish}*${transPart}, in *${bib.booktitle}*${seriesPart} (${imprint}), ${divSec}.`;
+			chicagoText = `${author}, *${work.titleEnglish}*${transPart}, in *${bib.booktitle}*${seriesPart} (${imprint}), ${divSec}.${bib.url ? ` ${bib.url}.` : ''}`;
 		}
 	} else {
 		chicagoText = `${author}, *${work.titleEnglish}*, ${divSec}.`;
@@ -121,7 +123,8 @@ export function formatVersionAcademicCitations(params: FormatVersionCitationsPar
 		publisher: bib?.publisher,
 		address: bib?.address,
 		year: bib?.year || '1912',
-		chapter: divSec
+		chapter: divSec,
+		url: bib?.url
 	});
 
 	return [

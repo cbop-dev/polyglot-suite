@@ -73,15 +73,28 @@
 		}
 	}
 
-	function toggleVisibleLanguage(lang:string){
+	function isVersionVisible(ver: CorpusTypes.TextVersionConfig): boolean {
+		if (!textVersionsVisible) return false;
+		return textVersionsVisible.has(ver.id) || textVersionsVisible.has(ver.language);
+	}
 
-		if(textVersionsVisible){
-			if (textVersionsVisible.has(lang))
-				textVersionsVisible.delete(lang);
-			else
-				textVersionsVisible.add(lang);
+	function toggleVisibleVersion(ver: CorpusTypes.TextVersionConfig) {
+		if (!textVersionsVisible) return;
+		if (textVersionsVisible.has(ver.id)) {
+			if (textVersionsVisible.size > 1) {
+				textVersionsVisible.delete(ver.id);
+			}
+		} else if (textVersionsVisible.has(ver.language)) {
+			// Migrate language-level key to explicit version IDs
+			textVersionsVisible.delete(ver.language);
+			for (const v of textVersions || []) {
+				if (v.language === ver.language && v.id !== ver.id && v.isDefaultVisible) {
+					textVersionsVisible.add(v.id);
+				}
+			}
+		} else {
+			textVersionsVisible.add(ver.id);
 		}
-
 	}
 </script>
 
@@ -147,18 +160,17 @@
 
 			{#if textVersions}
 			<!-- Dynamic Version Visibility Chips -->
-			<div class="hidden xl:flex gap-1 p-1 m-1 ">
+			<div class="hidden xl:flex flex-wrap gap-1 p-1 m-1 ">
 				{#each textVersions as ver, idx (ver.id)}
-					
+					{@const hasSameLang = textVersions.filter((v) => v.language === ver.language).length > 1}
 					<button
 						type="button"
-						onclick={() => toggleVisibleLanguage(ver.language)}
+						onclick={() => toggleVisibleVersion(ver)}
 						class="flex-auto px-2 py-0.5 rounded text-xs font-semibold transition-colors cursor-pointer border
-						 {textVersionsVisible?.has(ver.language) ? 'bg-blue-600 text-white border-blue-600' : 'bg-transparent text-[var(--color-ink-soft)] border-[var(--color-rule)] hover:bg-[var(--color-rule)]'}"
+						 {isVersionVisible(ver) ? 'bg-blue-600 text-white border-blue-600' : 'bg-transparent text-[var(--color-ink-soft)] border-[var(--color-rule)] hover:bg-[var(--color-rule)]'}"
 						title="Toggle {ver.title}"
 					>
-						<!--<span class="hidden md:inline">{Languages.getNameFromCode(ver.language) || ver.shortTitle}</span>-->
-						<span  class="">{Languages.getShortNameFromCode(ver.language) || ver.shortTitle}</span>
+						<span class="">{hasSameLang ? ver.shortTitle : (Languages.getShortNameFromCode(ver.language) || ver.shortTitle)}</span>
 					</button>
 				{/each}
 			</div>

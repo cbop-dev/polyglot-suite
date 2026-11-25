@@ -23,6 +23,7 @@ export interface VersionBibliographicConfig {
 	volume?: string;
 	sblQualifier?: string;
 	applicableWorks?: string[];
+	url?: string;
 }
 
 /**

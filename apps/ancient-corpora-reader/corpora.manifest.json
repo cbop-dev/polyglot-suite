@@ -194,6 +194,67 @@
         "dbTagPrefix": "corpora-justin-db-v",
         "aliases": ["justin", "acr-justin"]
       }
+    },
+    {
+      "id": "irenaeus",
+      "enabled": true,
+      "name": "Irenaeus of Lyons",
+      "title": "Irenaeus of Lyons",
+      "subtitle": "Against Heresies (Books 1–5): Greek fragments, Latin, & English",
+      "badge": "Irenaeus",
+      "era": "c. 130 – 202 CE",
+      "author": "Irenaeus of Lyons",
+      "primaryLanguage": "grc",
+      "defaultDictionary": "lsj",
+      "availableLanguages": ["grc", "lat", "eng"],
+      "coordinateScheme": "book_only",
+      "citationStyle": "book_section",
+      "features": {
+        "hasScriptureCitations": false,
+        "hasTextualApparatus": false,
+        "hasAudio": false
+      },
+      "citation": {
+        "author": "Irenaeus of Lyons",
+        "seriesTitle": "Against Heresies (Adversus Haereses)",
+        "defaultYear": "1885"
+      },
+      "license": {
+        "name": "CC BY-NC 4.0 / CC BY-SA 4.0 / Public Domain",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "notice": "Greek fragments from Giuseppe Celano’s Lemmatized Ancient Greek XML (CC BY-NC 4.0, derived from First1KGreek tlg1447); Latin text from Massuet (1710) / Migne PG 7 (Public Domain) via Sabbatismus; English translations from Roberts & Rambaut (ANF Vol. 1, Public Domain) and Sabbatismus (CC BY-SA 4.0).",
+        "editions": [
+          {
+            "label": "Greek Fragments & Lemmatization",
+            "source": "Giuseppe Celano, LemmatizedAncientGreekXML (tlg1447, W. W. Harvey 1857)",
+            "license": "CC BY-NC 4.0",
+            "url": "https://github.com/gcelano/LemmatizedAncientGreekXML"
+          },
+          {
+            "label": "Latin Text (PG 7 / Massuet)",
+            "source": "René Massuet (1710) / J.-P. Migne PG 7 (1857) via Sabbatismus",
+            "license": "Public Domain",
+            "url": "https://www.sabbatismus.com/en/san-ireneo-de-lyon/adversus-haereses/"
+          },
+          {
+            "label": "English (ANF Vol. 1)",
+            "source": "Alexander Roberts & William Rambaut, Ante-Nicene Fathers Vol. 1 (CCEL)",
+            "license": "Public Domain",
+            "url": "https://www.ccel.org/ccel/schaff/anf01"
+          },
+          {
+            "label": "English (Sabbatismus)",
+            "source": "Sabbatismus Bilingual Edition",
+            "license": "CC BY-SA 4.0",
+            "url": "https://www.sabbatismus.com/en/san-ireneo-de-lyon/adversus-haereses/"
+          }
+        ]
+      },
+      "pipeline": {
+        "chunkPrefix": "irenaeus.db",
+        "dbTagPrefix": "corpora-irenaeus-db-v",
+        "aliases": ["irenaeus", "acr-irenaeus"]
+      }
     }
   ]
 }

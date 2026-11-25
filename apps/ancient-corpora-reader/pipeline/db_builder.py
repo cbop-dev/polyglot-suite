@@ -449,7 +449,8 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 		year TEXT NOT NULL,
 		volume TEXT,
 		sbl_qualifier TEXT,
-		applicable_works TEXT
+		applicable_works TEXT,
+		url TEXT
 	);
 
 	CREATE VIEW IF NOT EXISTS corpora AS
@@ -464,7 +465,7 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 			v.get("direction") or "ltr", v.get("order_index") or (idx + 1),
 			v["role"], v.get("editor"), v.get("translator"), v["booktitle"],
 			v.get("series"), v["publisher"], v.get("address"), v["year"],
-			v.get("volume"), v.get("sbl_qualifier"), v.get("applicable_works")
+			v.get("volume"), v.get("sbl_qualifier"), v.get("applicable_works"), v.get("url")
 		)
 		for idx, v in enumerate(catalog_versions)
 	]
@@ -472,8 +473,8 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 		INSERT INTO corpus_versions (
 			id, language, title, version_label, direction, order_index,
 			role, editor, translator, booktitle, series, publisher,
-			address, year, volume, sbl_qualifier, applicable_works
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			address, year, volume, sbl_qualifier, applicable_works, url
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	""", norm_versions)
 
 	# 2. Compile corpus_works (+ backward compatibility view 'canonical_works')
@@ -607,7 +608,8 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 			)
 			for r in src_cur.fetchall()
 		]
-	elif corpus_type == "justin":
+	elif corpus_type != "af":
+		# Standard RawCorpusWriter schema (justin, irenaeus, and all new corpora)
 		src_cur.execute("""
 			SELECT id, version_id, work_code, book, chapter, section, section_label, display_citation, milestone_ref, text_content
 			FROM text_units
