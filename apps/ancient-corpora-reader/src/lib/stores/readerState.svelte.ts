@@ -32,6 +32,36 @@ export class ReaderState {
 	// Reactive language/version visibility set
 	visibleLanguages = $state<SvelteSet<string>>(new SvelteSet(['grc', 'lat', 'eng']));
 
+	// Per-work column ordering (keyed by `${corpusId}:${workCode}`)
+	columnOrdersByWork = $state<Record<string, string[]>>(ReaderState._loadColumnOrders());
+
+	private static _loadColumnOrders(): Record<string, string[]> {
+		if (typeof window === 'undefined' || !window.localStorage) return {};
+		try {
+			const raw = window.localStorage.getItem('acr-column-orders');
+			return raw ? JSON.parse(raw) : {};
+		} catch {
+			return {};
+		}
+	}
+
+	private _saveColumnOrders() {
+		if (typeof window === 'undefined' || !window.localStorage) return;
+		try {
+			window.localStorage.setItem('acr-column-orders', JSON.stringify(this.columnOrdersByWork));
+		} catch {
+			// Ignore storage quota / private mode errors
+		}
+	}
+
+	private _workOrderKey(): string {
+		return `${this.currentCorpus}:${this.currentWorkCode}`;
+	}
+
+	get currentColumnOrder(): string[] {
+		return this.columnOrdersByWork[this._workOrderKey()] ?? [];
+	}
+
 
 	toggleThemeSlider(){
 		this.showThemeSlider = !this.showThemeSlider;
@@ -91,6 +121,33 @@ export class ReaderState {
 		}
 		this.visibleLanguages.delete(oldVersionId);
 		this.visibleLanguages.add(newVersionId);
+
+		// Preserve the swapped column's slot in per-work column ordering
+		const key = this._workOrderKey();
+		const order = this.columnOrdersByWork[key];
+		if (order && order.includes(oldVersionId)) {
+			this.columnOrdersByWork = {
+				...this.columnOrdersByWork,
+				[key]: order.map((id) => (id === oldVersionId ? newVersionId : id))
+			};
+			this._saveColumnOrders();
+		}
+	}
+
+	moveColumn(versionId: string, direction: 'left' | 'right', activeVersionIds?: string[]) {
+		const base =
+			activeVersionIds && activeVersionIds.length > 0
+				? [...activeVersionIds]
+				: this.currentApplicableVersions
+						.filter((v) => this.isLanguageVisible(v.id))
+						.map((v) => v.id);
+		const idx = base.indexOf(versionId);
+		const targetIdx = direction === 'left' ? idx - 1 : idx + 1;
+		if (idx === -1 || targetIdx < 0 || targetIdx >= base.length) return;
+		[base[idx], base[targetIdx]] = [base[targetIdx], base[idx]];
+		const key = this._workOrderKey();
+		this.columnOrdersByWork = { ...this.columnOrdersByWork, [key]: base };
+		this._saveColumnOrders();
 	}
 
 	// Backwards-compatibility bridge for Phase 3 components:

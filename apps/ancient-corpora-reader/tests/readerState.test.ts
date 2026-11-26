@@ -229,4 +229,26 @@ describe('ReaderState Store', () => {
 		state.setWork('ORAT');
 		expect(Array.from(state.visibleLanguages)).toEqual(['origen_celano_grc', 'origen_tert_eng']);
 	});
+
+	it('reorders columns per work and preserves slot on swapVersion', () => {
+		const state = new ReaderState();
+		state.setCorpus('origen', 'PRIN');
+		expect(state.currentColumnOrder).toEqual([]);
+
+		// Move Greek right past Latin: [lat, grc, eng]
+		state.moveColumn('origen_mgr_grc', 'right', ['origen_mgr_grc', 'origen_cc_lat', 'origen_anf_eng']);
+		expect(state.currentColumnOrder).toEqual(['origen_cc_lat', 'origen_mgr_grc', 'origen_anf_eng']);
+
+		// Swapping English witness preserves its 3rd-column slot
+		state.swapVersion('origen_anf_eng', 'origen_anf_grc_eng');
+		expect(state.currentColumnOrder).toEqual(['origen_cc_lat', 'origen_mgr_grc', 'origen_anf_grc_eng']);
+
+		// Switching to another work has its own independent order
+		state.setWork('CELS');
+		expect(state.currentColumnOrder).toEqual([]);
+
+		// Switching back to PRIN retains its custom order
+		state.setWork('PRIN');
+		expect(state.currentColumnOrder).toEqual(['origen_cc_lat', 'origen_mgr_grc', 'origen_anf_grc_eng']);
+	});
 });

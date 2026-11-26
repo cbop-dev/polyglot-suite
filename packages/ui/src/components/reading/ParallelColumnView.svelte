@@ -64,6 +64,8 @@
 		// Actions
 		onWordClick?: (token: TextToken, citation: string, version: TextVersionData) => void;
 		onSwapVersion?: (oldVersionId: string, newVersionId: string) => void;
+		columnOrder?: string[];
+		onMoveColumn?: (versionId: string, direction: 'left' | 'right', activeVersionIds: string[]) => void;
 		onBookmarkToggle?: (secKey: string, snippet: string) => void;
 		onCitationClick?: (secKey: number | string, unitsByVersion: Record<string, TextUnitData>) => void;
 		onBiblicalCitationClick?: (bookCode: string, chapter: number, verse: number, display: string, bookName?: string) => void;
@@ -109,6 +111,8 @@
 
 		onWordClick,
 		onSwapVersion,
+		columnOrder = [],
+		onMoveColumn,
 		onBookmarkToggle,
 		onCitationClick,
 		onBiblicalCitationClick,
@@ -175,28 +179,42 @@
 		return legacy;
 	});
 
-	// Filter active versions based on visibleLanguages or legacy viewMode flags
+	// Filter active versions based on visibleLanguages or legacy viewMode flags, then apply columnOrder
 	let activeVersions = $derived.by(() => {
+		let filtered: TextVersionData[];
 		if (!visibleLanguages) {
 			if (showGreek !== undefined || showEnglish !== undefined || showLatin !== undefined) {
-				return resolvedTextVersions.filter((v) => {
+				filtered = resolvedTextVersions.filter((v) => {
 					if (v.language === 'grc' && showGreek === false) return false;
 					if (v.language === 'eng' && showEnglish === false) return false;
 					if (v.language === 'lat' && showLatin === false) return false;
 					return true;
 				});
+			} else {
+				filtered = resolvedTextVersions;
 			}
-			return resolvedTextVersions;
+		} else {
+			filtered = resolvedTextVersions.filter((v) => {
+				if (typeof visibleLanguages.has === 'function') {
+					return visibleLanguages.has(v.language) || visibleLanguages.has(v.versionId);
+				}
+				if (Array.isArray(visibleLanguages)) {
+					return visibleLanguages.includes(v.language) || visibleLanguages.includes(v.versionId);
+				}
+				return true;
+			});
 		}
-		return resolvedTextVersions.filter((v) => {
-			if (typeof visibleLanguages.has === 'function') {
-				return visibleLanguages.has(v.language) || visibleLanguages.has(v.versionId);
-			}
-			if (Array.isArray(visibleLanguages)) {
-				return visibleLanguages.includes(v.language) || visibleLanguages.includes(v.versionId);
-			}
-			return true;
-		});
+
+		if (columnOrder && columnOrder.length > 0) {
+			return [...filtered].sort((a, b) => {
+				const idxA = columnOrder.indexOf(a.versionId);
+				const idxB = columnOrder.indexOf(b.versionId);
+				const posA = idxA === -1 ? Number.MAX_SAFE_INTEGER : idxA;
+				const posB = idxB === -1 ? Number.MAX_SAFE_INTEGER : idxB;
+				return posA - posB;
+			});
+		}
+		return filtered;
 	});
 
 	// Map of versionId -> Map(secKey -> TextUnitData)
@@ -429,13 +447,14 @@
 	<!-- Tailwind scan anchor: md:grid lg:grid md:grid-cols-2 lg:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 -->
 	{#if !isStacked}
 		<div class="column-headers hidden {gridBreakpoint === 'md' ? 'md:grid' : 'lg:grid'} {gridColsClass} gap-6 sm:gap-8 border-b border-[var(--color-rule)] pb-2 text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)]">
-			{#each activeVersions as ver (ver.versionId)}
+			{#each activeVersions as ver, colIdx (ver.versionId)}
 				{@const swappableVersions = onSwapVersion
 					? resolvedTextVersions.filter(
 							(alt) => alt.versionId === ver.versionId || !activeVersions.some((a) => a.versionId === alt.versionId)
 						)
 					: []}
-				<div class="flex items-center justify-between gap-2">
+				{@const currentIds = activeVersions.map((v) => v.versionId)}
+				<div class="flex items-center justify-between gap-2 min-w-0">
 					{#if onSwapVersion && swappableVersions.length > 1}
 						<select
 							aria-label="Select text version for column {ver.label}"
@@ -448,11 +467,31 @@
 							{/each}
 						</select>
 					{:else}
-						<span>{ver.label}</span>
+						<span class="truncate">{ver.label}</span>
 					{/if}
-					{#if ver.shortLabel && ver.shortLabel !== ver.label}
-						<span class="text-[10px] font-normal normal-case text-[var(--color-ink-soft)] shrink-0">{ver.shortLabel}</span>
-					{/if}
+					<div class="flex items-center gap-1 shrink-0">
+						{#if ver.shortLabel && ver.shortLabel !== ver.label}
+							<span class="text-[10px] font-normal normal-case text-[var(--color-ink-soft)]">{ver.shortLabel}</span>
+						{/if}
+						{#if onMoveColumn && activeVersions.length > 1}
+							<button
+								type="button"
+								disabled={colIdx === 0}
+								onclick={() => onMoveColumn(ver.versionId, 'left', currentIds)}
+								aria-label="Move {ver.label} column left"
+								title="Move column left"
+								class="px-1 py-0.5 rounded text-[11px] leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-[var(--color-rule)]/50 disabled:opacity-25 disabled:pointer-events-none cursor-pointer transition-colors"
+							>←</button>
+							<button
+								type="button"
+								disabled={colIdx === activeVersions.length - 1}
+								onclick={() => onMoveColumn(ver.versionId, 'right', currentIds)}
+								aria-label="Move {ver.label} column right"
+								title="Move column right"
+								class="px-1 py-0.5 rounded text-[11px] leading-none text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-[var(--color-rule)]/50 disabled:opacity-25 disabled:pointer-events-none cursor-pointer transition-colors"
+							>→</button>
+						{/if}
+					</div>
 				</div>
 			{/each}
 		</div>
