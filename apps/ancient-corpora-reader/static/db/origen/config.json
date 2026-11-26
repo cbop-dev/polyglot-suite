@@ -1,0 +1,10 @@
+{
+  "databaseVersion": "corpora-origen-db-v0.0.1",
+  "serverMode": "chunked",
+  "requestChunkSize": 16384,
+  "urlPrefix": "origen.db.",
+  "serverChunkSize": 5242880,
+  "databaseLengthBytes": 189431808,
+  "suffixLength": 2,
+  "cacheBust": "v1795709888"
+}

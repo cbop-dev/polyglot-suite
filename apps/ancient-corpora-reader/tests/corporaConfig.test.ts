@@ -18,7 +18,7 @@ import {
 describe('Corpora Configuration & Catalog', () => {
 	it('defines all registered corpora in CORPORA_CONFIG and resolves active corpora via getAllCorpora/getActiveCorpora', () => {
 		const registered = getRegisteredCorpora();
-		expect(registered.map((c) => c.id)).toEqual(['af', 'philo', 'josephus', 'justin', 'irenaeus']);
+		expect(registered.map((c) => c.id)).toEqual(['af', 'philo', 'josephus', 'justin', 'irenaeus', 'origen']);
 
 		const active = getActiveCorpora();
 		expect(getAllCorpora().map((c) => c.id)).toEqual(active.map((c) => c.id));
@@ -26,6 +26,12 @@ describe('Corpora Configuration & Catalog', () => {
 		expect(isCorpusInstalled('justin')).toBe(true);
 		expect(isCorpusEnabled('irenaeus')).toBe(true);
 		expect(isCorpusInstalled('irenaeus')).toBe(true);
+		expect(isCorpusEnabled('origen')).toBe(true);
+		expect(isCorpusInstalled('origen')).toBe(true);
+
+		const origenConfig = getCorpusConfig('origen');
+		expect(origenConfig.name).toBe('Origen of Alexandria');
+		expect(origenConfig.license?.editions?.length).toBeGreaterThanOrEqual(6);
 
 		const justinConfig = getCorpusConfig('justin');
 		expect(justinConfig.name).toBe('Justin Martyr');

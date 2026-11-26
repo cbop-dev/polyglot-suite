@@ -29,7 +29,7 @@ class CelanoParser:
 	"""Parses Giuseppe Celano's LemmatizedAncientGreekXML files."""
 
 	@staticmethod
-	def parse(xml_path: Path, max_chapter: int) -> Dict[int, Dict[int, List[Dict[str, Any]]]]:
+	def parse(xml_path: Path, max_chapter: int, include_preface: bool = False) -> Dict[int, Dict[int, List[Dict[str, Any]]]]:
 		"""Returns {chapter: {section: [raw_tokens]}}."""
 		tree = ET.parse(xml_path)
 		root = tree.getroot()
@@ -41,15 +41,19 @@ class CelanoParser:
 				continue
 			if "." in p_val:
 				ch_str, sec_str = p_val.split(".", 1)
-				if not (ch_str.isdigit() and sec_str.isdigit()):
+				if ch_str == "praef" and include_preface and sec_str.isdigit():
+					ch, sec = 0, int(sec_str)
+				elif ch_str.isdigit() and sec_str.isdigit():
+					ch, sec = int(ch_str), int(sec_str)
+				else:
 					continue
-				ch, sec = int(ch_str), int(sec_str)
 			elif p_val.isdigit():
 				ch, sec = int(p_val), 1
 			else:
 				continue
 
-			if ch < 1 or ch > max_chapter:
+			min_ch = 0 if include_preface else 1
+			if ch < min_ch or ch > max_chapter:
 				continue
 
 			f_el = t.find("f")
@@ -248,4 +252,56 @@ class SabbatismusEpubParser:
 					books[current_book][ch_num] = pairs
 
 		return books
+
+
+class CorpusCorporumPosParser:
+	"""Parses Corpus Corporum lemmatized TEI XML (mlat.uzh.ch/2.0) by mlat:pid."""
+
+	MLAT_PID = "{http://mlat.uzh.ch/2.0}pid"
+
+	@staticmethod
+	def _join_words(words: List[str]) -> str:
+		no_space_before = set(".,;:!?)]»’\"'")
+		no_space_after = set("([«\"'")
+		parts: List[str] = []
+		for w in words:
+			if not parts:
+				parts.append(w)
+			elif w in no_space_before or parts[-1] in no_space_after:
+				parts.append(w)
+			else:
+				parts.append(" " + w)
+		return "".join(parts).strip()
+
+	@classmethod
+	def parse_by_pid(cls, xml_path: Path) -> Dict[str, str]:
+		"""Returns {pid_suffix: reconstructed_text} e.g. {'1.1.1': '...', '4.1': '...'}."""
+		tree = ET.parse(xml_path)
+		root = tree.getroot()
+		out: Dict[str, str] = {}
+
+		for div in root.iter():
+			if not div.tag.endswith("div"):
+				continue
+			pid = div.attrib.get(cls.MLAT_PID, "")
+			if ":" not in pid:
+				continue
+			key = pid.split(":", 1)[1]
+			# Only leaf divs that directly contain <p>
+			p_elems = [c for c in div if c.tag.endswith("p")]
+			if not p_elems:
+				continue
+			paras: List[str] = []
+			for p in p_elems:
+				words: List[str] = []
+				for el in p.iter():
+					if el.tag.endswith("w") and el.text:
+						words.append(el.text.strip())
+				joined = cls._join_words(words)
+				if joined:
+					paras.append(joined)
+			if paras:
+				out[key] = "\n\n".join(paras)
+		return out
+
 
