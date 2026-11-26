@@ -25,6 +25,7 @@ coverage/
 # Python & Virtual Environments
 __pycache__/
 *.pyc
+.venv*/
 .venv/
 venv/
 **/pipeline/raw_data/
