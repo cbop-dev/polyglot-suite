@@ -88,3 +88,26 @@ export function getAllCorpora(): CorpusTypes.CorpusConfig[] {
 export function getCorpusTextVersions(id: string): CorpusTypes.TextVersionConfig[] {
 	return getCorpusConfig(id).textVersions;
 }
+
+/**
+ * Check whether a text version applies to a given work code.
+ */
+export function isVersionApplicableToWork(
+	version: { applicableWorks?: string[] | null },
+	workCode?: string
+): boolean {
+	if (!workCode || !version.applicableWorks || version.applicableWorks.length === 0) {
+		return true;
+	}
+	return version.applicableWorks.includes(workCode);
+}
+
+/**
+ * Return text versions for a corpus filtered to a specific work code.
+ */
+export function getApplicableTextVersions(
+	corpusId: string,
+	workCode?: string
+): CorpusTypes.TextVersionConfig[] {
+	return getCorpusTextVersions(corpusId).filter((v) => isVersionApplicableToWork(v, workCode));
+}

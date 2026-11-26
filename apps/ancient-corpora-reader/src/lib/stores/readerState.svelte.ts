@@ -9,7 +9,7 @@ import {
 } from '../config/corpora.data.js';
 import {
 	getCorpusConfig,
-	
+	getApplicableTextVersions
 } from '../config/corpora.js';
 import type { CorpusConfig } from '@polyglot/ancient-languages/corpora-types';
 import type { Token } from '../services/dbClient.js';
@@ -32,6 +32,36 @@ export class ReaderState {
 	// Reactive language/version visibility set
 	visibleLanguages = $state<SvelteSet<string>>(new SvelteSet(['grc', 'lat', 'eng']));
 
+	// Per-work column ordering (keyed by `${corpusId}:${workCode}`)
+	columnOrdersByWork = $state<Record<string, string[]>>(ReaderState._loadColumnOrders());
+
+	private static _loadColumnOrders(): Record<string, string[]> {
+		if (typeof window === 'undefined' || !window.localStorage) return {};
+		try {
+			const raw = window.localStorage.getItem('acr-column-orders');
+			return raw ? JSON.parse(raw) : {};
+		} catch {
+			return {};
+		}
+	}
+
+	private _saveColumnOrders() {
+		if (typeof window === 'undefined' || !window.localStorage) return;
+		try {
+			window.localStorage.setItem('acr-column-orders', JSON.stringify(this.columnOrdersByWork));
+		} catch {
+			// Ignore storage quota / private mode errors
+		}
+	}
+
+	private _workOrderKey(): string {
+		return `${this.currentCorpus}:${this.currentWorkCode}`;
+	}
+
+	get currentColumnOrder(): string[] {
+		return this.columnOrdersByWork[this._workOrderKey()] ?? [];
+	}
+
 
 	toggleThemeSlider(){
 		this.showThemeSlider = !this.showThemeSlider;
@@ -39,6 +69,10 @@ export class ReaderState {
 
 	get currentCorpusConfig(): CorpusConfig {
 		return getCorpusConfig(this.currentCorpus);
+	}
+
+	get currentApplicableVersions() {
+		return getApplicableTextVersions(this.currentCorpus, this.currentWorkCode);
 	}
 
 
@@ -87,6 +121,33 @@ export class ReaderState {
 		}
 		this.visibleLanguages.delete(oldVersionId);
 		this.visibleLanguages.add(newVersionId);
+
+		// Preserve the swapped column's slot in per-work column ordering
+		const key = this._workOrderKey();
+		const order = this.columnOrdersByWork[key];
+		if (order && order.includes(oldVersionId)) {
+			this.columnOrdersByWork = {
+				...this.columnOrdersByWork,
+				[key]: order.map((id) => (id === oldVersionId ? newVersionId : id))
+			};
+			this._saveColumnOrders();
+		}
+	}
+
+	moveColumn(versionId: string, direction: 'left' | 'right', activeVersionIds?: string[]) {
+		const base =
+			activeVersionIds && activeVersionIds.length > 0
+				? [...activeVersionIds]
+				: this.currentApplicableVersions
+						.filter((v) => this.isLanguageVisible(v.id))
+						.map((v) => v.id);
+		const idx = base.indexOf(versionId);
+		const targetIdx = direction === 'left' ? idx - 1 : idx + 1;
+		if (idx === -1 || targetIdx < 0 || targetIdx >= base.length) return;
+		[base[idx], base[targetIdx]] = [base[targetIdx], base[idx]];
+		const key = this._workOrderKey();
+		this.columnOrdersByWork = { ...this.columnOrdersByWork, [key]: base };
+		this._saveColumnOrders();
 	}
 
 	// Backwards-compatibility bridge for Phase 3 components:
@@ -155,24 +216,28 @@ export class ReaderState {
 		this.showThemeSlider=false;
 	}
 
-	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: number, section?: string | number | null) {
-		
-		this.closeSidePanel();
-		//goto(resolve('/')+corpusId);
-		this.currentCorpus = corpusId;
+	private _applyDefaultVersions(corpusId: AncientCorpusId, workCode: string) {
 		const cfg = getCorpusConfig(corpusId);
-		const defaultVersions = cfg.textVersions
+		const applicable = getApplicableTextVersions(corpusId, workCode);
+		const defaultVersions = applicable
 			.filter((v) => v.isDefaultVisible)
 			.map((v) => v.id);
 		this.setVisibleLanguages(
 			defaultVersions.length > 0
 				? Array.from(new Set(defaultVersions))
-				: [cfg.textVersions[0]?.id || cfg.primaryLanguage]
+				: [applicable[0]?.id || cfg.textVersions[0]?.id || cfg.primaryLanguage]
 		);
+	}
 
+	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: number, section?: string | number | null) {
+		
+		this.closeSidePanel();
+		//goto(resolve('/')+corpusId);
+		this.currentCorpus = corpusId;
 		const works = getCorpusWorks(corpusId);
 		const targetWork = workCode ? (findWork(corpusId, workCode) || works[0]) : works[0];
 		this.currentWorkCode = targetWork.code;
+		this._applyDefaultVersions(corpusId, targetWork.code);
 		this.currentDivision = division !== undefined
 			? Math.max(targetWork.minDivision, Math.min(division, targetWork.totalDivisions))
 			: targetWork.minDivision;
@@ -185,6 +250,7 @@ export class ReaderState {
 		if (target) {
 			this.closeSidePanel();
 			this.currentWorkCode = target.code;
+			this._applyDefaultVersions(this.currentCorpus, target.code);
 			this.currentDivision = division !== undefined
 				? Math.max(target.minDivision, Math.min(division, target.totalDivisions))
 				: target.minDivision;

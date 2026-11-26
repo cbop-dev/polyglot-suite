@@ -51,7 +51,7 @@
 	themeWarmthStorageKey="ne-reading-warmth"
 	onOpenTheme={() => readerState.toggleThemeSlider()}
 	onOpenHelp={() => (readerState.showHotkeyHelp = true)}
-	textVersions={readerState.currentCorpusConfig.textVersions}
+	textVersions={readerState.currentApplicableVersions}
 	bind:textVersionsVisible
 	bind:layoutIsOpen={readerState.layoutIsOpen}
 	version={__APP_VERSION__}

@@ -287,5 +287,248 @@ export const CANONICAL_CORPUS_VERSIONS: Record<string, TextVersionConfig[]> = {
         "url": "https://www.sabbatismus.com/en/san-ireneo-de-lyon/adversus-haereses/"
       }
     }
+  ],
+  "origen": [
+    {
+      "id": "origen_celano_grc",
+      "language": "grc",
+      "title": "Greek Critical Text (First1KGreek / Celano Lemmatized)",
+      "shortTitle": "Greek (Celano)",
+      "versionLabel": "Greek (Celano)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 1,
+      "bibliographic": {
+        "role": "critical_edition",
+        "booktitle": "Lemmatized Ancient Greek XML (tlg2042)",
+        "publisher": "OpenGreekAndLatin",
+        "year": "2017",
+        "editor": "Giuseppe Celano",
+        "series": "First1KGreek",
+        "address": "Leipzig",
+        "sblQualifier": "(Greek)",
+        "applicableWorks": [
+          "CELS",
+          "COMM_JO",
+          "COMM_MT",
+          "ORAT",
+          "EP_AFR"
+        ],
+        "url": "https://github.com/gcelano/LemmatizedAncientGreekXML"
+      },
+      "applicableWorks": [
+        "CELS",
+        "COMM_JO",
+        "COMM_MT",
+        "ORAT",
+        "EP_AFR"
+      ]
+    },
+    {
+      "id": "origen_f1k_grc",
+      "language": "grc",
+      "title": "Greek Critical Text (First1KGreek TEI)",
+      "shortTitle": "Greek (First1KGreek)",
+      "versionLabel": "Greek (First1KGreek)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 2,
+      "bibliographic": {
+        "role": "critical_edition",
+        "booktitle": "The Philocalia of Origen",
+        "publisher": "Cambridge University Press",
+        "year": "1893",
+        "editor": "J. Armitage Robinson",
+        "series": "First1KGreek",
+        "address": "Cambridge",
+        "sblQualifier": "(Greek)",
+        "applicableWorks": [
+          "PHIL"
+        ],
+        "url": "https://github.com/OpenGreekAndLatin/First1KGreek"
+      },
+      "applicableWorks": [
+        "PHIL"
+      ]
+    },
+    {
+      "id": "origen_mgr_grc",
+      "language": "grc",
+      "title": "Greek Fragments (Migne Patrologia Graeca Vol. 11)",
+      "shortTitle": "Greek (PG 11)",
+      "versionLabel": "Greek (PG 11)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 3,
+      "bibliographic": {
+        "role": "critical_edition",
+        "booktitle": "Patrologia Graeca",
+        "publisher": "J.-P. Migne",
+        "year": "1857",
+        "editor": "J.-P. Migne",
+        "series": "Patrologia Graeca",
+        "address": "Paris",
+        "volume": "Vol. 11",
+        "sblQualifier": "(Greek)",
+        "applicableWorks": [
+          "PRIN"
+        ],
+        "url": "https://www.documentacatholicaomnia.eu/04z/z_0185-0254__Origenes__De_principiis__MGR.pdf.html"
+      },
+      "applicableWorks": [
+        "PRIN"
+      ]
+    },
+    {
+      "id": "origen_cc_lat",
+      "language": "lat",
+      "title": "Rufinus Latin Translation (Corpus Corporum)",
+      "shortTitle": "Latin (Rufinus)",
+      "versionLabel": "Latin (Rufinus)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 4,
+      "bibliographic": {
+        "role": "ancient_witness",
+        "booktitle": "Collectio Selecta SS. Ecclesiae Patrum",
+        "publisher": "Méquignon-Havard / Univ. of Zurich",
+        "year": "1829",
+        "editor": "Armand Benjamin Caillau and Philipp Roelli",
+        "translator": "Rufinus of Aquileia",
+        "series": "Corpus Corporum",
+        "address": "Paris / Zurich",
+        "volume": "Vol. 15",
+        "sblQualifier": "(Latin, Rufinus)",
+        "applicableWorks": [
+          "PRIN"
+        ],
+        "url": "https://mlat.uzh.ch/browser?path=21750"
+      },
+      "applicableWorks": [
+        "PRIN"
+      ]
+    },
+    {
+      "id": "origen_f1k_lat",
+      "language": "lat",
+      "title": "Ancient Latin Translation (First1KGreek, Mt. Bks 12–17)",
+      "shortTitle": "Latin (First1KGreek)",
+      "versionLabel": "Latin (First1KGreek)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 5,
+      "bibliographic": {
+        "role": "ancient_witness",
+        "booktitle": "Origenes Werke: Matthäuserklärung",
+        "publisher": "OpenGreekAndLatin",
+        "year": "1935",
+        "editor": "Erich Klostermann",
+        "series": "Die griechischen christlichen Schriftsteller",
+        "address": "Leipzig",
+        "volume": "Vol. 10",
+        "sblQualifier": "(Latin)",
+        "applicableWorks": [
+          "COMM_MT"
+        ],
+        "url": "https://github.com/OpenGreekAndLatin/First1KGreek"
+      },
+      "applicableWorks": [
+        "COMM_MT"
+      ]
+    },
+    {
+      "id": "origen_anf_eng",
+      "language": "eng",
+      "title": "Ante-Nicene Fathers English Translation (Vols. 4 & 9)",
+      "shortTitle": "English (ANF)",
+      "versionLabel": "English (ANF)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 6,
+      "bibliographic": {
+        "role": "translation",
+        "booktitle": "The Ante-Nicene Fathers",
+        "publisher": "Christian Literature Publishing Co.",
+        "year": "1885–1896",
+        "editor": "Alexander Roberts, James Donaldson, and Allan Menzies",
+        "translator": "Frederick Crombie, Allan Menzies, and John Patrick",
+        "series": "Ante-Nicene Fathers",
+        "address": "Buffalo, NY",
+        "volume": "Vols. 4 & 9",
+        "sblQualifier": "(ANF)",
+        "applicableWorks": [
+          "PRIN",
+          "CELS",
+          "COMM_JO",
+          "COMM_MT",
+          "EP_AFR"
+        ],
+        "url": "https://www.ccel.org/ccel/schaff/anf04"
+      },
+      "applicableWorks": [
+        "PRIN",
+        "CELS",
+        "COMM_JO",
+        "COMM_MT",
+        "EP_AFR"
+      ]
+    },
+    {
+      "id": "origen_anf_grc_eng",
+      "language": "eng",
+      "title": "Ante-Nicene Fathers English (from the Greek, De Principiis 3.1 & 4.1–23)",
+      "shortTitle": "English (ANF, from Greek)",
+      "versionLabel": "English (ANF, from Greek)",
+      "direction": "ltr",
+      "isDefaultVisible": false,
+      "order": 7,
+      "bibliographic": {
+        "role": "translation",
+        "booktitle": "The Ante-Nicene Fathers",
+        "publisher": "Christian Literature Publishing Co.",
+        "year": "1885",
+        "editor": "Alexander Roberts and James Donaldson",
+        "translator": "Frederick Crombie",
+        "series": "Ante-Nicene Fathers",
+        "address": "Buffalo, NY",
+        "volume": "Vol. 4",
+        "sblQualifier": "(ANF from Greek)",
+        "applicableWorks": [
+          "PRIN"
+        ],
+        "url": "https://www.ccel.org/ccel/schaff/anf04"
+      },
+      "applicableWorks": [
+        "PRIN"
+      ]
+    },
+    {
+      "id": "origen_tert_eng",
+      "language": "eng",
+      "title": "English Translations (Curtis / Lewis 1911 via Tertullian.org)",
+      "shortTitle": "English (Tertullian.org)",
+      "versionLabel": "English (Tertullian.org)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 8,
+      "bibliographic": {
+        "role": "translation",
+        "booktitle": "Early Church Fathers — Additional Texts",
+        "publisher": "Tertullian.org",
+        "year": "1911",
+        "editor": "Roger Pearse",
+        "translator": "William A. Curtis and George Lewis",
+        "sblQualifier": "(trans. Curtis / Lewis)",
+        "applicableWorks": [
+          "ORAT",
+          "PHIL"
+        ],
+        "url": "https://www.tertullian.org/fathers/index.htm"
+      },
+      "applicableWorks": [
+        "ORAT",
+        "PHIL"
+      ]
+    }
   ]
 };
