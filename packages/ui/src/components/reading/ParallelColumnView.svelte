@@ -415,6 +415,15 @@
 			<div class="text-sm font-semibold text-[var(--color-ink,#0f172a)]">{loadingMessage}</div>
 			<div class="text-xs text-[var(--color-ink-soft,#64748b)] mt-1">Fetching section records and morphological data...</div>
 		</div>
+	{:else if resolvedTextVersions.length > 0 && activeVersions.length === 0}
+		<div class="py-12 px-4 text-center rounded-lg border border-dashed border-[var(--color-rule)]">
+			<div class="text-sm font-semibold text-[var(--color-ink,#0f172a)]">
+				Selected version(s) have no text in this division.
+			</div>
+			<div class="text-xs text-[var(--color-ink-soft,#64748b)] mt-1">
+				Available here: {resolvedTextVersions.map((v) => v.shortLabel || v.label).join(', ')}. Use the version toggles above to show an available witness.
+			</div>
+		</div>
 	{:else}
 		<!-- Column Headers (desktop) -->
 	<!-- Tailwind scan anchor: md:grid lg:grid md:grid-cols-2 lg:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 -->

@@ -9,7 +9,7 @@ import {
 } from '../config/corpora.data.js';
 import {
 	getCorpusConfig,
-	
+	getApplicableTextVersions
 } from '../config/corpora.js';
 import type { CorpusConfig } from '@polyglot/ancient-languages/corpora-types';
 import type { Token } from '../services/dbClient.js';
@@ -39,6 +39,10 @@ export class ReaderState {
 
 	get currentCorpusConfig(): CorpusConfig {
 		return getCorpusConfig(this.currentCorpus);
+	}
+
+	get currentApplicableVersions() {
+		return getApplicableTextVersions(this.currentCorpus, this.currentWorkCode);
 	}
 
 
@@ -155,24 +159,28 @@ export class ReaderState {
 		this.showThemeSlider=false;
 	}
 
-	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: number, section?: string | number | null) {
-		
-		this.closeSidePanel();
-		//goto(resolve('/')+corpusId);
-		this.currentCorpus = corpusId;
+	private _applyDefaultVersions(corpusId: AncientCorpusId, workCode: string) {
 		const cfg = getCorpusConfig(corpusId);
-		const defaultVersions = cfg.textVersions
+		const applicable = getApplicableTextVersions(corpusId, workCode);
+		const defaultVersions = applicable
 			.filter((v) => v.isDefaultVisible)
 			.map((v) => v.id);
 		this.setVisibleLanguages(
 			defaultVersions.length > 0
 				? Array.from(new Set(defaultVersions))
-				: [cfg.textVersions[0]?.id || cfg.primaryLanguage]
+				: [applicable[0]?.id || cfg.textVersions[0]?.id || cfg.primaryLanguage]
 		);
+	}
 
+	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: number, section?: string | number | null) {
+		
+		this.closeSidePanel();
+		//goto(resolve('/')+corpusId);
+		this.currentCorpus = corpusId;
 		const works = getCorpusWorks(corpusId);
 		const targetWork = workCode ? (findWork(corpusId, workCode) || works[0]) : works[0];
 		this.currentWorkCode = targetWork.code;
+		this._applyDefaultVersions(corpusId, targetWork.code);
 		this.currentDivision = division !== undefined
 			? Math.max(targetWork.minDivision, Math.min(division, targetWork.totalDivisions))
 			: targetWork.minDivision;
@@ -185,6 +193,7 @@ export class ReaderState {
 		if (target) {
 			this.closeSidePanel();
 			this.currentWorkCode = target.code;
+			this._applyDefaultVersions(this.currentCorpus, target.code);
 			this.currentDivision = division !== undefined
 				? Math.max(target.minDivision, Math.min(division, target.totalDivisions))
 				: target.minDivision;

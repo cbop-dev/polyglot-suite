@@ -3,7 +3,8 @@ import { findWork, resolveDivisionCoordinates } from '../config/corpora.data.js'
 import {
 	CORPORA_CONFIG,
 	getCorpusConfig,
-	getAllCorpora
+	getAllCorpora,
+	getApplicableTextVersions
 } from '../config/corpora.js';
 import type { TextDirection } from '@polyglot/ancient-languages/corpora-types';
 import {
@@ -254,15 +255,17 @@ export async function fetchDivisionSections(
 		}
 	}
 
-	const textVersions: TextVersion[] = cfg.textVersions.map((v) => ({
-		versionId: v.id,
-		language: v.language,
-		label: v.title,
-		shortLabel: v.shortTitle,
-		direction: v.direction || 'ltr',
-		fontClass: getLanguageFontClass(v.language),
-		textUnits: unitsByVersion.get(v.id) || []
-	}));
+	const textVersions: TextVersion[] = getApplicableTextVersions(corpusId, workCode)
+		.map((v) => ({
+			versionId: v.id,
+			language: v.language,
+			label: v.title,
+			shortLabel: v.shortTitle,
+			direction: v.direction || 'ltr',
+			fontClass: getLanguageFontClass(v.language),
+			textUnits: unitsByVersion.get(v.id) || []
+		}))
+		.filter((v) => v.textUnits.length > 0);
 
 	const result: DivisionResult = {
 		corpusId,

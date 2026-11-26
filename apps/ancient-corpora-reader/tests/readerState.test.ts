@@ -207,4 +207,26 @@ describe('ReaderState Store', () => {
 		expect(state.isSidePanelOpen).toBe(false);
 		expect(state.selectedToken).toBeNull();
 	});
+
+	it('filters visibleLanguages and currentApplicableVersions per work in Origen', () => {
+		const state = new ReaderState();
+		state.setCorpus('origen', 'PRIN');
+		expect(Array.from(state.visibleLanguages)).toEqual(['origen_mgr_grc', 'origen_cc_lat', 'origen_anf_eng']);
+		expect(state.currentApplicableVersions.map((v) => v.id)).toEqual([
+			'origen_mgr_grc',
+			'origen_cc_lat',
+			'origen_anf_eng',
+			'origen_anf_grc_eng'
+		]);
+
+		state.setWork('CELS');
+		expect(Array.from(state.visibleLanguages)).toEqual(['origen_celano_grc', 'origen_anf_eng']);
+		expect(state.currentApplicableVersions.map((v) => v.id)).toEqual(['origen_celano_grc', 'origen_anf_eng']);
+
+		state.setWork('COMM_MT');
+		expect(Array.from(state.visibleLanguages)).toEqual(['origen_celano_grc', 'origen_f1k_lat', 'origen_anf_eng']);
+
+		state.setWork('ORAT');
+		expect(Array.from(state.visibleLanguages)).toEqual(['origen_celano_grc', 'origen_tert_eng']);
+	});
 });
