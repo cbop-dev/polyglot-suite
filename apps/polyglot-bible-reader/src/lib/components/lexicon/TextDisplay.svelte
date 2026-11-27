@@ -37,7 +37,7 @@
             <h2 class="text-lg font-bold mb-2">{ref}</h2>
         {/if}
 
-        <p class="{lang === 'hebrew' ? 'hebrew font-hebrew text-2xl' : 'greek font-greek text-xl'} text-center py-2 text-ink leading-relaxed whitespace-pre-line" dir={lang === 'hebrew' ? 'rtl' : 'ltr'}>{text}</p>
+        <p class="{lang === 'hebrew' ? 'hebrew font-hebrew lex-text-rtl' : 'greek font-greek lex-text-ltr'} text-center py-2 text-ink leading-relaxed whitespace-pre-line" dir={lang === 'hebrew' ? 'rtl' : 'ltr'}>{text}</p>
         <div class="text-center mt-2">
             <Button
                 buttonColors="btn btn-secondary"
@@ -48,3 +48,13 @@
         </div>
     </div>
 {/if}
+
+<style>
+    .lex-text-ltr {
+        font-size: calc(1.25rem * var(--reading-font-scale, 1));
+    }
+
+    .lex-text-rtl {
+        font-size: calc(1.5rem * var(--reading-font-scale, 1));
+    }
+</style>

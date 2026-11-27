@@ -61,6 +61,7 @@ export class ReaderState {
 	enableLemmaClick=$state(true);
 	versionGrid = $state<string[][]>([['BHS', 'LXX']]);
 	gridAlignments = $state<(( 'left' | 'right' ) | null)[][]>([['right', 'left']]);
+	gridFontScales = $state<number[][]>(this.loadGridFontScales());
 
 	hebrewMode = $state<HebrewDiacriticMode>('all');
 	greekDiacritics = $state<boolean>(true);
@@ -365,6 +366,69 @@ export class ReaderState {
 		return this.getDefaultAlign(rIdx, cIdx, ver);
 	}
 
+	private static readonly GRID_FONT_SCALES_KEY = 'biblical_grid_font_scales';
+	private static readonly MIN_CELL_FONT_SCALE = 0.5;
+	private static readonly MAX_CELL_FONT_SCALE = 2.0;
+
+	private loadGridFontScales(): number[][] {
+		if (typeof window === 'undefined') return [[1, 1]];
+		try {
+			const raw = localStorage.getItem(ReaderState.GRID_FONT_SCALES_KEY);
+			if (raw) {
+				const parsed = JSON.parse(raw);
+				if (Array.isArray(parsed) && parsed.every((r) => Array.isArray(r))) {
+					return parsed.map((row) =>
+						row.map((v: unknown) =>
+							typeof v === 'number' && !isNaN(v)
+								? Math.min(ReaderState.MAX_CELL_FONT_SCALE, Math.max(ReaderState.MIN_CELL_FONT_SCALE, v))
+								: 1
+						)
+					);
+				}
+			}
+		} catch {}
+		return [[1, 1]];
+	}
+
+	private saveGridFontScales() {
+		if (typeof window === 'undefined') return;
+		try {
+			localStorage.setItem(ReaderState.GRID_FONT_SCALES_KEY, JSON.stringify(this.gridFontScales));
+		} catch {}
+	}
+
+	private syncGridFontScalesShape(grid: string[][]) {
+		this.gridFontScales = grid.map((row, rIdx) =>
+			row.map((_, cIdx) => this.gridFontScales[rIdx]?.[cIdx] ?? 1)
+		);
+		this.saveGridFontScales();
+	}
+
+	getCellFontScale(rIdx: number, cIdx: number): number {
+		return this.gridFontScales[rIdx]?.[cIdx] ?? 1;
+	}
+
+	setCellFontScale(rIdx: number, cIdx: number, scale: number) {
+		const clamped = Math.min(
+			ReaderState.MAX_CELL_FONT_SCALE,
+			Math.max(ReaderState.MIN_CELL_FONT_SCALE, scale)
+		);
+		const rounded = Math.round(clamped * 100) / 100;
+		const next = this.versionGrid.map((row, r) =>
+			row.map((_, c) => (r === rIdx && c === cIdx ? rounded : this.getCellFontScale(r, c)))
+		);
+		this.gridFontScales = next;
+		this.saveGridFontScales();
+	}
+
+	stepCellFontScale(rIdx: number, cIdx: number, delta: number) {
+		this.setCellFontScale(rIdx, cIdx, this.getCellFontScale(rIdx, cIdx) + delta);
+	}
+
+	resetCellFontScale(rIdx: number, cIdx: number) {
+		this.setCellFontScale(rIdx, cIdx, 1);
+	}
+
 	toggleCellAlign(rIdx: number, cIdx: number) {
 		const current = this.getCellAlign(rIdx, cIdx);
 		const next = current === 'right' ? 'left' : 'right';
@@ -393,6 +457,7 @@ export class ReaderState {
 		
 		if (newGrid.length){
 			this.versionGrid=newGrid;
+			this.syncGridFontScalesShape(newGrid);
 			changed = true;
 			if(fixAlignment) {
 //				mylog(`realigning!`, true);
@@ -409,6 +474,7 @@ export class ReaderState {
 		const nextVer = normVersion ? normVersion : (availableBibles.find((d) => !used.has(d)) || 'WEB');
 		this.versionGrid = this.versionGrid.map((row) => [...row, nextVer]);
 		this.gridAlignments = this.gridAlignments.map((row) => [...row, null]);
+		this.syncGridFontScalesShape(this.versionGrid);
 		if (reload) this.loadCurrentChapter();
 	}
 
@@ -416,6 +482,8 @@ export class ReaderState {
 		if ((this.versionGrid[0]?.length || 0) <= 1) return;
 		this.versionGrid = this.versionGrid.map((row) => row.filter((_, idx) => idx !== colIndex));
 		this.gridAlignments = this.gridAlignments.map((row) => row.filter((_, idx) => idx !== colIndex));
+		this.gridFontScales = this.gridFontScales.map((row) => row.filter((_, idx) => idx !== colIndex));
+		this.saveGridFontScales();
 	}
 
 	addRow() {
@@ -429,6 +497,7 @@ export class ReaderState {
 		}
 		this.versionGrid = [...this.versionGrid, newRow];
 		this.gridAlignments = [...this.gridAlignments, new Array(cols).fill(null)];
+		this.syncGridFontScalesShape(this.versionGrid);
 		this.loadCurrentChapter();
 	}
 
@@ -436,6 +505,8 @@ export class ReaderState {
 		if (this.versionGrid.length <= 1) return;
 		this.versionGrid = this.versionGrid.filter((_, idx) => idx !== rowIndex);
 		this.gridAlignments = this.gridAlignments.filter((_, idx) => idx !== rowIndex);
+		this.gridFontScales = this.gridFontScales.filter((_, idx) => idx !== rowIndex);
+		this.saveGridFontScales();
 	}
 
 	realignAll(){

@@ -14,7 +14,9 @@
 		applyReadingFontSize,
 		saveReadingFontSize,
 		saveReadingWarmth,
-		
+		MIN_FONT_SIZE_PERCENT,
+		MAX_FONT_SIZE_PERCENT,
+		DEFAULT_FONT_SIZE_PERCENT,
 		type ThemeDomOptions
 	} from '../dom.ts';
 
@@ -46,7 +48,7 @@
 		onTrigger
 		
 	}: Props = $props();
-	let fontSizeValue = $state<number>(100); // 100%
+	let fontSizeValue = $state<number>(DEFAULT_FONT_SIZE_PERCENT); // 100%
 	//let isOpen = $derived<boolean>(open);
 	let containerEl = $state<HTMLElement | null>(null);
 	let sliderValue = $state<number>(25);
@@ -212,7 +214,7 @@
 
 	let isDark = $derived(sliderValue >= 50);
 	async function resetFontSize(){
-		fontSizeValue = 100;
+		fontSizeValue = DEFAULT_FONT_SIZE_PERCENT;
 		scheduleCommit(); 
 	}
 </script>
@@ -225,7 +227,7 @@
 	<button
       type="button"
       class="slider-label-btn"
-      onclick={() => { fontSizeValue = 50; scheduleCommit(); }}
+      onclick={() => { fontSizeValue = MIN_FONT_SIZE_PERCENT; scheduleCommit(); }}
       title="Small font size"
     >
       <span class="text-sm font-bold font-serif">A-</span>
@@ -234,14 +236,14 @@
       type="button"
       class="slider-label-btn font-mono" 
       onclick={() => { resetFontSize() }}
-      title="Reset to default (100%)"
+      title="Reset to default ({DEFAULT_FONT_SIZE_PERCENT}%)"
     >
       {fontSizeValue}%
     </button>
     <button
       type="button"
       class="slider-label-btn"
-      onclick={() => { fontSizeValue = 200; scheduleCommit(); }}
+      onclick={() => { fontSizeValue = MAX_FONT_SIZE_PERCENT; scheduleCommit(); }}
       title="Large font size"
     >
       <span class="text-xl font-bold font-serif">A+</span>
@@ -249,8 +251,8 @@
   </div>
   <input
     type="range"
-    min="50"
-    max="200"
+    min={MIN_FONT_SIZE_PERCENT}
+    max={MAX_FONT_SIZE_PERCENT}
     step="5"
     value={fontSizeValue}
     oninput={handleFontSizeInput}

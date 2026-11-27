@@ -8,7 +8,14 @@ import {
 	getNextPreset,
 	THEME_PRESETS
 } from '../src/core.ts';
-import { generateThemeInitScript } from '../src/dom.ts';
+import {
+	generateThemeInitScript,
+	initReadingFontSize,
+	applyReadingFontSize,
+	MIN_FONT_SIZE_PERCENT,
+	MAX_FONT_SIZE_PERCENT,
+	DEFAULT_FONT_SIZE_PERCENT
+} from '../src/dom.ts';
 
 describe('@polyglot/theme core engine', () => {
 	it('calculates light and dark colors properly', () => {
@@ -85,5 +92,59 @@ describe('@polyglot/theme core engine', () => {
 		assert.ok(script.includes('ne-reading-warmth'));
 		assert.ok(script.includes('ne-theme'));
 		assert.ok(script.includes('document.documentElement'));
+	});
+
+	it('initializes and clamps reading font size across the full slider range', () => {
+		const storage = new Map<string, string>();
+		const props = new Map<string, string>();
+
+		const prevWindow = (globalThis as any).window;
+		const prevLocalStorage = (globalThis as any).localStorage;
+		const prevDocument = (globalThis as any).document;
+
+		(globalThis as any).window = {};
+		(globalThis as any).localStorage = {
+			getItem: (k: string) => storage.get(k) ?? null,
+			setItem: (k: string, v: string) => storage.set(k, v)
+		};
+		(globalThis as any).document = {
+			documentElement: {
+				style: {
+					setProperty: (k: string, v: string) => props.set(k, v)
+				}
+			}
+		};
+
+		try {
+			// Accepts minimum (50) and maximum (200) bounds
+			storage.set('test-font-size', String(MIN_FONT_SIZE_PERCENT));
+			assert.equal(initReadingFontSize({ fontSizeStorageKey: 'test-font-size' }), 50);
+			assert.equal(props.get('--reading-font-scale'), '0.50');
+
+			storage.set('test-font-size', String(MAX_FONT_SIZE_PERCENT));
+			assert.equal(initReadingFontSize({ fontSizeStorageKey: 'test-font-size' }), 200);
+			assert.equal(props.get('--reading-font-scale'), '2.00');
+
+			// Rejects out-of-range or invalid values back to default (100)
+			storage.set('test-font-size', '40');
+			assert.equal(initReadingFontSize({ fontSizeStorageKey: 'test-font-size' }), DEFAULT_FONT_SIZE_PERCENT);
+			assert.equal(props.get('--reading-font-scale'), '1.00');
+
+			storage.set('test-font-size', '250');
+			assert.equal(initReadingFontSize({ fontSizeStorageKey: 'test-font-size' }), DEFAULT_FONT_SIZE_PERCENT);
+
+			storage.set('test-font-size', 'not-a-number');
+			assert.equal(initReadingFontSize({ fontSizeStorageKey: 'test-font-size' }), DEFAULT_FONT_SIZE_PERCENT);
+
+			// applyReadingFontSize clamps out-of-range inputs
+			applyReadingFontSize(10);
+			assert.equal(props.get('--reading-font-scale'), '0.50');
+			applyReadingFontSize(500);
+			assert.equal(props.get('--reading-font-scale'), '2.00');
+		} finally {
+			(globalThis as any).window = prevWindow;
+			(globalThis as any).localStorage = prevLocalStorage;
+			(globalThis as any).document = prevDocument;
+		}
 	});
 });

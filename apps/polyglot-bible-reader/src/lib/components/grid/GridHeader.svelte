@@ -2,7 +2,30 @@
   import { versionGroups, formatVersionLabel } from '$lib/config/versions';
   import { readerState } from '$lib/stores/readerState.svelte';
   import { size } from '@polyglot/theme';
+
+  let openFontPopoverKey = $state<string | null>(null);
+
+  function toggleFontPopover(key: string, e: MouseEvent) {
+    e.stopPropagation();
+    openFontPopoverKey = openFontPopoverKey === key ? null : key;
+  }
+
+  function handleWindowPointerDown(e: PointerEvent) {
+    if (!openFontPopoverKey) return;
+    const target = e.target as HTMLElement | null;
+    if (!target?.closest('[data-cell-font-popover]')) {
+      openFontPopoverKey = null;
+    }
+  }
+
+  function handleWindowKeyDown(e: KeyboardEvent) {
+    if (e.key === 'Escape' && openFontPopoverKey) {
+      openFontPopoverKey = null;
+    }
+  }
 </script>
+
+<svelte:window onpointerdown={handleWindowPointerDown} onkeydown={handleWindowKeyDown} />
 {#snippet notBase(text:string)}
 {#if size.current!='base'}
 {text}
@@ -79,6 +102,10 @@ pb-2.5 border-b border-rule z-20 shadow-xs">
         
         {#each row as cellVersion, cIdx}
           {@const align = readerState.getCellAlign(rIdx, cIdx)}
+          {@const cellScale = readerState.getCellFontScale(rIdx, cIdx)}
+          {@const cellScalePct = Math.round(cellScale * 100)}
+          {@const popoverKey = `${rIdx}-${cIdx}`}
+          {@const isPopoverOpen = openFontPopoverKey === popoverKey}
           
           <div class="relative flex items-center justify-center gap-1.5 bg-page border border-rule/60 rounded-md px-3 py-1.5 
           group hover:border-link transition-colors shadow-xs">
@@ -97,6 +124,66 @@ pb-2.5 border-b border-rule z-20 shadow-xs">
                 </optgroup>
               {/each}
             </select>
+            <div class="relative shrink-0" data-cell-font-popover>
+              <button
+                type="button"
+                class="h-5 px-1.5 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all cursor-pointer shrink-0 shadow-2xs {cellScalePct !== 100 ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-page text-ink-soft border-rule hover:bg-rule hover:text-ink'}"
+                onclick={(e) => toggleFontPopover(popoverKey, e)}
+                title="Cell text size: {cellScalePct}% (click to adjust)"
+                aria-label="Adjust text size for Row {rIdx + 1}, Column {cIdx + 1}"
+                aria-expanded={isPopoverOpen}
+              >
+                {cellScalePct === 100 ? 'Aa' : `${cellScalePct}%`}
+              </button>
+
+              {#if isPopoverOpen}
+                <div
+                  class="absolute right-0 top-7 z-40 w-48 rounded-lg border border-rule bg-page p-2.5 shadow-lg text-ink flex flex-col gap-2"
+                >
+                  <div class="flex items-center justify-between text-[11px] font-semibold">
+                    <span>Column Size</span>
+                    <button
+                      type="button"
+                      class="font-mono text-link hover:underline cursor-pointer"
+                      onclick={() => readerState.resetCellFontScale(rIdx, cIdx)}
+                      title="Reset to 100%"
+                    >
+                      {cellScalePct}% (Reset)
+                    </button>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      class="px-1.5 py-0.5 rounded border border-rule text-xs font-serif font-bold hover:bg-rule cursor-pointer"
+                      onclick={() => readerState.stepCellFontScale(rIdx, cIdx, -0.1)}
+                      title="Decrease text size"
+                      aria-label="Decrease text size"
+                    >
+                      A-
+                    </button>
+                    <input
+                      type="range"
+                      min="50"
+                      max="200"
+                      step="5"
+                      value={cellScalePct}
+                      oninput={(e) => readerState.setCellFontScale(rIdx, cIdx, parseInt(e.currentTarget.value, 10) / 100)}
+                      class="w-full cursor-pointer accent-blue-600"
+                      aria-label="Text size percentage for Row {rIdx + 1}, Column {cIdx + 1}"
+                    />
+                    <button
+                      type="button"
+                      class="px-1.5 py-0.5 rounded border border-rule text-sm font-serif font-bold hover:bg-rule cursor-pointer"
+                      onclick={() => readerState.stepCellFontScale(rIdx, cIdx, 0.1)}
+                      title="Increase text size"
+                      aria-label="Increase text size"
+                    >
+                      A+
+                    </button>
+                  </div>
+                </div>
+              {/if}
+            </div>
             <button
               type="button"
               class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all cursor-pointer shrink-0 shadow-2xs {align === 'right' ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-page text-ink-soft border-rule hover:bg-rule hover:text-ink'}"

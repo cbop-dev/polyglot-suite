@@ -288,6 +288,9 @@ export function generateThemeInitScript(options: ThemeDomOptions = {}): string {
 /******** */
 
 export const DEFAULT_FONT_SIZE_STORAGE_KEY = 'polyglot-reading-font-size';
+export const MIN_FONT_SIZE_PERCENT = 50;
+export const MAX_FONT_SIZE_PERCENT = 200;
+export const DEFAULT_FONT_SIZE_PERCENT = 100;
 
 export interface ThemeDomOptions {
   storageKey?: string;
@@ -300,25 +303,26 @@ export interface ThemeDomOptions {
 
 export function applyReadingFontSize(scalePercent: number): void {
   if (typeof document === 'undefined') return;
-  const scale = (scalePercent / 100).toFixed(2);
+  const clamped = Math.min(MAX_FONT_SIZE_PERCENT, Math.max(MIN_FONT_SIZE_PERCENT, scalePercent));
+  const scale = (clamped / 100).toFixed(2);
   document.documentElement.style.setProperty('--reading-font-scale', scale);
 }
 
 export function initReadingFontSize(options: ThemeDomOptions = {}): number {
-  if (typeof window === 'undefined') return 100;
+  if (typeof window === 'undefined') return DEFAULT_FONT_SIZE_PERCENT;
   const key = options.fontSizeStorageKey ?? DEFAULT_FONT_SIZE_STORAGE_KEY;
   try {
     const stored = localStorage.getItem(key);
     if (stored !== null) {
       const parsed = parseInt(stored, 10);
-      if (!isNaN(parsed) && parsed >= 70 && parsed <= 160) {
+      if (!isNaN(parsed) && parsed >= MIN_FONT_SIZE_PERCENT && parsed <= MAX_FONT_SIZE_PERCENT) {
         applyReadingFontSize(parsed);
         return parsed;
       }
     }
   } catch {}
-  applyReadingFontSize(100);
-  return 100;
+  applyReadingFontSize(DEFAULT_FONT_SIZE_PERCENT);
+  return DEFAULT_FONT_SIZE_PERCENT;
 }
 
 export function saveReadingFontSize(value: number, key: string = DEFAULT_FONT_SIZE_STORAGE_KEY): void {

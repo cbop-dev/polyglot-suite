@@ -71,9 +71,10 @@
 				<ThemeSlider
 					placement="top"
 					align="right"
-					enableFontSizeSlider={false}
+					enableFontSizeSlider={true}
 					storageKey="biblical_reading_theme"
 					warmthStorageKey="biblical_reading_warmth"
+					fontSizeStorageKey="biblical_reading_font_size"
 					profile="all"
 				/>
 			</div>

@@ -76,7 +76,11 @@
   <LinkIcon --strokecolor={theme.value=='dark'?'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'} height={8} width={10} /></CopyText>
           </div>
           {/if}
-          <div class="{isRtl ? 'text-2xl' : 'text-xl'} {align === 'right' ? 'text-right' : 'text-left'} leading-snug w-full" dir={isRtl ? 'rtl' : 'ltr'}>
+          <div
+            class="verse-text {isRtl ? 'verse-text-rtl' : 'verse-text-ltr'} {align === 'right' ? 'text-right' : 'text-left'} leading-snug w-full"
+            style="--cell-font-scale: {readerState.getCellFontScale(rIdx, cIdx)};"
+            dir={isRtl ? 'rtl' : 'ltr'}
+          >
             {#if vData?.omitted}
               <span class="text-sm italic text-ink-soft font-sans" dir="ltr">[Not found in this version.]</span>
             {:else if vData?.verseData?.words || vData?.verseData?.text}
@@ -161,5 +165,13 @@
  
   .verse-grid{
     @apply text-xl;
+  }
+
+  .verse-text-ltr {
+    font-size: calc(1.25rem * var(--reading-font-scale, 1) * var(--cell-font-scale, 1));
+  }
+
+  .verse-text-rtl {
+    font-size: calc(1.5rem * var(--reading-font-scale, 1) * var(--cell-font-scale, 1));
   }
 </style>
