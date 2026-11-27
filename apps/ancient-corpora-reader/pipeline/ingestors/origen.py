@@ -13,10 +13,10 @@ Ingests 7 freely available bilingual/trilingual works of Origen:
 from __future__ import annotations
 import html as html_lib
 import re
-import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+import zipfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -173,18 +173,20 @@ ROMAN_MAP = {
 }
 
 
+CORPUS_CORPORUM_POS_URL = "https://mlat.uzh.ch/php_modules/download.php?type=file-pos-xml&idno=21750"
+
+
 def ensure_sources() -> None:
 	CACHE_DIR.mkdir(parents=True, exist_ok=True)
 	pos_dest = CACHE_DIR / "Origenes_De-principiis.POS.xml"
 	if not pos_dest.exists():
-		tmp_pos = WORKSPACE_ROOT / "tmp" / "Origenes_De-principiis.POS.xml"
-		if tmp_pos.exists():
-			shutil.copy2(tmp_pos, pos_dest)
-		else:
-			raise FileNotFoundError(
-				f"Missing {pos_dest}. Download Origenes_De-principiis.POS.xml from "
-				"https://mlat.uzh.ch/browser?path=21750 into pipeline/cache/origen/."
-			)
+		zip_dest = CACHE_DIR / "Origenes_De-principiis.POS.xml.zip"
+		download_file(CORPUS_CORPORUM_POS_URL, zip_dest)
+		with zipfile.ZipFile(zip_dest, "r") as zf:
+			xml_names = [n for n in zf.namelist() if n.endswith(".xml")]
+			if not xml_names:
+				raise FileNotFoundError(f"No .xml file found inside {zip_dest}")
+			pos_dest.write_bytes(zf.read(xml_names[0]))
 
 	for fname, url in SOURCES.items():
 		dest = CACHE_DIR / fname
