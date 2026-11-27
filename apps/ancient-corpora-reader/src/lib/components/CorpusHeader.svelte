@@ -2,6 +2,7 @@
 	import { base } from '$app/paths';
 	import { ReaderHeader, type ViewMode } from '@polyglot/ui';
 	import { readerState } from '../stores/readerState.svelte.js';
+	import { formatPageLabel } from '../config/corpora.data.js';
 	import {Languages} from '@polyglot/ancient-languages';
 /*	const version = __APP_VERSION__ ? __APP_VERSION__ : null;
 	const repoHref= __APP_REPO__ ? __APP_REPO__: null;
@@ -30,11 +31,11 @@
 	workTitle={readerState.currentWork.titleEnglish}
 	workAbbrev={readerState.currentWork.abbrev}
 	onOpenWorkPicker={() => (readerState.isWorkModalOpen = true)}
-	locationLabel="{readerState.currentWork.divisionLabel} {readerState.currentDivision}"
-	locationShort={String(readerState.currentDivision)}
-	isMultiBook={readerState.currentWork.totalDivisions > 1}
-	canPrevBook={readerState.currentDivision > readerState.currentWork.minDivision}
-	canNextBook={readerState.currentDivision < readerState.currentWork.totalDivisions}
+	locationLabel={formatPageLabel(readerState.currentWork, readerState.currentDivision, true)}
+	locationShort={readerState.currentDivision}
+	isMultiBook={(readerState.currentWork.pages?.length ?? readerState.currentWork.totalDivisions) > 1}
+	canPrevBook={readerState.canPrevDivision}
+	canNextBook={readerState.canNextDivision}
 	onPrevBook={() => readerState.prevDivision()}
 	onNextBook={() => readerState.nextDivision()}
 	onOpenSectionPicker={() => (readerState.isDivisionModalOpen = true)}

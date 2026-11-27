@@ -75,6 +75,8 @@ WORKS_SPEC = [
 		"total_divisions": 4,
 		"min_division": 1,
 		"division_label": "Book",
+		"hierarchy_levels": ["Book", "Chapter", "Section"],
+		"pagination_level": 1,
 	},
 	{
 		"code": "CELS",

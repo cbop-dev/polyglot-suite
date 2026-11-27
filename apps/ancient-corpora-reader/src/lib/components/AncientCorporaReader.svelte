@@ -13,6 +13,7 @@
 	import { hotkeyManager } from '../services/hotkeyManager.js';
 
 	import { readerState } from '../stores/readerState.svelte.js';
+	import { formatPageLabel, getAdjacentPage } from '../config/corpora.data.js';
 	import {
 		fetchDivisionSections,
 		fetchDivisionTokens,
@@ -25,7 +26,7 @@
 	interface Props {
 		initialCorpus?: AncientCorpusId;
 		initialWork?: string;
-		initialDivision?: number;
+		initialDivision?: string | number;
 		initialSection?: string | number | null;
 	}
 
@@ -78,13 +79,13 @@
 		}
 	}
 
-	function schedulePrefetchNextDivision(corpus: AncientCorpusId, work: string, currentDiv: number) {
+	function schedulePrefetchNextDivision(corpus: AncientCorpusId, work: string, currentDiv: string) {
 		if (typeof window === 'undefined') return;
 		cancelPrefetch();
 
 		const currentWork = readerState.currentWork;
-		const nextDiv = currentDiv + 1;
-		if (nextDiv > currentWork.totalDivisions) return;
+		const nextDiv = getAdjacentPage(currentWork, currentDiv, 1);
+		if (!nextDiv) return;
 
 		const runPrefetch = () => {
 			fetchDivisionSections(corpus, work, nextDiv).catch(() => {});
@@ -108,7 +109,7 @@
 		};
 	});
 
-	async function loadData(corpus: AncientCorpusId, work: string, division: number) {
+	async function loadData(corpus: AncientCorpusId, work: string, division: string) {
 		loading = true;
 		error = null;
 		textVersions = [];
@@ -263,7 +264,7 @@
 				<Loading
 					size="lg"
 					title="Loading {readerState.currentCorpusConfig.name}..."
-					message={[`Opening ${readerState.currentWork.titleEnglish} (${readerState.currentWork.divisionLabel} ${readerState.currentDivision})`]}
+					message={[`Opening ${readerState.currentWork.titleEnglish} (${formatPageLabel(readerState.currentWork, readerState.currentDivision)})`]}
 				/>
 			</div>
 		{:else if error}

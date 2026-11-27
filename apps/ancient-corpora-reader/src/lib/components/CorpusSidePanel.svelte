@@ -19,7 +19,11 @@
 	let corpusTitle = $derived(readerState.currentCorpusConfig?.name || 'Corpus');
 
 	function handleNavigateToRef(ref: any) {
-		const targetDiv = ref.book ?? ref.chapter ?? 1;
+		const targetDiv =
+			ref.page_path ||
+			(ref.book && ref.chapter && ref.book !== ref.chapter
+				? `${ref.book}.${ref.chapter}`
+				: (ref.book ?? ref.chapter ?? 1));
 		const targetSec = ref.section ?? ref.section_num ?? ref.niese_section ?? null;
 		readerState.setWork(ref.work_code, targetDiv, targetSec);
 	}

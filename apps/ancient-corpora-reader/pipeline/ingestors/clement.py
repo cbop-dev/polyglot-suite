@@ -84,6 +84,8 @@ WORKS_SPEC = [
 		"total_divisions": 3,
 		"min_division": 1,
 		"division_label": "Book",
+		"hierarchy_levels": ["Book", "Chapter", "Section"],
+		"pagination_level": 1,
 	},
 	{
 		"code": "STROM",
@@ -98,6 +100,8 @@ WORKS_SPEC = [
 		"total_divisions": 8,
 		"min_division": 1,
 		"division_label": "Book",
+		"hierarchy_levels": ["Book", "Chapter", "Section"],
+		"pagination_level": 1,
 	},
 	{
 		"code": "QUIS",

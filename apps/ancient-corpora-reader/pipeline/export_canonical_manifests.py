@@ -132,8 +132,33 @@ def export_canonical_manifests():
 			total_divs = w["total_divisions"]
 			min_div = w["min_division"]
 			div_label = w["division_label"]
+			hierarchy_levels = (
+				json.loads(w["hierarchy_levels"])
+				if ("hierarchy_levels" in w.keys() and w["hierarchy_levels"])
+				else (["Book", "Section"] if div_label == "Book" else [div_label, "Section"])
+			)
+			pagination_level = (
+				int(w["pagination_level"])
+				if ("pagination_level" in w.keys() and w["pagination_level"] is not None)
+				else 0
+			)
 
-			# Determine sectionsByDivision
+			# Query ordered pages and unit counts per page from text_units
+			cur.execute(
+				"""
+				SELECT page_path, COUNT(DISTINCT coord_path) AS unit_cnt
+				FROM text_units
+				WHERE work_code = ?
+				GROUP BY page_path
+				ORDER BY MIN(sort_key) ASC
+				""",
+				(code,),
+			)
+			page_rows = cur.fetchall()
+			pages = [r[0] for r in page_rows]
+			units_by_page = {r[0]: r[1] for r in page_rows}
+
+			# Determine sectionsByDivision (backward compatibility)
 			sections_by_div = None
 			if cid == "josephus":
 				cur.execute(
@@ -167,6 +192,10 @@ def export_canonical_manifests():
 				"totalDivisions": total_divs,
 				"minDivision": min_div,
 				"divisionLabel": div_label,
+				"hierarchyLevels": hierarchy_levels,
+				"paginationLevel": pagination_level,
+				"pages": pages,
+				"unitsByPage": units_by_page,
 				"coordinateScheme": coord_scheme,
 			}
 			if title_sec:
@@ -220,7 +249,11 @@ export interface CorpusWork {{
 	titleLatin?: string;
 	totalDivisions: number;
 	minDivision: number;
-	divisionLabel: 'Book' | 'Chapter';
+	divisionLabel: 'Book' | 'Chapter' | 'Section';
+	hierarchyLevels: string[];
+	paginationLevel: number;
+	pages: string[];
+	unitsByPage?: Record<string, number>;
 	sectionsByDivision?: Record<number | string, number>;
 	coordinateScheme?: 'book_only' | 'division_both';
 }}

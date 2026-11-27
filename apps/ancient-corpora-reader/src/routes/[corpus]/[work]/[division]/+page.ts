@@ -6,7 +6,6 @@ export const load: PageLoad = ({ params }) => {
 	const raw = params.corpus?.toLowerCase();
 	const corpusId: AncientCorpusId = raw && raw in CORPORA_CONFIG ? (raw as AncientCorpusId) : 'af';
 	const work = params.work;
-	const divNum = parseInt(params.division, 10);
-	const division = isNaN(divNum) ? 1 : divNum;
+	const division = params.division || '1';
 	return { corpusId, work, division };
 };
