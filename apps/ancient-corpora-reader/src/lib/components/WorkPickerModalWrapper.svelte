@@ -13,7 +13,12 @@
 			titleLatin: w.titleLatin,
 			abbrev: w.abbrev,
 			category: w.category || 'general',
-			totalBooks: w.totalDivisions
+			totalBooks: w.totalDivisions,
+			divisionLabel: w.hierarchyLevels?.[0] || w.divisionLabel,
+			levelBadges: (w.hierarchyLevels || []).map((label, idx) => ({
+				label,
+				count: w.countsByLevel?.[idx] ?? (idx === 0 ? w.totalDivisions : 0)
+			})).filter((b) => b.count > 1)
 		}))
 	);
 

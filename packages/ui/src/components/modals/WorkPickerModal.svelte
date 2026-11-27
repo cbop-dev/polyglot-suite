@@ -70,9 +70,18 @@
 							Current
 						</span>
 					{/if}
-					{#if work.totalBooks && work.totalBooks > 1}
+					{#if work.levelBadges && work.levelBadges.length > 0}
+						{#each work.levelBadges as badge}
+							{#if badge.count > 1}
+								<span class="rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.2 text-[10px] font-bold border border-slate-200 dark:border-slate-700">
+									{badge.count} {badge.label.endsWith('y') ? `${badge.label.slice(0, -1)}ies` : `${badge.label}s`}
+								</span>
+							{/if}
+						{/each}
+					{:else if work.totalBooks && work.totalBooks > 1}
+						{@const lbl = work.divisionLabel || 'Book'}
 						<span class="rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.2 text-[10px] font-bold border border-slate-200 dark:border-slate-700">
-							{work.totalBooks} Books
+							{work.totalBooks} {lbl.endsWith('y') ? `${lbl.slice(0, -1)}ies` : `${lbl}s`}
 						</span>
 					{/if}
 				</div>

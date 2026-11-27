@@ -1,10 +1,10 @@
 {
-  "databaseVersion": "corpora-josephus-db-v1.2.3",
+  "databaseVersion": "corpora-josephus-db-v1.3.1",
   "serverMode": "chunked",
   "requestChunkSize": 16384,
   "urlPrefix": "josephus.db.",
   "serverChunkSize": 5242880,
-  "databaseLengthBytes": 209371136,
+  "databaseLengthBytes": 211746816,
   "suffixLength": 2,
-  "cacheBust": "v1795609717"
+  "cacheBust": "v1795755167"
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { AcademicCitationModal } from '@polyglot/ui';
 	import { readerState } from '../stores/readerState.svelte.js';
+	import { formatPageLabel } from '../config/corpora.data.js';
 	import { formatAncientCorpusCitation, formatVersionAcademicCitations } from '@polyglot/ancient-languages';
 
 	let activeEditionIndex = $state(0);
@@ -59,7 +60,7 @@
 	open={readerState.showCitationModal}
 	title="Academic Citation"
 	{locus}
-	subtitle="{work?.titleEnglish || ''} — {work?.divisionLabel || 'Chapter'} {readerState.currentDivision}"
+	subtitle="{work?.titleEnglish || ''} — {formatPageLabel(work, readerState.currentDivision)}"
 	{citations}
 	{tabHeadings}
 	bind:activeEditionIndex

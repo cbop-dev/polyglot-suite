@@ -39,6 +39,8 @@ export interface WorkPickerItem {
 	totalChapters?: number;
 	totalSections?: number;
 	totalBooks?: number;
+	divisionLabel?: string;
+	levelBadges?: { label: string; count: number }[];
 	tlgId?: string;
 	badge?: string;
 	[key: string]: any;

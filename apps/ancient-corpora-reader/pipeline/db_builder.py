@@ -29,10 +29,10 @@ REQUIRED_TABLES = {
 		"role", "editor", "translator", "booktitle", "series", "publisher",
 		"address", "year", "volume", "sbl_qualifier", "applicable_works"
 	},
-	"corpus_works": {"code", "slug", "order_index", "category", "abbrev", "title_english", "total_divisions", "division_label"},
-	"text_units": {"id", "version_id", "work_code", "book", "chapter", "section", "display_citation", "milestone_ref", "text_content"},
+	"corpus_works": {"code", "slug", "order_index", "category", "abbrev", "title_english", "total_divisions", "division_label", "hierarchy_levels"},
+	"text_units": {"id", "version_id", "work_code", "book", "chapter", "section", "coord_path", "sort_key", "display_citation", "milestone_ref", "text_content"},
 	"text_unit_tokens": {"work_unit_id", "tokens_json"},
-	"concordance_refs": {"corpus_id", "lemma", "work_unit_id", "display_citation", "work_code", "matched_form", "kwic_snippet"},
+	"concordance_refs": {"corpus_id", "lemma", "work_unit_id", "display_citation", "work_code", "coord_path", "matched_form", "kwic_snippet"},
 	"lexicon_entries": {"id", "dictionary", "lemma", "normalized_lemma", "pos", "transliteration", "gloss", "definition"},
 	"lemma_forms": {"id", "corpus_id", "lemma_key", "normalized_lemma", "forms_json"}
 }
@@ -93,6 +93,7 @@ def build_covering_concordance(
 		book INTEGER DEFAULT 0,
 		chapter INTEGER DEFAULT 0,
 		section INTEGER NOT NULL,
+		coord_path TEXT NOT NULL DEFAULT '',
 		milestone_ref TEXT DEFAULT '',
 		niese_section TEXT DEFAULT '',
 		matched_form TEXT NOT NULL,
@@ -100,6 +101,11 @@ def build_covering_concordance(
 		PRIMARY KEY (corpus_id, lemma, work_unit_id, matched_form)
 	) WITHOUT ROWID;
 	""")
+
+	unit_paths = {
+		r[0]: r[1]
+		for r in tgt_cur.execute("SELECT id, coord_path FROM text_units").fetchall()
+	}
 
 	# Query text units with tokens from source DB
 	src_cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='text_unit_tokens'")
@@ -205,6 +211,7 @@ def build_covering_concordance(
 						continue
 					seen_keys.add(key)
 					snippet = make_kwic_snippet(text, surf, radius=45)
+					c_path = unit_paths.get(u_id, f"{b}.{sec}")
 					batch_rows.append((
 						mapped_c_id,
 						lem,
@@ -214,6 +221,7 @@ def build_covering_concordance(
 						b,
 						ch,
 						sec,
+						c_path,
 						milestone,
 						milestone,  # niese_section compatibility column
 						surf,
@@ -224,8 +232,8 @@ def build_covering_concordance(
 				tgt_cur.executemany("""
 					INSERT OR IGNORE INTO concordance_refs (
 						corpus_id, lemma, work_unit_id, display_citation, work_code,
-						book, chapter, section, milestone_ref, niese_section, matched_form, kwic_snippet
-					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+						book, chapter, section, coord_path, milestone_ref, niese_section, matched_form, kwic_snippet
+					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				""", batch_rows)
 				batch_rows.clear()
 
@@ -233,8 +241,8 @@ def build_covering_concordance(
 		tgt_cur.executemany("""
 			INSERT OR IGNORE INTO concordance_refs (
 				corpus_id, lemma, work_unit_id, display_citation, work_code,
-				book, chapter, section, milestone_ref, niese_section, matched_form, kwic_snippet
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				book, chapter, section, coord_path, milestone_ref, niese_section, matched_form, kwic_snippet
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		""", batch_rows)
 		batch_rows.clear()
 
@@ -492,7 +500,8 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 		title_secondary TEXT,
 		total_divisions INTEGER NOT NULL,
 		min_division INTEGER DEFAULT 1,
-		division_label TEXT NOT NULL
+		division_label TEXT NOT NULL,
+		hierarchy_levels TEXT NOT NULL DEFAULT '["Chapter","Section"]'
 	);
 	CREATE INDEX idx_corpus_works_order ON corpus_works(order_index ASC);
 
@@ -504,15 +513,71 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 	FROM corpus_works;
 	""")
 
+	def _infer_work_hierarchy(work_code: str, div_label: str) -> List[str]:
+		max_sec_row = src_cur.execute(
+			"SELECT MAX(section) FROM text_units WHERE work_code = ?",
+			(work_code,),
+		).fetchone()
+		has_sub_sections = (max_sec_row[0] or 0) > 1 if corpus_type not in ("josephus", "philo", "af") else True
+
+		if corpus_type not in ("josephus", "philo", "af"):
+			# Check if work has distinct chapter values within books (e.g. STROM, PAED, PRIN, AH)
+			src_cur.execute(
+				"SELECT 1 FROM text_units WHERE work_code = ? AND chapter > 0 AND chapter != book LIMIT 1",
+				(work_code,),
+			)
+			if src_cur.fetchone() is not None:
+				return ["Book", "Chapter", "Section"] if has_sub_sections else ["Book", "Chapter"]
+		if div_label == "Book":
+			return ["Book", "Section"]
+		if div_label == "Section":
+			return ["Section"]
+		return [div_label, "Section"] if has_sub_sections else [div_label]
+
+	work_hierarchy_map: Dict[str, List[str]] = {}
+
 	src_cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='corpus_works'")
 	if src_cur.fetchone():
-		src_cur.execute("""
-			SELECT code, slug, order_index, category, abbrev, tlg_id,
-			       title_english, title_primary, title_secondary,
-			       total_divisions, min_division, division_label
-			FROM corpus_works
-		""")
-		norm_works = src_cur.fetchall()
+		src_cur.execute("PRAGMA table_info(corpus_works)")
+		cw_cols = {r[1] for r in src_cur.fetchall()}
+		has_hier = "hierarchy_levels" in cw_cols
+		if has_hier:
+			src_cur.execute("""
+				SELECT code, slug, order_index, category, abbrev, tlg_id,
+				       title_english, title_primary, title_secondary,
+				       total_divisions, min_division, division_label,
+				       hierarchy_levels
+				FROM corpus_works
+			""")
+		else:
+			src_cur.execute("""
+				SELECT code, slug, order_index, category, abbrev, tlg_id,
+				       title_english, title_primary, title_secondary,
+				       total_divisions, min_division, division_label
+				FROM corpus_works
+			""")
+		norm_works = []
+		for r in src_cur.fetchall():
+			w_code = r[0]
+			tot_divs = r[9]
+			div_lbl = r[11]
+			if w_code == "EP_AFR" and tot_divs == 1:
+				div_lbl = "Section"
+			if has_hier and r[12] and div_lbl != "Section":
+				levels = json.loads(r[12])
+				if len(levels) >= 2 and levels[-1] == "Section":
+					max_sec_row = src_cur.execute(
+						"SELECT MAX(section) FROM text_units WHERE work_code = ?",
+						(w_code,),
+					).fetchone()
+					if (max_sec_row[0] or 0) <= 1:
+						levels = levels[:-1]
+			else:
+				levels = _infer_work_hierarchy(w_code, div_lbl)
+			work_hierarchy_map[w_code] = levels
+			norm_works.append(
+				tuple(r[:11]) + (div_lbl, json.dumps(levels, ensure_ascii=False))
+			)
 	else:
 		src_cur.execute("PRAGMA table_info(canonical_works)")
 		w_cols = [r[1] for r in src_cur.fetchall()]
@@ -535,29 +600,36 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 
 			slug = slugify(code)
 			if corpus_type == "josephus":
-				total_divs = tot_books or 1
-				div_label = "Book"
+				if (tot_books or 0) > 1:
+					total_divs = tot_books
+					div_label = "Book"
+				else:
+					total_divs = tot_secs or 1
+					div_label = "Section"
 				min_div = 1
 			elif corpus_type == "philo":
 				if (tot_books or 0) > 1:
 					total_divs = tot_books
 					div_label = "Book"
 				else:
-					total_divs = tot_chaps or tot_secs or 1
-					div_label = "Chapter"
+					total_divs = tot_secs or tot_chaps or 1
+					div_label = "Section"
 				min_div = 1
 			else:  # af
 				total_divs = tot_chaps or tot_secs or 1
 				div_label = "Chapter"
 				min_div = 0 if code in ("1CLE", "1-clem") else 1
 
+			levels = _infer_work_hierarchy(code, div_label)
+			work_hierarchy_map[code] = levels
 			norm_works.append((
 				code, slug, order_idx, category, abbrev, tlg_id,
-				title_eng, title_pri, title_sec, total_divs, min_div, div_label
+				title_eng, title_pri, title_sec, total_divs, min_div, div_label,
+				json.dumps(levels, ensure_ascii=False),
 			))
 
 	tgt_cur.executemany("""
-		INSERT INTO corpus_works VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO corpus_works VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	""", norm_works)
 
 	# 3. Create canonical text_units and text_unit_tokens
@@ -571,6 +643,8 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 		book INTEGER NOT NULL DEFAULT 0,
 		chapter INTEGER NOT NULL DEFAULT 0,
 		section INTEGER NOT NULL,
+		coord_path TEXT NOT NULL DEFAULT '',
+		sort_key TEXT NOT NULL DEFAULT '',
 		section_label TEXT,
 		section_num INTEGER DEFAULT 0,
 		niese_section TEXT DEFAULT '',
@@ -582,63 +656,96 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 	);
 	CREATE INDEX idx_text_units_seek ON text_units(work_code, book, chapter, section, version_id);
 	CREATE INDEX idx_text_units_coords ON text_units(work_code, book, chapter, section, corpus_id);
+	CREATE INDEX idx_text_units_sort ON text_units(work_code, sort_key, version_id);
 	""")
+
+	def _compute_unit_paths(
+		work_code: str, book: int, chapter: int, section: int, explicit_coord: Optional[str] = None
+	) -> tuple[str, str]:
+		levels = work_hierarchy_map.get(work_code, ["Chapter", "Section"])
+		if explicit_coord:
+			parts = [int(p) if p.isdigit() else p for p in explicit_coord.split(".")][: len(levels)]
+			c_path = ".".join(str(p) for p in parts)
+		else:
+			if len(levels) >= 3:
+				parts = [book, chapter, section]
+			elif len(levels) == 2:
+				parts = [book, chapter] if levels == ["Book", "Chapter"] else [book, section]
+			elif len(levels) == 1:
+				val = section if corpus_type in ("philo", "josephus") else (book if book > 0 else section)
+				parts = [val]
+			else:
+				parts = [book, section]
+			c_path = ".".join(str(p) for p in parts)
+		s_key = ".".join(f"{p:05d}" if isinstance(p, int) else str(p).zfill(5) for p in parts)
+		return c_path, s_key
 
 	if corpus_type == "josephus":
 		src_cur.execute("""
 			SELECT id, corpus_id, work_code, book, section_num, niese_section, display_citation, text_content
 			FROM text_units
 		""")
-		norm_units = [
-			(
-				r[0], VERSION_MAP.get(r[1], r[1]), VERSION_MAP.get(r[1], r[1]), r[2], r[3], 0, r[4], str(r[4]), r[4],
-				str(r[5] or ""), None, 0, r[6], str(r[5] or ""), r[7]
-			)
-			for r in src_cur.fetchall()
-		]
+		norm_units = []
+		for r in src_cur.fetchall():
+			c_path, s_key = _compute_unit_paths(r[2], r[3], 0, r[4])
+			norm_units.append((
+				r[0], VERSION_MAP.get(r[1], r[1]), VERSION_MAP.get(r[1], r[1]), r[2], r[3], 0, r[4],
+				c_path, s_key, str(r[4]), r[4], str(r[5] or ""), None, 0, r[6], str(r[5] or ""), r[7]
+			))
 	elif corpus_type == "philo":
 		src_cur.execute("""
 			SELECT id, corpus_id, work_code, chapter, section, mangey_ref, is_supplement, display_citation, text_content
 			FROM text_units
 		""")
-		norm_units = [
-			(
-				r[0], VERSION_MAP.get(r[1], r[1]), VERSION_MAP.get(r[1], r[1]), r[2], r[3], r[3], r[4], str(r[4]), r[4],
-				"", str(r[5] or ""), r[6] or 0, r[7], str(r[5] or ""), r[8]
-			)
-			for r in src_cur.fetchall()
-		]
+		norm_units = []
+		for r in src_cur.fetchall():
+			c_path, s_key = _compute_unit_paths(r[2], r[3], r[3], r[4])
+			norm_units.append((
+				r[0], VERSION_MAP.get(r[1], r[1]), VERSION_MAP.get(r[1], r[1]), r[2], r[3], r[3], r[4],
+				c_path, s_key, str(r[4]), r[4], "", str(r[5] or ""), r[6] or 0, r[7], str(r[5] or ""), r[8]
+			))
 	elif corpus_type != "af":
-		# Standard RawCorpusWriter schema (justin, irenaeus, and all new corpora)
-		src_cur.execute("""
-			SELECT id, version_id, work_code, book, chapter, section, section_label, display_citation, milestone_ref, text_content
-			FROM text_units
-		""")
-		norm_units = [
-			(
-				r[0], VERSION_MAP.get(r[1], r[1]), VERSION_MAP.get(r[1], r[1]), r[2], r[3], r[4], r[5], str(r[6] or r[5]), r[5],
-				"", None, 0, r[7], str(r[8] or ""), r[9]
-			)
-			for r in src_cur.fetchall()
-		]
+		# Standard RawCorpusWriter schema (justin, irenaeus, clement, origen, and all new corpora)
+		src_cur.execute("PRAGMA table_info(text_units)")
+		tu_cols = {r[1] for r in src_cur.fetchall()}
+		has_coord = "coord_path" in tu_cols
+		if has_coord:
+			src_cur.execute("""
+				SELECT id, version_id, work_code, book, chapter, section, section_label, display_citation, milestone_ref, text_content, coord_path
+				FROM text_units
+			""")
+		else:
+			src_cur.execute("""
+				SELECT id, version_id, work_code, book, chapter, section, section_label, display_citation, milestone_ref, text_content
+				FROM text_units
+			""")
+		norm_units = []
+		for r in src_cur.fetchall():
+			explicit_coord = r[10] if (has_coord and r[10]) else None
+			c_path, s_key = _compute_unit_paths(r[2], r[3], r[4], r[5], explicit_coord)
+			norm_units.append((
+				r[0], VERSION_MAP.get(r[1], r[1]), VERSION_MAP.get(r[1], r[1]), r[2], r[3], r[4], r[5],
+				c_path, s_key, str(r[6] or r[5]), r[5], "", None, 0, r[7], str(r[8] or ""), r[9]
+			))
 	else:  # af
 		src_cur.execute("""
 			SELECT id, corpus_id, work_code, chapter, section, display_citation, text_content
 			FROM text_units
 		""")
-		norm_units = [
-			(
-				r[0], VERSION_MAP.get(r[1], r[1]), VERSION_MAP.get(r[1], r[1]), r[2], r[3], r[3], r[4], str(r[4]), r[4],
-				"", None, 0, r[5], "", r[6]
-			)
-			for r in src_cur.fetchall()
-		]
+		norm_units = []
+		for r in src_cur.fetchall():
+			c_path, s_key = _compute_unit_paths(r[2], r[3], r[3], r[4])
+			norm_units.append((
+				r[0], VERSION_MAP.get(r[1], r[1]), VERSION_MAP.get(r[1], r[1]), r[2], r[3], r[3], r[4],
+				c_path, s_key, str(r[4]), r[4], "", None, 0, r[5], "", r[6]
+			))
 
 	tgt_cur.executemany("""
 		INSERT INTO text_units (
-			id, version_id, corpus_id, work_code, book, chapter, section, section_label,
-			section_num, niese_section, mangey_ref, is_supplement, display_citation, milestone_ref, text_content
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			id, version_id, corpus_id, work_code, book, chapter, section,
+			coord_path, sort_key,
+			section_label, section_num, niese_section, mangey_ref, is_supplement, display_citation, milestone_ref, text_content
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	""", norm_units)
 
 	# Populate text_unit_tokens with compressed gzip blobs

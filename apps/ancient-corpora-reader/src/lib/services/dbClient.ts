@@ -1,5 +1,5 @@
 import { getDbWorker } from './dbWorker.js';
-import { findWork, resolveDivisionCoordinates } from '../config/corpora.data.js';
+import { findWork, resolveWorkPage } from '../config/corpora.data.js';
 import {
 	CORPORA_CONFIG,
 	getCorpusConfig,
@@ -46,6 +46,8 @@ export interface TextUnit {
 	chapter?: number;
 	book?: number;
 	section?: number;
+	coord_path?: string;
+	page_path?: string;
 	section_label?: string;
 	section_num?: number;
 	niese_section?: string;
@@ -95,6 +97,8 @@ export interface ConcordanceRef extends UiConcordanceRef {
 	chapter?: number;
 	book?: number;
 	section?: number;
+	page_path?: string;
+	coord_path?: string;
 	section_num?: number;
 	niese_section?: string;
 	text_content: string;
@@ -150,7 +154,8 @@ export const PRIMARY_GREEK_CORPUS_IDS: Record<AncientCorpusId, string> = Object.
 export interface DivisionResult {
 	corpusId?: AncientCorpusId;
 	workCode?: string;
-	division?: number;
+	division?: string | number;
+	pagePath?: string;
 	textVersions: TextVersion[];
 	// Backwards-compatibility bridge for Phase 3 components:
 	greek: TextUnit[];
@@ -166,14 +171,16 @@ export function clearDivisionCache(): void {
 }
 
 /**
- * Fetch parallel text units for a specific division (chapter for AF & single-treatise Philo, book for Josephus & multi-book Philo)
+ * Fetch parallel text units for a specific page path (e.g. "1" or "1.4")
  */
 export async function fetchDivisionSections(
 	corpusId: AncientCorpusId,
 	workCode: string,
-	division: number
+	division: string | number
 ): Promise<DivisionResult> {
-	const cacheKey = `${corpusId}:${workCode}:${division}`;
+	const work = findWork(corpusId, workCode);
+	const pagePath = resolveWorkPage(work, division);
+	const cacheKey = `${corpusId}:${workCode}:${pagePath}`;
 	const cached = divisionCache.get(cacheKey);
 	if (cached) {
 		// Re-insert to mark as most recently used in LRU order
@@ -188,34 +195,22 @@ export async function fetchDivisionSections(
 	const english: TextUnit[] = [];
 	const latin: TextUnit[] = [];
 
-	// Resolve exact coordinates via work metadata (e.g. book_only vs division_both)
-	const work = findWork(corpusId, workCode);
-	const coords = resolveDivisionCoordinates(work, division);
-
-	// Primary query: Direct indexed seek on idx_text_units_coords (work_code, book, chapter, section)
+	// Primary query: Direct indexed B-tree range scan on idx_text_units_sort (work_code, sort_key, version_id)
 	// Fast first paint: only query text_units (no heavy tokens_json join)
+	const sortPrefix = pagePath
+		.split('.')
+		.map((p) => (/^\d+$/.test(p) ? p.padStart(5, '0') : p.padStart(5, '0')))
+		.join('.');
 	const sqlExact = `
 		SELECT u.id, u.version_id, u.corpus_id, u.work_code, u.book, u.chapter, u.section,
 		       u.section_label, u.section_num, u.niese_section, u.mangey_ref, u.is_supplement,
-		       u.display_citation, u.milestone_ref, u.text_content
+		       u.display_citation, u.milestone_ref, u.text_content, u.coord_path
 		FROM text_units u
-		WHERE u.work_code = ? AND u.book = ? AND u.chapter = ?
-		ORDER BY u.section ASC, u.id ASC
+		WHERE u.work_code = ?
+		  AND (u.sort_key = ? OR (u.sort_key >= ? AND u.sort_key < ?))
+		ORDER BY u.sort_key ASC, u.id ASC
 	`;
-	let rows = await worker.db.query(sqlExact, [workCode, coords.book, coords.chapter]);
-
-	// Resilient fallback for any work with non-standard coordinate schemas
-	if (!rows || (rows as any[]).length === 0) {
-		const sqlFallback = `
-			SELECT u.id, u.version_id, u.corpus_id, u.work_code, u.book, u.chapter, u.section,
-			       u.section_label, u.section_num, u.niese_section, u.mangey_ref, u.is_supplement,
-			       u.display_citation, u.milestone_ref, u.text_content
-			FROM text_units u
-			WHERE u.work_code = ? AND (u.book = ? OR u.chapter = ?)
-			ORDER BY u.section ASC, u.id ASC
-		`;
-		rows = await worker.db.query(sqlFallback, [workCode, division, division]);
-	}
+	const rows = await worker.db.query(sqlExact, [workCode, sortPrefix, `${sortPrefix}.`, `${sortPrefix}/`]);
 
 	const unitsByVersion = new Map<string, TextUnit[]>();
 
@@ -236,7 +231,9 @@ export async function fetchDivisionSections(
 			is_supplement: getRowVal<number | undefined>(row, 'is_supplement', 11),
 			display_citation: getRowVal<string>(row, 'display_citation', 12),
 			milestone_ref: getRowVal<string | undefined>(row, 'milestone_ref', 13),
-			text_content: getRowVal<string>(row, 'text_content', 14)
+			text_content: getRowVal<string>(row, 'text_content', 14),
+			coord_path: getRowVal<string | undefined>(row, 'coord_path', 15),
+			page_path: pagePath
 		};
 
 		if (!unitsByVersion.has(versionId)) {
@@ -588,7 +585,7 @@ export async function fetchConcordancePage(
 			SELECT 
 				display_citation, work_unit_id, work_code, 
 				book, chapter, section, niese_section, 
-				matched_form, kwic_snippet
+				matched_form, kwic_snippet, coord_path
 			FROM concordance_refs
 			WHERE corpus_id = ? AND lemma = ? AND matched_form IN (${placeholders})
 			ORDER BY work_unit_id ASC
@@ -600,7 +597,7 @@ export async function fetchConcordancePage(
 			SELECT 
 				display_citation, work_unit_id, work_code, 
 				book, chapter, section, niese_section, 
-				matched_form, kwic_snippet
+				matched_form, kwic_snippet, coord_path
 			FROM concordance_refs
 			WHERE corpus_id = ? AND lemma = ?
 			ORDER BY work_unit_id ASC
@@ -623,6 +620,7 @@ export async function fetchConcordancePage(
 			section_num: sec,
 			niese_section: getRowVal<string | undefined>(r, 'niese_section', 6),
 			text_content: getRowVal<string>(r, 'kwic_snippet', 8),
+			coord_path: getRowVal<string | undefined>(r, 'coord_path', 9),
 			matched_word: matchedWord,
 			matched_words: [matchedWord]
 		};

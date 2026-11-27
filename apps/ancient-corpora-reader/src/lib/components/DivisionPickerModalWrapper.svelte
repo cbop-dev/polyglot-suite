@@ -10,25 +10,28 @@
 	let { sectionsCount = 0, greekSectionsCount = 0 }: Props = $props();
 
 	let currentWork = $derived(readerState.currentWork);
-	let isMultiDivision = $derived(currentWork.totalDivisions > 1);
+	let isMultiDivision = $derived((currentWork.pages?.length ?? currentWork.totalDivisions) > 1);
+	let isMultiTier = $derived((currentWork.paginationLevel ?? 0) >= 1 && (currentWork.pages?.length ?? 0) > 0);
 
 	let allDivisions = $derived.by<SubBookItem[]>(() => {
-		if (!isMultiDivision) return [];
+		if (!isMultiDivision || isMultiTier) return [];
 		const list: SubBookItem[] = [];
 		const isChapter = currentWork.divisionLabel === 'Chapter';
 		for (let i = currentWork.minDivision; i <= currentWork.totalDivisions; i++) {
-			const secCount = currentWork.sectionsByDivision?.[i];
+			const secCount = currentWork.unitsByPage?.[String(i)] ?? currentWork.sectionsByDivision?.[i];
 			list.push({
 				book: i,
 				label: isChapter ? `Ch. ${i}` : `Bk. ${i}`,
 				sections: secCount,
-				isSelected: i === readerState.currentDivision
+				isSelected: String(i) === readerState.currentDivision
 			});
 		}
 		return list;
 	});
 
 	let maxSectionInDivision = $derived.by(() => {
+		const pageCount = currentWork.unitsByPage?.[readerState.currentDivision];
+		if (pageCount) return pageCount;
 		if (currentWork.sectionsByDivision && currentWork.sectionsByDivision[readerState.currentDivision]) {
 			return currentWork.sectionsByDivision[readerState.currentDivision];
 		}
@@ -49,6 +52,11 @@
 		readerState.isDivisionModalOpen = false;
 	}
 
+	function selectPage(pagePath: string, secNum?: number) {
+		readerState.setDivision(pagePath, secNum);
+		readerState.isDivisionModalOpen = false;
+	}
+
 	function jumpToSection(secNum: number, divNum?: number) {
 		const targetDiv = divNum !== undefined
 			? Math.max(currentWork.minDivision, Math.min(divNum, currentWork.totalDivisions))
@@ -61,13 +69,21 @@
 
 <SectionPickerModal
 	open={readerState.isDivisionModalOpen}
-	placeholder={isMultiDivision
-		? `Jump to ${currentWork.divisionLabel.toLowerCase()} & section (e.g. '15' or '2.110')...`
-		: `Jump to section (1..${maxSectionInDivision})...`}
+	placeholder={isMultiTier
+		? `Jump to ${currentWork.hierarchyLevels.slice(0, currentWork.paginationLevel + 1).join('.')} (e.g. '${currentWork.pages[0] || '1.1'}')...`
+		: isMultiDivision
+			? `Jump to ${currentWork.divisionLabel.toLowerCase()} & section (e.g. '15' or '2.110')...`
+			: `Jump to section (1..${maxSectionInDivision})...`}
 	subBooks={allDivisions}
 	onSelectSubBook={selectDivision}
 	subBookLabel={currentWork.divisionLabel}
 	subBookShortLabel={currentWork.divisionLabel === 'Chapter' ? 'Ch.' : 'Bk.'}
+	levels={currentWork.hierarchyLevels}
+	paginationLevel={currentWork.paginationLevel}
+	pages={currentWork.pages}
+	unitsByPage={currentWork.unitsByPage}
+	currentPage={readerState.currentDivision}
+	onSelectPage={selectPage}
 	{quickJumpSections}
 	currentValue={typeof readerState.currentSection === 'number' ? readerState.currentSection : undefined}
 	onSelect={jumpToSection}

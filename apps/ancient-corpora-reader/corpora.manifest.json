@@ -11,7 +11,11 @@
       "author": "Early Christian Fathers",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "eng", "lat"],
+      "availableLanguages": [
+        "grc",
+        "eng",
+        "lat"
+      ],
       "coordinateScheme": "division_both",
       "citationStyle": "chapter_section",
       "features": {
@@ -38,7 +42,16 @@
       "pipeline": {
         "chunkPrefix": "af.db",
         "dbTagPrefix": "corpora-af-db-v",
-        "aliases": ["af", "fathers", "corpora-fathers", "acr-af"]
+        "aliases": [
+          "af",
+          "fathers",
+          "corpora-fathers",
+          "acr-af"
+        ]
+      },
+      "defaultPaginationLevel": 0,
+      "paginationLevels": {
+        "HER": 1
       }
     },
     {
@@ -52,7 +65,10 @@
       "author": "Philo of Alexandria",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "eng"],
+      "availableLanguages": [
+        "grc",
+        "eng"
+      ],
       "coordinateScheme": "division_both",
       "citationStyle": "division_section",
       "milestoneScheme": {
@@ -91,8 +107,12 @@
       "pipeline": {
         "chunkPrefix": "philo.db",
         "dbTagPrefix": "corpora-philo-db-v",
-        "aliases": ["philo", "acr-philo"]
-      }
+        "aliases": [
+          "philo",
+          "acr-philo"
+        ]
+      },
+      "defaultPaginationLevel": 1
     },
     {
       "id": "josephus",
@@ -105,7 +125,10 @@
       "author": "Flavius Josephus",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "eng"],
+      "availableLanguages": [
+        "grc",
+        "eng"
+      ],
       "coordinateScheme": "book_only",
       "citationStyle": "book_section",
       "milestoneScheme": {
@@ -143,8 +166,14 @@
       "pipeline": {
         "chunkPrefix": "josephus.db",
         "dbTagPrefix": "corpora-josephus-db-v",
-        "aliases": ["josephus", "jr", "acr-josephus", "acr-jr"]
-      }
+        "aliases": [
+          "josephus",
+          "jr",
+          "acr-josephus",
+          "acr-jr"
+        ]
+      },
+      "defaultPaginationLevel": 1
     },
     {
       "id": "justin",
@@ -157,7 +186,10 @@
       "author": "Justin Martyr",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "eng"],
+      "availableLanguages": [
+        "grc",
+        "eng"
+      ],
       "coordinateScheme": "division_both",
       "citationStyle": "chapter_section",
       "features": {
@@ -192,8 +224,12 @@
       "pipeline": {
         "chunkPrefix": "justin.db",
         "dbTagPrefix": "corpora-justin-db-v",
-        "aliases": ["justin", "acr-justin"]
-      }
+        "aliases": [
+          "justin",
+          "acr-justin"
+        ]
+      },
+      "defaultPaginationLevel": 0
     },
     {
       "id": "irenaeus",
@@ -206,7 +242,11 @@
       "author": "Irenaeus of Lyons",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "lat", "eng"],
+      "availableLanguages": [
+        "grc",
+        "lat",
+        "eng"
+      ],
       "coordinateScheme": "book_only",
       "citationStyle": "book_section",
       "features": {
@@ -253,7 +293,90 @@
       "pipeline": {
         "chunkPrefix": "irenaeus.db",
         "dbTagPrefix": "corpora-irenaeus-db-v",
-        "aliases": ["irenaeus", "acr-irenaeus"]
+        "aliases": [
+          "irenaeus",
+          "acr-irenaeus"
+        ]
+      },
+      "defaultPaginationLevel": 2
+    },
+    {
+      "id": "clement",
+      "enabled": true,
+      "name": "Clement of Alexandria",
+      "title": "Clement of Alexandria",
+      "subtitle": "Protrepticus, Paedagogus, Stromata, Quis Dives Salvetur, & minor treatises",
+      "badge": "Clement",
+      "era": "c. 150 – 215 CE",
+      "author": "Clement of Alexandria",
+      "primaryLanguage": "grc",
+      "defaultDictionary": "lsj",
+      "availableLanguages": [
+        "grc",
+        "eng",
+        "lat"
+      ],
+      "coordinateScheme": "division_both",
+      "citationStyle": "chapter_section",
+      "features": {
+        "hasScriptureCitations": false,
+        "hasTextualApparatus": false,
+        "hasAudio": false
+      },
+      "citation": {
+        "author": "Clement of Alexandria",
+        "seriesTitle": "Works of Clement of Alexandria (Protrepticus, Paedagogus, Stromata, & Minor Works)",
+        "defaultYear": "1885"
+      },
+      "license": {
+        "name": "CC BY-NC 4.0 / CC BY-SA 4.0 / Public Domain",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "notice": "Pre-lemmatized Greek texts from Giuseppe Celano’s Lemmatized Ancient Greek XML (CC BY-NC 4.0); Stromata Books 1–6 & To the Newly Baptized Greek from Perseus canonical-greekLit (CC BY-SA 4.0, Otto Stählin GCS) lemmatized via Stanza; English translations from Ante-Nicene Fathers Vols. 2 & 8 (CCEL, Public Domain) and G. W. Butterworth (Loeb Classical Library 92, 1919, Public Domain); Stromata Book 3 Latin (Gentian Hervet / Potter) from ANF Vol. 2 (Public Domain).",
+        "editions": [
+          {
+            "label": "Greek Texts & Lemmatization (Celano)",
+            "source": "Giuseppe Celano, LemmatizedAncientGreekXML (tlg0555)",
+            "license": "CC BY-NC 4.0",
+            "url": "https://github.com/gcelano/LemmatizedAncientGreekXML"
+          },
+          {
+            "label": "Greek TEI Texts (Perseus)",
+            "source": "PerseusDL canonical-greekLit (tlg0555.tlg004, tlg0555.tlg008; Otto Stählin GCS)",
+            "license": "CC BY-SA 4.0",
+            "url": "https://github.com/PerseusDL/canonical-greekLit"
+          },
+          {
+            "label": "English (ANF Vols. 2 & 8)",
+            "source": "William Wilson, Ante-Nicene Fathers Vols. 2 & 8 (CCEL)",
+            "license": "Public Domain",
+            "url": "https://www.ccel.org/ccel/schaff/anf02"
+          },
+          {
+            "label": "English (Butterworth 1919)",
+            "source": "G. W. Butterworth, Clement of Alexandria (Loeb Classical Library 92, 1919)",
+            "license": "Public Domain",
+            "url": "https://archive.org/details/L092ClementOfAlexandriaTheExhortationToTheGreeks"
+          },
+          {
+            "label": "Latin (Stromata Book 3)",
+            "source": "Gentian Hervet / John Potter via Ante-Nicene Fathers Vol. 2 (CCEL)",
+            "license": "Public Domain",
+            "url": "https://www.ccel.org/ccel/schaff/anf02"
+          }
+        ]
+      },
+      "pipeline": {
+        "chunkPrefix": "clement.db",
+        "dbTagPrefix": "corpora-clement-db-v",
+        "aliases": [
+          "clement",
+          "acr-clement"
+        ]
+      },
+      "defaultPaginationLevel": 0,
+      "paginationLevels": {
+        "PAED": 1,
+        "STROM": 1
       }
     },
     {
@@ -267,7 +390,11 @@
       "author": "Origen of Alexandria",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "lat", "eng"],
+      "availableLanguages": [
+        "grc",
+        "lat",
+        "eng"
+      ],
       "coordinateScheme": "division_both",
       "citationStyle": "chapter_section",
       "features": {
@@ -326,7 +453,16 @@
       "pipeline": {
         "chunkPrefix": "origen.db",
         "dbTagPrefix": "corpora-origen-db-v",
-        "aliases": ["origen", "acr-origen"]
+        "aliases": [
+          "origen",
+          "acr-origen"
+        ]
+      },
+      "defaultPaginationLevel": 1,
+      "paginationLevels": {
+        "PRIN": 2,
+        "ORAT": 0,
+        "EP_AFR": 0
       }
     }
   ]

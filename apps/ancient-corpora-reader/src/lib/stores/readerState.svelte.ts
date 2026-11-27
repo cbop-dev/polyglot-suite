@@ -5,6 +5,8 @@ import {resolve, } from '$app/paths';
 import {
 	getCorpusWorks,
 	findWork,
+	resolveWorkPage,
+	getAdjacentPage,
 	type CorpusWork
 } from '../config/corpora.data.js';
 import {
@@ -19,7 +21,7 @@ export type ViewMode = 'parallel' | 'greek' | 'english' | 'latin' | 'stacked' | 
 export class ReaderState {
 	currentCorpus = $state<AncientCorpusId>('af');
 	currentWorkCode = $state<string>('1CLE');
-	currentDivision = $state<number>(1);
+	currentDivision = $state<string>('1');
 	currentSection = $state<string | number | null>(null);
 	layoutIsOpen=$state<boolean>(false);
 	//for toggling the slider panel.
@@ -229,56 +231,56 @@ export class ReaderState {
 		);
 	}
 
-	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: number, section?: string | number | null) {
-		
+	get canPrevDivision(): boolean {
+		return getAdjacentPage(this.currentWork, this.currentDivision, -1) !== undefined;
+	}
+
+	get canNextDivision(): boolean {
+		return getAdjacentPage(this.currentWork, this.currentDivision, 1) !== undefined;
+	}
+
+	setCorpus(corpusId: AncientCorpusId, workCode?: string, division?: string | number, section?: string | number | null) {
 		this.closeSidePanel();
-		//goto(resolve('/')+corpusId);
 		this.currentCorpus = corpusId;
 		const works = getCorpusWorks(corpusId);
 		const targetWork = workCode ? (findWork(corpusId, workCode) || works[0]) : works[0];
 		this.currentWorkCode = targetWork.code;
 		this._applyDefaultVersions(corpusId, targetWork.code);
-		this.currentDivision = division !== undefined
-			? Math.max(targetWork.minDivision, Math.min(division, targetWork.totalDivisions))
-			: targetWork.minDivision;
-		
+		this.currentDivision = resolveWorkPage(targetWork, division);
 		this.currentSection = section ?? null;
 	}
 
-	setWork(workCode: string, division?: number, section?: string | number | null) {
+	setWork(workCode: string, division?: string | number, section?: string | number | null) {
 		const target = findWork(this.currentCorpus, workCode);
 		if (target) {
 			this.closeSidePanel();
 			this.currentWorkCode = target.code;
 			this._applyDefaultVersions(this.currentCorpus, target.code);
-			this.currentDivision = division !== undefined
-				? Math.max(target.minDivision, Math.min(division, target.totalDivisions))
-				: target.minDivision;
+			this.currentDivision = resolveWorkPage(target, division);
 			this.currentSection = section ?? null;
 		}
 	}
 
-	setDivision(division: number, section?: string | number | null) {
+	setDivision(division: string | number, section?: string | number | null) {
 		this.closeSidePanel();
-		const work = this.currentWork;
-		this.currentDivision = Math.max(work.minDivision, Math.min(division, work.totalDivisions));
+		this.currentDivision = resolveWorkPage(this.currentWork, division);
 		this.currentSection = section ?? null;
 	}
 
 	nextDivision() {
-		const work = this.currentWork;
-		if (this.currentDivision < work.totalDivisions) {
+		const next = getAdjacentPage(this.currentWork, this.currentDivision, 1);
+		if (next !== undefined) {
 			this.closeSidePanel();
-			this.currentDivision += 1;
+			this.currentDivision = next;
 			this.currentSection = null;
 		}
 	}
 
 	prevDivision() {
-		const work = this.currentWork;
-		if (this.currentDivision > work.minDivision) {
+		const prev = getAdjacentPage(this.currentWork, this.currentDivision, -1);
+		if (prev !== undefined) {
 			this.closeSidePanel();
-			this.currentDivision -= 1;
+			this.currentDivision = prev;
 			this.currentSection = null;
 		}
 	}

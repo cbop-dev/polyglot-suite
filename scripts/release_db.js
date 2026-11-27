@@ -88,6 +88,7 @@ Usage:
 
 Apps:
   bible (or data, lex) Polyglot Bible Reader & BLE database (tag: bible-data-vX.Y.Z)
+  corpora-all          All Ancient Corpora databases defined in corpora.manifest.json
   corpora-af           Ancient Corpora - Apostolic Fathers (tag: corpora-af-db-vX.Y.Z) [aliases: af, fathers]
   corpora-philo        Ancient Corpora - Philo of Alexandria (tag: corpora-philo-db-vX.Y.Z) [alias: philo]
   corpora-josephus     Ancient Corpora - Flavius Josephus (tag: corpora-josephus-db-vX.Y.Z) [aliases: josephus, jr]
@@ -123,30 +124,10 @@ Examples:
 `);
 }
 
-function main() {
-  const args = process.argv.slice(2);
-  const flags = new Set(args.filter((a) => a.startsWith('-')));
-  const positional = args.filter((a) => !a.startsWith('-'));
-
-  const appKey = positional[0];
-  const bumpType = positional[1] || 'patch';
-  const shouldPush = flags.has('--push');
-  const noCommit = flags.has('--no-commit');
-  const isDryRun = flags.has('--dry-run');
-
-  if (flags.has('--help') || flags.has('-h') || positional.includes('help')) {
-    printUsage();
-    process.exit(0);
-  }
-
-  if (!appKey) {
-    printUsage();
-    process.exit(1);
-  }
-
+function releaseSingleApp(appKey, bumpType, { isDryRun, noCommit, currentBranch }) {
   const app = APPS[appKey];
   if (!app) {
-    console.error(`❌ Unknown app: "${appKey}". Available: ${Object.keys(APPS).join(', ')}`);
+    console.error(`❌ Unknown app: "${appKey}". Available: ${Object.keys(APPS).join(', ')}, corpora-all`);
     process.exit(1);
   }
 
@@ -181,21 +162,12 @@ function main() {
   }
   console.log(`   Found ${chunks.length} database chunk files to publish.`);
 
-  let currentBranch = 'main';
-  try {
-    currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: REPO_ROOT, encoding: 'utf-8' }).trim();
-  } catch {}
-
   if (isDryRun) {
-    console.log(`\n[dry-run] Would update ${configPath} with "databaseVersion": "${newTag}"`);
+    console.log(`[dry-run] Would update ${configPath} with "databaseVersion": "${newTag}"`);
     console.log(`[dry-run] Would create GitHub Release "${newTag}" and upload ${chunks.length} chunks.`);
     if (!noCommit) {
       console.log(`[dry-run] Would commit ${configPath} with message: chore(${appKey}): bump databaseVersion to ${newTag}`);
     }
-    if (shouldPush) {
-      console.log(`[dry-run] Would run: git push origin ${currentBranch}`);
-    }
-    console.log('\n[dry-run] Complete.\n');
     return;
   }
 
@@ -228,15 +200,64 @@ function main() {
       console.warn(`⚠️ Warning: Could not automatically commit ${relConfigPath}:`, err.message);
     }
   }
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const flags = new Set(args.filter((a) => a.startsWith('-')));
+  const positional = args.filter((a) => !a.startsWith('-'));
+
+  const appKey = positional[0];
+  const bumpType = positional[1] || 'patch';
+  const shouldPush = flags.has('--push');
+  const noCommit = flags.has('--no-commit');
+  const isDryRun = flags.has('--dry-run');
+
+  if (flags.has('--help') || flags.has('-h') || positional.includes('help')) {
+    printUsage();
+    process.exit(0);
+  }
+
+  if (!appKey) {
+    printUsage();
+    process.exit(1);
+  }
+
+  let currentBranch = 'main';
+  try {
+    currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: REPO_ROOT, encoding: 'utf-8' }).trim();
+  } catch {}
+
+  const seenDirs = new Set();
+  const targets =
+    appKey === 'corpora-all'
+      ? Object.keys(APPS).filter((k) => {
+          if (!k.startsWith('corpora-') || seenDirs.has(APPS[k].dir)) return false;
+          seenDirs.add(APPS[k].dir);
+          return true;
+        })
+      : [appKey];
+
+  for (const target of targets) {
+    releaseSingleApp(target, bumpType, { isDryRun, noCommit, currentBranch });
+  }
+
+  if (isDryRun) {
+    if (shouldPush) {
+      console.log(`\n[dry-run] Would run: git push origin ${currentBranch}`);
+    }
+    console.log('\n[dry-run] Complete.\n');
+    return;
+  }
 
   // 4. Push if requested
   if (shouldPush) {
-    console.log(`\n🚀 Pushing commit to GitHub (${currentBranch})...`);
+    console.log(`\n🚀 Pushing commit(s) to GitHub (${currentBranch})...`);
     execSync(`git push origin ${currentBranch}`, { cwd: REPO_ROOT, stdio: 'inherit' });
     console.log(`✓ Successfully pushed to GitHub (${currentBranch})! Pages deployment will trigger when merged to main.`);
   } else {
     console.log(`\n🎉 Success!`);
-    console.log(`👉 Next step: Push your commit to GitHub to trigger GitHub Pages CI deployment.\n`);
+    console.log(`👉 Next step: Push your commit(s) to GitHub to trigger GitHub Pages CI deployment.\n`);
   }
 }
 

@@ -19,14 +19,22 @@ VERSIONS_TS_PATH = CONFIG_DIR / "corpusVersions.generated.ts"
 WORKS_TS_PATH = CONFIG_DIR / "canonicalWorks.generated.ts"
 
 
-def _load_corpora_ids() -> List[str]:
+def _load_manifest_config() -> tuple[List[str], Dict[str, tuple[int, Dict[str, int]]]]:
 	manifest_path = ACR_DIR / "corpora.manifest.json"
 	with open(manifest_path, "r", encoding="utf-8") as f:
 		data = json.load(f)
-	return [entry["id"] for entry in data.get("corpora", [])]
+	ids: List[str] = []
+	pag_cfg: Dict[str, tuple[int, Dict[str, int]]] = {}
+	for entry in data.get("corpora", []):
+		cid = entry["id"]
+		ids.append(cid)
+		default_pag = int(entry.get("defaultPaginationLevel", 0))
+		overrides = {k: int(v) for k, v in entry.get("paginationLevels", {}).items()}
+		pag_cfg[cid] = (default_pag, overrides)
+	return ids, pag_cfg
 
 
-CORPORA_IDS = _load_corpora_ids()
+CORPORA_IDS, PAGINATION_CONFIG = _load_manifest_config()
 
 
 def export_canonical_manifests():
@@ -132,8 +140,42 @@ def export_canonical_manifests():
 			total_divs = w["total_divisions"]
 			min_div = w["min_division"]
 			div_label = w["division_label"]
+			hierarchy_levels = (
+				json.loads(w["hierarchy_levels"])
+				if ("hierarchy_levels" in w.keys() and w["hierarchy_levels"])
+				else (["Book", "Section"] if div_label == "Book" else [div_label, "Section"])
+			)
+			default_pag, pag_overrides = PAGINATION_CONFIG.get(cid, (0, {}))
+			raw_pag = pag_overrides.get(code, default_pag)
+			pagination_level = max(0, min(raw_pag, len(hierarchy_levels) - 1))
 
-			# Determine sectionsByDivision
+			# Query distinct coord_paths ordered by sort_key, then group into pages in Python
+			# according to the UI-configured pagination_level.
+			cur.execute(
+				"""
+				SELECT coord_path
+				FROM text_units
+				WHERE work_code = ?
+				GROUP BY coord_path
+				ORDER BY MIN(sort_key) ASC
+				""",
+				(code,),
+			)
+			pages: List[str] = []
+			units_by_page: Dict[str, int] = {}
+			level_sets: List[set] = [set() for _ in hierarchy_levels]
+			for (c_path,) in cur.fetchall():
+				parts = c_path.split(".")
+				for lvl_idx in range(min(len(parts), len(level_sets))):
+					level_sets[lvl_idx].add(tuple(parts[: lvl_idx + 1]))
+				p_path = ".".join(parts[: pagination_level + 1])
+				if p_path not in units_by_page:
+					pages.append(p_path)
+					units_by_page[p_path] = 0
+				units_by_page[p_path] += 1
+			counts_by_level = [len(s) for s in level_sets]
+
+			# Determine sectionsByDivision (backward compatibility)
 			sections_by_div = None
 			if cid == "josephus":
 				cur.execute(
@@ -167,6 +209,11 @@ def export_canonical_manifests():
 				"totalDivisions": total_divs,
 				"minDivision": min_div,
 				"divisionLabel": div_label,
+				"hierarchyLevels": hierarchy_levels,
+				"countsByLevel": counts_by_level,
+				"paginationLevel": pagination_level,
+				"pages": pages,
+				"unitsByPage": units_by_page,
 				"coordinateScheme": coord_scheme,
 			}
 			if title_sec:
@@ -220,7 +267,12 @@ export interface CorpusWork {{
 	titleLatin?: string;
 	totalDivisions: number;
 	minDivision: number;
-	divisionLabel: 'Book' | 'Chapter';
+	divisionLabel: 'Book' | 'Chapter' | 'Section';
+	hierarchyLevels: string[];
+	countsByLevel?: number[];
+	paginationLevel: number;
+	pages: string[];
+	unitsByPage?: Record<string, number>;
 	sectionsByDivision?: Record<number | string, number>;
 	coordinateScheme?: 'book_only' | 'division_both';
 }}

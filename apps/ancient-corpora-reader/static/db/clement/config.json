@@ -1,0 +1,10 @@
+{
+  "databaseVersion": "corpora-clement-db-v0.1.2",
+  "serverMode": "chunked",
+  "requestChunkSize": 16384,
+  "urlPrefix": "clement.db.",
+  "serverChunkSize": 5242880,
+  "databaseLengthBytes": 116965376,
+  "suffixLength": 2,
+  "cacheBust": "v1795756634"
+}

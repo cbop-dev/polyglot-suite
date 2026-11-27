@@ -41,6 +41,63 @@ export const ALL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = CANONICAL
 export const ALL_CANONICAL_WORKS = ALL_CORPUS_WORKS;
 
 /**
+ * Formats a dot-separated page path (e.g. "1.4") into a human-readable label
+ * using the work's hierarchyLevels (e.g. "Book 1, Chapter 4" or "Bk. 1, Ch. 4").
+ */
+export function formatPageLabel(work: CorpusWork | undefined, pagePath: string, short = false): string {
+	if (!work) return pagePath;
+	const levels = work.hierarchyLevels || [work.divisionLabel || 'Chapter', 'Section'];
+	const parts = pagePath.split('.');
+	const shortMap: Record<string, string> = {
+		Book: 'Bk.',
+		Chapter: 'Ch.',
+		Section: 'Sec.',
+		Part: 'Pt.',
+		Homily: 'Hom.'
+	};
+	return parts
+		.map((val, idx) => {
+			const lvl = levels[idx] || `Level ${idx + 1}`;
+			const lbl = short ? (shortMap[lvl] || `${lvl.slice(0, 3)}.`) : lvl;
+			return `${lbl} ${val}`;
+		})
+		.join(', ');
+}
+
+/**
+ * Returns the next or previous page path from work.pages, or undefined if at the boundary.
+ */
+export function getAdjacentPage(
+	work: CorpusWork | undefined,
+	currentPage: string,
+	delta: -1 | 1
+): string | undefined {
+	if (!work?.pages || work.pages.length === 0) return undefined;
+	const idx = work.pages.indexOf(currentPage);
+	if (idx === -1) return delta > 0 ? work.pages[0] : undefined;
+	return work.pages[idx + delta];
+}
+
+/**
+ * Resolves a raw page/division input into a valid page path for the work.
+ */
+export function resolveWorkPage(work: CorpusWork | undefined, division?: string | number): string {
+	if (!work?.pages || work.pages.length === 0) {
+		return division !== undefined ? String(division) : String(work?.minDivision ?? 1);
+	}
+	if (division === undefined || division === null || division === '') {
+		return work.pages[0];
+	}
+	const raw = String(division);
+	if (work.pages.includes(raw)) return raw;
+	// If a top-level number was given for a multi-level paginated work (e.g. "1" -> "1.1"),
+	// match the first page starting with `${raw}.`
+	const prefixMatch = work.pages.find((p) => p.startsWith(`${raw}.`));
+	if (prefixMatch) return prefixMatch;
+	return work.pages[0];
+}
+
+/**
  * Resolves the database storage coordinates (book, chapter) for a division
  * based on the work's structural metadata. Supports both (work, division)
  * and (corpusId, workCode, division).

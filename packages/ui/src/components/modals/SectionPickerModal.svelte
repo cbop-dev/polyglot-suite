@@ -16,6 +16,13 @@
 		currentValue?: number;
 		onSelect: (value: number, book?: number) => void;
 		onClose: () => void;
+		// N-level hierarchy support
+		levels?: string[];
+		paginationLevel?: number;
+		pages?: string[];
+		unitsByPage?: Record<string, number>;
+		currentPage?: string;
+		onSelectPage?: (pagePath: string, section?: number) => void;
 	}
 
 	let {
@@ -31,17 +38,71 @@
 		totalCount = 0,
 		currentValue,
 		onSelect,
-		onClose
+		onClose,
+		levels,
+		paginationLevel = 0,
+		pages,
+		unitsByPage,
+		currentPage,
+		onSelectPage
 	}: Props = $props();
 
 	let selectedIndex = $state<number>(0);
 	let inputEl = $state<HTMLInputElement | null>(null);
 	let isBooksOpen = $state<boolean>(false);
+	let draftCoords = $state<string[]>([]);
+
+	let isMultiTier = $derived(
+		Boolean(levels && pages && pages.length > 0 && paginationLevel >= 1 && onSelectPage)
+	);
+
+	function sortCoords(a: string, b: string): number {
+		const na = Number(a);
+		const nb = Number(b);
+		if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+		return a.localeCompare(b);
+	}
+
+	function getTierOptions(tierIdx: number, prefix: string[]): string[] {
+		if (!pages) return [];
+		const seen = new Set<string>();
+		for (const p of pages) {
+			const parts = p.split('.');
+			if (parts.length <= tierIdx) continue;
+			let matches = true;
+			for (let i = 0; i < tierIdx; i++) {
+				if (parts[i] !== prefix[i]) {
+					matches = false;
+					break;
+				}
+			}
+			if (matches) seen.add(parts[tierIdx]);
+		}
+		return Array.from(seen).sort(sortCoords);
+	}
+
+	function selectTierCoord(tierIdx: number, val: string) {
+		const next = [...draftCoords.slice(0, tierIdx), val];
+		if (tierIdx >= paginationLevel) {
+			onSelectPage?.(next.join('.'));
+			return;
+		}
+		// Fill remaining tiers up to paginationLevel with first available child
+		for (let t = tierIdx + 1; t <= paginationLevel; t++) {
+			const opts = getTierOptions(t, next);
+			if (opts.length > 0) next.push(opts[0]);
+		}
+		draftCoords = next;
+	}
 
 	$effect(() => {
 		if (open) {
 			searchQuery = '';
 			selectedIndex = 0;
+			if (isMultiTier && pages && pages.length > 0) {
+				const base = currentPage && pages.includes(currentPage) ? currentPage : pages[0];
+				draftCoords = base.split('.');
+			}
 			setTimeout(() => {
 				inputEl?.focus();
 				inputEl?.select();
@@ -69,6 +130,30 @@
 			e.preventDefault();
 			const raw = searchQuery.trim();
 			if (!raw) return;
+
+			if (isMultiTier && onSelectPage && pages) {
+				const parts = raw.split(/[.:\s]+/).filter(Boolean);
+				if (parts.length === paginationLevel + 1) {
+					const target = parts.join('.');
+					if (pages.includes(target)) {
+						onSelectPage(target);
+						return;
+					}
+				} else if (parts.length > paginationLevel + 1) {
+					const target = parts.slice(0, paginationLevel + 1).join('.');
+					const sec = parseInt(parts[paginationLevel + 1], 10);
+					if (pages.includes(target)) {
+						onSelectPage(target, isNaN(sec) ? undefined : sec);
+						return;
+					}
+				} else if (parts.length === 1) {
+					const val = parseInt(parts[0], 10);
+					if (!isNaN(val) && val > 0 && currentPage) {
+						onSelectPage(currentPage, val);
+						return;
+					}
+				}
+			}
 
 			// Compound reference format: e.g. "2.110", "2:110", "2 110" (book 2, section 110)
 			const compoundMatch = raw.match(/^(\d+)[.:\s](\d+)$/);
@@ -121,8 +206,43 @@
 			</button>
 		</div>
 
-		<!-- Sub-book selector (if provided, e.g. multi-book treatises) -->
-		{#if subBooks.length > 0}
+		<!-- Multi-level cascading selector (for N-level works with paginationLevel >= 1) -->
+		{#if isMultiTier && levels && pages}
+			{#each Array.from({ length: paginationLevel + 1 }, (_, i) => i) as tierIdx}
+				{@const tierLabel = levels[tierIdx] || `Level ${tierIdx + 1}`}
+				{@const options = getTierOptions(tierIdx, draftCoords)}
+				{@const selectedOpt = draftCoords[tierIdx]}
+				<div class="p-3 border-b border-[var(--color-rule)] bg-[var(--color-page)]">
+					<div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[var(--color-ink-soft)] mb-2">
+						<span>{tierLabel}</span>
+						{#if selectedOpt !== undefined}
+							<span class="text-[11px] font-normal normal-case text-blue-600 dark:text-blue-400">
+								{tierLabel} {selectedOpt}
+							</span>
+						{/if}
+					</div>
+					<div class="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
+						{#each options as opt}
+							{@const isActivePage =
+								tierIdx === paginationLevel &&
+								currentPage === [...draftCoords.slice(0, tierIdx), opt].join('.')}
+							{@const isSelected = opt === selectedOpt}
+							{@const pageKey = tierIdx === paginationLevel ? [...draftCoords.slice(0, tierIdx), opt].join('.') : ''}
+							{@const unitCount = pageKey && unitsByPage ? unitsByPage[pageKey] : undefined}
+							<button
+								type="button"
+								onclick={() => selectTierCoord(tierIdx, opt)}
+								class="rounded-lg px-2.5 py-1 text-xs font-semibold border transition-all cursor-pointer {isActivePage || (tierIdx < paginationLevel && isSelected) ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100 font-bold shadow-2xs' : 'border-[var(--color-rule)] bg-[var(--color-card-bg)] text-[var(--color-ink)] hover:bg-[var(--color-rule)]'}"
+								title={unitCount ? `${tierLabel} ${opt} (${unitCount} sections)` : `${tierLabel} ${opt}`}
+							>
+								{opt}
+							</button>
+						{/each}
+					</div>
+				</div>
+			{/each}
+		{:else if subBooks.length > 0}
+			<!-- Sub-book selector (if provided, e.g. multi-book treatises) -->
 			{@const currentSelectedBook = subBooks.find((b) => b.isSelected)?.book}
 			<div class="p-3 border-b border-[var(--color-rule)] bg-[var(--color-page)]">
 				<button
