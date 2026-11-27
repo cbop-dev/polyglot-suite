@@ -29,6 +29,11 @@ Requires-Dist: stanza>=1.8.0; extra == "all"
 Requires-Dist: torch>=2.0.0; extra == "all"
 Requires-Dist: pytest>=7.0.0; extra == "all"
 
+> [!IMPORTANT]
+> **AI-Generated Documentation Notice**  
+> **Human Review Status:** `To be reviewed`  
+> This documentation was generated with AI assistance and may contain inaccuracies. Please verify with the codebase and primary sources.
+
 # greek-morphology
 
 High-performance Ancient and Hellenistic Greek lemmatization and morphological parsing engine.

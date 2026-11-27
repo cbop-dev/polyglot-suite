@@ -18,7 +18,7 @@ import {
 describe('Corpora Configuration & Catalog', () => {
 	it('defines all registered corpora in CORPORA_CONFIG and resolves active corpora via getAllCorpora/getActiveCorpora', () => {
 		const registered = getRegisteredCorpora();
-		expect(registered.map((c) => c.id)).toEqual(['af', 'philo', 'josephus', 'justin', 'irenaeus', 'origen']);
+		expect(registered.map((c) => c.id)).toEqual(['af', 'philo', 'josephus', 'justin', 'irenaeus', 'clement', 'origen']);
 
 		const active = getActiveCorpora();
 		expect(getAllCorpora().map((c) => c.id)).toEqual(active.map((c) => c.id));
@@ -26,8 +26,15 @@ describe('Corpora Configuration & Catalog', () => {
 		expect(isCorpusInstalled('justin')).toBe(true);
 		expect(isCorpusEnabled('irenaeus')).toBe(true);
 		expect(isCorpusInstalled('irenaeus')).toBe(true);
+		expect(isCorpusEnabled('clement')).toBe(true);
+		expect(isCorpusInstalled('clement')).toBe(true);
 		expect(isCorpusEnabled('origen')).toBe(true);
 		expect(isCorpusInstalled('origen')).toBe(true);
+
+		const clementConfig = getCorpusConfig('clement');
+		expect(clementConfig.name).toBe('Clement of Alexandria');
+		expect(clementConfig.availableLanguages).toEqual(['grc', 'eng', 'lat']);
+		expect(clementConfig.license?.editions?.length).toBeGreaterThanOrEqual(5);
 
 		const origenConfig = getCorpusConfig('origen');
 		expect(origenConfig.name).toBe('Origen of Alexandria');

@@ -288,6 +288,174 @@ export const CANONICAL_CORPUS_VERSIONS: Record<string, TextVersionConfig[]> = {
       }
     }
   ],
+  "clement": [
+    {
+      "id": "clement_celano_grc",
+      "language": "grc",
+      "title": "Otto Stählin Greek Critical Text (GCS, via Celano)",
+      "shortTitle": "Greek (Stählin / Celano)",
+      "versionLabel": "Greek (Stählin / Celano)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 1,
+      "bibliographic": {
+        "role": "critical_edition",
+        "booktitle": "Clemens Alexandrinus",
+        "publisher": "J. C. Hinrichs / LemmatizedAncientGreekXML",
+        "year": "1905–1909",
+        "editor": "Otto Stählin",
+        "series": "Die griechischen christlichen Schriftsteller",
+        "address": "Leipzig",
+        "volume": "Vols. 1–3",
+        "sblQualifier": "(GCS)",
+        "applicableWorks": [
+          "PROT",
+          "PAED",
+          "STROM",
+          "QUIS",
+          "EXC_TH",
+          "ECL_PR"
+        ],
+        "url": "https://github.com/gcelano/LemmatizedAncientGreekXML"
+      },
+      "applicableWorks": [
+        "PROT",
+        "PAED",
+        "STROM",
+        "QUIS",
+        "EXC_TH",
+        "ECL_PR"
+      ]
+    },
+    {
+      "id": "clement_perseus_grc",
+      "language": "grc",
+      "title": "Otto Stählin / Butterworth Greek Text (Perseus, Stanza-lemmatized)",
+      "shortTitle": "Greek (Perseus / Stanza)",
+      "versionLabel": "Greek (Perseus / Stanza)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 2,
+      "bibliographic": {
+        "role": "critical_edition",
+        "booktitle": "Clemens Alexandrinus / Loeb Classical Library 92",
+        "publisher": "Perseus Digital Library",
+        "year": "1905–1919",
+        "editor": "Otto Stählin / G. W. Butterworth",
+        "series": "GCS / Loeb Classical Library",
+        "address": "Leipzig / Cambridge, MA",
+        "sblQualifier": "(Perseus)",
+        "applicableWorks": [
+          "STROM",
+          "BAPT"
+        ],
+        "url": "https://github.com/PerseusDL/canonical-greekLit"
+      },
+      "applicableWorks": [
+        "STROM",
+        "BAPT"
+      ]
+    },
+    {
+      "id": "clement_anf_eng",
+      "language": "eng",
+      "title": "Ante-Nicene Fathers English Translation (Vols. 2 & 8)",
+      "shortTitle": "English (ANF)",
+      "versionLabel": "English (ANF)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 3,
+      "bibliographic": {
+        "role": "translation",
+        "booktitle": "The Ante-Nicene Fathers",
+        "publisher": "Christian Literature Publishing Co.",
+        "year": "1885",
+        "editor": "Alexander Roberts and James Donaldson",
+        "translator": "William Wilson",
+        "series": "Ante-Nicene Fathers",
+        "address": "Buffalo, NY",
+        "volume": "Vols. 2 & 8",
+        "sblQualifier": "(ANF)",
+        "applicableWorks": [
+          "PROT",
+          "PAED",
+          "STROM",
+          "QUIS",
+          "ECL_PR"
+        ],
+        "url": "https://www.ccel.org/ccel/schaff/anf02"
+      },
+      "applicableWorks": [
+        "PROT",
+        "PAED",
+        "STROM",
+        "QUIS",
+        "ECL_PR"
+      ]
+    },
+    {
+      "id": "clement_butterworth_eng",
+      "language": "eng",
+      "title": "G. W. Butterworth English Translation (Loeb Classical Library 92, 1919)",
+      "shortTitle": "English (Butterworth 1919)",
+      "versionLabel": "English (Butterworth 1919)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 4,
+      "bibliographic": {
+        "role": "translation",
+        "booktitle": "Clement of Alexandria: The Exhortation to the Greeks, The Rich Man's Salvation, To the Newly Baptized",
+        "publisher": "William Heinemann / Harvard University Press",
+        "year": "1919",
+        "editor": "G. W. Butterworth",
+        "translator": "G. W. Butterworth",
+        "series": "Loeb Classical Library",
+        "address": "London / Cambridge, MA",
+        "volume": "LCL 92",
+        "sblQualifier": "(trans. Butterworth)",
+        "applicableWorks": [
+          "PROT",
+          "QUIS",
+          "BAPT"
+        ],
+        "url": "https://archive.org/details/L092ClementOfAlexandriaTheExhortationToTheGreeks"
+      },
+      "applicableWorks": [
+        "PROT",
+        "QUIS",
+        "BAPT"
+      ]
+    },
+    {
+      "id": "clement_anf_lat",
+      "language": "lat",
+      "title": "Gentian Hervet / John Potter Latin Translation (Stromata Book 3, via ANF Vol. 2)",
+      "shortTitle": "Latin (Hervet / ANF)",
+      "versionLabel": "Latin (Hervet / ANF)",
+      "direction": "ltr",
+      "isDefaultVisible": true,
+      "order": 5,
+      "bibliographic": {
+        "role": "ancient_witness",
+        "booktitle": "The Ante-Nicene Fathers",
+        "publisher": "Christian Literature Publishing Co.",
+        "year": "1885",
+        "editor": "John Potter / Alexander Roberts & James Donaldson",
+        "translator": "Gentian Hervet",
+        "series": "Ante-Nicene Fathers",
+        "address": "Buffalo, NY",
+        "volume": "Vol. 2",
+        "sblQualifier": "(Latin)",
+        "applicableWorks": [
+          "STROM"
+        ],
+        "url": "https://www.ccel.org/ccel/schaff/anf02"
+      },
+      "applicableWorks": [
+        "STROM"
+      ]
+    }
+  ],
   "origen": [
     {
       "id": "origen_celano_grc",

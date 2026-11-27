@@ -38,6 +38,7 @@ class NeuralStanzaPipeline:
                     processors="tokenize,pos,lemma",
                     tokenize_pretokenized=True,
                     use_gpu=self.use_gpu,
+                    download_method=None,
                     verbose=False,
                 )
             except Exception:
