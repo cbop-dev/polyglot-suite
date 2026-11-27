@@ -1,10 +1,10 @@
 {
-  "databaseVersion": "corpora-justin-db-v0.1.1",
+  "databaseVersion": "corpora-justin-db-v0.1.2",
   "serverMode": "chunked",
   "requestChunkSize": 16384,
   "urlPrefix": "justin.db.",
   "serverChunkSize": 5242880,
-  "databaseLengthBytes": 46710784,
+  "databaseLengthBytes": 46678016,
   "suffixLength": 2,
-  "cacheBust": "v1795755168"
+  "cacheBust": "v1795756627"
 }
