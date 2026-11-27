@@ -4,7 +4,7 @@
   "requestChunkSize": 16384,
   "urlPrefix": "clement.db.",
   "serverChunkSize": 5242880,
-  "databaseLengthBytes": 117932032,
+  "databaseLengthBytes": 117276672,
   "suffixLength": 2,
-  "cacheBust": "v1795750180"
+  "cacheBust": "v1795755174"
 }

@@ -11,7 +11,11 @@
       "author": "Early Christian Fathers",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "eng", "lat"],
+      "availableLanguages": [
+        "grc",
+        "eng",
+        "lat"
+      ],
       "coordinateScheme": "division_both",
       "citationStyle": "chapter_section",
       "features": {
@@ -38,7 +42,16 @@
       "pipeline": {
         "chunkPrefix": "af.db",
         "dbTagPrefix": "corpora-af-db-v",
-        "aliases": ["af", "fathers", "corpora-fathers", "acr-af"]
+        "aliases": [
+          "af",
+          "fathers",
+          "corpora-fathers",
+          "acr-af"
+        ]
+      },
+      "defaultPaginationLevel": 0,
+      "paginationLevels": {
+        "HER": 1
       }
     },
     {
@@ -52,7 +65,10 @@
       "author": "Philo of Alexandria",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "eng"],
+      "availableLanguages": [
+        "grc",
+        "eng"
+      ],
       "coordinateScheme": "division_both",
       "citationStyle": "division_section",
       "milestoneScheme": {
@@ -91,8 +107,12 @@
       "pipeline": {
         "chunkPrefix": "philo.db",
         "dbTagPrefix": "corpora-philo-db-v",
-        "aliases": ["philo", "acr-philo"]
-      }
+        "aliases": [
+          "philo",
+          "acr-philo"
+        ]
+      },
+      "defaultPaginationLevel": 1
     },
     {
       "id": "josephus",
@@ -105,7 +125,10 @@
       "author": "Flavius Josephus",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "eng"],
+      "availableLanguages": [
+        "grc",
+        "eng"
+      ],
       "coordinateScheme": "book_only",
       "citationStyle": "book_section",
       "milestoneScheme": {
@@ -143,8 +166,14 @@
       "pipeline": {
         "chunkPrefix": "josephus.db",
         "dbTagPrefix": "corpora-josephus-db-v",
-        "aliases": ["josephus", "jr", "acr-josephus", "acr-jr"]
-      }
+        "aliases": [
+          "josephus",
+          "jr",
+          "acr-josephus",
+          "acr-jr"
+        ]
+      },
+      "defaultPaginationLevel": 1
     },
     {
       "id": "justin",
@@ -157,7 +186,10 @@
       "author": "Justin Martyr",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "eng"],
+      "availableLanguages": [
+        "grc",
+        "eng"
+      ],
       "coordinateScheme": "division_both",
       "citationStyle": "chapter_section",
       "features": {
@@ -192,8 +224,12 @@
       "pipeline": {
         "chunkPrefix": "justin.db",
         "dbTagPrefix": "corpora-justin-db-v",
-        "aliases": ["justin", "acr-justin"]
-      }
+        "aliases": [
+          "justin",
+          "acr-justin"
+        ]
+      },
+      "defaultPaginationLevel": 0
     },
     {
       "id": "irenaeus",
@@ -206,7 +242,11 @@
       "author": "Irenaeus of Lyons",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "lat", "eng"],
+      "availableLanguages": [
+        "grc",
+        "lat",
+        "eng"
+      ],
       "coordinateScheme": "book_only",
       "citationStyle": "book_section",
       "features": {
@@ -253,8 +293,12 @@
       "pipeline": {
         "chunkPrefix": "irenaeus.db",
         "dbTagPrefix": "corpora-irenaeus-db-v",
-        "aliases": ["irenaeus", "acr-irenaeus"]
-      }
+        "aliases": [
+          "irenaeus",
+          "acr-irenaeus"
+        ]
+      },
+      "defaultPaginationLevel": 2
     },
     {
       "id": "clement",
@@ -267,7 +311,11 @@
       "author": "Clement of Alexandria",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "eng", "lat"],
+      "availableLanguages": [
+        "grc",
+        "eng",
+        "lat"
+      ],
       "coordinateScheme": "division_both",
       "citationStyle": "chapter_section",
       "features": {
@@ -320,7 +368,15 @@
       "pipeline": {
         "chunkPrefix": "clement.db",
         "dbTagPrefix": "corpora-clement-db-v",
-        "aliases": ["clement", "acr-clement"]
+        "aliases": [
+          "clement",
+          "acr-clement"
+        ]
+      },
+      "defaultPaginationLevel": 0,
+      "paginationLevels": {
+        "PAED": 1,
+        "STROM": 1
       }
     },
     {
@@ -334,7 +390,11 @@
       "author": "Origen of Alexandria",
       "primaryLanguage": "grc",
       "defaultDictionary": "lsj",
-      "availableLanguages": ["grc", "lat", "eng"],
+      "availableLanguages": [
+        "grc",
+        "lat",
+        "eng"
+      ],
       "coordinateScheme": "division_both",
       "citationStyle": "chapter_section",
       "features": {
@@ -393,7 +453,16 @@
       "pipeline": {
         "chunkPrefix": "origen.db",
         "dbTagPrefix": "corpora-origen-db-v",
-        "aliases": ["origen", "acr-origen"]
+        "aliases": [
+          "origen",
+          "acr-origen"
+        ]
+      },
+      "defaultPaginationLevel": 1,
+      "paginationLevels": {
+        "PRIN": 2,
+        "ORAT": 0,
+        "EP_AFR": 0
       }
     }
   ]

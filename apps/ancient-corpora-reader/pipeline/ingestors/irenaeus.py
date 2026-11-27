@@ -8,12 +8,13 @@ Ingests Against Heresies (Books 1-5) as a single 5-book work (`AH`) with 4 witne
 """
 
 from __future__ import annotations
+import re
 import shutil
 import sys
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 PIPELINE_DIR = Path(__file__).resolve().parent.parent
 ACR_DIR = PIPELINE_DIR.parent
@@ -59,17 +60,18 @@ def ensure_sources() -> None:
 	download_file(CELANO_URL, CACHE_DIR / "tlg1447.tlg001.1st1K-grc1.xml")
 
 
-def parse_irenaeus_greek_fragments(xml_path: Path) -> Dict[int, List[Dict[str, Any]]]:
-	"""Parses tlg1447.tlg001 (Harvey Book 1 fragments) into {massuet_chapter: [raw_tokens]}."""
+def parse_irenaeus_greek_fragments(xml_path: Path) -> Dict[int, Dict[int, List[Dict[str, Any]]]]:
+	"""Parses tlg1447.tlg001 (Harvey Book 1 fragments) into {massuet_chapter: {section: [raw_tokens]}}."""
 	tree = ET.parse(xml_path)
 	root = tree.getroot()
-	chapters: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
+	chapters: Dict[int, Dict[int, List[Dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
 
 	for t in root.iter("t"):
 		p_val = (t.attrib.get("p") or "").strip()
 		if not p_val:
 			continue
-		head = p_val.split(".", 1)[0]
+		parts = p_val.split(".", 1)
+		head = parts[0]
 		if head == "prooemium":
 			ch_num = 0
 		elif head in ("6a", "6b"):
@@ -82,6 +84,8 @@ def parse_irenaeus_greek_fragments(xml_path: Path) -> Dict[int, List[Dict[str, A
 		else:
 			continue
 
+		sec_num = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 1
+
 		f_el = t.find("f")
 		surface = (f_el.text or "").strip() if f_el is not None else ""
 		if not surface:
@@ -92,13 +96,43 @@ def parse_irenaeus_greek_fragments(xml_path: Path) -> Dict[int, List[Dict[str, A
 		l1 = (l1_el.text or "").strip() if l1_el is not None and l1_el.text else ""
 		l2 = (l2_el.text or "").strip() if l2_el is not None and l2_el.text else ""
 
-		chapters[ch_num].append({
+		chapters[ch_num][sec_num].append({
 			"w": surface,
 			"o": (t.attrib.get("o") or "").strip(),
 			"l1": l1,
 			"l2": l2,
 		})
 	return chapters
+
+
+def _split_numbered_subsections(paras: List[str]) -> Dict[int, List[str]]:
+	"""Splits chapter paragraphs on leading 'N. ' subsection markers, keeping any leading heading with section 1."""
+	sections: Dict[int, List[str]] = defaultdict(list)
+	current_sec = 1
+	pending_heading: List[str] = []
+	seen_numbered = False
+
+	for p in paras:
+		p = p.strip()
+		if not p:
+			continue
+		m = re.match(r"^(\d+)\.\s+", p)
+		if m:
+			num = int(m.group(1))
+			if 1 <= num <= 100:
+				current_sec = num
+				seen_numbered = True
+				if pending_heading:
+					sections[current_sec].extend(pending_heading)
+					pending_heading.clear()
+		if not seen_numbered:
+			pending_heading.append(p)
+		else:
+			sections[current_sec].append(p)
+
+	if pending_heading:
+		sections[1].extend(pending_heading)
+	return dict(sections)
 
 
 def build_irenaeus_raw_db(lemmatizer_scheme: str = "celano") -> Path:
@@ -125,6 +159,7 @@ def build_irenaeus_raw_db(lemmatizer_scheme: str = "celano") -> Path:
 		"total_divisions": 5,
 		"min_division": 1,
 		"division_label": "Book",
+		"hierarchy_levels": ["Book", "Chapter", "Section"],
 	})
 
 	anf_by_book: Dict[int, Dict[int, List[str]]] = {}
@@ -140,74 +175,82 @@ def build_irenaeus_raw_db(lemmatizer_scheme: str = "celano") -> Path:
 		all_chs = sorted(set(epub_ch_map.keys()) | set(anf_ch_map.keys()))
 
 		for ch_num in all_chs:
-			sec_int = ch_num + 1  # 1-based section index per book (1 = Preface, 2 = Ch 1, ...)
 			ch_label = "Pref." if ch_num == 0 else str(ch_num)
-			cit = f"Haer. {book_num}.{ch_label}"
 
-			# 1. Greek fragments (Book 1 where extant)
+			# 1. Greek fragments (Book 1 where extant, split by Harvey section)
 			if book_num == 1 and ch_num in grc_book1:
-				canon_toks = lemmatizer.lemmatize_tokens(grc_book1[ch_num], lang="grc")
-				grc_text = join_tokens(canon_toks)
-				if grc_text:
+				for subsec_num, raw_toks in sorted(grc_book1[ch_num].items()):
+					canon_toks = lemmatizer.lemmatize_tokens(raw_toks, lang="grc")
+					grc_text = join_tokens(canon_toks)
+					if grc_text:
+						cit = f"Haer. {book_num}.{ch_label}.{subsec_num}"
+						writer.insert_text_unit(
+							"irenaeus_celano_grc",
+							"AH",
+							book_num,
+							ch_num,
+							subsec_num,
+							cit,
+							grc_text,
+							tokens=canon_toks,
+							section_label=f"{ch_label}.{subsec_num}",
+						)
+						total_units += 1
+
+			# 2. Sabbatismus Latin & English (split by numbered subsections)
+			pairs = epub_ch_map.get(ch_num, [])
+			lat_secs = _split_numbered_subsections([la for la, _ in pairs if la])
+			sab_secs = _split_numbered_subsections([tr for _, tr in pairs if tr])
+
+			for subsec_num, paras in sorted(lat_secs.items()):
+				lat_text = "\n\n".join(paras)
+				if lat_text:
+					cit = f"Haer. {book_num}.{ch_label}.{subsec_num}"
 					writer.insert_text_unit(
-						"irenaeus_celano_grc",
+						"irenaeus_pg_lat",
 						"AH",
 						book_num,
-						0,
-						sec_int,
+						ch_num,
+						subsec_num,
 						cit,
-						grc_text,
-						tokens=canon_toks,
-						section_label=ch_label,
+						lat_text,
+						section_label=f"{ch_label}.{subsec_num}",
 					)
 					total_units += 1
 
-			# 2. Sabbatismus Latin & English
-			pairs = epub_ch_map.get(ch_num, [])
-			lat_text = "\n\n".join(la for la, _ in pairs if la)
-			sab_eng_text = "\n\n".join(tr for _, tr in pairs if tr)
+			for subsec_num, paras in sorted(sab_secs.items()):
+				sab_eng_text = "\n\n".join(paras)
+				if sab_eng_text:
+					cit = f"Haer. {book_num}.{ch_label}.{subsec_num}"
+					writer.insert_text_unit(
+						"irenaeus_sab_eng",
+						"AH",
+						book_num,
+						ch_num,
+						subsec_num,
+						cit,
+						sab_eng_text,
+						section_label=f"{ch_label}.{subsec_num}",
+					)
+					total_units += 1
 
-			if lat_text:
-				writer.insert_text_unit(
-					"irenaeus_pg_lat",
-					"AH",
-					book_num,
-					0,
-					sec_int,
-					cit,
-					lat_text,
-					section_label=ch_label,
-				)
-				total_units += 1
-
-			if sab_eng_text:
-				writer.insert_text_unit(
-					"irenaeus_sab_eng",
-					"AH",
-					book_num,
-					0,
-					sec_int,
-					cit,
-					sab_eng_text,
-					section_label=ch_label,
-				)
-				total_units += 1
-
-			# 3. ANF Vol. 1 English
-			anf_paras = anf_ch_map.get(ch_num, [])
-			anf_text = "\n\n".join(anf_paras)
-			if anf_text:
-				writer.insert_text_unit(
-					"irenaeus_anf_eng",
-					"AH",
-					book_num,
-					0,
-					sec_int,
-					cit,
-					anf_text,
-					section_label=ch_label,
-				)
-				total_units += 1
+			# 3. ANF Vol. 1 English (split by numbered subsections)
+			anf_secs = _split_numbered_subsections(anf_ch_map.get(ch_num, []))
+			for subsec_num, paras in sorted(anf_secs.items()):
+				anf_text = "\n\n".join(paras)
+				if anf_text:
+					cit = f"Haer. {book_num}.{ch_label}.{subsec_num}"
+					writer.insert_text_unit(
+						"irenaeus_anf_eng",
+						"AH",
+						book_num,
+						ch_num,
+						subsec_num,
+						cit,
+						anf_text,
+						section_label=f"{ch_label}.{subsec_num}",
+					)
+					total_units += 1
 
 	print(f"  ✓ Ingested AH (5 books, {total_units} text units across 4 witnesses)")
 	return writer.finalize(stats_corpus_id="irenaeus_celano_grc")

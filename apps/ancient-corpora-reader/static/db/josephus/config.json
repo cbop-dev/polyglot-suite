@@ -4,7 +4,7 @@
   "requestChunkSize": 16384,
   "urlPrefix": "josephus.db.",
   "serverChunkSize": 5242880,
-  "databaseLengthBytes": 212647936,
+  "databaseLengthBytes": 211746816,
   "suffixLength": 2,
-  "cacheBust": "v1795750172"
+  "cacheBust": "v1795755167"
 }

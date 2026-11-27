@@ -39,6 +39,7 @@ export interface WorkPickerItem {
 	totalChapters?: number;
 	totalSections?: number;
 	totalBooks?: number;
+	divisionLabel?: string;
 	tlgId?: string;
 	badge?: string;
 	[key: string]: any;

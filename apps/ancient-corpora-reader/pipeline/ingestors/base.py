@@ -80,8 +80,7 @@ class RawCorpusWriter:
 			total_divisions INTEGER NOT NULL,
 			min_division INTEGER DEFAULT 1,
 			division_label TEXT NOT NULL,
-			hierarchy_levels TEXT NOT NULL DEFAULT '["Chapter","Section"]',
-			pagination_level INTEGER NOT NULL DEFAULT 0
+			hierarchy_levels TEXT NOT NULL DEFAULT '["Chapter","Section"]'
 		);
 		CREATE TABLE text_units (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,7 +91,6 @@ class RawCorpusWriter:
 			chapter INTEGER NOT NULL DEFAULT 0,
 			section INTEGER NOT NULL,
 			coord_path TEXT NOT NULL DEFAULT '',
-			page_path TEXT NOT NULL DEFAULT '',
 			sort_key TEXT NOT NULL DEFAULT '',
 			section_label TEXT,
 			display_citation TEXT NOT NULL,
@@ -174,8 +172,7 @@ class RawCorpusWriter:
 		div_label = spec.get("division_label", "Chapter")
 		default_levels = ["Book", "Section"] if div_label == "Book" else [div_label, "Section"]
 		hierarchy_levels = spec.get("hierarchy_levels", default_levels)
-		pagination_level = spec.get("pagination_level", 0)
-		self._work_hierarchy[spec["code"]] = (hierarchy_levels, pagination_level)
+		self._work_hierarchy[spec["code"]] = hierarchy_levels
 
 		self.cur.execute(
 			"""
@@ -183,8 +180,8 @@ class RawCorpusWriter:
 				code, slug, order_index, category, abbrev, tlg_id,
 				title_english, title_primary, title_secondary,
 				total_divisions, min_division, division_label,
-				hierarchy_levels, pagination_level
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				hierarchy_levels
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			""",
 			(
 				spec["code"],
@@ -200,7 +197,6 @@ class RawCorpusWriter:
 				spec.get("min_division", 1),
 				div_label,
 				json.dumps(hierarchy_levels, ensure_ascii=False),
-				pagination_level,
 			),
 		)
 
@@ -220,7 +216,7 @@ class RawCorpusWriter:
 	) -> Optional[int]:
 		if not text_content:
 			return None
-		levels, pag_level = self._work_hierarchy.get(work_code, (["Chapter", "Section"], 0))
+		levels = self._work_hierarchy.get(work_code, ["Chapter", "Section"])
 		if coord_path is None:
 			if len(levels) >= 3:
 				parts = [book, chapter, section]
@@ -230,17 +226,15 @@ class RawCorpusWriter:
 		else:
 			parts = [int(p) if p.isdigit() else p for p in coord_path.split(".")]
 
-		page_parts = parts[: pag_level + 1]
-		page_path = ".".join(str(p) for p in page_parts)
 		sort_key = ".".join(f"{p:05d}" if isinstance(p, int) else str(p).zfill(5) for p in parts)
 
 		self.cur.execute(
 			"""
 			INSERT INTO text_units (
 				version_id, corpus_id, work_code, book, chapter, section,
-				coord_path, page_path, sort_key,
+				coord_path, sort_key,
 				section_label, display_citation, milestone_ref, text_content
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			""",
 			(
 				version_id,
@@ -250,7 +244,6 @@ class RawCorpusWriter:
 				chapter,
 				section,
 				coord_path,
-				page_path,
 				sort_key,
 				section_label if section_label is not None else str(section),
 				display_citation,

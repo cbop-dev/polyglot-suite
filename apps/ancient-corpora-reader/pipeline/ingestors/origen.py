@@ -76,7 +76,6 @@ WORKS_SPEC = [
 		"min_division": 1,
 		"division_label": "Book",
 		"hierarchy_levels": ["Book", "Chapter", "Section"],
-		"pagination_level": 1,
 	},
 	{
 		"code": "CELS",
@@ -532,7 +531,20 @@ def build_origen_raw_db(lemmatizer_scheme: str = "celano") -> Path:
 			eng_list = jo_anf.get("xv.iii.iii", {}).get("direct", [])
 
 		if eng_list:
-			_, pairs = ExactMatchHybridAligner.align_chapter(jo_grc[book_num], eng_list)
+			exact, pairs = ExactMatchHybridAligner.align_chapter(jo_grc[book_num], eng_list)
+			if not exact and len(eng_list) > 1 and len(jo_grc[book_num]) > len(eng_list):
+				# Proportional bucket alignment so Books 1, 2, 5, 6, 10 stay split into ANF chapters
+				grc_keys = sorted(jo_grc[book_num].keys())
+				n_g = len(grc_keys)
+				n_e = len(eng_list)
+				pairs = []
+				for idx, eng_text in enumerate(eng_list):
+					start = (idx * n_g) // n_e
+					end = ((idx + 1) * n_g) // n_e
+					bucket_toks: List[Dict[str, Any]] = []
+					for k in grc_keys[start:end]:
+						bucket_toks.extend(jo_grc[book_num][k])
+					pairs.append((idx + 1, bucket_toks, eng_text))
 			for sec_num, raw_toks, eng_text in pairs:
 				cit = f"Comm. Jo. {book_num}.{sec_num}"
 				canon_toks = lemmatizer.lemmatize_tokens(raw_toks, lang="grc")

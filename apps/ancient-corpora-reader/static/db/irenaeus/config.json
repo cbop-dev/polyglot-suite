@@ -4,7 +4,7 @@
   "requestChunkSize": 16384,
   "urlPrefix": "irenaeus.db.",
   "serverChunkSize": 5242880,
-  "databaseLengthBytes": 25231360,
+  "databaseLengthBytes": 26492928,
   "suffixLength": 2,
-  "cacheBust": "v1795750174"
+  "cacheBust": "v1795755168"
 }

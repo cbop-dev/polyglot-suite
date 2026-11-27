@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { LexemeSidePanel } from '@polyglot/lemma-ui';
 	import { readerState } from '../stores/readerState.svelte.js';
+	import { findWork } from '../config/corpora.data.js';
 	import { highlightStore } from '../stores/highlightStore.svelte.js';
 	import { getCorpusPrimaryLanguage } from '@polyglot/ancient-languages';
 	import {
@@ -19,11 +20,17 @@
 	let corpusTitle = $derived(readerState.currentCorpusConfig?.name || 'Corpus');
 
 	function handleNavigateToRef(ref: any) {
-		const targetDiv =
-			ref.page_path ||
-			(ref.book && ref.chapter && ref.book !== ref.chapter
-				? `${ref.book}.${ref.chapter}`
-				: (ref.book ?? ref.chapter ?? 1));
+		const work = findWork(readerState.currentCorpus, ref.work_code);
+		const pagLevel = work?.paginationLevel ?? 0;
+		let targetDiv: string | number = ref.book ?? ref.chapter ?? 1;
+		if (ref.coord_path) {
+			targetDiv = String(ref.coord_path)
+				.split('.')
+				.slice(0, pagLevel + 1)
+				.join('.');
+		} else if (ref.book && ref.chapter && ref.book !== ref.chapter) {
+			targetDiv = pagLevel >= 1 ? `${ref.book}.${ref.chapter}` : ref.book;
+		}
 		const targetSec = ref.section ?? ref.section_num ?? ref.niese_section ?? null;
 		readerState.setWork(ref.work_code, targetDiv, targetSec);
 	}

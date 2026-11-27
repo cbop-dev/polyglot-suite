@@ -13,7 +13,8 @@
 			titleLatin: w.titleLatin,
 			abbrev: w.abbrev,
 			category: w.category || 'general',
-			totalBooks: w.totalDivisions
+			totalBooks: w.totalDivisions,
+			divisionLabel: w.hierarchyLevels?.[0] || w.divisionLabel
 		}))
 	);
 

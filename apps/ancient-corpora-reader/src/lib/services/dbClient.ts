@@ -195,17 +195,22 @@ export async function fetchDivisionSections(
 	const english: TextUnit[] = [];
 	const latin: TextUnit[] = [];
 
-	// Primary query: Direct indexed seek on idx_text_units_page (work_code, page_path, sort_key, version_id)
+	// Primary query: Direct indexed B-tree range scan on idx_text_units_sort (work_code, sort_key, version_id)
 	// Fast first paint: only query text_units (no heavy tokens_json join)
+	const sortPrefix = pagePath
+		.split('.')
+		.map((p) => (/^\d+$/.test(p) ? p.padStart(5, '0') : p.padStart(5, '0')))
+		.join('.');
 	const sqlExact = `
 		SELECT u.id, u.version_id, u.corpus_id, u.work_code, u.book, u.chapter, u.section,
 		       u.section_label, u.section_num, u.niese_section, u.mangey_ref, u.is_supplement,
-		       u.display_citation, u.milestone_ref, u.text_content, u.coord_path, u.page_path
+		       u.display_citation, u.milestone_ref, u.text_content, u.coord_path
 		FROM text_units u
-		WHERE u.work_code = ? AND u.page_path = ?
+		WHERE u.work_code = ?
+		  AND (u.sort_key = ? OR (u.sort_key >= ? AND u.sort_key < ?))
 		ORDER BY u.sort_key ASC, u.id ASC
 	`;
-	const rows = await worker.db.query(sqlExact, [workCode, pagePath]);
+	const rows = await worker.db.query(sqlExact, [workCode, sortPrefix, `${sortPrefix}.`, `${sortPrefix}/`]);
 
 	const unitsByVersion = new Map<string, TextUnit[]>();
 
@@ -228,7 +233,7 @@ export async function fetchDivisionSections(
 			milestone_ref: getRowVal<string | undefined>(row, 'milestone_ref', 13),
 			text_content: getRowVal<string>(row, 'text_content', 14),
 			coord_path: getRowVal<string | undefined>(row, 'coord_path', 15),
-			page_path: getRowVal<string | undefined>(row, 'page_path', 16)
+			page_path: pagePath
 		};
 
 		if (!unitsByVersion.has(versionId)) {
@@ -580,7 +585,7 @@ export async function fetchConcordancePage(
 			SELECT 
 				display_citation, work_unit_id, work_code, 
 				book, chapter, section, niese_section, 
-				matched_form, kwic_snippet, page_path, coord_path
+				matched_form, kwic_snippet, coord_path
 			FROM concordance_refs
 			WHERE corpus_id = ? AND lemma = ? AND matched_form IN (${placeholders})
 			ORDER BY work_unit_id ASC
@@ -592,7 +597,7 @@ export async function fetchConcordancePage(
 			SELECT 
 				display_citation, work_unit_id, work_code, 
 				book, chapter, section, niese_section, 
-				matched_form, kwic_snippet, page_path, coord_path
+				matched_form, kwic_snippet, coord_path
 			FROM concordance_refs
 			WHERE corpus_id = ? AND lemma = ?
 			ORDER BY work_unit_id ASC
@@ -615,8 +620,7 @@ export async function fetchConcordancePage(
 			section_num: sec,
 			niese_section: getRowVal<string | undefined>(r, 'niese_section', 6),
 			text_content: getRowVal<string>(r, 'kwic_snippet', 8),
-			page_path: getRowVal<string | undefined>(r, 'page_path', 9),
-			coord_path: getRowVal<string | undefined>(r, 'coord_path', 10),
+			coord_path: getRowVal<string | undefined>(r, 'coord_path', 9),
 			matched_word: matchedWord,
 			matched_words: [matchedWord]
 		};
