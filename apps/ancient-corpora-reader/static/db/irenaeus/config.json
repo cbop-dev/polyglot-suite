@@ -1,5 +1,5 @@
 {
-  "databaseVersion": "corpora-irenaeus-db-v0.1.0",
+  "databaseVersion": "corpora-irenaeus-db-v0.1.1",
   "serverMode": "chunked",
   "requestChunkSize": 16384,
   "urlPrefix": "irenaeus.db.",
