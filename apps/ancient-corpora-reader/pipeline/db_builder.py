@@ -514,6 +514,12 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 	""")
 
 	def _infer_work_hierarchy(work_code: str, div_label: str) -> List[str]:
+		max_sec_row = src_cur.execute(
+			"SELECT MAX(section) FROM text_units WHERE work_code = ?",
+			(work_code,),
+		).fetchone()
+		has_sub_sections = (max_sec_row[0] or 0) > 1 if corpus_type not in ("josephus", "philo", "af") else True
+
 		if corpus_type not in ("josephus", "philo", "af"):
 			# Check if work has distinct chapter values within books (e.g. STROM, PAED, PRIN, AH)
 			src_cur.execute(
@@ -521,12 +527,12 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 				(work_code,),
 			)
 			if src_cur.fetchone() is not None:
-				return ["Book", "Chapter", "Section"]
+				return ["Book", "Chapter", "Section"] if has_sub_sections else ["Book", "Chapter"]
 		if div_label == "Book":
 			return ["Book", "Section"]
 		if div_label == "Section":
 			return ["Section"]
-		return [div_label, "Section"]
+		return [div_label, "Section"] if has_sub_sections else [div_label]
 
 	work_hierarchy_map: Dict[str, List[str]] = {}
 
@@ -559,6 +565,13 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 				div_lbl = "Section"
 			if has_hier and r[12] and div_lbl != "Section":
 				levels = json.loads(r[12])
+				if len(levels) >= 2 and levels[-1] == "Section":
+					max_sec_row = src_cur.execute(
+						"SELECT MAX(section) FROM text_units WHERE work_code = ?",
+						(w_code,),
+					).fetchone()
+					if (max_sec_row[0] or 0) <= 1:
+						levels = levels[:-1]
 			else:
 				levels = _infer_work_hierarchy(w_code, div_lbl)
 			work_hierarchy_map[w_code] = levels
@@ -651,11 +664,13 @@ def build_optimized_corpus_db(corpus_type: str, src_path: Path, tgt_path: Path):
 	) -> tuple[str, str]:
 		levels = work_hierarchy_map.get(work_code, ["Chapter", "Section"])
 		if explicit_coord:
-			parts = [int(p) if p.isdigit() else p for p in explicit_coord.split(".")]
-			c_path = explicit_coord
+			parts = [int(p) if p.isdigit() else p for p in explicit_coord.split(".")][: len(levels)]
+			c_path = ".".join(str(p) for p in parts)
 		else:
 			if len(levels) >= 3:
 				parts = [book, chapter, section]
+			elif len(levels) == 2:
+				parts = [book, chapter] if levels == ["Book", "Chapter"] else [book, section]
 			elif len(levels) == 1:
 				val = section if corpus_type in ("philo", "josephus") else (book if book > 0 else section)
 				parts = [val]

@@ -22,6 +22,7 @@ export interface CorpusWork {
 	minDivision: number;
 	divisionLabel: 'Book' | 'Chapter' | 'Section';
 	hierarchyLevels: string[];
+	countsByLevel?: number[];
 	paginationLevel: number;
 	pages: string[];
 	unitsByPage?: Record<string, number>;
@@ -47,6 +48,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Chapter",
         "Section"
+      ],
+      "countsByLevel": [
+        66,
+        400
       ],
       "paginationLevel": 0,
       "pages": [
@@ -274,6 +279,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
         "Chapter",
         "Section"
       ],
+      "countsByLevel": [
+        20,
+        118
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -361,6 +370,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Chapter",
         "Section"
+      ],
+      "countsByLevel": [
+        22,
+        48
       ],
       "paginationLevel": 0,
       "pages": [
@@ -456,6 +469,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
         "Chapter",
         "Section"
       ],
+      "countsByLevel": [
+        16,
+        26
+      ],
       "paginationLevel": 0,
       "pages": [
         "0",
@@ -532,6 +549,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
         "Chapter",
         "Section"
       ],
+      "countsByLevel": [
+        14,
+        30
+      ],
       "paginationLevel": 0,
       "pages": [
         "0",
@@ -602,6 +623,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
         "Chapter",
         "Section"
       ],
+      "countsByLevel": [
+        11,
+        29
+      ],
       "paginationLevel": 0,
       "pages": [
         "0",
@@ -662,6 +687,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Chapter",
         "Section"
+      ],
+      "countsByLevel": [
+        12,
+        24
       ],
       "paginationLevel": 0,
       "pages": [
@@ -726,6 +755,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Chapter",
         "Section"
+      ],
+      "countsByLevel": [
+        14,
+        29
       ],
       "paginationLevel": 0,
       "pages": [
@@ -797,6 +830,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
         "Chapter",
         "Section"
       ],
+      "countsByLevel": [
+        9,
+        22
+      ],
       "paginationLevel": 0,
       "pages": [
         "0",
@@ -851,6 +888,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Chapter",
         "Section"
+      ],
+      "countsByLevel": [
+        15,
+        38
       ],
       "paginationLevel": 0,
       "pages": [
@@ -924,6 +965,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Chapter",
         "Section"
+      ],
+      "countsByLevel": [
+        17,
+        101
       ],
       "paginationLevel": 0,
       "pages": [
@@ -1003,6 +1048,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Chapter",
         "Section"
+      ],
+      "countsByLevel": [
+        21,
+        194
       ],
       "paginationLevel": 0,
       "pages": [
@@ -1094,6 +1143,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Chapter",
         "Section"
+      ],
+      "countsByLevel": [
+        27,
+        754
       ],
       "paginationLevel": 1,
       "pages": [
@@ -2658,6 +2711,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
         "Chapter",
         "Section"
       ],
+      "countsByLevel": [
+        23,
+        59
+      ],
       "paginationLevel": 0,
       "pages": [
         "0",
@@ -2755,6 +2812,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
         "Chapter",
         "Section"
       ],
+      "countsByLevel": [
+        12,
+        100
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -2819,6 +2880,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        172
       ],
       "paginationLevel": 0,
       "pages": [
@@ -3192,6 +3256,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Book",
         "Section"
+      ],
+      "countsByLevel": [
+        3,
+        469
       ],
       "paginationLevel": 1,
       "pages": [
@@ -4161,6 +4229,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        130
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -4448,6 +4519,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        139
       ],
       "paginationLevel": 0,
       "pages": [
@@ -4754,6 +4828,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        178
       ],
       "paginationLevel": 0,
       "pages": [
@@ -5138,6 +5215,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        185
       ],
       "paginationLevel": 0,
       "pages": [
@@ -5537,6 +5617,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        67
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -5698,6 +5781,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        183
       ],
       "paginationLevel": 0,
       "pages": [
@@ -6093,6 +6179,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        181
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -6483,6 +6572,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        177
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -6864,6 +6956,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        224
       ],
       "paginationLevel": 0,
       "pages": [
@@ -7341,6 +7436,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        69
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -7506,6 +7604,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        198
       ],
       "paginationLevel": 0,
       "pages": [
@@ -7930,6 +8031,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        225
       ],
       "paginationLevel": 0,
       "pages": [
@@ -8408,6 +8512,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        316
       ],
       "paginationLevel": 0,
       "pages": [
@@ -9069,6 +9176,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        180
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -9456,6 +9566,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        213
       ],
       "paginationLevel": 0,
       "pages": [
@@ -9910,6 +10023,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        270
       ],
       "paginationLevel": 0,
       "pages": [
@@ -10479,6 +10595,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Book",
         "Section"
+      ],
+      "countsByLevel": [
+        2,
+        558
       ],
       "paginationLevel": 1,
       "pages": [
@@ -11625,6 +11745,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        276
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -12205,6 +12328,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        270
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -12773,6 +12899,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Book",
         "Section"
+      ],
+      "countsByLevel": [
+        2,
+        626
       ],
       "paginationLevel": 1,
       "pages": [
@@ -14055,6 +14185,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        178
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -14439,6 +14572,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Book",
         "Section"
+      ],
+      "countsByLevel": [
+        4,
+        1054
       ],
       "paginationLevel": 1,
       "pages": [
@@ -16579,6 +16716,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        227
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -17061,6 +17201,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        172
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -17433,6 +17576,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        160
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -17781,6 +17927,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        90
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -17988,6 +18137,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        150
       ],
       "paginationLevel": 0,
       "pages": [
@@ -18316,6 +18468,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        191
       ],
       "paginationLevel": 0,
       "pages": [
@@ -18726,6 +18881,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        373
       ],
       "paginationLevel": 0,
       "pages": [
@@ -19503,6 +19661,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Book",
         "Section"
+      ],
+      "countsByLevel": [
+        20,
+        1444
       ],
       "paginationLevel": 1,
       "pages": [
@@ -22440,6 +22602,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
         "Book",
         "Section"
       ],
+      "countsByLevel": [
+        7,
+        707
+      ],
       "paginationLevel": 1,
       "pages": [
         "1.1",
@@ -23888,6 +24054,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        76
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -24068,6 +24237,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Book",
         "Section"
+      ],
+      "countsByLevel": [
+        2,
+        77
       ],
       "paginationLevel": 1,
       "pages": [
@@ -24252,8 +24425,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "minDivision": 1,
       "divisionLabel": "Chapter",
       "hierarchyLevels": [
-        "Chapter",
-        "Section"
+        "Chapter"
+      ],
+      "countsByLevel": [
+        68
       ],
       "paginationLevel": 0,
       "pages": [
@@ -24484,8 +24659,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "minDivision": 1,
       "divisionLabel": "Chapter",
       "hierarchyLevels": [
-        "Chapter",
-        "Section"
+        "Chapter"
+      ],
+      "countsByLevel": [
+        15
       ],
       "paginationLevel": 0,
       "pages": [
@@ -24559,6 +24736,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Chapter",
         "Section"
+      ],
+      "countsByLevel": [
+        142,
+        147
       ],
       "paginationLevel": 0,
       "pages": [
@@ -25016,6 +25197,11 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
         "Book",
         "Chapter",
         "Section"
+      ],
+      "countsByLevel": [
+        5,
+        173,
+        782
       ],
       "paginationLevel": 2,
       "pages": [
@@ -26613,8 +26799,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "minDivision": 1,
       "divisionLabel": "Chapter",
       "hierarchyLevels": [
-        "Chapter",
-        "Section"
+        "Chapter"
+      ],
+      "countsByLevel": [
+        12
       ],
       "paginationLevel": 0,
       "pages": [
@@ -26678,8 +26866,11 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Book",
       "hierarchyLevels": [
         "Book",
-        "Chapter",
-        "Section"
+        "Chapter"
+      ],
+      "countsByLevel": [
+        3,
+        38
       ],
       "paginationLevel": 1,
       "pages": [
@@ -26786,8 +26977,11 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Book",
       "hierarchyLevels": [
         "Book",
-        "Chapter",
-        "Section"
+        "Chapter"
+      ],
+      "countsByLevel": [
+        8,
+        155
       ],
       "paginationLevel": 1,
       "pages": [
@@ -27132,8 +27326,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "minDivision": 1,
       "divisionLabel": "Chapter",
       "hierarchyLevels": [
-        "Chapter",
-        "Section"
+        "Chapter"
+      ],
+      "countsByLevel": [
+        42
       ],
       "paginationLevel": 0,
       "pages": [
@@ -27288,6 +27484,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        6
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -27332,6 +27531,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        86
       ],
       "paginationLevel": 0,
       "pages": [
@@ -27618,6 +27820,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Section"
       ],
+      "countsByLevel": [
+        65
+      ],
       "paginationLevel": 0,
       "pages": [
         "1",
@@ -27843,6 +28048,11 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
         "Book",
         "Chapter",
         "Section"
+      ],
+      "countsByLevel": [
+        4,
+        31,
+        209
       ],
       "paginationLevel": 2,
       "pages": [
@@ -28293,6 +28503,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Book",
         "Section"
+      ],
+      "countsByLevel": [
+        9,
+        630
       ],
       "paginationLevel": 1,
       "pages": [
@@ -29590,6 +29804,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Book",
         "Section"
+      ],
+      "countsByLevel": [
+        11,
+        1832
       ],
       "paginationLevel": 1,
       "pages": [
@@ -33294,6 +33512,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
         "Book",
         "Section"
       ],
+      "countsByLevel": [
+        8,
+        245
+      ],
       "paginationLevel": 1,
       "pages": [
         "10.1",
@@ -33817,8 +34039,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "minDivision": 1,
       "divisionLabel": "Chapter",
       "hierarchyLevels": [
-        "Chapter",
-        "Section"
+        "Chapter"
+      ],
+      "countsByLevel": [
+        34
       ],
       "paginationLevel": 0,
       "pages": [
@@ -33949,6 +34173,10 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "hierarchyLevels": [
         "Chapter",
         "Section"
+      ],
+      "countsByLevel": [
+        27,
+        243
       ],
       "paginationLevel": 1,
       "pages": [
@@ -34489,6 +34717,9 @@ export const CANONICAL_CORPUS_WORKS: Record<AncientCorpusId, CorpusWork[]> = {
       "divisionLabel": "Section",
       "hierarchyLevels": [
         "Section"
+      ],
+      "countsByLevel": [
+        1
       ],
       "paginationLevel": 0,
       "pages": [

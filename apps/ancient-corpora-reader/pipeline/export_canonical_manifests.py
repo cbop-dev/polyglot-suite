@@ -163,13 +163,17 @@ def export_canonical_manifests():
 			)
 			pages: List[str] = []
 			units_by_page: Dict[str, int] = {}
+			level_sets: List[set] = [set() for _ in hierarchy_levels]
 			for (c_path,) in cur.fetchall():
 				parts = c_path.split(".")
+				for lvl_idx in range(min(len(parts), len(level_sets))):
+					level_sets[lvl_idx].add(tuple(parts[: lvl_idx + 1]))
 				p_path = ".".join(parts[: pagination_level + 1])
 				if p_path not in units_by_page:
 					pages.append(p_path)
 					units_by_page[p_path] = 0
 				units_by_page[p_path] += 1
+			counts_by_level = [len(s) for s in level_sets]
 
 			# Determine sectionsByDivision (backward compatibility)
 			sections_by_div = None
@@ -206,6 +210,7 @@ def export_canonical_manifests():
 				"minDivision": min_div,
 				"divisionLabel": div_label,
 				"hierarchyLevels": hierarchy_levels,
+				"countsByLevel": counts_by_level,
 				"paginationLevel": pagination_level,
 				"pages": pages,
 				"unitsByPage": units_by_page,
@@ -264,6 +269,7 @@ export interface CorpusWork {{
 	minDivision: number;
 	divisionLabel: 'Book' | 'Chapter' | 'Section';
 	hierarchyLevels: string[];
+	countsByLevel?: number[];
 	paginationLevel: number;
 	pages: string[];
 	unitsByPage?: Record<string, number>;
