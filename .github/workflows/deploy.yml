@@ -3,7 +3,7 @@ name: Deploy Polyglot Suite to GitHub Pages
 on:
   push:
     branches:
-      - main
+      - gh-publish
   workflow_dispatch:
 
 permissions:
