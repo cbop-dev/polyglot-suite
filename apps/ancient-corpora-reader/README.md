@@ -13,13 +13,15 @@ The **Ancient Corpora Reader** unifies major historical corpora into a single in
 3. **Flavius Josephus** (*The Jewish War, Antiquities of the Jews, Life, and Against Apion*)
 4. **Justin Martyr** (*First Apology, Second Apology, and Dialogue with Trypho*)
 5. **Irenaeus of Lyons** (*Against Heresies, Books 1–5*)
+6. **Clement of Alexandria** (*Protrepticus, Paedagogus, Stromata, Quis dives salvetur, Excerpta ex Theodoto, Eclogae Propheticae*)
+7. **Origen of Alexandria** (*De Principiis, Contra Celsum, Exhortatio ad Martyrium, De Oratione, Commentaries, Homilies*)
 
 ---
 
 ## Key Features
 
 - **Unified Multi-Corpus Reader**:
-  - Switch between Apostolic Fathers, Philo, and Josephus from the top header or keyboard command palette.
+  - Switch between Apostolic Fathers, Philo, Josephus, Justin Martyr, Irenaeus, Clement, and Origen from the top header or keyboard command palette.
   - Deep-linkable routing: `/[corpus]/[work]/[division]` (e.g., `/af/1-clem/1`, `/philo/opif/1`, `/josephus/ant/1.1`).
 - **Parallel Multilingual Columns**:
   - Synchronized Greek source text with English translation.
@@ -40,7 +42,7 @@ The **Ancient Corpora Reader** unifies major historical corpora into a single in
 - **Zero-Backend Client Architecture**:
   - Powered by `@polyglot/db-vfs` (`sql.js-httpvfs`) querying pre-chunked SQLite databases in WebAssembly via HTTP range requests.
   - **Database Design & SSOT**: See [Database Design & Architecture](docs/database-design.md) for complete SQLite schema specifications, covering concordance tables, and manifest generation details.
-  - **Chunking**: Each corpus database (`af`, `philo`, `josephus`, `justin`) is sliced into lightweight 5MB chunks, minimizing data transfer on mobile connections.
+  - **Chunking**: Each corpus database (`af`, `philo`, `josephus`, `justin`, `irenaeus`, `clement`, `origen`) is sliced into 5MB chunks, minimizing data transfer on mobile connections.
 
 ---
 
@@ -53,6 +55,8 @@ The **Ancient Corpora Reader** unifies major historical corpora into a single in
 | **Flavius Josephus** | 4 complete works | Benedikt Niese (*Flavii Iosephi Opera*, 1885–1890) | William Whiston (1737 / 1856) | Niese sections & Whiston mapping |
 | **Justin Martyr** | 3 authentic works | *First1KGreek* (`tlg0645`) / Giuseppe Celano *LemmatizedAncientGreekXML* | Roberts & Donaldson (*Ante-Nicene Fathers* Vol. 1, CCEL) | Pre-lemmatized Greek (`CC BY-NC 4.0`) + Public Domain English |
 | **Irenaeus of Lyons** | *Against Heresies* (5 books) | *First1KGreek* (`tlg1447`) / Celano Greek fragments | Massuet / PG 7 Latin (Public Domain via Sabbatismus); Roberts & Rambaut (*ANF* Vol. 1, Public Domain) & Sabbatismus English (`CC BY-SA 4.0`) | 4 witnesses with per-column version switching |
+| **Clement of Alexandria** | 6 major works | Otto Stählin (GCS, via Celano) & Perseus/Butterworth (Stanza-lemmatized) | *Ante-Nicene Fathers* Vols. 2 & 8; G. W. Butterworth (Loeb 92, 1919); Hervet/Potter Latin (Stromata 3) | Multiple Greek/English witnesses |
+| **Origen of Alexandria** | Treatises, Commentaries & Homilies | *First1KGreek* / Celano Lemmatized & Migne PG 11 Greek fragments | Rufinus & *First1KGreek* Latin; *ANF* Vols. 4 & 9, Curtis/Lewis English | 8 witnesses across Greek, Latin, and English |
 
 ---
 
@@ -60,6 +64,7 @@ The **Ancient Corpora Reader** unifies major historical corpora into a single in
 
 ```
 apps/ancient-corpora-reader/
+├── corpora.manifest.json        # Canonical registry of enabled corpora & pipeline targets
 ├── docs/                        # Architecture specs, performance audits, and optimization plans
 │   └── database-design.md       # Canonical SQLite database schema & SSOT manifest architecture
 ├── pipeline/                    # Offline Python database compilation & chunking pipeline
@@ -78,9 +83,12 @@ apps/ancient-corpora-reader/
 ├── static/
 │   ├── db/                      # HTTP-VFS database chunks (5MB each) and config.json
 │   │   ├── af/                  # Apostolic Fathers database chunks
-│   │   ├── josephus/            # Flavius Josephus database chunks
 │   │   ├── philo/               # Philo of Alexandria database chunks
-│   │   └── justin/              # Justin Martyr database chunks
+│   │   ├── josephus/            # Flavius Josephus database chunks
+│   │   ├── justin/              # Justin Martyr database chunks
+│   │   ├── irenaeus/            # Irenaeus of Lyons database chunks
+│   │   ├── clement/             # Clement of Alexandria database chunks
+│   │   └── origen/              # Origen of Alexandria database chunks
 │   └── sqlite/                  # sql.js WASM binaries and worker scripts
 └── tests/                       # Vitest unit test suites
 ```
@@ -105,7 +113,7 @@ npm run test:corpora
 
 ### 2. Database Management
 
-The pre-computed SQLite databases are hosted on GitHub Releases and tracked locally via `config.json` in `static/db/{af,philo,josephus}/`.
+The pre-computed SQLite databases are hosted on GitHub Releases and tracked locally via `config.json` in `static/db/{af,philo,josephus,justin,irenaeus,clement,origen}/`.
 
 ```bash
 # Check status of local chunks against remote GitHub Releases
@@ -118,19 +126,24 @@ npm run pull:db:corpora
 npm run pull:db:corpora:af
 npm run pull:db:corpora:philo
 npm run pull:db:corpora:josephus
+npm run pull:db:corpora:justin
+npm run pull:db:corpora:irenaeus
+npm run pull:db:corpora:origen
 ```
 
 ### 3. Compiling Databases from Source (`pipeline/`)
 
-To compile the normalized SQLite databases and slice them into 1MB HTTP-VFS chunks from raw upstream files:
+To compile the normalized SQLite databases, slice them into 5MB HTTP-VFS chunks, and regenerate TypeScript manifests:
 
 ```bash
-# Build and chunk all three corpora
-python3 apps/ancient-corpora-reader/pipeline/build.py --all
+# Build and chunk all corpora (from workspace root)
+npm --prefix apps/ancient-corpora-reader run pipeline:build
 
-# Or build/chunk individually
-python3 apps/ancient-corpora-reader/pipeline/build.py --build af
-python3 apps/ancient-corpora-reader/pipeline/build.py --chunk af
+# Or run directly via python (from apps/ancient-corpora-reader/)
+python3 -m pipeline.build
+
+# Build and chunk a single corpus
+python3 -m pipeline.build --corpus af
 ```
 
 ---

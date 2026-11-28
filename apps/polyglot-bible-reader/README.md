@@ -20,6 +20,7 @@ An interactive web application for side-by-side reading, comparative textual stu
 - **Unabridged Scholarly Lexicons**: Integrated Liddell-Scott-Jones (LSJ) for Greek and Brown-Driver-Briggs (BDB) for Hebrew.
 - **Adaptive Reading Themes**: Continuous, contrast-invariant theme slider with Light, Dark, and Sepia palettes adapted from OpenScriptorium.
 - **Zero-Backend Client Execution**: Powered by WebAssembly SQLite (`sql.js-httpvfs`) querying pre-chunked database files via HTTP range requests. No server-side database daemon required.
+  - **Database Design & Schema**: See [Database Design & Architecture](docs/database-design.md) for the full SQLite schema, TVTMS dual-coordinate layout, and indexing specification.
 
 ---
 
