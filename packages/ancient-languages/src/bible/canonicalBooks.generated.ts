@@ -1400,7 +1400,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       "LXX": "DanTh",
       "KJV": "Dan",
       "WEB": "Dan",
-      "Brenton": "Dan"
+      "Brenton": "DanTh"
     },
     "extraAliases": [
       "DanTh",
@@ -1691,7 +1691,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       "KJV": "Tob",
       "WEB": "Tob",
       "Vulgate": "Tob",
-      "Brenton": "Tob"
+      "Brenton": "TobBA"
     },
     "extraAliases": [
       "TobBA",
@@ -1941,7 +1941,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       "LXX": "SusTh",
       "KJV": "Sus",
       "WEB": "Sus",
-      "Brenton": "Sus"
+      "Brenton": "SusTh"
     },
     "extraAliases": [
       "SusTh",
@@ -1966,7 +1966,7 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       "LXX": "BelTh",
       "KJV": "Bel",
       "WEB": "Bel",
-      "Brenton": "Bel"
+      "Brenton": "BelTh"
     },
     "extraAliases": [
       "Bel and the Dragon (Theodotion)",
@@ -2333,8 +2333,8 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "code": "DAG",
     "slug": "daniel-old-greek",
     "order": 60,
-    "standardAbbrev": "Dan",
-    "title": "Daniel (Old Greek)",
+    "standardAbbrev": "DanOG",
+    "title": "Daniel (OG)",
     "testament": "apocrypha",
     "totalChapters": 12,
     "chapters": [
@@ -2352,8 +2352,8 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
       12
     ],
     "versionBooks": {
-      "LXX": "Dan",
-      "Brenton": "Dan"
+      "LXX": "DanOG",
+      "Brenton": "DanOG"
     },
     "extraAliases": [
       "DanOG",
@@ -2442,16 +2442,16 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "code": "SUG",
     "slug": "susanna-old-greek",
     "order": 61,
-    "standardAbbrev": "Sus",
-    "title": "Susanna (Old Greek)",
+    "standardAbbrev": "SusOG",
+    "title": "Susanna (OG)",
     "testament": "apocrypha",
     "totalChapters": 1,
     "chapters": [
       1
     ],
     "versionBooks": {
-      "LXX": "Sus",
-      "Brenton": "Sus"
+      "LXX": "SusOG",
+      "Brenton": "SusOG"
     },
     "extraAliases": [
       "SusOG",
@@ -2463,16 +2463,16 @@ export const CANONICAL_BOOK_DEFINITIONS: CanonicalBook[] = [
     "code": "BLG",
     "slug": "bel-and-the-dragon-old-greek",
     "order": 62,
-    "standardAbbrev": "Bel",
-    "title": "Bel and the Dragon (Old Greek)",
+    "standardAbbrev": "BelOG",
+    "title": "Bel and the Dragon (OG)",
     "testament": "apocrypha",
     "totalChapters": 1,
     "chapters": [
       1
     ],
     "versionBooks": {
-      "LXX": "Bel",
-      "Brenton": "Bel"
+      "LXX": "BelOG",
+      "Brenton": "BelOG"
     },
     "extraAliases": [
       "Bel and the Dragon (Old Greek)",
@@ -3176,21 +3176,21 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "Hag",
     "Zech",
     "Mal",
-    "Tob",
+    "TobBA",
     "Jdt",
     "AddEsth",
     "Wis",
     "Sir",
     "Bar",
-    "Sus",
-    "Bel",
+    "SusTh",
+    "BelTh",
     "1Mac",
     "2Mac",
     "1Esdr",
     "PrMan",
     "3Mac",
     "4Mac",
-    "Dan"
+    "DanTh"
   ],
   "Douay": [
     "Gen",
@@ -3622,11 +3622,11 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "Lam",
     "EpJer",
     "Ezek",
-    "Dan",
+    "DanOG",
     "DanTh",
-    "Sus",
+    "SusOG",
     "SusTh",
-    "Bel",
+    "BelOG",
     "BelTh",
     "1Mac",
     "2Mac",
@@ -3839,6 +3839,7 @@ export const VERSION_AVAILABLE_BOOKS: Record<string, string[]> = {
     "3Mac",
     "2Esdr",
     "4Mac",
+    "DanOG",
     "Matt",
     "Mark",
     "Luke",
@@ -3963,7 +3964,7 @@ export const VERSION_CANONICAL_CODES: Record<string, string[]> = {
     "MAN",
     "3MA",
     "4MA",
-    "DAG"
+    "DAN"
   ],
   "Douay": [
     "GEN",
@@ -5362,6 +5363,12 @@ export const VERSION_CHAPTER_OVERRIDES: Record<string, Partial<Record<string, nu
   }
 };
 
+export const RECENSION_PAIRS: Record<string, string> = {
+  "DAG": "DAN",
+  "SUG": "SUS",
+  "BLG": "BEL"
+};
+
 /**
  * Normalizes any string to a clean alphanumeric key for fast lookup.
  */
@@ -5435,6 +5442,11 @@ export function normalizeBookName(input?: string | null): CanonicalBook | null {
  */
 export function resolveBookCode(input?: string | null, version?: string): string {
 	if (!input) return '';
+	const trimmed = input.trim();
+	const upper = trimmed.toUpperCase();
+	if (trimmed.length === 3 && trimmed === upper && CODE_TO_CANONICAL.has(upper)) {
+		return upper;
+	}
 	const clean = cleanKey(input);
 
 	// Dual recensions in LXX
@@ -5449,7 +5461,6 @@ export function resolveBookCode(input?: string | null, version?: string): string
 
 	const book = NORM_TO_CANONICAL.get(clean);
 	if (book) return book.code;
-	const upper = input.trim().toUpperCase();
 	if (upper.length === 3) return upper;
 	return '';
 }

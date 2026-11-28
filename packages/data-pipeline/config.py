@@ -218,9 +218,9 @@ CANONICAL_BOOKS = [
     {"code": "PS2", "order": 57, "testament": "AP", "name_en": "Psalm 151", "chapters": 1},
     {"code": "ODA", "order": 58, "testament": "AP", "name_en": "Odes", "chapters": 14},
     {"code": "PSS", "order": 59, "testament": "AP", "name_en": "Psalms of Solomon", "chapters": 18},
-    {"code": "DAG", "order": 60, "testament": "AP", "name_en": "Daniel (Old Greek)", "chapters": 12},
-    {"code": "SUG", "order": 61, "testament": "AP", "name_en": "Susanna (Old Greek)", "chapters": 1},
-    {"code": "BLG", "order": 62, "testament": "AP", "name_en": "Bel and the Dragon (Old Greek)", "chapters": 1},
+    {"code": "DAG", "order": 60, "testament": "AP", "name_en": "Daniel (OG)", "chapters": 12},
+    {"code": "SUG", "order": 61, "testament": "AP", "name_en": "Susanna (OG)", "chapters": 1},
+    {"code": "BLG", "order": 62, "testament": "AP", "name_en": "Bel and the Dragon (OG)", "chapters": 1},
     {"code": "LAO", "order": 63, "testament": "AP", "name_en": "Laodiceans", "chapters": 1},
 
     # New Testament
@@ -469,7 +469,7 @@ VERSION_CANONICAL_ORDERS = {
         "SNG", "ISA", "JER", "LAM", "EZK", "HOS", "JOL", "AMO", "OBA", "JON",
         "MIC", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL",
         "TOB", "JDT", "ESG", "WIS", "SIR", "BAR", "SUS", "BEL",
-        "1MA", "2MA", "1ES", "MAN", "3MA", "4MA", "DAG"
+        "1MA", "2MA", "1ES", "MAN", "3MA", "4MA", "DAN"
     ],
 
     # 9. SBLGNT: Society of Biblical Literature Greek New Testament (MorphGNT)

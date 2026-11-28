@@ -857,9 +857,10 @@ describe('dbClient service', () => {
 			const sugResults = await getChapterVerses('Sus', 1, ['LXX'], false, 'LXX');
 			expect(sugResults).toHaveLength(1);
 			expect(sugResults[0].base_label).toBe('SUG 1:6');
+			expect(sugResults[0].native_citation).toBe('Sus (OG) 1:6');
 			expect(mockQuery).toHaveBeenCalledWith(
-				expect.stringContaining("std_book = 'SUG'"),
-				[1, 'swete_lxx']
+				expect.stringContaining("(std_book = ? OR (std_book = ? AND corpus_id != 'swete_lxx'))"),
+				['SUG', 'SUS', 1, 'swete_lxx']
 			);
 
 			// Theodotion Susanna
@@ -883,9 +884,79 @@ describe('dbClient service', () => {
 			const susThResults = await getChapterVerses('SusTh', 1, ['LXX'], false, 'LXX');
 			expect(susThResults).toHaveLength(1);
 			expect(susThResults[0].base_label).toBe('SUS 1:1');
+			expect(susThResults[0].native_citation).toBe('Sus (Th) 1:1');
 			expect(mockQuery).toHaveBeenCalledWith(
 				expect.stringContaining('WHERE std_book = ? AND std_chapter = ?'),
 				['SUS', 1, 'swete_lxx']
+			);
+		});
+
+		it('aligns Brenton Theodotion Daniel with DAN and DAG parallel queries', async () => {
+			mockQuery.mockResolvedValueOnce([
+				{
+					work_unit_id: 601,
+					corpus_id: 'brenton-lxx',
+					std_book: 'DAN',
+					std_chapter: 1,
+					std_verse: 1,
+					std_subverse: '',
+					native_book: 'DanTh',
+					native_chapter: 1,
+					native_verse: 1,
+					verse_label: 'DanTh 1:1',
+					body: 'In the third year of the reign of Joakim king of Juda...',
+					tokens_json: null
+				}
+			]);
+
+			const danResults = await getChapterVerses('Dan', 1, ['KJV', 'Brenton'], false, 'KJV');
+			expect(danResults).toHaveLength(1);
+			expect(danResults[0].base_label).toBe('DAN 1:1');
+			expect(danResults[0].native_citation).toBe('Dan (Th) 1:1');
+			expect(mockQuery).toHaveBeenCalledWith(
+				expect.stringContaining('WHERE std_book = ? AND std_chapter = ?'),
+				['DAN', 1, 'kjv', 'brenton-lxx']
+			);
+
+			// Old Greek Daniel (LXX primary) also pulls Brenton Theodotion from DAN in parallel
+			mockQuery.mockResolvedValueOnce([
+				{
+					work_unit_id: 602,
+					corpus_id: 'swete_lxx',
+					std_book: 'DAG',
+					std_chapter: 1,
+					std_verse: 1,
+					std_subverse: '',
+					native_book: 'DanOG',
+					native_chapter: 1,
+					native_verse: 1,
+					verse_label: 'DanOG 1:1',
+					body: 'Ἐν ἔτει τρίτῳ βασιλεύοντος Ἰωακιμ',
+					tokens_json: null
+				},
+				{
+					work_unit_id: 601,
+					corpus_id: 'brenton-lxx',
+					std_book: 'DAN',
+					std_chapter: 1,
+					std_verse: 1,
+					std_subverse: '',
+					native_book: 'DanTh',
+					native_chapter: 1,
+					native_verse: 1,
+					verse_label: '1:1',
+					body: 'In the third year of the reign of Joakim king of Juda...',
+					tokens_json: null
+				}
+			]);
+
+			const dagResults = await getChapterVerses('Dan', 1, ['LXX', 'Brenton'], false, 'LXX');
+			expect(dagResults).toHaveLength(2);
+			expect(dagResults[0].native_citation).toBe('Dan (OG) 1:1');
+			expect(dagResults[1].native_citation).toBe('Dan (Th) 1:1');
+			expect(mockQuery).toHaveBeenCalledWith(
+				expect.stringContaining("(std_book = ? OR (std_book = ? AND corpus_id != 'swete_lxx'))"),
+				['DAG', 'DAN', 1, 'swete_lxx', 'brenton-lxx']
 			);
 		});
 

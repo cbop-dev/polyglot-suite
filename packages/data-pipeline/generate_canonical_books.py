@@ -46,7 +46,7 @@ STANDARD_ABBREVS = {
     "SUS": "Sus", "BEL": "Bel", "1MA": "1Mac", "2MA": "2Mac",
     "3MA": "3Mac", "4MA": "4Mac", "1ES": "1Esdr", "2ES": "2Esdr",
     "MAN": "PrMan", "PS2": "Ps151", "ODA": "Od", "PSS": "PsSol",
-    "DAG": "Dan", "SUG": "Sus", "BLG": "Bel", "LAO": "Lao",
+    "DAG": "DanOG", "SUG": "SusOG", "BLG": "BelOG", "LAO": "Lao",
     # NT
     "MAT": "Matt", "MRK": "Mark", "LUK": "Luke", "JHN": "John",
     "ACT": "Acts", "ROM": "Rom", "1CO": "1_Cor", "2CO": "2_Cor",
@@ -66,28 +66,28 @@ VERSION_BOOKS = {
         "BHS": "Cant", "LXX": "Cant", "KJV": "Song", "WEB": "Song", "Vulgate": "Song", "Brenton": "Song"
     },
     "TOB": {
-        "LXX": "TobBA", "KJV": "Tob", "WEB": "Tob", "Vulgate": "Tob", "Brenton": "Tob"
+        "LXX": "TobBA", "KJV": "Tob", "WEB": "Tob", "Vulgate": "Tob", "Brenton": "TobBA"
     },
     "ESG": {
         "LXX": "Esth", "KJV": "AddEsth", "WEB": "AddEsth", "Brenton": "AddEsth"
     },
     "SUS": {
-        "LXX": "SusTh", "KJV": "Sus", "WEB": "Sus", "Brenton": "Sus"
+        "LXX": "SusTh", "KJV": "Sus", "WEB": "Sus", "Brenton": "SusTh"
     },
     "SUG": {
-        "LXX": "Sus", "Brenton": "Sus"
+        "LXX": "SusOG", "Brenton": "SusOG"
     },
     "BEL": {
-        "LXX": "BelTh", "KJV": "Bel", "WEB": "Bel", "Brenton": "Bel"
+        "LXX": "BelTh", "KJV": "Bel", "WEB": "Bel", "Brenton": "BelTh"
     },
     "BLG": {
-        "LXX": "Bel", "Brenton": "Bel"
+        "LXX": "BelOG", "Brenton": "BelOG"
     },
     "DAN": {
-        "LXX": "DanTh", "KJV": "Dan", "WEB": "Dan", "Brenton": "Dan"
+        "LXX": "DanTh", "KJV": "Dan", "WEB": "Dan", "Brenton": "DanTh"
     },
     "DAG": {
-        "LXX": "Dan", "Brenton": "Dan"
+        "LXX": "DanOG", "Brenton": "DanOG"
     },
     "1MA": {
         "LXX": "1Mac", "KJV": "1Mac", "WEB": "1Mac", "Vulgate": "1Mac", "Brenton": "1Mac"
@@ -107,6 +107,15 @@ VERSION_BOOKS = {
     "NEH": {
         "LXX": "2Esdr",
     },
+}
+
+# Dual-recension books: Old Greek hub code -> Theodotion/standard hub code.
+# Used by dbClient to align single-recension corpora (stored under the standard code)
+# alongside Swete LXX Old Greek (stored under DAG/SUG/BLG).
+RECENSION_PAIRS = {
+    "DAG": "DAN",
+    "SUG": "SUS",
+    "BLG": "BEL",
 }
 
 # Slugs mapping
@@ -423,6 +432,8 @@ def generate_typescript():
         "",
         "export const VERSION_CHAPTER_OVERRIDES: Record<string, Partial<Record<string, number[]>>> = " + json.dumps(version_chapter_overrides, indent=2) + ";",
         "",
+        "export const RECENSION_PAIRS: Record<string, string> = " + json.dumps(RECENSION_PAIRS, indent=2) + ";",
+        "",
         "/**",
         " * Normalizes any string to a clean alphanumeric key for fast lookup.",
         " */",
@@ -496,6 +507,11 @@ def generate_typescript():
         " */",
         "export function resolveBookCode(input?: string | null, version?: string): string {",
         "	if (!input) return '';",
+        "	const trimmed = input.trim();",
+        "	const upper = trimmed.toUpperCase();",
+        "	if (trimmed.length === 3 && trimmed === upper && CODE_TO_CANONICAL.has(upper)) {",
+        "		return upper;",
+        "	}",
         "	const clean = cleanKey(input);",
         "",
         "	// Dual recensions in LXX",
@@ -510,7 +526,6 @@ def generate_typescript():
         "",
         "	const book = NORM_TO_CANONICAL.get(clean);",
         "	if (book) return book.code;",
-        "	const upper = input.trim().toUpperCase();",
         "	if (upper.length === 3) return upper;",
         "	return '';",
         "}",

@@ -155,7 +155,8 @@ buildbibleRefReverseLookupHash();
  * for that version (e.g. 'Qoh' for BHS vs 'Eccl' for KJV). If none found, returns empty string.
  */
 export function getBookForVersion(bookIdentifier: string, version: string, chapter?: number): string {
-	const canonical = normalizeBookName(bookIdentifier);
+	const code = resolveBookCode(bookIdentifier, version);
+	const canonical = (code ? getCanonicalBook(code) : null) || normalizeBookName(bookIdentifier);
 	if (!canonical) return '';
 
 	if (canonical.versionBooks && canonical.versionBooks[version]) {
@@ -176,10 +177,16 @@ export function getBookFile(version: string, canonicalBook: string, chapter?: nu
  * Formats a book abbreviation for user display:
  * - Replaces underscores with spaces (e.g. '1_Cor' -> '1 Cor', '2_Pet' -> '2 Pet')
  * - Adds a space after a leading number (e.g. '2Mac' -> '2 Mac', '1Sam' -> '1 Sam')
+ * - Formats recension suffixes in parentheses (e.g. 'DanOG' -> 'Dan (OG)', 'DanTh' -> 'Dan (Th)', 'TobBA' -> 'Tob (BA)', 'TobS' -> 'Tob (S)')
  */
 export function formatBookAbbreviation(name?: string | null): string {
 	if (!name) return '';
-	return name.replace(/_/g, ' ').replace(/^([1-4])\s*([a-zA-Z])/, '$1 $2').trim();
+	return name
+		.replace(/_/g, ' ')
+		.replace(/^([1-4])\s*([a-zA-Z])/, '$1 $2')
+		.replace(/^(Dan|Sus|Bel)(OG|Th)$/, '$1 ($2)')
+		.replace(/^(Tob)(BA|S)$/, '$1 ($2)')
+		.trim();
 }
 
 /**

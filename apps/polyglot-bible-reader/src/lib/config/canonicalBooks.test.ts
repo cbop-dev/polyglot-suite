@@ -73,7 +73,7 @@ describe('canonicalBooks Parity with SQLite Database', () => {
 		expect(VERSION_AVAILABLE_BOOKS['SBLGNT']).toHaveLength(27);
 		expect(VERSION_AVAILABLE_BOOKS['KJV']).toHaveLength(80);
 		expect(VERSION_AVAILABLE_BOOKS['Vulgate']).toHaveLength(80);
-		expect(VERSION_AVAILABLE_BOOKS['WEB']).toHaveLength(80);
+		expect(VERSION_AVAILABLE_BOOKS['WEB']).toHaveLength(81);
 		expect(VERSION_AVAILABLE_BOOKS['Brenton']).toHaveLength(52);
 
 		// Vulgate contains Revelation and canonical additions
@@ -127,8 +127,14 @@ describe('canonicalBooks Parity with SQLite Database', () => {
 		expect(formatDisplayReference('ECC 1:1', 'BHS')).toBe('Qoh 1:1');
 		expect(formatDisplayReference('ECC 1:1', 'LXX')).toBe('Qoh 1:1');
 		expect(formatDisplayReference('ECC 1:1', 'KJV')).toBe('Eccl 1:1');
-		expect(formatDisplayReference('TOB 1:1', 'LXX')).toBe('TobBA 1:1');
+		expect(formatDisplayReference('TOB 1:1', 'LXX')).toBe('Tob (BA) 1:1');
+		expect(formatDisplayReference('TOB 1:1', 'Brenton')).toBe('Tob (BA) 1:1');
 		expect(formatDisplayReference('TOB 1:1', 'KJV')).toBe('Tob 1:1');
+		expect(formatDisplayReference('DAN 1:1', 'Brenton')).toBe('Dan (Th) 1:1');
+		expect(formatDisplayReference('DanTh 1:1', 'LXX')).toBe('Dan (Th) 1:1');
+		expect(formatDisplayReference('DAG 1:1', 'LXX')).toBe('Dan (OG) 1:1');
+		expect(formatDisplayReference('Dan 1:1', 'LXX')).toBe('Dan (OG) 1:1');
+		expect(formatDisplayReference('DAN 1:1', 'KJV')).toBe('Dan 1:1');
 	});
 
 	it('should accurately resolve version-specific chapter ranges including Sirach chapter 0', async () => {

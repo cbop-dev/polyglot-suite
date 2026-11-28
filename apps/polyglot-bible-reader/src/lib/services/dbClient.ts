@@ -1,6 +1,7 @@
 import { getDbWorker } from './dbWorker';
 import { mylog } from '$lib/utils/logger';
 import { normalizeBookName, getBookForVersion, formatDisplayReference, formatBookAbbreviation } from '$lib/config/bookMapping.js';
+import { RECENSION_PAIRS } from '$lib/config/canonicalBooks.generated.js';
 import { getStaticCorpusTotalWords, getStaticBookWordStats } from '$lib/config/corpusBookStats';
 import {
 	type CorpusId,
@@ -224,7 +225,7 @@ export const USFM_ALIASES: Record<string, string> = {
 	jeremiah: 'JER', jer: 'JER', 'jeremiah-lxx': 'JER', 'jeremiahlxx': 'JER',
 	lamentations: 'LAM', lam: 'LAM',
 	ezekiel: 'EZK', ezek: 'EZK', ezk: 'EZK',
-	daniel: 'DAN', dan: 'DAN', danth: 'DAN',
+	daniel: 'DAN', dan: 'DAN', danth: 'DAN', danog: 'DAG', dag: 'DAG',
 	hosea: 'HOS', hos: 'HOS',
 	joel: 'JOL', joe: 'JOL', jol: 'JOL',
 	amos: 'AMO', amo: 'AMO',
@@ -247,8 +248,8 @@ export const USFM_ALIASES: Record<string, string> = {
 	baruch: 'BAR', bar: 'BAR',
 	letterofjeremiah: 'LJE', lje: 'LJE', epjer: 'LJE',
 	prayerofazariah: 'S3Y', s3y: 'S3Y', prazar: 'S3Y',
-	susanna: 'SUS', sus: 'SUS', susth: 'SUS', sug: 'SUG',
-	belandthedragon: 'BEL', bel: 'BEL', belth: 'BEL', blg: 'BLG',
+	susanna: 'SUS', sus: 'SUS', susth: 'SUS', susog: 'SUG', sug: 'SUG',
+	belandthedragon: 'BEL', bel: 'BEL', belth: 'BEL', belog: 'BLG', blg: 'BLG',
 	'1maccabees': '1MA', '1mac': '1MA', '1ma': '1MA', '1macc': '1MA', imaccabees: '1MA', imac: '1MA',
 	'2maccabees': '2MA', '2mac': '2MA', '2ma': '2MA', '2macc': '2MA', iimaccabees: '2MA', iimac: '2MA',
 	'3maccabees': '3MA', '3mac': '3MA', '3ma': '3MA', '3macc': '3MA', iiimaccabees: '3MA',
@@ -617,16 +618,12 @@ export async function getChapterVerses(
 		let bookWhereClause = 'std_book = ?';
 		const queryParams: any[] = [targetBook, targetChapter, ...corpusIds];
 
-		// For Greek Old Greek recensions where Greek text is SUG/DAG/BLG but parallels in Vulgate/KJV/MT use SUS/DAN/BEL
-		if (targetBook === 'SUG') {
-			bookWhereClause = "(std_book = 'SUG' OR (std_book = 'SUS' AND corpus_id != 'swete_lxx'))";
-			queryParams.shift();
-		} else if (targetBook === 'DAG') {
-			bookWhereClause = "(std_book = 'DAG' OR (std_book = 'DAN' AND corpus_id != 'swete_lxx'))";
-			queryParams.shift();
-		} else if (targetBook === 'BLG') {
-			bookWhereClause = "(std_book = 'BLG' OR (std_book = 'BEL' AND corpus_id != 'swete_lxx'))";
-			queryParams.shift();
+		// For dual-recension books (e.g. Old Greek SUG/DAG/BLG vs. standard/Theodotion SUS/DAN/BEL),
+		// align single-recension corpora alongside Swete LXX Old Greek.
+		const fallbackBook = RECENSION_PAIRS[targetBook];
+		if (fallbackBook) {
+			bookWhereClause = `(std_book = ? OR (std_book = ? AND corpus_id != 'swete_lxx'))`;
+			queryParams.splice(1, 0, fallbackBook);
 		}
 
 		const sql = `
@@ -672,6 +669,9 @@ export async function getChapterVerses(
 				}
 
 				const nativeLabel = `${row.native_chapter}:${row.native_verse}${row.native_subverse ? String(row.native_subverse) : ''}`;
+				const rawRef = row.verse_label && !/^\d+:/.test(row.verse_label.trim())
+					? row.verse_label
+					: (row.native_book ? `${row.native_book} ${row.verse_label || nativeLabel}` : (row.verse_label || nativeLabel));
 
 				results.push({
 					base_cref_id: row.work_unit_id,
@@ -681,7 +681,7 @@ export async function getChapterVerses(
 					version: versionAcronym,
 					work_unit_id: row.work_unit_id,
 					verse_label: nativeLabel,
-					native_citation: formatDisplayReference(row.verse_label || (row.native_book ? `${row.native_book} ${nativeLabel}` : nativeLabel), versionAcronym),
+					native_citation: formatDisplayReference(rawRef, versionAcronym),
 					body: row.body,
 					words
 				});

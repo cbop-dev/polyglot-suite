@@ -25,6 +25,14 @@ class BrentonAdapter(BaseAdapter):
     category = "bible"
     default_scheme = "LXX"
 
+    # Brenton translates Theodotion for Daniel/Susanna/Bel and Vaticanus/Alexandrinus for Tobit.
+    RECENSION_BOOKS = {
+        "DAN": "DanTh",
+        "SUS": "SusTh",
+        "BEL": "BelTh",
+        "TOB": "TobBA",
+    }
+
     def __init__(
         self,
         source_dir: Optional[Path] = None,
@@ -65,8 +73,13 @@ class BrentonAdapter(BaseAdapter):
                     book_code = resolve_canonical_book(raw_book_code)
                     if not book_code:
                         continue
+                    # eBible USFM uses DAG for Brenton Daniel, which is actually Theodotion (DAN).
+                    if book_code == "DAG":
+                        book_code = "DAN"
                     # Align via TVTMS using the Septuagint (LXX) scheme
                     ref = self.tvtms.resolve_to_standard("LXX", book_code, ch_num, v_num, subverse)
+                    native_book = self.RECENSION_BOOKS.get(book_code, book_code)
+                    native_citation = f"{native_book} {nat_cit}" if native_book != book_code else nat_cit
 
                     yield VerseUnit(
                         corpus_id=self.corpus_id,
@@ -74,11 +87,11 @@ class BrentonAdapter(BaseAdapter):
                         std_chapter=ref.chapter,
                         std_verse=ref.verse,
                         std_subverse=ref.subverse,
-                        native_book=book_code,
+                        native_book=native_book,
                         native_chapter=ch_num,
                         native_verse=v_num,
                         native_subverse=subverse,
-                        native_citation=nat_cit,
+                        native_citation=native_citation,
                         text=clean_text,
                         tokens=None,
                     )
@@ -109,6 +122,8 @@ class BrentonAdapter(BaseAdapter):
             for bpath in book_files:
                 b_abbrev = bpath.stem
                 book_code = resolve_canonical_book(b_abbrev)
+                if book_code == "DAG":
+                    book_code = "DAN"
                 if not book_code or book_code in seen_books:
                     continue
                 seen_books.add(book_code)
@@ -116,6 +131,7 @@ class BrentonAdapter(BaseAdapter):
                 with open(bpath, "r", encoding="utf-8") as f:
                     bdata = json.load(f)
 
+                native_book = self.RECENSION_BOOKS.get(book_code, book_code)
                 chapters = bdata.get("chapters", {})
                 for c_str in sorted(chapters.keys(), key=lambda x: int(x) if x.isdigit() else 0):
                     ch_num = int(c_str)
@@ -129,17 +145,19 @@ class BrentonAdapter(BaseAdapter):
                             continue
 
                         ref = self.tvtms.resolve_to_standard("LXX", book_code, ch_num, v_num)
+                        nat_cit = f"{ch_num}:{v_num}"
+                        native_citation = f"{native_book} {nat_cit}" if native_book != book_code else nat_cit
                         yield VerseUnit(
                             corpus_id=self.corpus_id,
                             std_book=ref.book,
                             std_chapter=ref.chapter,
                             std_verse=ref.verse,
                             std_subverse=ref.subverse,
-                            native_book=book_code,
+                            native_book=native_book,
                             native_chapter=ch_num,
                             native_verse=v_num,
                             native_subverse="",
-                            native_citation=f"{ch_num}:{v_num}",
+                            native_citation=native_citation,
                             text=clean_text,
                             tokens=None,
                         )

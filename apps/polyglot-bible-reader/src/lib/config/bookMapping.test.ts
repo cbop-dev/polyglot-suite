@@ -61,7 +61,7 @@ describe('bookMapping', () => {
       expect(getBookFile('KJV', 'TobBA')).toBe('Tob');
       expect(getBookFile('WEB', 'TobBA')).toBe('Tob');
       expect(getBookFile('Vulgate', 'TobBA')).toBe('Tob');
-      expect(getBookFile('Brenton', 'TobBA')).toBe('Tob');
+      expect(getBookFile('Brenton', 'TobBA')).toBe('TobBA');
 
       expect(getBookFile('Brenton', 'AddEsth')).toBe('AddEsth');
       expect(getBookFile('LXX', 'AddEsth')).toBe('Esth');

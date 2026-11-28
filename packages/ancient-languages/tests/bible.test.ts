@@ -59,6 +59,16 @@ describe('Ancient Languages: Bible Books & References', () => {
 			expect(formatBookAbbreviation('1_Cor')).toBe('1 Cor');
 			expect(formatBookAbbreviation('2_Pet')).toBe('2 Pet');
 			expect(formatBookAbbreviation('2Mac')).toBe('2 Mac');
+			expect(formatBookAbbreviation('DanOG')).toBe('Dan (OG)');
+			expect(formatBookAbbreviation('DanTh')).toBe('Dan (Th)');
+			expect(formatBookAbbreviation('SusOG')).toBe('Sus (OG)');
+			expect(formatBookAbbreviation('SusTh')).toBe('Sus (Th)');
+			expect(formatBookAbbreviation('BelOG')).toBe('Bel (OG)');
+			expect(formatBookAbbreviation('BelTh')).toBe('Bel (Th)');
+			expect(formatBookAbbreviation('TobBA')).toBe('Tob (BA)');
+			expect(formatBookAbbreviation('TobS')).toBe('Tob (S)');
+			expect(formatBookAbbreviation('Esth')).toBe('Esth');
+			expect(formatBookAbbreviation('Ruth')).toBe('Ruth');
 		});
 
 		it('formats display references', () => {
