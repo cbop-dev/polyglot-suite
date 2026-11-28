@@ -4,7 +4,7 @@ Monorepo workspace for ancient language text readers, linguistic research tools,
 
 > [!IMPORTANT]
 > **AI-Generated Documentation Notice**  
-> **Human Review Status:** `Passed initial human review`  
+> **Human Review Status:** `To be reviewed`  
 > This documentation was generated with AI assistance and may contain inaccuracies. Please verify with the codebase and primary sources.
 
 > 📖 **Technical Architecture**: For details on the WebAssembly database engine, shared packages, and build workflows, see [**Monorepo Architecture & Technical Design**](docs/monorepo-architecture.md).
@@ -17,7 +17,7 @@ Monorepo workspace for ancient language text readers, linguistic research tools,
 |:---------------------------- |:---------------------------------------------------------------- |:----------------------------------------------------- |:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |:--------------------------------------------------------- |
 | **Polyglot Bible Reader**    | [`apps/polyglot-bible-reader`](apps/polyglot-bible-reader)       | SvelteKit 2, Svelte 5, Tailwind CSS, `sql.js-httpvfs` | Multi-version parallel biblical reader (Hebrew WLC, Greek LXX & SBLGNT, Open Greek NT, Syriac Peshitta, Latin Vulgate, English KJV/WEB/Brenton/Douay-Rheims, Luther 1912 German, Vamvas Modern Greek) with versification alignment, LSJ/BDB lexicons, and concordance search.                     | **Active**                                                |
 | **Biblical Lexeme Explorer** | [`apps/biblical-lexeme-explorer`](apps/biblical-lexeme-explorer) | SvelteKit 2, Svelte 5, Tailwind CSS, D3, Chart.js     | Vocabulary acquisition tool with frequency distributions, concordance lookups, word clouds, and unabridged LSJ and BDB lexicons for LXX, BHS, and SBLGNT.                                                                                                                                         | **Active**                                                |
-| **Ancient Corpora Reader**   | [`apps/ancient-corpora-reader`](apps/ancient-corpora-reader)     | SvelteKit 2, Svelte 5, `sql.js-httpvfs`               | Consolidated reader for **Apostolic Fathers**, **Philo of Alexandria**, and **Flavius Josephus** with parallel English/Greek/Latin views, paginated concordances, Mangey citations, and Scripture indexes.                                                                                        | **Active**                                                |
+| **Ancient Corpora Reader**   | [`apps/ancient-corpora-reader`](apps/ancient-corpora-reader)     | SvelteKit 2, Svelte 5, `sql.js-httpvfs`               | Consolidated reader for **Apostolic Fathers**, **Philo of Alexandria**, **Flavius Josephus**, **Justin Martyr**, **Irenaeus of Lyons**, **Clement of Alexandria**, and **Origen of Alexandria** with parallel English/Greek/Latin views, paginated concordances, Mangey citations, and Scripture indexes. | **Active** |
 | **Suite Portal**             | [`apps/portal`](apps/portal)                                     | SvelteKit 2, Svelte 5                                 | Landing page and navigation directory for all apps across local and production deployment environments.                                                                                                                                                                                           | **Active**                                                |
 | **Synoptic Viewer**          | [`apps/synoptic-viewer`](apps/synoptic-viewer)                   | SvelteKit 2, Svelte 5                                 | NT Gospel synoptic comparison based on Kurt Aland's *Synopsis Quattuor Evangeliorum*. Maintained as a submodule but currently deployed as [an external app from external GH pages deployment](https://synopsis.texts.faith), of [remote repository](https://github.com/cbop-dev/synoptic-viewer). | **Active** ([External App](https://synopsis.texts.faith)) |
 
@@ -28,7 +28,7 @@ Monorepo workspace for ancient language text readers, linguistic research tools,
 ```
 polyglot-suite/
 ├── apps/
-│   ├── ancient-corpora-reader/     # Consolidated AF, Philo, and Josephus reader
+│   ├── ancient-corpora-reader/     # Consolidated AF, Philo, Josephus, Justin, Irenaeus, Clement & Origen reader
 │   ├── biblical-lexeme-explorer/   # Analytical vocabulary explorer & lexical charts
 │   ├── polyglot-bible-reader/      # Multi-version parallel biblical reader
 │   ├── portal/                     # Suite landing portal & navigation hub
@@ -106,7 +106,7 @@ npm run check:portal
 Applications query pre-computed SQLite databases in the browser using HTTP range requests (`sql.js-httpvfs`). Large database files are split into small chunks (`.db.00`, `.db.01`, etc.) so users only download the specific pages they view:
 
 - **Polyglot Bible Reader & BLE**: 5MB chunks (`polyglot.db.*`).
-- **Ancient Corpora Reader**: 1MB chunks (`af.db.*`, `philo.db.*`, `josephus.db.*`).
+- **Ancient Corpora Reader**: 5MB chunks (`af.db.*`, `philo.db.*`, `josephus.db.*`, `justin.db.*`, `irenaeus.db.*`, `clement.db.*`, `origen.db.*`).
 
 Database chunks are not committed to Git. Instead, they are hosted on GitHub Releases and tracked locally via `config.json` in each app's `static/db/` directory.
 
@@ -149,6 +149,9 @@ npm run pull:db:corpora
 npm run pull:db:corpora:af
 npm run pull:db:corpora:philo
 npm run pull:db:corpora:josephus
+npm run pull:db:corpora:justin
+npm run pull:db:corpora:irenaeus
+npm run pull:db:corpora:origen
 ```
 
 ### 3. Release a New Database Version
@@ -165,6 +168,10 @@ npm run release:db:bible                  # Bumps patch version
 npm run release:db:corpora:af             # Apostolic Fathers
 npm run release:db:corpora:philo          # Philo of Alexandria
 npm run release:db:corpora:josephus       # Flavius Josephus
+npm run release:db:corpora:justin         # Justin Martyr
+npm run release:db:corpora:irenaeus       # Irenaeus of Lyons
+npm run release:db:corpora:clement        # Clement of Alexandria
+npm run release:db:corpora:origen         # Origen of Alexandria
 ```
 
 ### 4. Compiling Databases from Source
@@ -185,8 +192,8 @@ npm run chunk:db
 npm run data:all
 ```
 
-To compile Ancient Corpora databases (AF, Philo, Josephus):
+To compile Ancient Corpora databases (AF, Philo, Josephus, Justin, Irenaeus, Clement, Origen):
 
 ```bash
-python3 apps/ancient-corpora-reader/pipeline/build.py --all
+npm --prefix apps/ancient-corpora-reader run pipeline:build
 ```

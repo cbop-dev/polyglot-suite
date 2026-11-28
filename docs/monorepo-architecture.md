@@ -4,7 +4,7 @@ An architectural blueprint and technical guide for the **Polyglot Suite** monore
 
 > [!IMPORTANT]
 > **AI-Generated Documentation Notice**  
-> **Human Review Status:** `Reviewed Part 1. Others: to be reviewed`  
+> **Human Review Status:** `To be reviewed`  
 > This documentation was generated with AI assistance and may contain inaccuracies. Please verify against the active codebase and primary sources.
 
 ---
@@ -26,7 +26,7 @@ The Polyglot Suite operates under four governing technical principles:
      > [!IMPORTANT]
      > Much code-refactoring still needs to be done. The apps were originally developed indepentendly and the integration into one monorepo is still on-going.
 3. **Consolidated Unified Readers**:
-   - Non-biblical literature is unified into one multi-corpus reader, [`apps/ancient-corpora-reader`](../apps/ancient-corpora-reader). Currently, this reader has three corpora: Apostolic Fathers, Philo of Alexandria, and Flavius Josephus. But it build to be extensible to other ancient texts/corpora.
+   - Non-biblical literature is unified into one multi-corpus reader, [`apps/ancient-corpora-reader`](../apps/ancient-corpora-reader). Currently, this reader has seven corpora: Apostolic Fathers, Philo of Alexandria, Flavius Josephus, Justin Martyr, Irenaeus of Lyons, Clement of Alexandria, and Origen of Alexandria, and is built to be extensible to other ancient texts/corpora.
 4- **Submodule and External App Integration**:
    - Other tools can be integrated, either as modular external apps or submodules. Currently, the Greek NT Synoptic Viewer is set up as a submodule in [`apps/synoptic-viewer`](../apps/synoptic-viewer), but deployed in the portal as a link to an external app.
 
@@ -40,7 +40,7 @@ flowchart TD
         Raw["Raw Critical Texts & Lexicons<br/>(TEI XML, Text-Fabric, USFM, CSV)"]
         BiblePipeline["packages/data-pipeline<br/>(TVTMS Aligner, SQLite Builder)"]
         ACRPipeline["apps/ancient-corpora-reader/pipeline<br/>(Covering Concordance, Token Slicer)"]
-        Chunker["DatabaseChunker (pipeline-core)<br/>(5MB Bible / 1MB ACR Chunks)"]
+        Chunker["DatabaseChunker (pipeline-core)<br/>(5MB Bible & ACR Chunks)"]
         GHReleases["GitHub Releases Storage<br/>(bible-data-v*, corpora-*-db-v*)"]
 
         Raw --> BiblePipeline
@@ -66,7 +66,7 @@ flowchart TD
         Portal["apps/portal<br/>(Suite directory & routing hub)"]
         PBR["apps/polyglot-bible-reader<br/>(12 versions, TVTMS alignment)"]
         BLE["apps/biblical-lexeme-explorer<br/>(Vocabulary analytics & manifests)"]
-        ACR["apps/ancient-corpora-reader<br/>(Consolidated AF, Philo, Josephus)"]
+        ACR["apps/ancient-corpora-reader<br/>(Consolidated AF, Philo, Josephus, Justin, Irenaeus, Clement, Origen)"]
         Synoptic["apps/synoptic-viewer<br/>(Gospel Synopsis Submodule / External App)"]
     end
 
@@ -96,7 +96,7 @@ The repository is configured as an **npm workspace** with explicit separation be
 ```
 polyglot-suite/
 ├── apps/                               # User-facing applications
-│   ├── ancient-corpora-reader/         # [Active] Consolidated AF, Philo, and Josephus reader
+│   ├── ancient-corpora-reader/         # [Active] Consolidated AF, Philo, Josephus, Justin, Irenaeus, Clement & Origen reader
 │   ├── biblical-lexeme-explorer/       # [Active] Analytical vocabulary tool & lexical charts
 │   ├── polyglot-bible-reader/          # [Active] Multi-version parallel biblical reader
 │   ├── portal/                         # [Active] SvelteKit suite entry portal & landing directory
@@ -133,7 +133,7 @@ polyglot-suite/
 |:---------------------------- |:------------------------------------------------------------------- |:---------------------- |:-------------------- |:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Polyglot Bible Reader**    | [`apps/polyglot-bible-reader`](../apps/polyglot-bible-reader)       | SvelteKit 2 + Svelte 5 | `dist/bible/`        | Multi-corpus biblical reader (WLC Hebrew, Swete LXX, SBLGNT, Open Greek NT, Syriac Peshitta, Clementine Vulgate, KJV, WEB, Brenton LXX, Douay-Rheims, Luther 1912, Vamvas 1850) with TVTMS alignment and LSJ/BDB lexicons. |
 | **Biblical Lexeme Explorer** | [`apps/biblical-lexeme-explorer`](../apps/biblical-lexeme-explorer) | SvelteKit 2 + Svelte 5 | `dist/lexemes/`      | Vocabulary exploration, frequency distributions, concordance searches, and word clouds powered by build-time manifests generated from the master DB.                                                                       |
-| **Ancient Corpora Reader**   | [`apps/ancient-corpora-reader`](../apps/ancient-corpora-reader)     | SvelteKit 2 + Svelte 5 | `dist/corpora/`      | Consolidated parallel reader for Apostolic Fathers, Philo of Alexandria, and Flavius Josephus with 1MB chunked HTTP-VFS databases, covering concordances, and milestone citations.                                         |
+| **Ancient Corpora Reader**   | [`apps/ancient-corpora-reader`](../apps/ancient-corpora-reader)     | SvelteKit 2 + Svelte 5 | `dist/corpora/`      | Consolidated parallel reader for Apostolic Fathers, Philo of Alexandria, Flavius Josephus, Justin Martyr, Irenaeus of Lyons, Clement of Alexandria, and Origen of Alexandria with 5MB chunked HTTP-VFS databases, covering concordances, and milestone citations. |
 | **Suite Portal**             | [`apps/portal`](../apps/portal)                                     | SvelteKit 2 + Svelte 5 | `dist/index.html`    | Central suite navigation hub. Serves backward-compatible redirect pages (`dist/{philo,fathers,josephus}/`) and handles environment-based URL overrides.                                                                    |
 | **Synoptic Viewer**          | [`apps/synoptic-viewer`](../apps/synoptic-viewer)                   | SvelteKit 2 + Svelte 5 | Submodule / External | Comparative synopsis of NT Gospel parallels according to Kurt Aland's outline. Deployed independently at `https://synopsis.texts.faith`.                                                                                   |
 
@@ -170,12 +170,16 @@ Applications eliminate dynamic backend database servers by hosting an SQLite que
 
 2. **Multi-VFS Modular Pattern (`ancient-corpora-reader`)**:
    
-   - Manages an isolated worker pool across three independent corpus databases:
-     - `static/db/af/` (~43MB, 44 chunks)
-     - `static/db/philo/` (~223MB, 224 chunks)
-     - `static/db/josephus/` (~193MB, 194 chunks)
-   - **Chunk Configuration**: 1MB server chunks (`serverChunkSize: 1048576`), 16KB request chunks (`requestChunkSize: 16384`).
-   - **Advantage**: Zero bytes are downloaded for a corpus until a user explicitly navigates to it. Smaller 1MB chunks reduce transfer latency on sporadic searches and mobile devices.
+   - Manages an isolated worker pool across seven independent corpus databases:
+     - `static/db/af/` (~44.6 MiB, 9 chunks)
+     - `static/db/philo/` (~236.7 MiB, 48 chunks)
+     - `static/db/josephus/` (~201.9 MiB, 41 chunks)
+     - `static/db/justin/` (~44.5 MiB, 9 chunks)
+     - `static/db/irenaeus/` (~25.3 MiB, 6 chunks)
+     - `static/db/clement/` (~111.5 MiB, 23 chunks)
+     - `static/db/origen/` (~191.7 MiB, 39 chunks)
+   - **Chunk Configuration**: 5MB server chunks (`serverChunkSize: 5242880`), 16KB request chunks (`requestChunkSize: 16384`).
+   - **Advantage**: Zero bytes are downloaded for a corpus until a user explicitly navigates to it, while 5MB server chunks keep the total file count compact for GitHub Releases and static hosting.
 
 ### 4.3 Query Performance & Indexing Strategies
 

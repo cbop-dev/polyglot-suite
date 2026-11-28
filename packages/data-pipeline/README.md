@@ -11,7 +11,7 @@ Offline Python ETL pipeline, versification crosswalk engine, and master SQLite c
 
 ## Overview
 
-The **Data Pipeline** is the centralized build system responsible for producing the unified master SQLite database (`polyglot-working.sqlite3`, ~857 MB) used by **Polyglot Bible Reader** and **Biblical Lexeme Explorer**.
+The **Data Pipeline** is the centralized build system responsible for producing the unified master SQLite database (`polyglot-working.sqlite3`, ~857 MiB) used by **Polyglot Bible Reader** and **Biblical Lexeme Explorer**. For the full SQLite schema specification, see [Polyglot Bible Reader Database Design](../../apps/polyglot-bible-reader/docs/database-design.md).
 
 It automates:
 1. Fetching raw upstream text, morphology, and lexicon datasets into local cache.
@@ -30,17 +30,20 @@ It automates:
 packages/data-pipeline/
 ├── adapters/                    # Text and lexicon format ingestion adapters
 │   ├── base.py                  # Base adapter class
+│   ├── bdb.py                   # Brown-Driver-Briggs Hebrew lexicon adapter
 │   ├── brenton.py               # Brenton English Septuagint adapter
 │   ├── douay.py                 # Douay-Rheims Challoner revision adapter
 │   ├── kjv.py                   # King James Version adapter
+│   ├── lsj.py                   # STEPBible LSJ Greek lexicon adapter
 │   ├── luther1912.py            # Lutherbibel 1912 adapter
 │   ├── ognt.py                  # Open Greek New Testament adapter
 │   ├── peshitta.py              # Syriac Peshitta adapter
 │   ├── sblgnt.py                # SBL Greek New Testament adapter
 │   ├── swete_lxx.py             # Swete Septuagint adapter
+│   ├── usfm.py                  # USFM text parser utilities
 │   ├── vamvas.py                # Modern Greek (Vamvas 1850) adapter
 │   ├── vulgate.py               # Clementine Vulgate adapter
-│   ├── web.py                   # World English Bible adapter
+│   ├── webbe.py                 # World English Bible (British Edition) adapter
 │   └── wlc.py                   # Westminster Leningrad Codex adapter
 ├── cache/                       # Cached raw upstream source downloads
 ├── build/                       # Output directory for compiled SQLite databases
@@ -50,6 +53,8 @@ packages/data-pipeline/
 ├── chunker.py                   # SQLite database byte-range 5MB chunker
 ├── config.py                    # Corpus definitions, schema constants & file paths
 ├── db_builder.py                # SQLite schema creation & table population
+├── export_lemma_search_json.py  # Lemma search JSON exporter
+├── export_peshitta_tf.py        # Peshitta Text-Fabric exporter
 ├── fetcher.py                   # Polite HTTP cache downloader
 ├── generate_canonical_books.py  # Synchronizes canonical book definitions with frontend
 ├── lemma_indexer.py             # Pre-computes lemma distributions and concordance refs

@@ -59,7 +59,7 @@ Each application provides a `static/db/config.json` manifest defining chunk para
 }
 ```
 
-- **`serverChunkSize`**: Size of chunk files on disk (5MB for Bible, 1MB for Ancient Corpora).
+- **`serverChunkSize`**: Size of chunk files on disk (5MB for both Bible and Ancient Corpora).
 - **`requestChunkSize`**: Size of individual range requests (4096 bytes for Bible, 16384 bytes for Ancient Corpora).
 - **`urlPrefix`**: Chunk file naming pattern (e.g., `polyglot.db.00`, `af.db.00`).
 
